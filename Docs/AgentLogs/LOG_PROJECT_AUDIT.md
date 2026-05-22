@@ -1858,3 +1858,15 @@ Cinematic Cheats used: Not visual. This reduces duplicate writer names for one s
 Exact Microseconds saved: 0 us measured. Static API risk moved `nativeCollectionPublicMutableApiExposure=14->13`, `nativeApiExposureBuildPlayerRuntime=14->13`, `nativeApiExposureMutableReturn=5->4`, and `nativeApiRiskRuntimeReturnMutableView=3->2`.
 
 Evidence: `Docs/Reports/PROJECT_AUDIT_polish_after_legacy_writer_alias_scope.json`; `python Tools\test_polish_mandate_static_audit.py` passed 12 tests; focused scan found no external `OpenLegacyMpscWriter` caller; targeted `git diff --check` reported LF/CRLF warnings only. Batch re-check found no `<AGENT_PROMPT id="PROJECT_AUDIT">` block. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - HectonArena NativeArray Proof Route Removal
+
+What was wrong: `HectonArenaAllocator.TryAllocateNativeArray<T>` still exposed a public out-`NativeArray<T>` frame-arena allocation route with one hull proof caller.
+
+What was done: Moved the hull emergency proof to `NativeArenaArray<int>`, updated `HullIntegrityArenaBfsProofJob`, and removed the public arena `NativeArray` allocation route.
+
+Cinematic Cheats used: Not visual. This keeps proof scratch in arena-native form instead of converting frame arena memory to a broad mutable `NativeArray` API.
+
+Exact Microseconds saved: 0 us measured. Static API risk moved `nativeCollectionPublicMutableApiExposure=13->12`, `nativeApiExposureBuildPlayerRuntime=13->12`, `nativeApiExposureOutRefMutable=9->8`, and `nativeApiRiskCoreVaultOrAllocatorSurface=9->8`.
+
+Evidence: `Docs/Reports/PROJECT_AUDIT_polish_after_hecton_arena_nativearray_route_removal.json`; `python Tools\test_polish_mandate_static_audit.py` passed 12 tests; focused scan found no `TryAllocateNativeArray` route or caller; targeted `git diff --check` reported LF/CRLF warnings only. Batch re-check found no `<AGENT_PROMPT id="PROJECT_AUDIT">` block. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.

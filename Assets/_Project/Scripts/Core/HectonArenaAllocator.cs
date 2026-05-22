@@ -203,27 +203,6 @@ namespace Hecton8.Core
             }
         }
 
-        public static bool TryAllocateNativeArray<T>(int count, NativeArrayOptions options, uint ownerHash, out NativeArray<T> array) where T : unmanaged
-        {
-            return TryAllocateNativeArray(count, ShouldClear(options), ownerHash, out array);
-        }
-
-        private static bool TryAllocateNativeArray<T>(int count, bool clearMemory, uint ownerHash, out NativeArray<T> array) where T : unmanaged
-        {
-            array = default;
-            if (!TryAllocateBlock<T>(count, ownerHash, out ArenaAllocation allocation))
-                return false;
-
-            if (clearMemory)
-                UnsafeUtility.MemClear(allocation.Ptr, allocation.ByteCount);
-
-            array = NativeArrayUnsafeUtility.ConvertExistingDataToNativeArray<T>(allocation.Ptr, count, Allocator.None);
-#if ENABLE_UNITY_COLLECTIONS_CHECKS
-            NativeArrayUnsafeUtility.SetAtomicSafetyHandle(ref array, GetSafetyHandle(allocation.ArenaIndex));
-#endif
-            return true;
-        }
-
         public static NativeArenaArray<T> AllocateNativeArenaArray<T>(int count, bool clearMemory = true) where T : unmanaged
         {
             if (!TryAllocateNativeArenaArray(count, clearMemory, DefaultOwnerHash, out NativeArenaArray<T> array))

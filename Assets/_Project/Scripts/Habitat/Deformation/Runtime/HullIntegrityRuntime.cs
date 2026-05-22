@@ -1654,11 +1654,11 @@ namespace Hecton8.Habitat.Deformation
             if (!HectonArenaAllocator.IsCreated)
                 HectonArenaAllocator.Initialize();
 
-            if (!HectonArenaAllocator.TryAllocateNativeArray(
+            if (!HectonArenaAllocator.TryAllocateNativeArenaArray(
                     math.max(1, _activeModuleCount),
                     NativeArrayOptions.UninitializedMemory,
                     HullIntegrityConstants.AgentHash,
-                    out NativeArray<int> scratch))
+                    out NativeArenaArray<int> scratch))
             {
                 return;
             }

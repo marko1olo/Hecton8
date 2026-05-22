@@ -1,5 +1,6 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using Hecton8.Core;
 using Unity.Burst;
 using Unity.Burst.CompilerServices;
 using Unity.Collections;
@@ -862,7 +863,7 @@ namespace Hecton8.Habitat.Deformation
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     internal struct HullIntegrityArenaBfsProofJob : IJob
     {
-        [NoAlias] public NativeArray<int> Queue;
+        [NoAlias] public NativeArenaArray<int> Queue;
         public int NodeCount;
 
         public void Execute()
