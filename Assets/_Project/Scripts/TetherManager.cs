@@ -794,19 +794,7 @@ namespace Hecton8.Physics
             if (_dataVault == null)
                 return;
             if (_shinobu132CableBootstrapRequested &&
-                CablePhysicsSolver132.TryResolveMockBuffers(
-                    _dataVault,
-                    out _,
-                    out _,
-                    out _,
-                    out _,
-                    out _,
-                    out _,
-                    out _,
-                    out _,
-                    out _,
-                    out _,
-                    out _))
+                CablePhysicsSolver132.TryHasMockBuffers(_dataVault))
             {
                 return;
             }
@@ -831,23 +819,6 @@ namespace Hecton8.Physics
             if (_shinobu132CableMockScheduled)
                 return;
 
-            if (!CablePhysicsSolver132.TryResolveMockBuffers(
-                    _dataVault,
-                    out NativeArray<CableNodeDTO> nodes,
-                    out NativeArray<TetherConstraintDTO> constraints,
-                    out NativeArray<TetherEndpointAupDTO> endpoints,
-                    out NativeArray<TetherSplineVertexDTO> vertices,
-                    out NativeArray<float> segmentTensions,
-                    out NativeArray<PhysicsEventPayload> physicsEvents,
-                    out NativeArray<TetherTelemetryEntry> telemetryRing,
-                    out NativeArray<int> telemetryHead,
-                    out NativeArray<double3> pinnedAups,
-                    out NativeArray<byte> pinnedMask,
-                    out NativeArray<VerletCableTuningDTO> tuning))
-            {
-                return;
-            }
-
             if (!ResolveShinobu132CameraContext(out Vector3 cameraPosition, out double3 cameraAup))
                 return;
 
@@ -867,27 +838,21 @@ namespace Hecton8.Physics
             }
 
             _shinobu132CableMockScheduleTicks = System.Diagnostics.Stopwatch.GetTimestamp();
-            _shinobu132CableMockHandle = CablePhysicsSolver132.ScheduleMock(
-                nodes,
-                constraints,
-                endpoints,
-                vertices,
-                segmentTensions,
-                physicsEvents,
-                telemetryRing,
-                telemetryHead,
-                pinnedAups,
-                pinnedMask,
-                tuning,
-                CablePhysicsSolver132.AcquirePhysicsEventWriter(),
-                frameIndex,
-                safeDelta,
-                gravity,
-                abyssalFlow,
-                cameraAup,
-                qualityWeight,
-                _shinobu132LastMockElapsedUs,
-                default);
+            if (!CablePhysicsSolver132.TryScheduleMockFromVault(
+                    _dataVault,
+                    frameIndex,
+                    safeDelta,
+                    gravity,
+                    abyssalFlow,
+                    cameraAup,
+                    qualityWeight,
+                    _shinobu132LastMockElapsedUs,
+                    default,
+                    out _shinobu132CableMockHandle))
+            {
+                return;
+            }
+
             _shinobu132CableMockScheduled = true;
             H8Memory.RegisterActiveJob(SystemID.Physics, _shinobu132CableMockHandle);
         }

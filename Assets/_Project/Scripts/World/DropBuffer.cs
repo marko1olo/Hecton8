@@ -1,6 +1,7 @@
 using System;
 using Hecton8.Core;
 using Unity.Collections;
+using Unity.Jobs;
 
 namespace Hecton8.World
 {
@@ -39,10 +40,27 @@ namespace Hecton8.World
         /// <summary>True when no pending drop records remain in the native queue.</summary>
         public bool IsEmpty => !_queue.IsCreated || _queue.IsEmpty();
 
-        /// <summary>Returns a Burst-safe writer for the current queue.</summary>
-        public NativeQueue<ItemDropData>.ParallelWriter AsParallelWriter()
+        /// <summary>Schedules the owner yield job without exporting the queue writer.</summary>
+        public JobHandle ScheduleEntropyYieldJob(
+            NativeArray<DestroyedOrganicEvent> events,
+            NativeArray<HarvestableTemplate.RuntimeDescriptor> templateDescriptors,
+            NativeArray<HarvestableTemplate.LootRuntimeEntry> lootEntries,
+            NativeArray<EntropyYieldMaterialLutEntry> materialLut,
+            int eventCount,
+            int innerloopBatchCount)
         {
-            return _queue.AsParallelWriter();
+            if (!_queue.IsCreated || eventCount <= 0)
+                return default;
+
+            return new EntropyYieldJob
+            {
+                Events = events,
+                TemplateDescriptors = templateDescriptors,
+                LootEntries = lootEntries,
+                MaterialLut = materialLut,
+                DropWriter = _queue.AsParallelWriter(),
+                EventCount = eventCount
+            }.Schedule(eventCount, innerloopBatchCount);
         }
 
         /// <summary>Attempts to read one queued drop on the main thread.</summary>

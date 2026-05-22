@@ -3466,15 +3466,13 @@ namespace Hecton8.World
             }
 
             _scheduledYieldCount = eventCount;
-            _yieldJobHandle = new EntropyYieldJob
-            {
-                Events = _yieldJobInput,
-                TemplateDescriptors = _templateDescriptors,
-                LootEntries = _lootEntries,
-                MaterialLut = _yieldMaterialLut,
-                DropWriter = _dropBuffer.AsParallelWriter(),
-                EventCount = eventCount
-            }.Schedule(eventCount, 8);
+            _yieldJobHandle = _dropBuffer.ScheduleEntropyYieldJob(
+                _yieldJobInput,
+                _templateDescriptors,
+                _lootEntries,
+                _yieldMaterialLut,
+                eventCount,
+                8);
             _yieldScheduled = true;
         }
 

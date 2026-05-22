@@ -1282,3 +1282,27 @@ Cinematic Cheats used: Scope cleanup only. Existing systems keep their DataVault
 Exact Microseconds saved: 0 us measured. Static hygiene gain: `nativeApiExposurePrivateNestedSuppressed` 5 -> 0 in `Docs/Reports/PROJECT_AUDIT_polish_after_private_wrapper_tail_scope.json`. Public mutable counters remained `nativeCollectionPublicMutableApiExposure=100`, `nativeApiExposureBuildPlayerRuntime=93`, and `nativeApiExposureOutRefMutable=73`.
 
 Verification: Focused scan found no public/internal native wrapper methods matching the selected names. `python Tools\test_polish_mandate_static_audit.py` passed 12 tests. Static audit status remained `PASS_WITH_WARNINGS`. `git diff --check` reported only LF/CRLF normalization warnings. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Construction Proof Owner Write Split
+
+What was wrong: `ModularBaseConstructionValidator` still exposed three public QA/proof mutable native buffer openers. `PlayerBuilder` consumed the telemetry opener only to write one row, and bounds/occupancy ensure routes were same-class owner helpers.
+
+What was done: Added `TryWriteTelemetryToVault` as the public owner-write method, changed `PlayerBuilder` to call it directly, and narrowed `EnsureTelemetryRing`, `EnsureBoundsOverrideBuffer`, and `EnsureOccupancyHashTable` to private.
+
+Cinematic Cheats used: No new simulation. This is route tightening only; construction still uses deterministic grid/AABB proof data and existing telemetry instead of scene scans.
+
+Exact Microseconds saved: 0 us measured. Static API risk moved `nativeCollectionPublicMutableApiExposure=100->97`, `nativeApiExposureOutRefMutable=73->70`, `nativeApiExposureBuildQaDevProof=7->4`, and `nativeApiRiskEditorOrProofSurface=7->4`.
+
+Evidence: `Docs/Reports/PROJECT_AUDIT_polish_after_construction_proof_owner_write.json`; `python Tools\test_polish_mandate_static_audit.py` passed 12 tests; focused scan found no public construction `Ensure*` mutable buffer openers and no external `ModularBaseConstructionValidator.Ensure*` callers; targeted `git diff --check` produced no output. Batch re-check found no `<AGENT_PROMPT id="PROJECT_AUDIT">` block. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - DropBuffer Owner Schedule Split
+
+What was wrong: `World.DropBuffer.AsParallelWriter()` returned a mutable `NativeQueue<ItemDropData>.ParallelWriter` from a public method. Focused source search found only `DestructibleOrganicManager`, which immediately used the writer to schedule `EntropyYieldJob`.
+
+What was done: Replaced the writer-return route with `DropBuffer.ScheduleEntropyYieldJob`, which opens the queue writer inside the buffer owner and returns only the scheduled `JobHandle`. `DestructibleOrganicManager` now passes native input views and batch size to the owner wrapper.
+
+Cinematic Cheats used: No new simulation. Existing organic yield remains a deterministic Burst loot approximation, not GameObject spawning or physics debris simulation.
+
+Exact Microseconds saved: 0 us measured. Static API risk moved `nativeCollectionPublicMutableApiExposure=97->96`, `nativeApiExposureBuildPlayerRuntime=93->92`, `nativeApiExposureMutableReturn=27->26`, and `nativeApiRiskRuntimeReturnMutableView=15->14`.
+
+Evidence: `Docs/Reports/PROJECT_AUDIT_polish_after_dropbuffer_owner_schedule.json`; `python Tools\test_polish_mandate_static_audit.py` passed 12 tests; focused scan found no `DropBuffer.AsParallelWriter` API and only owner-local `_queue.AsParallelWriter()` inside `DropBuffer.ScheduleEntropyYieldJob`; targeted `git diff --check` reported only LF/CRLF normalization warnings. Batch re-check found no `<AGENT_PROMPT id="PROJECT_AUDIT">` block. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.

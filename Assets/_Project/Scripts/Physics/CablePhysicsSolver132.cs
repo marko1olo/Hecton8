@@ -221,7 +221,24 @@ namespace Hecton8.Physics
             DispatcherJobFence.TryComplete(ref mockHandle, forceComplete: true);
         }
 
-        public static bool TryResolveMockBuffers(
+        public static bool TryHasMockBuffers(IDataVault vault)
+        {
+            return TryResolveMockBuffers(
+                vault,
+                out _,
+                out _,
+                out _,
+                out _,
+                out _,
+                out _,
+                out _,
+                out _,
+                out _,
+                out _,
+                out _);
+        }
+
+        private static bool TryResolveMockBuffers(
             IDataVault vault,
             out NativeArray<CableNodeDTO> nodes,
             out NativeArray<TetherConstraintDTO> constraints,
@@ -258,6 +275,60 @@ namespace Hecton8.Physics
                    TryOpenExistingVaultView(vault, CablePhysics132BufferIds.PinnedAups, out pinnedAups) &&
                    TryOpenExistingVaultView(vault, CablePhysics132BufferIds.PinnedMask, out pinnedMask) &&
                    TryOpenExistingVaultView(vault, CablePhysics132BufferIds.Tuning, out tuning);
+        }
+
+        public static bool TryScheduleMockFromVault(
+            IDataVault vault,
+            uint frameIndex,
+            float fixedDeltaTime,
+            float3 gravityAcceleration,
+            float3 externalAbyssalFlow,
+            double3 cameraAup,
+            float globalQualityWeight,
+            float cpuMicroseconds,
+            JobHandle dependency,
+            out JobHandle handle)
+        {
+            handle = dependency;
+            if (!TryResolveMockBuffers(
+                    vault,
+                    out NativeArray<CableNodeDTO> nodes,
+                    out NativeArray<TetherConstraintDTO> constraints,
+                    out NativeArray<TetherEndpointAupDTO> endpoints,
+                    out NativeArray<TetherSplineVertexDTO> vertices,
+                    out NativeArray<float> segmentTensions,
+                    out NativeArray<PhysicsEventPayload> physicsEvents,
+                    out NativeArray<TetherTelemetryEntry> telemetryRing,
+                    out NativeArray<int> telemetryHead,
+                    out NativeArray<double3> pinnedAups,
+                    out NativeArray<byte> pinnedMask,
+                    out NativeArray<VerletCableTuningDTO> tuning))
+            {
+                return false;
+            }
+
+            handle = ScheduleMock(
+                nodes,
+                constraints,
+                endpoints,
+                vertices,
+                segmentTensions,
+                physicsEvents,
+                telemetryRing,
+                telemetryHead,
+                pinnedAups,
+                pinnedMask,
+                tuning,
+                AcquirePhysicsEventWriter(),
+                frameIndex,
+                fixedDeltaTime,
+                gravityAcceleration,
+                externalAbyssalFlow,
+                cameraAup,
+                globalQualityWeight,
+                cpuMicroseconds,
+                dependency);
+            return true;
         }
 
         public static JobHandle ScheduleMock(
@@ -397,7 +468,7 @@ namespace Hecton8.Physics
             }.Schedule(splineHandle);
         }
 
-        public static NativeQueue<PhysicsEventPayload>.ParallelWriter AcquirePhysicsEventWriter()
+        private static NativeQueue<PhysicsEventPayload>.ParallelWriter AcquirePhysicsEventWriter()
         {
             SignalBus<PhysicsEventPayload>.EnsureInitialized();
             return SignalBus<PhysicsEventPayload>.ParallelWriter;
