@@ -877,11 +877,10 @@ namespace Hecton8.Networking
 
             SignalBus<RollbackRequiredSignal>.Configure(32, maxFrameSignals: 64, lowTierFrameSignals: 8, laneHash: 0x52425153u);
             SignalBus<RollbackRequiredSignal>.EnsureInitialized();
-            NativeQueue<RollbackRequiredSignal> rollbackSignalQueue = SignalBus<RollbackRequiredSignal>.OpenQueueForLegacyGlobalSignals();
-            if (!rollbackSignalQueue.IsCreated)
+            if (!SignalBus<RollbackRequiredSignal>.HasNativeStorage)
                 return false;
 
-            _rollbackSignalWriter = rollbackSignalQueue.AsParallelWriter();
+            _rollbackSignalWriter = SignalBus<RollbackRequiredSignal>.OpenParallelWriter();
             _rollbackSignalsReady = 1u;
             return true;
         }

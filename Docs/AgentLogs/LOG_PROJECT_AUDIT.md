@@ -1822,3 +1822,39 @@ Cinematic Cheats used: Not visual. This removes stale pointer-handle bridge APIs
 Exact Microseconds saved: 0 us measured. Static API risk moved `nativeCollectionPublicMutableApiExposure=18->16`, `nativeApiExposureBuildPlayerRuntime=18->16`, `nativeApiExposureOutRefMutable=11->9`, and `nativeApiRiskCoreVaultOrAllocatorSurface=11->9`.
 
 Evidence: `Docs/Reports/PROJECT_AUDIT_polish_after_vault_bufferhandle_bridge_removal.json`; `python Tools\test_polish_mandate_static_audit.py` passed 12 tests; focused scan found no first-party bridge methods beyond analyzer string text; targeted `git diff --check` reported LF/CRLF warning only. Batch re-check found no `<AGENT_PROMPT id="PROJECT_AUDIT">` block. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - GlobalSignals Generic Phase Writer Scope
+
+What was wrong: `GlobalSignals.OpenSignalWriterForProducerPhase<TSignal>` exposed a generic public `NativeQueue<T>.ParallelWriter` route even though exact search showed only same-file typed compatibility properties use it.
+
+What was done: Narrowed the generic helper to private while preserving public typed writer properties and active `SignalBus<T>` producer routes.
+
+Cinematic Cheats used: Not visual. This keeps legacy writer access behind explicit typed compatibility lanes instead of advertising a generic public writer opener.
+
+Exact Microseconds saved: 0 us measured. Static API risk moved `nativeCollectionPublicMutableApiExposure=16->15`, `nativeApiExposureBuildPlayerRuntime=16->15`, and `nativeApiExposureMutableReturn=7->6`.
+
+Evidence: `Docs/Reports/PROJECT_AUDIT_polish_after_globalsignals_phase_writer_scope.json`; `python Tools\test_polish_mandate_static_audit.py` passed 12 tests; focused scan shows only the private helper and same-file typed property calls; targeted `git diff --check` reported LF/CRLF warning only. Batch re-check found no `<AGENT_PROMPT id="PROJECT_AUDIT">` block. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - GlobalSignals Legacy Queue Scope
+
+What was wrong: `SignalBus<T>.OpenQueueForLegacyGlobalSignals` exposed the mutable queue itself. The only external caller was rollback netcode, and it only used the queue to open a parallel writer.
+
+What was done: Added pure `SignalBus<T>.HasNativeStorage`, changed rollback writer caching to use `OpenLegacyMpscWriter`, and narrowed the queue opener to private same-file use.
+
+Cinematic Cheats used: Not visual. This preserves rollback mismatch publication as a typed signal writer without leaking the queue handle.
+
+Exact Microseconds saved: 0 us measured. Static API risk moved `nativeCollectionPublicMutableApiExposure=15->14`, `nativeApiExposureBuildPlayerRuntime=15->14`, `nativeApiExposureMutableReturn=6->5`, and `nativeApiRiskRuntimeReturnMutableView=4->3`.
+
+Evidence: `Docs/Reports/PROJECT_AUDIT_polish_after_legacy_queue_scope.json`; `python Tools\test_polish_mandate_static_audit.py` passed 12 tests; focused scan shows no external `OpenQueueForLegacyGlobalSignals` call; targeted `git diff --check` reported LF/CRLF warnings only. Batch re-check found no `<AGENT_PROMPT id="PROJECT_AUDIT">` block. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - GlobalSignals Duplicate Writer Alias Scope
+
+What was wrong: `SignalBus<T>.OpenLegacyMpscWriter` duplicated the active public `OpenParallelWriter` writer route after rollback stopped using the legacy-named method.
+
+What was done: Narrowed `OpenLegacyMpscWriter` to private, moved rollback and same-file phase helpers to `OpenParallelWriter`, and preserved active public producer ABI.
+
+Cinematic Cheats used: Not visual. This reduces duplicate writer names for one signal lane without changing signal queue behavior.
+
+Exact Microseconds saved: 0 us measured. Static API risk moved `nativeCollectionPublicMutableApiExposure=14->13`, `nativeApiExposureBuildPlayerRuntime=14->13`, `nativeApiExposureMutableReturn=5->4`, and `nativeApiRiskRuntimeReturnMutableView=3->2`.
+
+Evidence: `Docs/Reports/PROJECT_AUDIT_polish_after_legacy_writer_alias_scope.json`; `python Tools\test_polish_mandate_static_audit.py` passed 12 tests; focused scan found no external `OpenLegacyMpscWriter` caller; targeted `git diff --check` reported LF/CRLF warnings only. Batch re-check found no `<AGENT_PROMPT id="PROJECT_AUDIT">` block. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.

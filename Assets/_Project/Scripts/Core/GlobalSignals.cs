@@ -1929,11 +1929,14 @@ namespace Hecton8.Core.Contracts.Signals
         /// <summary>Peak queue depth observed at the last pre-simulation flush.</summary>
         public static int PeakQueuedLastFlush => Volatile.Read(ref _peakQueuedLastFlush);
 
+        /// <summary>True when the lane owns native queue storage. Pure readiness probe; initialization is explicit.</summary>
+        public static bool HasNativeStorage => _queue.IsCreated;
+
         /// <summary>
         /// Opens the legacy MPSC queue writer for compatibility producers that have not migrated to thread-local scratch.
         /// This is a low-frequency bridge, not the preferred route for cache-line-critical producer storms.
         /// </summary>
-        public static NativeQueue<T>.ParallelWriter OpenLegacyMpscWriter()
+        private static NativeQueue<T>.ParallelWriter OpenLegacyMpscWriter()
         {
             EnsureInitialized();
             if (!_queue.IsCreated)
@@ -2186,7 +2189,7 @@ namespace Hecton8.Core.Contracts.Signals
             return dropped;
         }
 
-        internal static NativeQueue<T> OpenQueueForLegacyGlobalSignals()
+        private static NativeQueue<T> OpenQueueForLegacyGlobalSignals()
         {
             EnsureInitialized();
             return _queue;
@@ -5819,10 +5822,10 @@ namespace Hecton8.Core
         public static uint LatestCraftingCompletedUnitCount => unchecked((uint)Volatile.Read(ref _latestCraftingCompletedUnitCount));
 
         /// <summary>Opens one typed legacy MPSC writer for an explicit compatibility producer phase without booting every direct queue.</summary>
-        public static NativeQueue<TSignal>.ParallelWriter OpenSignalWriterForProducerPhase<TSignal>()
+        private static NativeQueue<TSignal>.ParallelWriter OpenSignalWriterForProducerPhase<TSignal>()
             where TSignal : unmanaged, ISignal
         {
-            return SignalBus<TSignal>.OpenLegacyMpscWriter();
+            return SignalBus<TSignal>.OpenParallelWriter();
         }
 
         // Compatibility writer properties below preserve existing sibling-domain ABI.
