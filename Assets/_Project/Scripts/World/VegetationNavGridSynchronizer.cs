@@ -733,11 +733,13 @@ namespace Hecton8.World
             payload.Count = 0;
         }
 
-        public bool TryGetHLODRegistryPayload(out NativeArray<HLODData> entries, out int count)
+        public bool TryGetHLODRegistryPayload(out NativeArray<HLODData>.ReadOnly entries, out int count)
         {
-            entries = _nativeMemory.HlodRegistrySnapshotNative;
+            entries = _nativeMemory.HlodRegistrySnapshotNative.IsCreated
+                ? _nativeMemory.HlodRegistrySnapshotNative.AsReadOnly()
+                : default;
             count = _hlodRegistryCount;
-            return count > 0 && entries.IsCreated;
+            return count > 0 && entries.Length > 0;
         }
 
         /// <summary>

@@ -29,7 +29,7 @@ namespace Hecton8.VFX.Debris
         private float _brushRadius = 6f;
         private int _deltaDensity = -48;
         private int _massUnitsPerParticle = 16;
-        private int _maxDebris = ShinobuDeltaCrusher.LowTierDebrisCap;
+        private int _maxDebris = ShinobuDeltaCrusher.MinimumQualityDebrisCap;
         private float _gravityY = -5.25f;
         private float _bounce = ShinobuDeltaCrusher.DefaultBounce;
         private int _lastRawBytes;
@@ -59,7 +59,7 @@ namespace Hecton8.VFX.Debris
 
             EditorGUILayout.Space(6f);
             EditorGUILayout.LabelField("Debris", EditorStyles.boldLabel);
-            _maxDebris = EditorGUILayout.IntSlider("Max Debris", _maxDebris, ShinobuDeltaCrusher.LowTierDebrisCap, ShinobuDeltaCrusher.UltraTierDebrisCap);
+            _maxDebris = EditorGUILayout.IntSlider("Max Debris", _maxDebris, ShinobuDeltaCrusher.MinimumQualityDebrisCap, ShinobuDeltaCrusher.MaximumQualityDebrisCap);
             _gravityY = EditorGUILayout.Slider("Gravity Y", _gravityY, -30f, 0f);
             _bounce = EditorGUILayout.Slider("Bounce", _bounce, 0f, 1f);
 
@@ -382,7 +382,7 @@ namespace Hecton8.VFX.Debris
         {
             _gravityY = math.isfinite(tuning.Gravity.y) ? tuning.Gravity.y : -5.25f;
             _bounce = math.saturate(math.isfinite(tuning.Bounce) ? tuning.Bounce : ShinobuDeltaCrusher.DefaultBounce);
-            _maxDebris = math.clamp(tuning.MaxActiveDebris, ShinobuDeltaCrusher.LowTierDebrisCap, ShinobuDeltaCrusher.UltraTierDebrisCap);
+            _maxDebris = math.clamp(tuning.MaxActiveDebris, ShinobuDeltaCrusher.MinimumQualityDebrisCap, ShinobuDeltaCrusher.MaximumQualityDebrisCap);
             _massUnitsPerParticle = math.max(1, tuning.MassUnitsPerParticle);
         }
 
@@ -458,7 +458,7 @@ namespace Hecton8.VFX.Debris
                 {
                     Gravity = new float3(0f, gravityY, 0f),
                     Bounce = math.saturate(bounce),
-                    MaxActiveDebris = math.clamp(maxDebris, ShinobuDeltaCrusher.LowTierDebrisCap, ShinobuDeltaCrusher.UltraTierDebrisCap),
+                    MaxActiveDebris = math.clamp(maxDebris, ShinobuDeltaCrusher.MinimumQualityDebrisCap, ShinobuDeltaCrusher.MaximumQualityDebrisCap),
                     MassUnitsPerParticle = math.max(1, massUnits),
                     Flags = 0u,
                     Version = TuningBinaryVersion
@@ -670,7 +670,7 @@ namespace Hecton8.VFX.Debris
             debrisCount = new NativeArray<int>(CounterLength, Allocator.TempJob, NativeArrayOptions.ClearMemory);
             stats = new NativeArray<int>(StatsLength, Allocator.TempJob, NativeArrayOptions.ClearMemory);
             writtenCount = new NativeArray<int>(CounterLength, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-            particles = new NativeArray<DebrisParticleDTO>(ShinobuDeltaCrusher.UltraTierDebrisCap, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+            particles = new NativeArray<DebrisParticleDTO>(ShinobuDeltaCrusher.MaximumQualityDebrisCap, Allocator.TempJob, NativeArrayOptions.ClearMemory);
             rlePairs = new NativeList<short>(RlePairCapacity, Allocator.TempJob);
         }
 

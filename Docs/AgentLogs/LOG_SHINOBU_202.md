@@ -5755,3 +5755,46 @@ Static verification:
 - Descriptor scan confirms `VaultGenerationHandle<T>`, `EnsureSargassumVaultGenerationHandle`, `TryEnsureSargassumVaultArray`, `ResolveSargassumVaultArray`, `TryResolveSargassumVaultArray`, `IsSargassumVaultHandle`, `GetGenerationHandle`, `TryResolveHandle`, and `SystemID.WorldSargassum`.
 - Brace/preprocessor counts are balanced: braces `593/593`, `#if/#endif` `4/4`. `git diff --check` passed with CRLF warning only.
 - Guarded Core build after the Sargassum pass exposed two SHINOBU-owned Flora descriptor accessor errors and one external Fauna error. The Flora accessor was fixed; the second guarded Core build now reports one external error only: `PredatorCognitionDomain.cs(4840,67)` needs `out NativeArray<HabitatSiegeTargetSnapshot>.ReadOnly`.
+
+## 2026-05-22 - Compile Wall Unblock - Habitat Siege Read-Only Snapshot
+
+What was wrong:
+- `PredatorCognitionDomain.RefreshHabitatSiegeSnapshot` requested a mutable `NativeArray<HabitatSiegeTargetSnapshot>` from `HabitatGraphManager.TryGetLatestSiegeTargets`.
+- The Construction owner API correctly returns `NativeArray<HabitatSiegeTargetSnapshot>.ReadOnly`, so Core compile failed at `PredatorCognitionDomain.cs(4840,67)`.
+
+What was done:
+- Changed the local source declaration to `NativeArray<HabitatSiegeTargetSnapshot>.ReadOnly`.
+- Left the copy into the Fauna-owned `_habitatSiegeTargets` buffer unchanged.
+
+Cinematic cheats used:
+- None. This is a compile/authority boundary correction.
+
+Exact microseconds saved:
+- 0 runtime cost change. It removes a compile wall and preserves read-only ownership.
+
+Verification:
+- `git diff --check` passed for `PredatorCognitionDomain.cs` with CRLF warning only.
+- Guarded `dotnet build Hecton8.Core.csproj -nologo -clp:ErrorsOnly -maxcpucount:1` succeeded: 0 errors, 29 warnings, elapsed `00:00:56.73`.
+
+## 2026-05-22 - Loop 244 - Ecosystem Director Macro Snapshot Descriptor Read Route
+
+What was wrong:
+- `Assets/_Project/Scripts/World/EcosystemDirector.cs` retained borrowed macro ecosystem snapshot lanes as `VaultBufferHandle<T>` fields and used `TryGetBufferHandle` plus cached handle resolution.
+- The route is a World-side pure read of AIEcology-owned macro sector front, index, and tuning records, so pointer-bearing storage was unnecessary and relocation-hostile.
+
+What was done:
+- Converted `_macroSectorSnapshotHandle`, `_macroSectorIndexHandle`, and `_macroTuningHandle` to `VaultGenerationHandle<T>`.
+- Added descriptor helpers that require exact BufferID, `SystemID.AIEcology`, nonzero generation, inactive compaction fence, `TryReadHandle`, created view proof, and tuning length >= 1 before returning the borrowed snapshot.
+- Left the broader `VaultNativeArray<T>` wrapper and unrelated heatmap bridge untouched and explicitly unclaimed.
+
+Cinematic cheats used:
+- None added. Existing biomass read behavior and macro ecosystem fallback remain unchanged; this pass removes stale pointer provenance from a borrowed snapshot route.
+
+Exact microseconds saved:
+- No measured speedup claimed. The added descriptor checks are O(1) on a cold query boundary. The gain is stale-pointer risk removal and authority proof, not frame-time reduction.
+
+Verification:
+- Focused macro scan found zero `VaultBufferHandle<MacroEcosystem...>` fields and zero `TryGetBufferHandle(BufferID.ShinobuMacroEcosystem...)` acquisitions in `EcosystemDirector.cs`.
+- Brace/preprocessor counts are balanced: braces `560/560`, `#if/#endif` `0/0`.
+- `git diff --check` passed with CRLF warning only.
+- Guarded `dotnet build Hecton8.Core.csproj -nologo -clp:ErrorsOnly -maxcpucount:1` succeeded: 0 errors, 29 warnings, elapsed `00:00:54.15`.

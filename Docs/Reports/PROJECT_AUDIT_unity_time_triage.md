@@ -711,6 +711,63 @@ Updated static counts from that artifact:
 
 This is static-source proof only. No Unity import, Console, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
 
+## 2026-05-22 Streaming Impostor Native API Follow-Up
+
+Additional native API narrowing after the pure snapshot pass:
+
+- `IStreamingBackpressureService.TryGetActiveImpostors` now returns read-only matrix/type views.
+- `IStreamingBackpressureService.TryGetActiveImpostorPoints` now returns a read-only impostor point view.
+- `WorldChunkResidencyManager` now exposes those active impostor snapshots as read-only aliases.
+- `PDAMapTab` now consumes read-only impostor points.
+
+Rejected:
+
+- `WorldChunkResidencyManager.TryGetChunkResidencyDtos`, because it resolves Vault-backed DTO storage and is not a pure read surface.
+- Chunk DTO layout changes, HLOD generation job changes, and broad streaming contract churn.
+
+Focused proof:
+
+- Focused scans found only read-only streaming impostor signatures/call sites.
+- Broad artifact: `Docs/Reports/PROJECT_AUDIT_polish_after_streaming_impostor_readonly.json`.
+
+Updated static counts from that artifact:
+
+- `nativeCollectionPublicMutableApiExposure`: 180, down from 182.
+- `nativeApiExposureBuildPlayerRuntime`: 167, down from 169.
+- `nativeApiExposureOutRefMutable`: 129, down from 131.
+- `nativeApiRiskRuntimeOutRefMutableView`: 80, down from 82.
+
+This is static-source proof only. No Unity import, Console, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 Pure Snapshot Native API Follow-Up
+
+Additional native API narrowing after the plasma snapshot pass:
+
+- `LoreDatabaseManager.TryGetPackedUnlockWords` now returns a read-only packed unlock word view.
+- `PDADataLogTab` now consumes the read-only lore word view.
+- `VegetationNavGridSynchronizer.TryGetHLODRegistryPayload` now returns a read-only HLOD registry view.
+- `SpectrumSystem.TryGetAupDiscoveryGrid` now returns a read-only discovery grid view.
+
+Rejected:
+
+- `TryGetLatestAbyssalPathPayload` and `TryGetVisibleHLODPayload`, because they finalize scheduled jobs inside getters.
+- `HectonFluidEngine.TryGetActiveWhirlpoolFlows`, because current gameplay consumers pass mutable arrays into Burst job fields.
+- Core contract churn and managed copies.
+
+Focused proof:
+
+- Focused scans found no stale mutable call sites for the selected APIs.
+- Broad artifact: `Docs/Reports/PROJECT_AUDIT_polish_after_pure_snapshot_readonly.json`.
+
+Updated static counts from that artifact:
+
+- `nativeCollectionPublicMutableApiExposure`: 182, down from 185.
+- `nativeApiExposureBuildPlayerRuntime`: 169, down from 172.
+- `nativeApiExposureOutRefMutable`: 131, down from 134.
+- `nativeApiRiskRuntimeOutRefMutableView`: 82, down from 85.
+
+This is static-source proof only. No Unity import, Console, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
 ## 2026-05-22 Plasma Beam Editor Snapshot Follow-Up
 
 Additional native API narrowing after the ocean debug pass:

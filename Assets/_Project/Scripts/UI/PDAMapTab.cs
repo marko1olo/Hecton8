@@ -1090,8 +1090,8 @@ namespace Hecton8.UI
 
             IStreamingBackpressureService streaming = ResolveStreamingBackpressureService();
             if (streaming == null ||
-                !streaming.TryGetActiveImpostorPoints(out NativeArray<StreamingHlodImpostorPoint> points, out int runtimeCount) ||
-                !points.IsCreated)
+                !streaming.TryGetActiveImpostorPoints(out NativeArray<StreamingHlodImpostorPoint>.ReadOnly points, out int runtimeCount) ||
+                points.Length <= 0)
             {
                 _uploadedHlodImpostorCount = 0;
                 return true;

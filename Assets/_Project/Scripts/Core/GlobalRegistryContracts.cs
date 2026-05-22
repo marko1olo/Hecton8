@@ -281,8 +281,8 @@ namespace Hecton8.Core
         int ActiveImpostorCount { get; }
         uint ActiveImpostorVersion { get; }
         bool IsChunkResident(long chunkId);
-        bool TryGetActiveImpostors(out NativeArray<float4x4> matrices, out NativeArray<int> impostorTypes, out int count);
-        bool TryGetActiveImpostorPoints(out NativeArray<StreamingHlodImpostorPoint> points, out int count);
+        bool TryGetActiveImpostors(out NativeArray<float4x4>.ReadOnly matrices, out NativeArray<int>.ReadOnly impostorTypes, out int count);
+        bool TryGetActiveImpostorPoints(out NativeArray<StreamingHlodImpostorPoint>.ReadOnly points, out int count);
         bool IsChunkImpostorAudioMuted(long chunkId);
         void PurgeImpostorForDestroyedChunk(long chunkId);
     }
@@ -3726,14 +3726,14 @@ namespace Hecton8.Core
         int ActiveDebrisCount { get; }
 
         /// <summary>
-        /// Current tier-gated particle capacity.
+        /// Current continuously pressure-scaled particle capacity.
         /// </summary>
         int ActiveParticleCapacity { get; }
 
         /// <summary>
-        /// True when the MX350 / low-memory debris budget is active.
+        /// Continuous quality pressure, where 0 is maximum visual budget and 1 is minimum survival budget.
         /// </summary>
-        bool IsLowTierActive { get; }
+        float QualityPressure01 { get; }
 
         /// <summary>
         /// Clears live GPU debris state without destroying persistent buffers.

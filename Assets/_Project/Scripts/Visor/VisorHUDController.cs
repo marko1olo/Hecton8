@@ -28,7 +28,7 @@ namespace NASAPunk.Visor
     /// </summary>
     [DisallowMultipleComponent]
     [ExecuteAlways]
-    public class VisorHUDController : MonoBehaviour, ITickable, IUpdatable, ISubmarineOsEventListener, IGlobalRegistryHotSwapListener, IScalabilityChangedEventListener
+    public class VisorHUDController : MonoBehaviour, ITickable, IUpdatable, ISubmarineOsEventListener, IGlobalRegistryHotSwapListener
     {
         private const float BiosRecoveryClarityThreshold = 0.1f;
         private const float LowPowerBiosThreshold = 0.15f;
@@ -204,12 +204,11 @@ namespace NASAPunk.Visor
         private float _appliedStaticNoise;
         private float _appliedScalableRefractionScale;
         private float _appliedScalableChromaticScale;
-        private float _appliedLowTierDitherScale;
-        private HectonQualityTier _runtimeQualityTier = HectonQualityTier.Unknown;
-        private HectonQualityTier _cachedScalabilityTier = HectonQualityTier.Unknown;
+        private float _appliedQualityPressureDitherScale;
+        private float _cachedQualityPressure01 = -1f;
         private float _cachedScalableRefractionScale;
         private float _cachedScalableChromaticScale;
-        private float _cachedLowTierDitherScale;
+        private float _cachedQualityPressureDitherScale;
         private float _appliedHypoxiaLevel;
         private float _appliedHullStressFlicker;
         private float _appliedHazardRadiationLevel;
@@ -308,10 +307,8 @@ namespace NASAPunk.Visor
         private bool _biosFontModeApplied;
         private float _appliedVRBrownoutIntensity = -1f;
         private bool _hotSwapListenerRegistered;
-        private bool _scalabilityListenerRegistered;
 
         private uint _glitchRngState = 1u;
-        private static HectonQualityTier s_fallbackQualityTier = HectonQualityTier.Unknown;
 
         private static readonly int ID_HUDTex = Shader.PropertyToID("_HUD_RenderTexture");
         private static readonly int ID_HUDIntensity = Shader.PropertyToID("_HUD_Intensity");
@@ -333,7 +330,7 @@ namespace NASAPunk.Visor
         private static readonly int ID_StaticNoise = Shader.PropertyToID("_StaticNoise");
         private static readonly int ID_ScalableRefractionScale = Shader.PropertyToID("_HectonVisorRefractionScale");
         private static readonly int ID_ScalableChromaticScale = Shader.PropertyToID("_HectonVisorChromaticScale");
-        private static readonly int ID_LowTierDitherScale = Shader.PropertyToID("_HectonVisorLowTierDither");
+        private static readonly int ID_QualityPressureDitherScale = Shader.PropertyToID("_HectonVisorQualityPressureDither");
         private static readonly int ID_HypoxiaLevel = Shader.PropertyToID("_HypoxiaLevel");
         private static readonly int ID_HullStressFlicker = Shader.PropertyToID("_HullStressFlicker");
         private static readonly int ID_HazardRadiationLevel = Shader.PropertyToID("_HazardRadiationLevel");
@@ -367,7 +364,6 @@ namespace NASAPunk.Visor
         {
             s_activeControllers.Clear();
             s_hudPhosphorModeUserCount = 0;
-            s_fallbackQualityTier = HectonQualityTier.Unknown;
             Shader.DisableKeyword(HudPhosphorKeyword);
             Shader.SetGlobalFloat(ID_HectonVRBrownoutIntensity, 0f);
         }
@@ -406,7 +402,6 @@ namespace NASAPunk.Visor
             RegisterActiveController();
             CacheRegistryServicesCold();
             TryRegisterHotSwapListener();
-            TryRegisterScalabilityListener();
             EnsurePropertyBlock();
             PrewarmBiosTerminalFont();
             _materialPropertiesDirty = true;
@@ -430,7 +425,6 @@ namespace NASAPunk.Visor
         {
             UnregisterActiveController();
             TryUnregisterHotSwapListener();
-            TryUnregisterScalabilityListener();
 
             if (_glitchActive)
             {
@@ -501,7 +495,6 @@ namespace NASAPunk.Visor
         private void OnDestroy()
         {
             TryUnregisterHotSwapListener();
-            TryUnregisterScalabilityListener();
             HectonSubmarineOsEvents.Unregister(this);
             ReleaseHudPhosphorKeyword();
             DisposeHudScissorCommandBuffers();
@@ -559,13 +552,6 @@ namespace NASAPunk.Visor
                 _cachedRenderTextureLifecycle = currentService as RenderTextureLifecycleTracker;
         }
 
-        public void OnScalabilityChanged(in ScalabilityChangedEvent payload)
-        {
-            _runtimeQualityTier = payload.CurrentQualityTier;
-            _cachedScalabilityTier = HectonQualityTier.Unknown;
-            _materialPropertiesDirty = true;
-        }
-
         private void TryRegisterHotSwapListener()
         {
             if (_hotSwapListenerRegistered || !Application.isPlaying)
@@ -588,7 +574,6 @@ namespace NASAPunk.Visor
             _cachedPlayerContext = GlobalRegistry.Player;
             _cachedModularEquipment = GlobalRegistry.ModularEquipment;
             _submarineRuntimeContext = GlobalRegistry.Submarine;
-            _runtimeQualityTier = GlobalRegistry.QualityTier;
             _cachedVramMonitor = GlobalRegistry.VRAMMonitor;
             _cachedRenderTexturePool = GlobalRegistry.RenderTexturePool;
             _cachedRenderTextureLifecycle = GlobalRegistry.RenderTextureLifecycle;
@@ -618,24 +603,6 @@ namespace NASAPunk.Visor
         {
             ISubmarineRuntimeContext submarineRuntimeContext = _submarineRuntimeContext;
             _structuralGrid = submarineRuntimeContext != null ? submarineRuntimeContext.StructuralGrid : null;
-        }
-
-        private void TryRegisterScalabilityListener()
-        {
-            if (_scalabilityListenerRegistered || !Application.isPlaying)
-                return;
-
-            ScalabilityEvents.Register(this);
-            _scalabilityListenerRegistered = true;
-        }
-
-        private void TryUnregisterScalabilityListener()
-        {
-            if (!_scalabilityListenerRegistered)
-                return;
-
-            ScalabilityEvents.Unregister(this);
-            _scalabilityListenerRegistered = false;
         }
 
 #if UNITY_EDITOR
@@ -918,7 +885,7 @@ namespace NASAPunk.Visor
             ResolveScalabilityMatrixGlassState(
                 out float scalableRefractionScale,
                 out float scalableChromaticScale,
-                out float lowTierDitherScale);
+                out float qualityPressureDitherScale);
 
             float condensationStrength = Mathf.Clamp01(_condensationShockIntensity + _criticalPressureCondensation + _coldCondensation);
             float environmentalDistortion = _interferenceDistortionIntensity * _interferenceDistortionMax;
@@ -960,7 +927,7 @@ namespace NASAPunk.Visor
             propertyBlockChanged |= ApplyVisorFloat(ID_StaticNoise, compositeStaticNoise, ref _appliedStaticNoise);
             propertyBlockChanged |= ApplyVisorFloat(ID_ScalableRefractionScale, scalableRefractionScale, ref _appliedScalableRefractionScale);
             propertyBlockChanged |= ApplyVisorFloat(ID_ScalableChromaticScale, scalableChromaticScale, ref _appliedScalableChromaticScale);
-            propertyBlockChanged |= ApplyVisorFloat(ID_LowTierDitherScale, lowTierDitherScale, ref _appliedLowTierDitherScale);
+            propertyBlockChanged |= ApplyVisorFloat(ID_QualityPressureDitherScale, qualityPressureDitherScale, ref _appliedQualityPressureDitherScale);
             propertyBlockChanged |= ApplyVisorFloat(ID_HypoxiaLevel, _hudHypoxiaLevel, ref _appliedHypoxiaLevel);
             propertyBlockChanged |= ApplyVisorFloat(ID_HullStressFlicker, _hudHullStressFlicker, ref _appliedHullStressFlicker);
             propertyBlockChanged |= ApplyVisorFloat(ID_HazardRadiationLevel, _hazardRadiationLevel, ref _appliedHazardRadiationLevel);
@@ -1017,68 +984,60 @@ namespace NASAPunk.Visor
         private void ResolveScalabilityMatrixGlassState(
             out float refractionScale,
             out float chromaticScale,
-            out float lowTierDitherScale)
+            out float qualityPressureDitherScale)
         {
-            HectonQualityTier tier = _runtimeQualityTier;
-            if (tier == HectonQualityTier.Unknown)
-                tier = ResolveFallbackQualityTier();
-
-            if (tier != _cachedScalabilityTier)
+            float qualityPressure01 = ResolveVisorQualityPressure01();
+            if (math.abs(qualityPressure01 - _cachedQualityPressure01) > VisorPropertyFloatWriteEpsilon)
             {
                 ResolveScalabilityMatrixGlassScalars(
-                    tier,
+                    qualityPressure01,
                     out _cachedScalableRefractionScale,
                     out _cachedScalableChromaticScale,
-                    out _cachedLowTierDitherScale);
-                _cachedScalabilityTier = tier;
+                    out _cachedQualityPressureDitherScale);
+                _cachedQualityPressure01 = qualityPressure01;
             }
 
             refractionScale = _cachedScalableRefractionScale;
             chromaticScale = _cachedScalableChromaticScale;
-            lowTierDitherScale = _cachedLowTierDitherScale;
+            qualityPressureDitherScale = _cachedQualityPressureDitherScale;
         }
 
         private static void ResolveScalabilityMatrixGlassScalars(
-            HectonQualityTier tier,
+            float qualityPressure01,
             out float refractionScale,
             out float chromaticScale,
-            out float lowTierDitherScale)
+            out float qualityPressureDitherScale)
         {
-            switch (tier)
-            {
-                case HectonQualityTier.Low:
-                case HectonQualityTier.Mx350:
-                    refractionScale = 0f;
-                    chromaticScale = 0f;
-                    lowTierDitherScale = 1f;
-                    return;
-                case HectonQualityTier.Mid:
-                    refractionScale = 0.55f;
-                    chromaticScale = 0.45f;
-                    lowTierDitherScale = 0.35f;
-                    return;
-                default:
-                    refractionScale = 1f;
-                    chromaticScale = 1f;
-                    lowTierDitherScale = 0f;
-                    return;
-            }
+            float pressure = math.saturate(qualityPressure01);
+            float visualBudget01 = 1f - pressure;
+            float smoothVisualBudget01 = SmoothStep01(visualBudget01);
+            refractionScale = smoothVisualBudget01;
+            chromaticScale = SmoothStep01(math.saturate(visualBudget01 * 1.08f));
+            qualityPressureDitherScale = SmoothStep01(pressure);
         }
 
-        private static HectonQualityTier ResolveFallbackQualityTier()
+        private static float ResolveVisorQualityPressure01()
         {
-            if (s_fallbackQualityTier != HectonQualityTier.Unknown)
-                return s_fallbackQualityTier;
+            float quality = HomeostasisBrain.GlobalQualityWeight;
+            quality = math.isfinite(quality) ? math.saturate(quality) : 1f;
+            float pressure = 1f - SmoothStep01(quality);
+            return math.saturate(math.max(pressure, ResolveMemoryQualityPressureFloor01()));
+        }
 
+        private static float ResolveMemoryQualityPressureFloor01()
+        {
             int graphicsMemoryMb = SystemInfo.graphicsMemorySize;
-            if (graphicsMemoryMb > 0 && graphicsMemoryMb <= 2048)
-            {
-                s_fallbackQualityTier = HectonQualityTier.Mx350;
-                return s_fallbackQualityTier;
-            }
+            if (graphicsMemoryMb <= 0)
+                return 0.15f;
 
-            s_fallbackQualityTier = HectonQualityTier.High;
-            return s_fallbackQualityTier;
+            float shortage01 = math.saturate((2048f - graphicsMemoryMb) * math.rcp(1536f));
+            return 0.65f * SmoothStep01(shortage01);
+        }
+
+        private static float SmoothStep01(float value)
+        {
+            value = math.isfinite(value) ? math.saturate(value) : 0f;
+            return value * value * (3f - (2f * value));
         }
 
         private bool ApplyVisorFloat(int propertyId, float value, ref float cachedValue)

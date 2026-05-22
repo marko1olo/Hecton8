@@ -1137,7 +1137,7 @@ namespace Hecton8.UI
 
             EnsureLoreBindingCache();
             LoreDatabaseManager database = s_cachedLoreDatabase;
-            if (database == null || !database.TryGetPackedUnlockWords(out Unity.Collections.NativeArray<uint> words))
+            if (database == null || !database.TryGetPackedUnlockWords(out Unity.Collections.NativeArray<uint>.ReadOnly words))
                 return false;
 
             int recordIndex = _catalogLoreRecordIndices[logIndex];

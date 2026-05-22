@@ -5015,6 +5015,12 @@ Fault route: `ExosuitTelemetryEntry[300]` dumps fixed 64-byte rows to `Docs/Agen
 - Binary payload impact: none. Wake/sway DTOs, BufferIDs, shader IDs, graphics buffer ABI, render texture route, blackbox bytes, and VFX authority are unchanged.
 - Verification: focused scan found no `_proceduralWakePointsHandle.IsCreated` or `_floraSwayFieldHandle.IsCreated` reads; brace/preprocessor counts remain `619/619` and `8/8`; `git diff --check` passed with CRLF warning only. Guarded `Hecton8.Core.csproj` build moved from two Flora errors plus one external Fauna error to the single external Fauna error.
 
+## 2026-05-22 - SHINOBU_202 Habitat Siege Read-Only Compile Unblock
+
+- `Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.cs` now consumes the Construction-owned habitat siege target snapshot as `NativeArray<HabitatSiegeTargetSnapshot>.ReadOnly`, matching `HabitatGraphManager.TryGetLatestSiegeTargets`.
+- Binary payload impact: none. `HabitatSiegeTargetSnapshot`, Predator cognition buffers, HabitatGraph ownership, job payloads, BufferIDs, save identity, and authority routes are unchanged.
+- Verification: `git diff --check` passed for the Fauna patch with CRLF warning only. Guarded `dotnet build Hecton8.Core.csproj -nologo -clp:ErrorsOnly -maxcpucount:1` succeeded with 0 errors and 29 warnings in `00:00:56.73`.
+
 ## 2026-05-22 - SHINOBU_260 Crest Generated Project And Payload Quarantine
 
 - Root generated `WaveHarmonic.Crest*.csproj` and `WaveHarmonic.Crest*.csproj.lscache` files are archived outside active MSBuild/IDE visibility. Broad generated first-party projects and `Directory.Build.targets` no longer route `Hecton8.Core` or sibling assemblies directly into Crest or WaveHarmonic Crest.
@@ -5053,3 +5059,28 @@ Fault route: `ExosuitTelemetryEntry[300]` dumps fixed 64-byte rows to `Docs/Agen
 - Binary payload impact: none. `_HectonDamageHologramParams` property identity and vector layout are unchanged; the cockpit runtime still uploads the same `.w` value from continuous `_cheapVisualWeight01`. Point append buffer, room water buffer, indirect args, and material property IDs are unchanged.
 - Authority impact: damage hologram remains a presentation-owned GPU point-cloud fake over hull dent/flood facts. No gameplay damage truth, SignalBus payload, DataVault BufferID, or save identity changed.
 - Verification: targeted shader scan found no `lowTier`, `LowTier`, low-tier, or high-tier route in the two damage hologram shaders; `git diff --check` passed with CRLF warnings only. Guarded build was attempted and failed in externally modified `Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.cs` line 4840 due to a `TryGetLatestSiegeTargets` out-parameter type mismatch outside this pass.
+
+## 2026-05-22 - SHINOBU_SYSTEMIC_SURGEON Delta Crusher Quality Endpoint Contract Cleanup
+
+- `Assets/_Project/Scripts/VFX/Debris/ShinobuDeltaCrusherJobs.cs` now names debris capacity endpoints as `MinimumQualityDebrisCap`, `MiddleQualityDebrisCap`, and `MaximumQualityDebrisCap`; `ResolveDebrisCap` blends 500 -> 4096 -> configured maximum with smooth continuous segments.
+- `Assets/_Project/Scripts/VFX/Debris/ShinobuVoxelSculptorWindow.cs` clamps editor tuning and cold preview scratch buffers against the same endpoint names.
+- `Assets/_Project/Scripts/Core/GlobalRegistryContracts.cs` and `Assets/_Project/Scripts/VFX/Debris/CarveDebrisComputeRenderer.cs` replaced `IsLowTierActive` with `QualityPressure01`, removing a binary hardware predicate from the debris compute service.
+- Binary payload impact: none. `DebrisParticleDTO`, `DeltaCrusherMockLaserFireSignal`, `CarveDebrisTuningDTO`, `ChunkCarveDispatchDTO`, `CarveDebrisRequest`, telemetry rows, BufferIDs, shader buffers, and save identity are unchanged.
+- Authority impact: VFX remains the owner of debris presentation. Consumers now read a continuous pressure scalar instead of a low-tier boolean.
+- Verification: targeted scans found no `LowTierDebrisCap`, `MidTierDebrisCap`, `UltraTierDebrisCap`, or `IsLowTierActive` in `Assets/_Project/Scripts`; focused `git diff --check` passed with CRLF warnings only. Build was not launched because active `VBCSCompiler` process `34988` was present.
+
+## 2026-05-22 - SHINOBU_202 Ecosystem Director Macro Snapshot Descriptor Read Route
+
+- `Assets/_Project/Scripts/World/EcosystemDirector.cs` now stores borrowed macro ecosystem sector front, index entries, and tuning lanes as `VaultGenerationHandle<T>` descriptors instead of pointer-bearing `VaultBufferHandle<T>`.
+- Binary payload impact: none. `MacroEcosystemSectorVaultRecord`, `MacroEcosystemSectorIndexRecord`, `MacroEcosystemTuningVaultRecord`, BufferIDs `ShinobuMacroEcosystemSectorFront`, `ShinobuMacroEcosystemIndexEntries`, and `ShinobuMacroEcosystemTuning`, sector hash math, biomass fallback behavior, save identity, and AIEcology authority are unchanged.
+- Vault route impact: macro snapshot reads now require exact BufferID, `SystemID.AIEcology`, nonzero generation, inactive compaction fence, and pure `TryReadHandle` resolution. The World consumer does not create or grow missing macro snapshot buffers.
+- Scope note: the unrelated `VaultNativeArray<T>` wrapper and heatmap bridge in `EcosystemDirector.cs` remain separate pointer-route debt and are not claimed by this entry.
+- Verification: focused macro scan found zero `VaultBufferHandle<MacroEcosystem...>` fields and zero `TryGetBufferHandle(BufferID.ShinobuMacroEcosystem...)` acquisitions; guarded `dotnet build Hecton8.Core.csproj -nologo -clp:ErrorsOnly -maxcpucount:1` succeeded with 0 errors and 29 warnings in `00:00:54.15`.
+
+## 2026-05-22 - SHINOBU_SYSTEMIC_SURGEON Internal Flood Waterline Quality Pressure Continuum
+
+- `Assets/_Project/Scripts/Visor/InternalFloodWaterlineRuntime.cs` no longer caches `HectonQualityTier` or reads `GlobalRegistry.ScalabilityTier`.
+- `_InternalWaterlineDistortion.w` now carries continuous `qualityPressure01`; refraction strength lerps from `MinQualityRefractionStrength` to `MaxQualityRefractionStrength` by smoothed `HomeostasisBrain.GlobalQualityWeight`.
+- Binary payload impact: `WaterlineTelemetryEntry` remains explicit 40 bytes. Offset 33 `Reserved0` now stores the quality byte instead of zero; dump field order, dump magic/version, shader property IDs, SignalBus payloads, and habitat/gas authority routes are unchanged.
+- Authority impact: HabitatGraph still owns room waterline facts; this runtime only publishes presentation globals and fixed blackbox rows.
+- Verification: targeted scans found no `HectonQualityTier`, `GlobalRegistry.ScalabilityTier`, `LowTierRefractionStrength`, `HighTierRefractionStrength`, `IsLowTier`, low-tier, or high-tier route in `InternalFloodWaterlineRuntime.cs`; focused `git diff --check` passed with CRLF warning only. Build was not launched because active `VBCSCompiler` process `34988` was present.

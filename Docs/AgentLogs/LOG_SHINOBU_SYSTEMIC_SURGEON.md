@@ -3588,3 +3588,75 @@ Verification:
     Targeted shader scan found no `lowTier`, `LowTier`, low-tier, or high-tier route in the two damage hologram shaders; `qualityPressure01` is present. `git diff --check` passed with CRLF warnings only. Compile is dependency-blocked by the dirty Fauna file noted above.
   </VERIFICATION>
 </SELF_AUDIT>
+
+<SELF_AUDIT id="SHINOBU_SYSTEMIC_SURGEON" pass="DeltaCrusherQualityEndpointContractCleanup">
+  <WHAT_WAS_WRONG>
+    `ShinobuDeltaCrusher` exported debris caps as low/mid/ultra tier constants and `IDebrisComputeService` exposed `IsLowTierActive`. The runtime already used continuous quality pressure, but the API names still encoded binary hardware identity.
+  </WHAT_WAS_WRONG>
+  <WHAT_WAS_DONE>
+    Renamed debris cap constants to minimum/middle/maximum quality endpoints, updated the editor facade and runtime renderer to use those names, and replaced the service boolean with `float QualityPressure01`. `ResolveDebrisCap` now blends minimum-to-middle-to-configured maximum through smooth polynomial segments, preserving a continuous capacity curve.
+  </WHAT_WAS_DONE>
+  <TASK_RECONCILIATION>
+    01 [PASS] Status/rationale read before response and edits. 02 [PASS] Binary tier cap names removed. 03 [PASS] One core contract edit was limited to the direct debris service leak. 04 [PASS] No DTO ABI changed. 05 [PASS] No `Pack=1`. 06 [PASS] Debris DTO layouts unchanged. 07 [PASS] No runtime native container allocation added. 08 [PASS] Vault handles unchanged. 09 [PASS] No hot registry poll added. 10 [PASS] `GlobalQualityWeight` remains continuous capacity source. 11 [PASS] No RNG added. 12 [PASS] AUP paths unchanged. 13 [PASS] Dear Lie remains GPU indirect debris. 14 [PASS] Minimum/middle/maximum endpoints now form a smooth curve. 15 [PASS] Visual-overkill endpoint remains 10000 particles plus shader polish. 16 [PASS] Existing `[NoAlias]` job fields unchanged. 17 [PASS] No scheduled job or `.Complete()` added. 18 [PASS] Blackbox buffers unchanged. 19 [PASS] Shader variants unchanged. 20 [PASS] Build not launched because compiler guard failed.
+  </TASK_RECONCILIATION>
+  <STRUCT_LAYOUT>
+    `DebrisParticleDTO` remains `[StructLayout(LayoutKind.Explicit, Size = 32)]`: offset 0 `float3 Position` 12; offset 12 `float Radius` 4; offset 16 `float3 Velocity` 12; offset 28 `uint MaterialHash` 4. Total = 32 bytes. `DeltaCrusherMockLaserFireSignal` remains explicit 64 bytes with `double3` at offset 0, scalar fields at 24/28/29/30/32/36/40/44/48/56. No padding or save payload changed.
+  </STRUCT_LAYOUT>
+  <SCALABILITY_CURVE>
+    `ResolveDebrisCap` clamps the authored maximum, smooths quality, blends 500-to-4096 on the lower half, blends 4096-to-configured maximum on the upper half, and selects the continuous segment with `math.step(0.5f, quality)`. At quality below 0.3 the cap stays near the minimum-to-middle slope; middle devices reach the 4096 endpoint; high/ultra approach the configured maximum. Gameplay truth, DTO layout, and authority route do not change.
+  </SCALABILITY_CURVE>
+  <H_PHI_VAULT_STATUS>
+    No new private runtime array/list/hash allocation was declared. Runtime debris memory still requests `BufferID.CarveDebris`, `CarveDebrisVelocity`, `CarveDebrisRequests`, `CarveDebrisJobState`, and `CarveDebrisBlackBox` through existing Vault generation handles. Editor scratch `TempJob` allocations remain cold preview buffers and are disposed in the same method scope.
+  </H_PHI_VAULT_STATUS>
+  <POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+    Existing Delta Crusher Burst jobs keep `[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]` and `[NoAlias]` on non-overlapping arrays. This pass added no `JobHandle`, no `.Schedule()`, and no `.Complete()`.
+  </POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+  <COMPILE_GUARD>
+    `GlobalRegistryContracts.cs` changed only the debris service contract member from a boolean predicate to a continuous scalar. No asmdef, sibling runtime reference, SignalBus payload, BufferID, save identity, or DTO layout changed. Build was skipped because CPU was 35 percent but active `VBCSCompiler` process 34988 was present.
+  </COMPILE_GUARD>
+  <CINEMATIC_CHEATS>
+    The debris route remains a GPU indirect visual fake. CPU emits bounded requests and quality capacity; shader/compute work fakes shard motion and polish. Rejected route remains per-shard `GameObject` physics or mesh-collider debris. Complexity remains O(active GPU particles) with active count continuously reduced; rejected CPU route is O(shards * contacts) plus managed object churn.
+  </CINEMATIC_CHEATS>
+  <MICROSECONDS_SAVED estimate="0">
+    No measured speed claim. This pass removes stale binary contract semantics and prevents future boolean hardware gates.
+  </MICROSECONDS_SAVED>
+  <VERIFICATION>
+    Targeted scans found no remaining `LowTierDebrisCap`, `MidTierDebrisCap`, `UltraTierDebrisCap`, or `IsLowTierActive` in `Assets/_Project/Scripts`; no `Pack=1`, `UnityEngine.Random`, or `.Complete()` in the touched debris runtime/job files. Focused `git diff --check` passed with CRLF warnings only.
+  </VERIFICATION>
+</SELF_AUDIT>
+
+<SELF_AUDIT id="SHINOBU_SYSTEMIC_SURGEON" pass="InternalFloodWaterlineQualityPressureContinuum">
+  <WHAT_WAS_WRONG>
+    `InternalFloodWaterlineRuntime` cached `HectonQualityTier`, polled `GlobalRegistry.ScalabilityTier`, and used `IsLowTier` to disable refraction and stamp telemetry. This made an internal visor waterline effect depend on discrete hardware identity.
+  </WHAT_WAS_WRONG>
+  <WHAT_WAS_DONE>
+    Removed the cached tier and helper. Added a continuous quality policy from `HomeostasisBrain.GlobalQualityWeight`, derived `qualityPressure01 = 1 - smoothstep(quality)`, lerped refraction between minimum and maximum quality strengths, and wrote the pressure to `_InternalWaterlineDistortion.w`. The telemetry row now stores an exact quality byte in the existing reserved byte and hashes it.
+  </WHAT_WAS_DONE>
+  <TASK_RECONCILIATION>
+    01 [PASS] Status/rationale read before response and edit. 02 [PASS] Hardware tier poll removed. 03 [PASS] No asmdef/reference changed. 04 [PASS] Telemetry size unchanged. 05 [PASS] No `Pack=1`. 06 [PASS] `WaterlineTelemetryEntry` remains explicit 40 bytes. 07 [PASS] No new runtime native container. 08 [PASS] Existing blackbox ring unchanged. 09 [PASS] No hot `GlobalRegistry.ScalabilityTier` poll remains. 10 [PASS] `HomeostasisBrain.GlobalQualityWeight` is continuous source. 11 [PASS] No RNG. 12 [PASS] AUP conversion unchanged. 13 [PASS] Dear Lie remains shader waterline/refraction fake. 14 [PASS] Refraction collapses continuously at pressure. 15 [PASS] Max quality reaches authored refraction. 16 [PASS] No Burst job aliasing changes. 17 [PASS] No job scheduling/completion changes. 18 [PASS] 300-frame telemetry ring remains. 19 [PASS] Shader property vector ABI unchanged. 20 [PASS] Build not launched because compiler guard failed.
+  </TASK_RECONCILIATION>
+  <STRUCT_LAYOUT>
+    `WaterlineTelemetryEntry` remains `[StructLayout(LayoutKind.Explicit, Size = 40)]`: 0 `uint Frame` 4; 4 `uint Sequence` 4; 8 `int RoomId` 4; 12 `float Fill01` 4; 16 `float CurrentWaterlineY` 4; 20 `float TargetWaterlineY` 4; 24 `float CameraY` 4; 28 `float Droplets01` 4; 32 `byte Flags` 1; 33 `byte Reserved0` now quality byte; 34 `ushort Reserved1` 2; 36 `uint StateHash` 4. Total = 40 bytes, aligned to 8 and unchanged.
+  </STRUCT_LAYOUT>
+  <SCALABILITY_CURVE>
+    Quality is sanitized, smoothed as `q*q*(3-2*q)`, inverted to pressure, and used as `lerp(0, 0.0018, 1-pressure)` for refraction. Below quality 0.3, refraction trends toward zero while waterline active/fill/droplet facts stay intact. Middle quality interpolates the shader distortion scalar. High/ultra reaches the authored refraction strength without changing room flood authority.
+  </SCALABILITY_CURVE>
+  <H_PHI_VAULT_STATUS>
+    No Vault route changed. This runtime already owns one fixed 300-entry telemetry ring and this pass did not add any `NativeArray`, `NativeList`, or `NativeHashMap`. Habitat waterline and gas dynamics facts remain owned by their services.
+  </H_PHI_VAULT_STATUS>
+  <POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+    No Burst job or `JobHandle` changed. This is a main-thread shader-global presentation bridge with fixed telemetry; no `.Schedule()` or `.Complete()` was added.
+  </POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+  <COMPILE_GUARD>
+    No asmdef, SignalBus payload, BufferID, save identity, or shader property name changed. Build was skipped because CPU was 21 percent but active `VBCSCompiler` process 34988 was present.
+  </COMPILE_GUARD>
+  <CINEMATIC_CHEATS>
+    Internal flood remains a shader waterline/refraction fake over habitat waterline data. Rejected route: CPU fluid surface simulation or per-droplet physics. Complexity remains O(1) shader-global publication plus downstream full-screen shader cost scaled by pressure.
+  </CINEMATIC_CHEATS>
+  <MICROSECONDS_SAVED estimate="0">
+    No measured speed claim. Static proof only: one tier poll and one binary branch removed; exact frame cost requires profiler capture.
+  </MICROSECONDS_SAVED>
+  <VERIFICATION>
+    Targeted scans found no remaining `HectonQualityTier`, `GlobalRegistry.ScalabilityTier`, `LowTierRefractionStrength`, `HighTierRefractionStrength`, `IsLowTier`, low-tier, or high-tier route in `InternalFloodWaterlineRuntime.cs`. Focused `git diff --check` passed with CRLF warning only.
+  </VERIFICATION>
+</SELF_AUDIT>

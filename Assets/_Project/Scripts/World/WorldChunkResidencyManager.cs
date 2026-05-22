@@ -1011,19 +1011,19 @@ namespace Hecton8.World
 
         public uint ActiveImpostorVersion => _activeImpostorPointVersion;
 
-        public bool TryGetActiveImpostors(out NativeArray<float4x4> matrices, out NativeArray<int> impostorTypes, out int count)
+        public bool TryGetActiveImpostors(out NativeArray<float4x4>.ReadOnly matrices, out NativeArray<int>.ReadOnly impostorTypes, out int count)
         {
-            matrices = _activeImpostors;
-            impostorTypes = _impostorTypes;
+            matrices = _activeImpostors.IsCreated ? _activeImpostors.AsReadOnly() : default;
+            impostorTypes = _impostorTypes.IsCreated ? _impostorTypes.AsReadOnly() : default;
             count = _activeImpostorCount;
-            return matrices.IsCreated && impostorTypes.IsCreated && count > 0;
+            return matrices.Length > 0 && impostorTypes.Length > 0 && count > 0;
         }
 
-        public bool TryGetActiveImpostorPoints(out NativeArray<StreamingHlodImpostorPoint> points, out int count)
+        public bool TryGetActiveImpostorPoints(out NativeArray<StreamingHlodImpostorPoint>.ReadOnly points, out int count)
         {
-            points = _activeImpostorCartographyPoints;
+            points = _activeImpostorCartographyPoints.IsCreated ? _activeImpostorCartographyPoints.AsReadOnly() : default;
             count = _activeImpostorCount;
-            return points.IsCreated && count > 0;
+            return points.Length > 0 && count > 0;
         }
 
         public bool TryGetChunkResidencyDtos(out NativeArray<ChunkResidencyDTO> chunks, out int count)

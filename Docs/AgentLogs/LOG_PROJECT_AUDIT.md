@@ -660,3 +660,27 @@ Cinematic Cheats used: No simulation was added. The editor mesh overlay remains 
 Exact Microseconds saved: 0 us measured. Static outcome: broad audit dropped `nativeCollectionPublicMutableApiExposure` from `186` to `185`, `nativeApiExposureOutRefMutable` from `135` to `134`, and `nativeApiExposureBuildPlayerRuntime` from `173` to `172`.
 
 Evidence: Focused scans found only read-only editor mesh snapshot call sites. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_after_plasma_editor_snapshot_readonly.json` returned `PASS_WITH_WARNINGS` with `nativeCollectionPublicMutableApiExposure=185`, `nativeApiExposureBuildPlayerRuntime=172`, `nativeApiExposureOutRefMutable=134`, and `nativeApiRiskRuntimeDiagnosticNamedMutableView=31`. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Pure Snapshot Read-Only Narrowing
+
+What was wrong: Lore unlock words, HLOD registry entries, and visor AUP discovery grid exposed mutable native arrays through read-style APIs.
+
+What was done: Converted the selected APIs to `NativeArray<T>.ReadOnly` and updated the PDA lore consumer. Internal writer routes for HLOD culling and visor discovery marking remain mutable.
+
+Cinematic Cheats used: No simulation was added. HLOD and visor surfaces remain compact snapshot/projection data instead of managed debug copies.
+
+Exact Microseconds saved: 0 us measured. Static outcome: broad audit dropped `nativeCollectionPublicMutableApiExposure` from `185` to `182`, `nativeApiExposureOutRefMutable` from `134` to `131`, and `nativeApiExposureBuildPlayerRuntime` from `172` to `169`.
+
+Evidence: Focused scans found no stale mutable call sites for the selected APIs. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_after_pure_snapshot_readonly.json` returned `PASS_WITH_WARNINGS` with `nativeCollectionPublicMutableApiExposure=182`, `nativeApiExposureBuildPlayerRuntime=169`, `nativeApiExposureOutRefMutable=131`, and `nativeApiRiskRuntimeOutRefMutableView=82`. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Streaming Impostor Read-Only Contract Narrowing
+
+What was wrong: The core streaming backpressure contract exposed active HLOD impostor arrays as mutable native arrays to cross-domain consumers.
+
+What was done: Converted active impostor matrices/types and active impostor cartography points to `NativeArray<T>.ReadOnly` in the interface, owner implementation, and PDA map consumer. Owner buffers remain mutable only inside `WorldChunkResidencyManager`.
+
+Cinematic Cheats used: No simulation was added. PDA/HLOD rendering still uses compact impostor point snapshots instead of scene-object scans.
+
+Exact Microseconds saved: 0 us measured. Static outcome: broad audit dropped `nativeCollectionPublicMutableApiExposure` from `182` to `180`, `nativeApiExposureOutRefMutable` from `131` to `129`, and `nativeApiExposureBuildPlayerRuntime` from `169` to `167`.
+
+Evidence: Focused scans found only read-only streaming impostor signatures/call sites. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_after_streaming_impostor_readonly.json` returned `PASS_WITH_WARNINGS` with `nativeCollectionPublicMutableApiExposure=180`, `nativeApiExposureBuildPlayerRuntime=167`, `nativeApiExposureOutRefMutable=129`, and `nativeApiRiskRuntimeOutRefMutableView=80`. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.

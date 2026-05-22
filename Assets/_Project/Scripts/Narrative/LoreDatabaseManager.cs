@@ -480,11 +480,11 @@ namespace Hecton8.Narrative
         /// <summary>
         /// Exposes the packed runtime lore words for zero-GC readers that need direct bit tests.
         /// </summary>
-        public bool TryGetPackedUnlockWords(out NativeArray<uint> words)
+        public bool TryGetPackedUnlockWords(out NativeArray<uint>.ReadOnly words)
         {
             EnsureUnlockStorage();
-            words = _unlockedWords;
-            return words.IsCreated;
+            words = _unlockedWords.IsCreated ? _unlockedWords.AsReadOnly() : default;
+            return words.Length > 0;
         }
 
         /// <summary>

@@ -972,3 +972,18 @@ The scan proves repo-wide debt, not successful consumer migration. A full rename
 - Each route validates exact BufferID, `SystemID.WorldSargassum`, nonzero generation, required length, inactive compaction fence, `TryResolveHandle`, and created view state before returning a phase-local mutable `NativeArray<T>`.
 - This entry does not change `BoidData`, `BoidKillSignal`, `FoodChainTelemetryEntry`, `BoidSensoryBlackBoxEntry`, `FoveatedSimulationInput`, `FoveatedSimulationDecision`, `SimulationFrameConstants`, BufferIDs, GPU stride constants, compute kernels, shader property IDs, foveated front/back swaps, leviathan front/back swaps, indirect draw args, blackbox dump bytes, or WorldSargassum authority.
 - Build note: guarded `Hecton8.Core.csproj` compile now reports no Sargassum or Flora errors after the SHINOBU-owned Flora readiness accessor fix. Remaining compile wall is external: `PredatorCognitionDomain.cs(4840,67)` must pass a `NativeArray<HabitatSiegeTargetSnapshot>.ReadOnly` out parameter.
+
+## 2026-05-22 Habitat Siege Read-Only Compile Unblock
+
+- `Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.cs` now consumes `HabitatGraphManager.TryGetLatestSiegeTargets` through `NativeArray<HabitatSiegeTargetSnapshot>.ReadOnly`, matching the Construction owner route.
+- This entry does not change `HabitatSiegeTargetSnapshot`, HabitatGraph ownership, Predator cognition DTOs, Vault BufferIDs, job payloads, or save identity.
+- Verification: guarded `dotnet build Hecton8.Core.csproj -nologo -clp:ErrorsOnly -maxcpucount:1` succeeded with 0 errors and 29 warnings in `00:00:56.73`.
+
+## 2026-05-22 Ecosystem Director Macro Snapshot Descriptor Read Route
+
+- `Assets/_Project/Scripts/World/EcosystemDirector.cs` no longer stores `VaultBufferHandle<MacroEcosystemSectorVaultRecord>`, `VaultBufferHandle<MacroEcosystemSectorIndexRecord>`, or `VaultBufferHandle<MacroEcosystemTuningVaultRecord>`.
+- `TryResolveMacroEcosystemVaultSnapshot` refreshes borrowed macro ecosystem descriptors with `TryGetGenerationHandle` and reads through `TryReadHandle`.
+- Each borrowed read validates exact BufferID, `SystemID.AIEcology`, nonzero generation, inactive compaction fence, created view state, and `MacroEcosystemTuning` length >= 1.
+- This entry does not claim the unrelated `VaultNativeArray<T>` wrapper or heatmap bridge in `EcosystemDirector.cs`; those remain separate Vault pointer debt.
+- This entry does not change `MacroEcosystemSectorVaultRecord`, `MacroEcosystemSectorIndexRecord`, `MacroEcosystemTuningVaultRecord`, sector hash math, biomass fallback behavior, BufferIDs `70433/70437/70439`, save identity, or AIEcology authority.
+- Verification: focused macro scan found zero `VaultBufferHandle<MacroEcosystem...>` fields and zero `TryGetBufferHandle(BufferID.ShinobuMacroEcosystem...)` acquisitions; guarded Core build succeeded with 0 errors and 29 warnings in `00:00:54.15`.

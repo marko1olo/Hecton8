@@ -265,16 +265,25 @@ namespace Hecton8.World
         private struct VaultNativeArray<T> where T : struct
         {
             private IDataVault _vault;
-            private VaultBufferHandle<T> _handle;
+            private VaultGenerationHandle<T> _handle;
             private NativeArray<T> _array;
 
-            public static VaultNativeArray<T> Create(IDataVault vault, VaultBufferHandle<T> handle)
+            public static VaultNativeArray<T> Create(IDataVault vault, VaultGenerationHandle<T> handle)
             {
+                NativeArray<T> array = default;
+                if (vault == null ||
+                    handle.BufferID == 0u ||
+                    !vault.TryResolveHandle(in handle, out array) ||
+                    !array.IsCreated)
+                {
+                    array = default;
+                }
+
                 return new VaultNativeArray<T>
                 {
                     _vault = vault,
                     _handle = handle,
-                    _array = handle.Resolve(vault)
+                    _array = array
                 };
             }
 
@@ -301,7 +310,15 @@ namespace Hecton8.World
 
             public NativeArray<T> Resolve()
             {
-                return _array.IsCreated ? _array : _handle.Resolve(_vault);
+                if (_array.IsCreated)
+                    return _array;
+
+                return _vault != null &&
+                       _handle.BufferID != 0u &&
+                       _vault.TryResolveHandle(in _handle, out NativeArray<T> array) &&
+                       array.IsCreated
+                    ? array
+                    : default;
             }
 
             public static implicit operator NativeArray<T>(VaultNativeArray<T> view)
@@ -1065,9 +1082,9 @@ namespace Hecton8.World
         private int _lastSectorResidencySignalDrainFrame;
         private int _scheduledApexTerritoryOverlapCount;
         private IDataVault _dataVault;
-        private VaultBufferHandle<MacroEcosystemSectorVaultRecord> _macroSectorSnapshotHandle;
-        private VaultBufferHandle<MacroEcosystemSectorIndexRecord> _macroSectorIndexHandle;
-        private VaultBufferHandle<MacroEcosystemTuningVaultRecord> _macroTuningHandle;
+        private VaultGenerationHandle<MacroEcosystemSectorVaultRecord> _macroSectorSnapshotHandle;
+        private VaultGenerationHandle<MacroEcosystemSectorIndexRecord> _macroSectorIndexHandle;
+        private VaultGenerationHandle<MacroEcosystemTuningVaultRecord> _macroTuningHandle;
         private bool _registeredService;
         private bool _registeredSlowTickable;
         private bool _registeredFrostTickable;
@@ -1185,11 +1202,18 @@ namespace Hecton8.World
                 return;
             }
 
-            NativeArray<byte> vaultHeatmap = vault.GetBuffer<byte>(
+            VaultGenerationHandle<byte> heatmapHandle = vault.GetGenerationHandle<byte>(
                 BufferID.EcosystemSectorFoodHeatmapR8,
                 (int)requiredLength,
                 SystemID.AIEcology,
                 NativeArrayOptions.UninitializedMemory);
+            if (!vault.TryResolveHandle(in heatmapHandle, out NativeArray<byte> vaultHeatmap))
+            {
+                _sectorFoodHeatmapR8 = default;
+                _sectorFoodHeatmapSize = default;
+                return;
+            }
+
             if (!vaultHeatmap.IsCreated || vaultHeatmap.Length < requiredLength)
             {
                 _sectorFoodHeatmapR8 = default;
@@ -1200,7 +1224,6 @@ namespace Hecton8.World
             for (int i = 0; i < requiredLength; i++)
                 vaultHeatmap[i] = heatmapR8[i];
 
-            vault.TryGetBufferHandle(BufferID.EcosystemSectorFoodHeatmapR8, out VaultBufferHandle<byte> heatmapHandle);
             _sectorFoodHeatmapR8 = VaultNativeArray<byte>.Create(vault, heatmapHandle);
             _sectorFoodHeatmapSize = new int2(width, height);
         }
@@ -2301,28 +2324,110 @@ namespace Hecton8.World
             if (vault == null)
                 return false;
 
-            if (!_macroSectorSnapshotHandle.IsCreated &&
-                !vault.TryGetBufferHandle(BufferID.ShinobuMacroEcosystemSectorFront, out _macroSectorSnapshotHandle))
+            if (!TryRefreshMacroEcosystemVaultHandle(
+                    vault,
+                    BufferID.ShinobuMacroEcosystemSectorFront,
+                    ref _macroSectorSnapshotHandle) ||
+                !TryReadMacroEcosystemVaultBuffer(
+                    vault,
+                    in _macroSectorSnapshotHandle,
+                    BufferID.ShinobuMacroEcosystemSectorFront,
+                    0,
+                    out sectors))
             {
                 return false;
             }
 
-            if (!_macroSectorIndexHandle.IsCreated &&
-                !vault.TryGetBufferHandle(BufferID.ShinobuMacroEcosystemIndexEntries, out _macroSectorIndexHandle))
+            if (!TryRefreshMacroEcosystemVaultHandle(
+                    vault,
+                    BufferID.ShinobuMacroEcosystemIndexEntries,
+                    ref _macroSectorIndexHandle) ||
+                !TryReadMacroEcosystemVaultBuffer(
+                    vault,
+                    in _macroSectorIndexHandle,
+                    BufferID.ShinobuMacroEcosystemIndexEntries,
+                    0,
+                    out entries))
             {
                 return false;
             }
 
-            if (!_macroTuningHandle.IsCreated &&
-                !vault.TryGetBufferHandle(BufferID.ShinobuMacroEcosystemTuning, out _macroTuningHandle))
+            if (!TryRefreshMacroEcosystemVaultHandle(
+                    vault,
+                    BufferID.ShinobuMacroEcosystemTuning,
+                    ref _macroTuningHandle) ||
+                !TryReadMacroEcosystemVaultBuffer(
+                    vault,
+                    in _macroTuningHandle,
+                    BufferID.ShinobuMacroEcosystemTuning,
+                    1,
+                    out tuning))
             {
                 return false;
             }
 
-            sectors = _macroSectorSnapshotHandle.Resolve(vault);
-            entries = _macroSectorIndexHandle.Resolve(vault);
-            tuning = _macroTuningHandle.Resolve(vault);
             return sectors.IsCreated && entries.IsCreated && tuning.IsCreated && tuning.Length > 0;
+        }
+
+        private static bool TryRefreshMacroEcosystemVaultHandle<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            ref VaultGenerationHandle<T> handle) where T : struct
+        {
+            if (vault == null ||
+                bufferId == BufferID.Unknown ||
+                vault.IsCompactionFenceActive)
+            {
+                return false;
+            }
+
+            if (IsMacroEcosystemVaultHandle(in handle, bufferId) &&
+                vault.TryReadHandle(in handle, out NativeArray<T> existing) &&
+                existing.IsCreated)
+            {
+                return true;
+            }
+
+            if (!vault.TryGetGenerationHandle(bufferId, out VaultGenerationHandle<T> refreshed))
+                return false;
+
+            handle = refreshed;
+            return IsMacroEcosystemVaultHandle(in handle, bufferId) &&
+                   vault.TryReadHandle(in handle, out NativeArray<T> buffer) &&
+                   buffer.IsCreated;
+        }
+
+        private static bool TryReadMacroEcosystemVaultBuffer<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int minimumLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            if (vault == null ||
+                bufferId == BufferID.Unknown ||
+                minimumLength < 0 ||
+                vault.IsCompactionFenceActive ||
+                !IsMacroEcosystemVaultHandle(in handle, bufferId) ||
+                !vault.TryReadHandle(in handle, out buffer) ||
+                !buffer.IsCreated ||
+                buffer.Length < minimumLength)
+            {
+                buffer = default;
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool IsMacroEcosystemVaultHandle<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId) where T : struct
+        {
+            return handle.BufferID == (uint)bufferId &&
+                   handle.SystemID == (uint)SystemID.AIEcology &&
+                   handle.Generation != 0u;
         }
 
         /// <inheritdoc />
@@ -3328,60 +3433,60 @@ namespace Hecton8.World
             if (vault == null)
                 return;
 
-            _sectorFrontStates = VaultNativeArray<SectorPopulationState>.Create(vault, vault.GetBufferHandle<SectorPopulationState>(BufferID.EcosystemSectorFrontStates, maxTrackedSectors, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
-            _sectorBackStates = VaultNativeArray<SectorPopulationState>.Create(vault, vault.GetBufferHandle<SectorPopulationState>(BufferID.EcosystemSectorBackStates, maxTrackedSectors, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
-            _preyFrontCounts = VaultNativeArray<int>.Create(vault, vault.GetBufferHandle<int>(BufferID.EcosystemPreyFrontCounts, maxTrackedSectors, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
-            _preyBackCounts = VaultNativeArray<int>.Create(vault, vault.GetBufferHandle<int>(BufferID.EcosystemPreyBackCounts, maxTrackedSectors, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
-            _predatorFrontCounts = VaultNativeArray<int>.Create(vault, vault.GetBufferHandle<int>(BufferID.EcosystemPredatorFrontCounts, maxTrackedSectors, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
-            _predatorBackCounts = VaultNativeArray<int>.Create(vault, vault.GetBufferHandle<int>(BufferID.EcosystemPredatorBackCounts, maxTrackedSectors, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
-            _preyBiomassFront = VaultNativeArray<float>.Create(vault, vault.GetBufferHandle<float>(BufferID.EcosystemPreyBiomassFront, maxTrackedBiomassCells, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
-            _preyBiomassBack = VaultNativeArray<float>.Create(vault, vault.GetBufferHandle<float>(BufferID.EcosystemPreyBiomassBack, maxTrackedBiomassCells, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
-            _predatorBiomassFront = VaultNativeArray<float>.Create(vault, vault.GetBufferHandle<float>(BufferID.EcosystemPredatorBiomassFront, maxTrackedBiomassCells, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
-            _predatorBiomassBack = VaultNativeArray<float>.Create(vault, vault.GetBufferHandle<float>(BufferID.EcosystemPredatorBiomassBack, maxTrackedBiomassCells, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
-            _biomassCarryingCapacity = VaultNativeArray<float>.Create(vault, vault.GetBufferHandle<float>(BufferID.EcosystemBiomassCarryingCapacity, maxTrackedBiomassCells, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
-            _biomassSumScratch = VaultNativeArray<float>.Create(vault, vault.GetBufferHandle<float>(BufferID.EcosystemBiomassSumScratch, maxTrackedBiomassCells, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
-            _biomassMacroCellCoords = VaultNativeArray<int2>.Create(vault, vault.GetBufferHandle<int2>(BufferID.EcosystemBiomassMacroCellCoords, maxTrackedBiomassCells, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
-            _biomassCellFlags = VaultNativeArray<byte>.Create(vault, vault.GetBufferHandle<byte>(BufferID.EcosystemBiomassCellFlags, maxTrackedBiomassCells, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
-            _biomassIndexEntries = VaultNativeArray<EcosystemIndexEntry>.Create(vault, vault.GetBufferHandle<EcosystemIndexEntry>(BufferID.EcosystemBiomassIndexEntries, ResolveVaultIndexCapacity(maxTrackedBiomassCells), SystemID.AIEcology, NativeArrayOptions.ClearMemory));
-            _pendingBiomassImpacts = VaultNativeArray<BiomassImpactEvent>.Create(vault, vault.GetBufferHandle<BiomassImpactEvent>(BufferID.EcosystemPendingBiomassImpacts, BiomassImpactQueueCapacity, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
-            _biomassBlackBox = VaultNativeArray<BiomassTelemetryEntry>.Create(vault, vault.GetBufferHandle<BiomassTelemetryEntry>(BufferID.EcosystemBiomassBlackBox, BiomassBlackBoxCapacity, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
-            _macroSwarms = VaultNativeArray<MacroSwarm>.Create(vault, vault.GetBufferHandle<MacroSwarm>(BufferID.EcosystemMacroSwarms, MacroSwarmCapacity, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
-            _macroSwarmArrivals = VaultNativeArray<MacroSwarmArrival>.Create(vault, vault.GetBufferHandle<MacroSwarmArrival>(BufferID.EcosystemMacroSwarmArrivals, MacroSwarmArrivalCapacity, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
-            _macroSwarmCounters = VaultNativeArray<int>.Create(vault, vault.GetBufferHandle<int>(BufferID.EcosystemMacroSwarmCounters, 4, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
-            _macroSwarmBlackBox = VaultNativeArray<MacroSwarmTelemetryEntry>.Create(vault, vault.GetBufferHandle<MacroSwarmTelemetryEntry>(BufferID.EcosystemMacroSwarmBlackBox, MacroSwarmBlackBoxCapacity, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
-            _macroSwarmMutationRadiation = VaultNativeArray<float>.Create(vault, vault.GetBufferHandle<float>(BufferID.EcosystemMacroSwarmMutationRadiation, MacroSwarmCapacity, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
-            _macroSwarmMutationToxicity = VaultNativeArray<float>.Create(vault, vault.GetBufferHandle<float>(BufferID.EcosystemMacroSwarmMutationToxicity, MacroSwarmCapacity, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
-            _macroSwarmMutationBrine = VaultNativeArray<float>.Create(vault, vault.GetBufferHandle<float>(BufferID.EcosystemMacroSwarmMutationBrine, MacroSwarmCapacity, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
-            _macroSwarmMutationResults = VaultNativeArray<byte>.Create(vault, vault.GetBufferHandle<byte>(BufferID.EcosystemMacroSwarmMutationResults, MacroSwarmCapacity, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
-            _faunaMutationBlackBox = VaultNativeArray<FaunaMutationTelemetryEntry>.Create(vault, vault.GetBufferHandle<FaunaMutationTelemetryEntry>(BufferID.EcosystemFaunaMutationBlackBox, FaunaMutationBlackBoxCapacity, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
-            _macroHydrationScratch = VaultNativeArray<MacroSwarm>.Create(vault, vault.GetBufferHandle<MacroSwarm>(BufferID.EcosystemMacroHydrationScratch, MacroSwarmSignalScratchCapacity, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
-            _macroDehydrationScratch = VaultNativeArray<MacroSwarm>.Create(vault, vault.GetBufferHandle<MacroSwarm>(BufferID.EcosystemMacroDehydrationScratch, MacroSwarmSignalScratchCapacity, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
+            _sectorFrontStates = VaultNativeArray<SectorPopulationState>.Create(vault, vault.GetGenerationHandle<SectorPopulationState>(BufferID.EcosystemSectorFrontStates, maxTrackedSectors, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
+            _sectorBackStates = VaultNativeArray<SectorPopulationState>.Create(vault, vault.GetGenerationHandle<SectorPopulationState>(BufferID.EcosystemSectorBackStates, maxTrackedSectors, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
+            _preyFrontCounts = VaultNativeArray<int>.Create(vault, vault.GetGenerationHandle<int>(BufferID.EcosystemPreyFrontCounts, maxTrackedSectors, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
+            _preyBackCounts = VaultNativeArray<int>.Create(vault, vault.GetGenerationHandle<int>(BufferID.EcosystemPreyBackCounts, maxTrackedSectors, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
+            _predatorFrontCounts = VaultNativeArray<int>.Create(vault, vault.GetGenerationHandle<int>(BufferID.EcosystemPredatorFrontCounts, maxTrackedSectors, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
+            _predatorBackCounts = VaultNativeArray<int>.Create(vault, vault.GetGenerationHandle<int>(BufferID.EcosystemPredatorBackCounts, maxTrackedSectors, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
+            _preyBiomassFront = VaultNativeArray<float>.Create(vault, vault.GetGenerationHandle<float>(BufferID.EcosystemPreyBiomassFront, maxTrackedBiomassCells, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
+            _preyBiomassBack = VaultNativeArray<float>.Create(vault, vault.GetGenerationHandle<float>(BufferID.EcosystemPreyBiomassBack, maxTrackedBiomassCells, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
+            _predatorBiomassFront = VaultNativeArray<float>.Create(vault, vault.GetGenerationHandle<float>(BufferID.EcosystemPredatorBiomassFront, maxTrackedBiomassCells, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
+            _predatorBiomassBack = VaultNativeArray<float>.Create(vault, vault.GetGenerationHandle<float>(BufferID.EcosystemPredatorBiomassBack, maxTrackedBiomassCells, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
+            _biomassCarryingCapacity = VaultNativeArray<float>.Create(vault, vault.GetGenerationHandle<float>(BufferID.EcosystemBiomassCarryingCapacity, maxTrackedBiomassCells, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
+            _biomassSumScratch = VaultNativeArray<float>.Create(vault, vault.GetGenerationHandle<float>(BufferID.EcosystemBiomassSumScratch, maxTrackedBiomassCells, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
+            _biomassMacroCellCoords = VaultNativeArray<int2>.Create(vault, vault.GetGenerationHandle<int2>(BufferID.EcosystemBiomassMacroCellCoords, maxTrackedBiomassCells, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
+            _biomassCellFlags = VaultNativeArray<byte>.Create(vault, vault.GetGenerationHandle<byte>(BufferID.EcosystemBiomassCellFlags, maxTrackedBiomassCells, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
+            _biomassIndexEntries = VaultNativeArray<EcosystemIndexEntry>.Create(vault, vault.GetGenerationHandle<EcosystemIndexEntry>(BufferID.EcosystemBiomassIndexEntries, ResolveVaultIndexCapacity(maxTrackedBiomassCells), SystemID.AIEcology, NativeArrayOptions.ClearMemory));
+            _pendingBiomassImpacts = VaultNativeArray<BiomassImpactEvent>.Create(vault, vault.GetGenerationHandle<BiomassImpactEvent>(BufferID.EcosystemPendingBiomassImpacts, BiomassImpactQueueCapacity, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
+            _biomassBlackBox = VaultNativeArray<BiomassTelemetryEntry>.Create(vault, vault.GetGenerationHandle<BiomassTelemetryEntry>(BufferID.EcosystemBiomassBlackBox, BiomassBlackBoxCapacity, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
+            _macroSwarms = VaultNativeArray<MacroSwarm>.Create(vault, vault.GetGenerationHandle<MacroSwarm>(BufferID.EcosystemMacroSwarms, MacroSwarmCapacity, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
+            _macroSwarmArrivals = VaultNativeArray<MacroSwarmArrival>.Create(vault, vault.GetGenerationHandle<MacroSwarmArrival>(BufferID.EcosystemMacroSwarmArrivals, MacroSwarmArrivalCapacity, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
+            _macroSwarmCounters = VaultNativeArray<int>.Create(vault, vault.GetGenerationHandle<int>(BufferID.EcosystemMacroSwarmCounters, 4, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
+            _macroSwarmBlackBox = VaultNativeArray<MacroSwarmTelemetryEntry>.Create(vault, vault.GetGenerationHandle<MacroSwarmTelemetryEntry>(BufferID.EcosystemMacroSwarmBlackBox, MacroSwarmBlackBoxCapacity, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
+            _macroSwarmMutationRadiation = VaultNativeArray<float>.Create(vault, vault.GetGenerationHandle<float>(BufferID.EcosystemMacroSwarmMutationRadiation, MacroSwarmCapacity, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
+            _macroSwarmMutationToxicity = VaultNativeArray<float>.Create(vault, vault.GetGenerationHandle<float>(BufferID.EcosystemMacroSwarmMutationToxicity, MacroSwarmCapacity, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
+            _macroSwarmMutationBrine = VaultNativeArray<float>.Create(vault, vault.GetGenerationHandle<float>(BufferID.EcosystemMacroSwarmMutationBrine, MacroSwarmCapacity, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
+            _macroSwarmMutationResults = VaultNativeArray<byte>.Create(vault, vault.GetGenerationHandle<byte>(BufferID.EcosystemMacroSwarmMutationResults, MacroSwarmCapacity, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
+            _faunaMutationBlackBox = VaultNativeArray<FaunaMutationTelemetryEntry>.Create(vault, vault.GetGenerationHandle<FaunaMutationTelemetryEntry>(BufferID.EcosystemFaunaMutationBlackBox, FaunaMutationBlackBoxCapacity, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
+            _macroHydrationScratch = VaultNativeArray<MacroSwarm>.Create(vault, vault.GetGenerationHandle<MacroSwarm>(BufferID.EcosystemMacroHydrationScratch, MacroSwarmSignalScratchCapacity, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
+            _macroDehydrationScratch = VaultNativeArray<MacroSwarm>.Create(vault, vault.GetGenerationHandle<MacroSwarm>(BufferID.EcosystemMacroDehydrationScratch, MacroSwarmSignalScratchCapacity, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
             _headlessEntities = new HeadlessEntitySoA
             {
-                Positions = VaultNativeArray<float3>.Create(vault, vault.GetBufferHandle<float3>(BufferID.EcosystemHeadlessPositions, maxTrackedSectors, SystemID.AIEcology, NativeArrayOptions.ClearMemory)),
-                SpeciesID = VaultNativeArray<byte>.Create(vault, vault.GetBufferHandle<byte>(BufferID.EcosystemHeadlessSpeciesId, maxTrackedSectors, SystemID.AIEcology, NativeArrayOptions.ClearMemory)),
-                Hunger = VaultNativeArray<byte>.Create(vault, vault.GetBufferHandle<byte>(BufferID.EcosystemHeadlessHunger, maxTrackedSectors, SystemID.AIEcology, NativeArrayOptions.ClearMemory)),
-                SectorCoord = VaultNativeArray<int2>.Create(vault, vault.GetBufferHandle<int2>(BufferID.EcosystemHeadlessSectorCoord, maxTrackedSectors, SystemID.AIEcology, NativeArrayOptions.ClearMemory)),
-                SectorID = VaultNativeArray<int>.Create(vault, vault.GetBufferHandle<int>(BufferID.EcosystemHeadlessSectorId, maxTrackedSectors, SystemID.AIEcology, NativeArrayOptions.ClearMemory)),
-                FaunaGenomes = VaultNativeArray<ulong>.Create(vault, vault.GetBufferHandle<ulong>(BufferID.EcosystemHeadlessFaunaGenomes, maxTrackedSectors, SystemID.AIEcology, NativeArrayOptions.ClearMemory)),
-                MutationRadiation = VaultNativeArray<float>.Create(vault, vault.GetBufferHandle<float>(BufferID.EcosystemHeadlessMutationRadiation, maxTrackedSectors, SystemID.AIEcology, NativeArrayOptions.ClearMemory)),
-                MutationToxicity = VaultNativeArray<float>.Create(vault, vault.GetBufferHandle<float>(BufferID.EcosystemHeadlessMutationToxicity, maxTrackedSectors, SystemID.AIEcology, NativeArrayOptions.ClearMemory)),
-                MutationBrine = VaultNativeArray<float>.Create(vault, vault.GetBufferHandle<float>(BufferID.EcosystemHeadlessMutationBrine, maxTrackedSectors, SystemID.AIEcology, NativeArrayOptions.ClearMemory)),
-                MutationStableHashes = VaultNativeArray<uint>.Create(vault, vault.GetBufferHandle<uint>(BufferID.EcosystemHeadlessMutationStableHashes, maxTrackedSectors, SystemID.AIEcology, NativeArrayOptions.ClearMemory)),
-                MutationResults = VaultNativeArray<byte>.Create(vault, vault.GetBufferHandle<byte>(BufferID.EcosystemHeadlessMutationResults, maxTrackedSectors, SystemID.AIEcology, NativeArrayOptions.ClearMemory))
+                Positions = VaultNativeArray<float3>.Create(vault, vault.GetGenerationHandle<float3>(BufferID.EcosystemHeadlessPositions, maxTrackedSectors, SystemID.AIEcology, NativeArrayOptions.ClearMemory)),
+                SpeciesID = VaultNativeArray<byte>.Create(vault, vault.GetGenerationHandle<byte>(BufferID.EcosystemHeadlessSpeciesId, maxTrackedSectors, SystemID.AIEcology, NativeArrayOptions.ClearMemory)),
+                Hunger = VaultNativeArray<byte>.Create(vault, vault.GetGenerationHandle<byte>(BufferID.EcosystemHeadlessHunger, maxTrackedSectors, SystemID.AIEcology, NativeArrayOptions.ClearMemory)),
+                SectorCoord = VaultNativeArray<int2>.Create(vault, vault.GetGenerationHandle<int2>(BufferID.EcosystemHeadlessSectorCoord, maxTrackedSectors, SystemID.AIEcology, NativeArrayOptions.ClearMemory)),
+                SectorID = VaultNativeArray<int>.Create(vault, vault.GetGenerationHandle<int>(BufferID.EcosystemHeadlessSectorId, maxTrackedSectors, SystemID.AIEcology, NativeArrayOptions.ClearMemory)),
+                FaunaGenomes = VaultNativeArray<ulong>.Create(vault, vault.GetGenerationHandle<ulong>(BufferID.EcosystemHeadlessFaunaGenomes, maxTrackedSectors, SystemID.AIEcology, NativeArrayOptions.ClearMemory)),
+                MutationRadiation = VaultNativeArray<float>.Create(vault, vault.GetGenerationHandle<float>(BufferID.EcosystemHeadlessMutationRadiation, maxTrackedSectors, SystemID.AIEcology, NativeArrayOptions.ClearMemory)),
+                MutationToxicity = VaultNativeArray<float>.Create(vault, vault.GetGenerationHandle<float>(BufferID.EcosystemHeadlessMutationToxicity, maxTrackedSectors, SystemID.AIEcology, NativeArrayOptions.ClearMemory)),
+                MutationBrine = VaultNativeArray<float>.Create(vault, vault.GetGenerationHandle<float>(BufferID.EcosystemHeadlessMutationBrine, maxTrackedSectors, SystemID.AIEcology, NativeArrayOptions.ClearMemory)),
+                MutationStableHashes = VaultNativeArray<uint>.Create(vault, vault.GetGenerationHandle<uint>(BufferID.EcosystemHeadlessMutationStableHashes, maxTrackedSectors, SystemID.AIEcology, NativeArrayOptions.ClearMemory)),
+                MutationResults = VaultNativeArray<byte>.Create(vault, vault.GetGenerationHandle<byte>(BufferID.EcosystemHeadlessMutationResults, maxTrackedSectors, SystemID.AIEcology, NativeArrayOptions.ClearMemory))
             };
-            _sectorIndexEntries = VaultNativeArray<EcosystemIndexEntry>.Create(vault, vault.GetBufferHandle<EcosystemIndexEntry>(BufferID.EcosystemSectorIndexEntries, ResolveVaultIndexCapacity(maxTrackedSectors), SystemID.AIEcology, NativeArrayOptions.ClearMemory));
-            _apexTerritorySamples = VaultNativeArray<ApexTerritorySample>.Create(vault, vault.GetBufferHandle<ApexTerritorySample>(BufferID.EcosystemApexTerritorySamples, ApexTerritoryOverlapCandidateCapacity, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
-            _apexTerritoryOverlapResults = VaultNativeArray<ApexTerritoryOverlapResult>.Create(vault, vault.GetBufferHandle<ApexTerritoryOverlapResult>(BufferID.EcosystemApexTerritoryOverlapResults, ApexTerritoryOverlapCandidateCapacity, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
-            _apexSpawnGateCommands = VaultNativeArray<CapsulecastCommand>.Create(vault, vault.GetBufferHandle<CapsulecastCommand>(BufferID.EcosystemApexSpawnGateCommands, ApexSpawnGateCommandCount, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
-            _apexSpawnGateHits = VaultNativeArray<RaycastHit>.Create(vault, vault.GetBufferHandle<RaycastHit>(BufferID.EcosystemApexSpawnGateHits, ApexSpawnGateMaxHits, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
-            _floraPredatorAupUpload = VaultNativeArray<float4>.Create(vault, vault.GetBufferHandle<float4>(BufferID.EcosystemFloraPredatorAupUpload, FloraPredatorAupBufferCapacity, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
-            _saveSnapshotSectors = VaultNativeArray<EcosystemSectorSaveRecord>.Create(vault, vault.GetBufferHandle<EcosystemSectorSaveRecord>(
+            _sectorIndexEntries = VaultNativeArray<EcosystemIndexEntry>.Create(vault, vault.GetGenerationHandle<EcosystemIndexEntry>(BufferID.EcosystemSectorIndexEntries, ResolveVaultIndexCapacity(maxTrackedSectors), SystemID.AIEcology, NativeArrayOptions.ClearMemory));
+            _apexTerritorySamples = VaultNativeArray<ApexTerritorySample>.Create(vault, vault.GetGenerationHandle<ApexTerritorySample>(BufferID.EcosystemApexTerritorySamples, ApexTerritoryOverlapCandidateCapacity, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
+            _apexTerritoryOverlapResults = VaultNativeArray<ApexTerritoryOverlapResult>.Create(vault, vault.GetGenerationHandle<ApexTerritoryOverlapResult>(BufferID.EcosystemApexTerritoryOverlapResults, ApexTerritoryOverlapCandidateCapacity, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
+            _apexSpawnGateCommands = VaultNativeArray<CapsulecastCommand>.Create(vault, vault.GetGenerationHandle<CapsulecastCommand>(BufferID.EcosystemApexSpawnGateCommands, ApexSpawnGateCommandCount, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
+            _apexSpawnGateHits = VaultNativeArray<RaycastHit>.Create(vault, vault.GetGenerationHandle<RaycastHit>(BufferID.EcosystemApexSpawnGateHits, ApexSpawnGateMaxHits, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
+            _floraPredatorAupUpload = VaultNativeArray<float4>.Create(vault, vault.GetGenerationHandle<float4>(BufferID.EcosystemFloraPredatorAupUpload, FloraPredatorAupBufferCapacity, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
+            _saveSnapshotSectors = VaultNativeArray<EcosystemSectorSaveRecord>.Create(vault, vault.GetGenerationHandle<EcosystemSectorSaveRecord>(
                 BufferID.EcosystemSaveSnapshotSectors,
                 maxTrackedSectors + maxTrackedBiomassCells + (maxTrackedSectors * 2) + (MacroSwarmCapacity * 4),
                 SystemID.AIEcology,
                 NativeArrayOptions.ClearMemory));
-            _saveSnapshotBiomassRuns = VaultNativeArray<EcosystemBiomassSaveRun>.Create(vault, vault.GetBufferHandle<EcosystemBiomassSaveRun>(
+            _saveSnapshotBiomassRuns = VaultNativeArray<EcosystemBiomassSaveRun>.Create(vault, vault.GetGenerationHandle<EcosystemBiomassSaveRun>(
                 BufferID.EcosystemSaveSnapshotBiomassRuns,
                 maxTrackedBiomassCells,
                 SystemID.AIEcology,

@@ -63,7 +63,7 @@ Shader "NASAPunk/SuitVisor"
         _StaticNoise ("Structural Static Noise", Range(0, 1)) = 0
         _HectonVisorRefractionScale ("Scalable Refraction Scale", Range(0, 1)) = 1
         _HectonVisorChromaticScale ("Scalable Chromatic Scale", Range(0, 1)) = 1
-        _HectonVisorLowTierDither ("Low Tier Dither Vignette", Range(0, 1)) = 0
+        _HectonVisorQualityPressureDither ("Quality Pressure Dither Vignette", Range(0, 1)) = 0
         _HypoxiaLevel ("HUD Hypoxia Failure", Range(0, 1)) = 0
         _HullStressFlicker ("Pressure Flicker", Range(0, 1)) = 0
         _PressureLensCrackIntensity ("Pressure Lens Crack Intensity", Range(0, 1)) = 0
@@ -188,7 +188,7 @@ Shader "NASAPunk/SuitVisor"
                 float  _StaticNoise;
                 float  _HectonVisorRefractionScale;
                 float  _HectonVisorChromaticScale;
-                float  _HectonVisorLowTierDither;
+                float  _HectonVisorQualityPressureDither;
                 float  _HypoxiaLevel;
                 float  _HullStressFlicker;
                 float  _PressureLensCrackIntensity;
@@ -820,7 +820,7 @@ Shader "NASAPunk/SuitVisor"
                 screenUV = saturate(HectonFinite2(screenUV, float2(0.5, 0.5)));
                 float scalableRefractionScale = HectonFinite01(_HectonVisorRefractionScale);
                 float scalableChromaticScale = HectonFinite01(_HectonVisorChromaticScale);
-                float lowTierDitherScale = HectonFinite01(_HectonVisorLowTierDither);
+                float qualityPressureDitherScale = HectonFinite01(_HectonVisorQualityPressureDither);
                 float edgeDist = EdgeMask(IN.uv, _DistortionFalloff);
                 float blueNoiseDustMask = 0.0;
                 float blueNoiseMoistureMask = 0.0;
@@ -1007,7 +1007,7 @@ Shader "NASAPunk/SuitVisor"
                 {
                     float2 staticCell = floor(screenUV * scaledScreenParams * 0.0625);
                     float2 staticOffset = float2(Hash21(staticCell), Hash21(staticCell.yx + 17.0)) - 0.5;
-                    refractedUV = screenUV + staticOffset * lerp(0.00035, 0.0011, lowTierDitherScale);
+                    refractedUV = screenUV + staticOffset * lerp(0.00035, 0.0011, qualityPressureDitherScale);
                 }
 
                 float2 hazardSceneSplit = float2(hazardRadiation * 0.006 + hazardGlitch * 0.003, 0.0) * scalableChromaticScale;
@@ -1023,18 +1023,18 @@ Shader "NASAPunk/SuitVisor"
                 float sceneSurrogateEdge = smoothstep(0.18, 1.0, radialMagnitude);
                 float sceneSurrogateGlare = saturate(IN.glareData.x * 0.28 + IN.glareData.y * 0.22 + sceneSurrogateEdge * 0.18);
                 float3 sceneColor = SAMPLE_TEXTURE2D_X(_CameraOpaqueTexture, sampler_CameraOpaqueTexture, refractedUV).rgb;
-                float lowTierRefractionMode = max(1.0 - step(0.001, scalableRefractionScale), step(0.5, lowTierDitherScale));
+                float qualityPressureRefractionMode = max(1.0 - step(0.001, scalableRefractionScale), step(0.5, qualityPressureDitherScale));
                 [branch]
-                if (lowTierRefractionMode > 0.5)
+                if (qualityPressureRefractionMode > 0.5)
                 {
-                    float lowTierChromaDrive = saturate((0.35 + radialMagnitude * 0.65) * max(lowTierDitherScale, hullStressFlicker));
-                    float2 lowTierChromaOffset = HectonClampUvOffset(
+                    float qualityPressureChromaDrive = saturate((0.35 + radialMagnitude * 0.65) * max(qualityPressureDitherScale, hullStressFlicker));
+                    float2 qualityPressureChromaOffset = HectonClampUvOffset(
                         radialScreenOffset * (0.0012 + hullStressFlicker * 0.0024) * depthRefractionMask * inverseDirtRefraction,
                         0.004);
-                    float3 lowTierScene = sceneColor;
-                    lowTierScene.r = SAMPLE_TEXTURE2D_X(_CameraOpaqueTexture, sampler_CameraOpaqueTexture, saturate(screenUV + lowTierChromaOffset)).r;
-                    lowTierScene.b = SAMPLE_TEXTURE2D_X(_CameraOpaqueTexture, sampler_CameraOpaqueTexture, saturate(screenUV - lowTierChromaOffset)).b;
-                    sceneColor = lerp(sceneColor, lowTierScene, lowTierChromaDrive);
+                    float3 qualityPressureScene = sceneColor;
+                    qualityPressureScene.r = SAMPLE_TEXTURE2D_X(_CameraOpaqueTexture, sampler_CameraOpaqueTexture, saturate(screenUV + qualityPressureChromaOffset)).r;
+                    qualityPressureScene.b = SAMPLE_TEXTURE2D_X(_CameraOpaqueTexture, sampler_CameraOpaqueTexture, saturate(screenUV - qualityPressureChromaOffset)).b;
+                    sceneColor = lerp(sceneColor, qualityPressureScene, qualityPressureChromaDrive);
                 }
                 sceneColor += _BaseColor.rgb * (0.018 + _BaseColor.a * 0.012);
                 sceneColor += fresnelColor * (0.05 + sceneSurrogateEdge * 0.08 + runoffMask * 0.035);
@@ -1422,14 +1422,14 @@ Shader "NASAPunk/SuitVisor"
                 finalColor *= 1.0 - noirVignetteStrength * 0.52;
                 finalColor += _HUD_Color.rgb * noirVignetteStrength * hudAlpha * 0.025;
                 [branch]
-                if (lowTierDitherScale > 0.0001)
+                if (qualityPressureDitherScale > 0.0001)
                 {
-                    float lowTierEdge = smoothstep(0.30, 1.0, radialMagnitude);
-                    float lowTierFault = saturate(max(max(hazardGlitch, criticalHealthGlitch), stressHudChromatic));
-                    float lowTierCoverage = saturate(lowTierEdge * (0.16 + lowTierFault * 0.34) * lowTierDitherScale);
-                    float lowTierDither = step(Bayer4x4(floor(IN.positionCS.xy)), lowTierCoverage);
-                    float3 lowTierTint = finalColor * 0.82 + _HUD_Color.rgb * (0.018 + lowTierFault * 0.028);
-                    finalColor = lerp(finalColor, lowTierTint, lowTierDither * lowTierEdge * lowTierDitherScale);
+                    float qualityPressureEdge = smoothstep(0.30, 1.0, radialMagnitude);
+                    float qualityPressureFault = saturate(max(max(hazardGlitch, criticalHealthGlitch), stressHudChromatic));
+                    float qualityPressureCoverage = saturate(qualityPressureEdge * (0.16 + qualityPressureFault * 0.34) * qualityPressureDitherScale);
+                    float qualityPressureDither = step(Bayer4x4(floor(IN.positionCS.xy)), qualityPressureCoverage);
+                    float3 qualityPressureTint = finalColor * 0.82 + _HUD_Color.rgb * (0.018 + qualityPressureFault * 0.028);
+                    finalColor = lerp(finalColor, qualityPressureTint, qualityPressureDither * qualityPressureEdge * qualityPressureDitherScale);
                 }
                 float vrComfortVignette = HectonFinite01(vrComfortSignals.x) * vrComfortEnabled;
                 float vrComfortVelocitySq = HectonFinite01(vrComfortMotion.z) * vrComfortEnabled;

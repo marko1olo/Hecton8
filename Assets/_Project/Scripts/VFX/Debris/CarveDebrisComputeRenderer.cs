@@ -27,7 +27,7 @@ namespace Hecton8.VFX.Debris
         IGlobalRegistryHotSwapListener,
         IGlobalRegistryHotSwapRefListener
     {
-        private const int MaxCarveDebrisCount = ShinobuDeltaCrusher.UltraTierDebrisCap;
+        private const int MaxCarveDebrisCount = ShinobuDeltaCrusher.MaximumQualityDebrisCap;
         private static readonly int MinQualityActiveCarveDebrisCount = ShinobuDeltaCrusher.ResolveDebrisCap(0f, MaxCarveDebrisCount);
         private const int ThreadGroupFallbackSize = 64;
         private const int ThreadGroupPortableMaxSize = 512;
@@ -268,7 +268,7 @@ namespace Hecton8.VFX.Debris
         public int ActiveParticleCapacity => ResolveActiveCapacity(_cachedGlobalQualityWeight01, _configuredMaxActiveDebris);
 
         /// <inheritdoc />
-        public bool IsLowTierActive => _qualityPressure01 >= 0.75f;
+        public float QualityPressure01 => _qualityPressure01;
 
         /// <inheritdoc />
         public void ClearGpuDebris()

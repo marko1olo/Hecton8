@@ -1800,9 +1800,10 @@ namespace Hecton8.Visor
         public bool HasSonarSnapshot    => _hasSonarSnapshot;
         public SpatialSonarSnapshot LastSonarSnapshot => _lastSonarSnapshot;
 
-        public bool TryGetAupDiscoveryGrid(out NativeArray<uint> discoveryGrid, out int width, out int height, out float cellSizeMeters)
+        public bool TryGetAupDiscoveryGrid(out NativeArray<uint>.ReadOnly discoveryGrid, out int width, out int height, out float cellSizeMeters)
         {
-            bool resolved = TryResolveAupDiscoveryGrid(out discoveryGrid);
+            bool resolved = TryResolveAupDiscoveryGrid(out NativeArray<uint> mutableDiscoveryGrid);
+            discoveryGrid = resolved ? mutableDiscoveryGrid.AsReadOnly() : default;
             width = _aupDiscoveryGridWidthRuntime;
             height = _aupDiscoveryGridHeightRuntime;
             cellSizeMeters = _aupDiscoveryCellSizeRuntime;

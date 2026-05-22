@@ -83,9 +83,9 @@ namespace Hecton8.VFX.Debris
     {
         public const int DefaultChunkResolution = 32;
         public const int DefaultChunkCellCount = DefaultChunkResolution * DefaultChunkResolution * DefaultChunkResolution;
-        public const int LowTierDebrisCap = 500;
-        public const int MidTierDebrisCap = 4096;
-        public const int UltraTierDebrisCap = 10000;
+        public const int MinimumQualityDebrisCap = 500;
+        public const int MiddleQualityDebrisCap = 4096;
+        public const int MaximumQualityDebrisCap = 10000;
         public const sbyte MockSolidDensity = 127;
         public const sbyte MockEmptyDensity = sbyte.MinValue;
         public const uint TitaniumOreHash = 0x61C51592u;
@@ -110,10 +110,15 @@ namespace Hecton8.VFX.Debris
 
         public static int ResolveDebrisCap(float globalQualityWeight01, int configuredCap)
         {
-            int upper = math.clamp(configuredCap > 0 ? configuredCap : UltraTierDebrisCap, LowTierDebrisCap, UltraTierDebrisCap);
+            int upper = math.clamp(configuredCap > 0 ? configuredCap : MaximumQualityDebrisCap, MinimumQualityDebrisCap, MaximumQualityDebrisCap);
             float quality = SmoothQuality01(globalQualityWeight01);
-            int continuousCap = (int)math.round(math.lerp(LowTierDebrisCap, upper, quality));
-            return math.clamp(continuousCap, LowTierDebrisCap, upper);
+            int middle = math.clamp(MiddleQualityDebrisCap, MinimumQualityDebrisCap, upper);
+            float lowerT = SmoothQuality01(quality * 2f);
+            float upperT = SmoothQuality01((quality - 0.5f) * 2f);
+            float minimumToMiddle = math.lerp(MinimumQualityDebrisCap, middle, lowerT);
+            float middleToMaximum = math.lerp(middle, upper, upperT);
+            int continuousCap = (int)math.round(math.lerp(minimumToMiddle, middleToMaximum, math.step(0.5f, quality)));
+            return math.clamp(continuousCap, MinimumQualityDebrisCap, upper);
         }
 
         public static float SmoothQuality01(float globalQualityWeight01)
@@ -138,7 +143,7 @@ namespace Hecton8.VFX.Debris
             {
                 Gravity = new float3(0f, math.isfinite(gravityY) ? gravityY : -5.25f, 0f),
                 Bounce = math.isfinite(bounce) ? math.saturate(bounce) : DefaultBounce,
-                MaxActiveDebris = math.clamp(jobState[CarveDebrisTuningMaxDebrisIndex], LowTierDebrisCap, UltraTierDebrisCap),
+                MaxActiveDebris = math.clamp(jobState[CarveDebrisTuningMaxDebrisIndex], MinimumQualityDebrisCap, MaximumQualityDebrisCap),
                 MassUnitsPerParticle = math.max(1, jobState[CarveDebrisTuningMassUnitsIndex]),
                 Flags = 0u,
                 Version = (uint)version
@@ -156,7 +161,7 @@ namespace Hecton8.VFX.Debris
             jobState[CarveDebrisTuningVersionIndex] = math.max(1, (int)tuning.Version);
             jobState[CarveDebrisTuningGravityYBitsIndex] = math.asint(gravityY);
             jobState[CarveDebrisTuningBounceBitsIndex] = math.asint(bounce);
-            jobState[CarveDebrisTuningMaxDebrisIndex] = math.clamp(tuning.MaxActiveDebris, LowTierDebrisCap, UltraTierDebrisCap);
+            jobState[CarveDebrisTuningMaxDebrisIndex] = math.clamp(tuning.MaxActiveDebris, MinimumQualityDebrisCap, MaximumQualityDebrisCap);
             jobState[CarveDebrisTuningMassUnitsIndex] = math.max(1, tuning.MassUnitsPerParticle);
             return true;
         }

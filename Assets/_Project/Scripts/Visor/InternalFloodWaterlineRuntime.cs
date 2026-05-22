@@ -23,8 +23,8 @@ namespace Hecton8.Visor
         private const float CrossingEpsilonMeters = 0.03f;
         private const float TransitionSmoothingSeconds = 0.22f;
         private const float DropletDurationSeconds = 2f;
-        private const float LowTierRefractionStrength = 0f;
-        private const float HighTierRefractionStrength = 0.0018f;
+        private const float MinQualityRefractionStrength = 0f;
+        private const float MaxQualityRefractionStrength = 0.0018f;
         private const float InternalWaterlineInvalidY = -100000f;
         private const float ShaderFloatEpsilon = 0.0001f;
         private const int DependencyRefreshTickInterval = 30;
@@ -91,7 +91,8 @@ namespace Hecton8.Visor
         private Color _lastPublishedWaterColor = Color.clear;
         private Vector4 _lastPublishedRuntime = Vector4.positiveInfinity;
         private Vector4 _lastPublishedDistortion = Vector4.positiveInfinity;
-        private HectonQualityTier _cachedQualityTier = HectonQualityTier.Unknown;
+        private float _cachedGlobalQualityWeight01 = 1f;
+        private float _cachedQualityPressure01;
         private bool _hasPendingGasSubmergedFraction;
         private bool _hasWaterline;
         private bool _cameraSubmerged;
@@ -129,6 +130,7 @@ namespace Hecton8.Visor
             EnsureNativeTelemetry();
             _shaderGlobalsDirty = true;
             RefreshCachedDependencies(force: true);
+            RefreshQualityPolicy();
             _isInitialized = true;
             ActiveRuntimeInstance = this;
             RegisterRuntime();
@@ -166,9 +168,10 @@ namespace Hecton8.Visor
             if (!_isInitialized || deltaTime <= 0f)
                 return;
 
+            RefreshCachedDependencies(force: false);
+            RefreshQualityPolicy();
             ConsumeExternalDropletSignals();
             ConsumePlayerExhaleSignals();
-            RefreshCachedDependencies(force: false);
             FlushPendingGasSubmergedFraction();
             if (_dropletSecondsRemaining > 0f)
                 _dropletSecondsRemaining = math.max(0f, _dropletSecondsRemaining - deltaTime);
@@ -424,8 +427,21 @@ namespace Hecton8.Visor
 
             _habitatGraph = GlobalRegistry.HabitatGraph;
             _gasDynamics = GlobalRegistry.GasDynamics;
-            _cachedQualityTier = GlobalRegistry.ScalabilityTier;
             _nextDependencyRefreshTick = _tickCount + DependencyRefreshTickInterval;
+        }
+
+        private void RefreshQualityPolicy()
+        {
+            float quality = ResolveGlobalQualityWeight01();
+            float pressure = 1f - SmoothQuality01(quality);
+            if (math.abs(_cachedGlobalQualityWeight01 - quality) > ShaderFloatEpsilon ||
+                math.abs(_cachedQualityPressure01 - pressure) > ShaderFloatEpsilon)
+            {
+                _shaderGlobalsDirty = true;
+            }
+
+            _cachedGlobalQualityWeight01 = quality;
+            _cachedQualityPressure01 = pressure;
         }
 
         private void PublishCrossingFeedback(Vector3 cameraRuntimePosition, bool wasSubmerged)
@@ -452,10 +468,10 @@ namespace Hecton8.Visor
         {
             float active01 = _hasWaterline ? 1f : 0f;
             float droplets01 = math.saturate(_dropletSecondsRemaining * math.rcp(DropletDurationSeconds));
-            bool lowTier = IsLowTier(_cachedQualityTier);
-            float refraction = lowTier ? LowTierRefractionStrength : HighTierRefractionStrength;
+            float qualityPressure01 = math.saturate(_cachedQualityPressure01);
+            float refraction = math.lerp(MinQualityRefractionStrength, MaxQualityRefractionStrength, 1f - qualityPressure01);
             Vector4 runtime = new Vector4(active01, math.saturate(fill01), droplets01, _currentRoomId);
-            Vector4 distortion = new Vector4(refraction, math.saturate(tintStrength), math.max(0.001f, edgeSoftness), lowTier ? 1f : 0f);
+            Vector4 distortion = new Vector4(refraction, math.saturate(tintStrength), math.max(0.001f, edgeSoftness), qualityPressure01);
 
             SetGlobalFloatIfChanged(InternalWaterlineYId, _hasWaterline ? _currentWaterlineY : InternalWaterlineInvalidY, ref _lastPublishedWaterlineY);
             SetGlobalColorIfChanged(InternalWaterColorId, internalWaterColor, ref _lastPublishedWaterColor);
@@ -551,8 +567,9 @@ namespace Hecton8.Visor
                 telemetryFlags |= 2;
             if (_hasPendingGasSubmergedFraction)
                 telemetryFlags |= 4;
-            if (IsLowTier(_cachedQualityTier))
+            if (_cachedQualityPressure01 > 0.5f)
                 telemetryFlags |= 8;
+            byte qualityByte = EncodeQualityWeightByte(_cachedGlobalQualityWeight01);
             WaterlineTelemetryEntry entry = new WaterlineTelemetryEntry
             {
                 Frame = (uint)math.max(0, Time.frameCount),
@@ -564,9 +581,9 @@ namespace Hecton8.Visor
                 CameraY = cameraY,
                 Droplets01 = droplets01,
                 Flags = telemetryFlags,
-                Reserved0 = 0,
+                Reserved0 = qualityByte,
                 Reserved1 = 0,
-                StateHash = ResolveTelemetryHash(snapshot.RoomId, snapshot.Fill01, _currentWaterlineY, cameraY, droplets01)
+                StateHash = ResolveTelemetryHash(snapshot.RoomId, snapshot.Fill01, _currentWaterlineY, cameraY, droplets01, qualityByte)
             };
 
             _telemetry[_telemetryCursor] = entry;
@@ -619,13 +636,6 @@ namespace Hecton8.Visor
             }
         }
 
-        private static bool IsLowTier(HectonQualityTier tier)
-        {
-            return tier == HectonQualityTier.Low ||
-                   tier == HectonQualityTier.Mx350 ||
-                   tier == HectonQualityTier.Unknown;
-        }
-
         private static bool IsFiniteVector(Vector3 value)
         {
             return math.isfinite(value.x) &&
@@ -656,7 +666,24 @@ namespace Hecton8.Visor
             return IsFiniteAup(in absoluteAup);
         }
 
-        private static uint ResolveTelemetryHash(int roomId, float fill01, float waterlineY, float cameraY, float droplets01)
+        private static float ResolveGlobalQualityWeight01()
+        {
+            float quality = HomeostasisBrain.GlobalQualityWeight;
+            return math.isfinite(quality) ? math.saturate(quality) : 1f;
+        }
+
+        private static float SmoothQuality01(float quality)
+        {
+            quality = math.isfinite(quality) ? math.saturate(quality) : 1f;
+            return quality * quality * (3f - (2f * quality));
+        }
+
+        private static byte EncodeQualityWeightByte(float quality)
+        {
+            return (byte)math.clamp((int)math.round(math.saturate(quality) * 255f), 0, 255);
+        }
+
+        private static uint ResolveTelemetryHash(int roomId, float fill01, float waterlineY, float cameraY, float droplets01, byte qualityByte)
         {
             uint hash = 2166136261u;
             hash = (hash ^ (uint)roomId) * 16777619u;
@@ -664,6 +691,7 @@ namespace Hecton8.Visor
             hash = (hash ^ math.asuint(waterlineY)) * 16777619u;
             hash = (hash ^ math.asuint(cameraY)) * 16777619u;
             hash = (hash ^ math.asuint(droplets01)) * 16777619u;
+            hash = (hash ^ qualityByte) * 16777619u;
             return hash;
         }
     }

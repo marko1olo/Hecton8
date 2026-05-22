@@ -4356,3 +4356,19 @@ Mandates read before coding:
   Rejected: widening `HabitatGraphManager` back to mutable output or copying through a temporary mutable NativeArray. The consumer only reads and copies into its own AIEcology buffer.
   Estimate: 0 runtime cost; type declaration only.
 - Guarded `dotnet build Hecton8.Core.csproj -nologo -clp:ErrorsOnly -maxcpucount:1` succeeded after the Fauna patch: 0 errors, 29 warnings, elapsed `00:00:56.73`.
+
+## Loop 244 - Ecosystem Director Macro Snapshot Descriptor Read Route
+- [x] Replaced the macro ecosystem borrowed snapshot pointer handles in `EcosystemDirector.cs`.
+  DOD practice: `_macroSectorSnapshotHandle`, `_macroSectorIndexHandle`, and `_macroTuningHandle` now store `VaultGenerationHandle<T>` descriptors. `TryResolveMacroEcosystemVaultSnapshot` refreshes borrowed descriptors through `TryGetGenerationHandle`, then reads through `TryReadHandle` after exact BufferID, `SystemID.AIEcology`, nonzero generation, created view, optional length floor, and inactive compaction-fence checks.
+  Rejected: rewriting the full `VaultNativeArray<T>` wrapper and AIEcology-owned runtime arrays in this loop because that is a larger owner-allocation migration. Rewriting macro ecosystem DTOs, sector hash math, biomass quality curves, fallback service reads, or save payloads was rejected because the defect was the borrowed snapshot read boundary.
+  Estimate: one O(1) descriptor proof per cold biomass query route; no added per-sector scan and no native allocation.
+- [x] Kept macro ecosystem fact ownership unchanged.
+  DOD practice: the reader validates `SystemID.AIEcology` and uses pure read access; it does not create, grow, publish, or mutate the macro ecosystem snapshot buffers.
+  Rejected: creating missing macro snapshot buffers from the World consumer was rejected because one fact must have one owner. Falling back to `TryResolveHandle` was rejected because this route is read-only.
+  Estimate: 0 DTO/ABI/shader-format change.
+
+## Compile State Update 240
+- Focused macro snapshot scan on `EcosystemDirector.cs` found zero `VaultBufferHandle<MacroEcosystem...>` fields and zero `TryGetBufferHandle(BufferID.ShinobuMacroEcosystem...)` acquisitions.
+- The file still contains unrelated pointer-era debt in the generic `VaultNativeArray<T>` wrapper and one heatmap bridge; those are not claimed as resolved by Loop 244.
+- Brace/preprocessor counts are balanced: `EcosystemDirector.cs` braces `560/560`, preprocessor `#if/#endif` `0/0`; `git diff --check` passed with CRLF warning only.
+- Guarded `dotnet build Hecton8.Core.csproj -nologo -clp:ErrorsOnly -maxcpucount:1` succeeded after the Ecosystem macro snapshot patch: 0 errors, 29 warnings, elapsed `00:00:54.15`.
