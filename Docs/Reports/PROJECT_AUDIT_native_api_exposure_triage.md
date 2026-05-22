@@ -545,3 +545,63 @@ Rejected:
 - Returning mutable tuning just for editor sliders.
 - Managed tuning/telemetry graph copies.
 - Runtime solver job buffer rewrites or force packet ownership changes.
+
+## 2026-05-22 Animation Tuning Editor View Update
+
+Evidence class: STATIC_SOURCE / STATIC_TOOL only. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+Selected route:
+
+- `ProceduralBoneBlenderRuntime.TryResolveTuningForEditor` is consumed by `ProceduralRigTunerWindow` for readout and sliders.
+- `KineticCharacterAnimatorRuntime.TryResolveTuningForEditor` is consumed by `KineticCharacterAnimationTunerWindow` for readout and sliders.
+- CSV/import code needs mutable owner-local access, but it can remain private inside each runtime.
+
+Patch:
+
+- Public tuning editor APIs now return `NativeArray<T>.ReadOnly`.
+- Editor windows mutate local DTO copies and submit them through `TryApplyEditorTuning`.
+- Runtime CSV/import paths use private `TryResolveTuningMutable` helpers.
+
+Updated static counts from `Docs/Reports/PROJECT_AUDIT_polish_after_animation_tuning_readonly.json`:
+
+- `nativeCollectionPublicMutableApiExposure`: 132, down from 134.
+- `nativeApiExposureBuildPlayerRuntime`: 119, down from 121.
+- `nativeApiExposureOutRefMutable`: 101, down from 103.
+- `nativeApiRiskRuntimeDiagnosticNamedMutableView`: 17, down from 19.
+
+Rejected:
+
+- Mutable editor tuning buffers.
+- Managed tuning mirrors.
+- Solver, GPU matrix upload, or DTO layout rewrites.
+
+## 2026-05-22 Buoyancy Editor View Update
+
+Evidence class: STATIC_SOURCE / STATIC_TOOL only. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+Selected route:
+
+- `BuoyancyDisplacementRuntime.TryOpenEditorViews` is consumed by `HydrodynamicBuoyancyTunerWindow` for readout and designer tuning.
+- `TryOpenSleepTelemetryEditorViews` is consumed by `PhysicsSleepStateXRayWindow`.
+- `TryOpenSimdTuningEditorView` is consumed by `BurstVectorizationXRayWindow` for scalar fallback tuning.
+- Runtime solver buffers, force packet queues, material CSV lanes, and physics apply lanes remain explicit writer/owner routes.
+
+Patch:
+
+- Public buoyancy editor views now return `NativeArray<T>.ReadOnly`.
+- Editor windows mutate local DTO/scalar values and submit them through `TryApplyEditorTuning`, `TryApplySleepTelemetryEditorTuning`, or `TryApplySimdScalarFallbackEditorTuning`.
+- Owner runtime resolves mutable Vault buffers internally only inside those apply methods.
+
+Updated static counts from `Docs/Reports/PROJECT_AUDIT_polish_after_buoyancy_editor_readonly.json`:
+
+- `nativeCollectionPublicMutableApiExposure`: 128, down from 132.
+- `nativeApiExposureBuildPlayerRuntime`: 115, down from 119.
+- `nativeApiExposureOutRefMutable`: 97, down from 101.
+- `nativeApiRiskRuntimeDiagnosticNamedMutableView`: 14, down from 17.
+- `nativeApiRiskRuntimeOutRefMutableView`: 63, down from 64.
+
+Rejected:
+
+- Mutable editor tuning buffers.
+- Managed editor mirrors.
+- Solver, force packet, material CSV, physics apply, or DTO layout rewrites.

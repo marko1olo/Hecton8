@@ -126,7 +126,26 @@ namespace Hecton8.Animation.KineticCharacter
             return false;
         }
 
-        public bool TryResolveTuningForEditor(out NativeArray<KineticCharacterTuningDTO> tuning)
+        public bool TryResolveTuningForEditor(out NativeArray<KineticCharacterTuningDTO>.ReadOnly tuning)
+        {
+            tuning = default;
+            if (!TryResolveTuningMutable(out NativeArray<KineticCharacterTuningDTO> mutableTuning))
+                return false;
+
+            tuning = mutableTuning.AsReadOnly();
+            return true;
+        }
+
+        public bool TryApplyEditorTuning(in KineticCharacterTuningDTO tuning)
+        {
+            if (!TryResolveTuningMutable(out NativeArray<KineticCharacterTuningDTO> mutableTuning))
+                return false;
+
+            mutableTuning[0] = KineticCharacterSanitizer.SanitizeTuning(tuning);
+            return true;
+        }
+
+        private bool TryResolveTuningMutable(out NativeArray<KineticCharacterTuningDTO> tuning)
         {
             tuning = default;
             IDataVault vault = ResolveDataVaultCold();
@@ -169,7 +188,7 @@ namespace Hecton8.Animation.KineticCharacter
 
         public bool TryApplyCsvProfile(string csvText)
         {
-            if (string.IsNullOrEmpty(csvText) || !TryResolveTuningForEditor(out NativeArray<KineticCharacterTuningDTO> tuning))
+            if (string.IsNullOrEmpty(csvText) || !TryResolveTuningMutable(out NativeArray<KineticCharacterTuningDTO> tuning))
                 return false;
 
             IDataVault vault = ResolveDataVaultCold();
@@ -195,7 +214,7 @@ namespace Hecton8.Animation.KineticCharacter
 
         public bool TryApplyCsvProfileBytes(ReadOnlySpan<byte> csvBytes)
         {
-            if (csvBytes.Length <= 0 || !TryResolveTuningForEditor(out NativeArray<KineticCharacterTuningDTO> tuning))
+            if (csvBytes.Length <= 0 || !TryResolveTuningMutable(out NativeArray<KineticCharacterTuningDTO> tuning))
                 return false;
 
             IDataVault vault = ResolveDataVaultCold();

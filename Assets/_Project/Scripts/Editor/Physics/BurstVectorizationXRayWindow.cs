@@ -168,7 +168,7 @@ namespace Hecton8.Editor.Physics
                 return;
 
             if (!BuoyancyDisplacementRuntime.TryGetActiveRuntimeInstance(out BuoyancyDisplacementRuntime runtime) ||
-                !runtime.TryOpenSimdTuningEditorView(out NativeArray<SimdHydrodynamicTuningDTO> tuning) ||
+                !runtime.TryOpenSimdTuningEditorView(out NativeArray<SimdHydrodynamicTuningDTO>.ReadOnly tuning) ||
                 !tuning.IsCreated ||
                 tuning.Length <= 0)
             {
@@ -189,7 +189,7 @@ namespace Hecton8.Editor.Physics
                 return;
 
             if (!BuoyancyDisplacementRuntime.TryGetActiveRuntimeInstance(out BuoyancyDisplacementRuntime runtime) ||
-                !runtime.TryOpenSimdTuningEditorView(out NativeArray<SimdHydrodynamicTuningDTO> tuning) ||
+                !runtime.TryOpenSimdTuningEditorView(out NativeArray<SimdHydrodynamicTuningDTO>.ReadOnly tuning) ||
                 !tuning.IsCreated ||
                 tuning.Length <= 0)
             {
@@ -199,7 +199,7 @@ namespace Hecton8.Editor.Physics
             SimdHydrodynamicTuningDTO value = tuning[0];
             value.ScalarFallbackWeight01 = math.saturate(_scalarFallbackSlider.value);
             value.Flags = SimdVectorizationConstants.FlagActive;
-            tuning[0] = value;
+            runtime.TryApplySimdScalarFallbackEditorTuning(value.ScalarFallbackWeight01);
             _lastScalarFallbackCentis = ToCentis(value.ScalarFallbackWeight01);
         }
 

@@ -77,10 +77,10 @@ namespace Hecton8.Physics.Editor
         {
             if (!BuoyancyDisplacementRuntime.TryGetActiveRuntimeInstance(out BuoyancyDisplacementRuntime runtime) ||
                 !runtime.TryOpenSleepTelemetryEditorViews(
-                    out NativeArray<BuoyancyTuningDTO> tuning,
+                    out NativeArray<BuoyancyTuningDTO>.ReadOnly tuning,
                     out _,
                     out _,
-                    out NativeArray<BuoyancySleepSdfConfigDTO> sdfConfig))
+                    out NativeArray<BuoyancySleepSdfConfigDTO>.ReadOnly sdfConfig))
             {
                 return;
             }
@@ -99,25 +99,16 @@ namespace Hecton8.Physics.Editor
         {
             if (!BuoyancyDisplacementRuntime.TryGetActiveRuntimeInstance(out BuoyancyDisplacementRuntime runtime) ||
                 !runtime.TryOpenSleepTelemetryEditorViews(
-                    out NativeArray<BuoyancyTuningDTO> tuning,
+                    out NativeArray<BuoyancyTuningDTO>.ReadOnly tuning,
                     out _,
                     out _,
-                    out NativeArray<BuoyancySleepSdfConfigDTO> sdfConfig))
+                    out NativeArray<BuoyancySleepSdfConfigDTO>.ReadOnly sdfConfig))
             {
                 return;
             }
 
-            BuoyancyTuningDTO tuningValue = tuning[0];
-            tuningValue.SleepSpeedSq = math.max(0.000001f, _baseSleepThreshold.value);
-            tuning[0] = tuningValue;
-
-            BuoyancySleepSdfConfigDTO configValue = sdfConfig[0];
             int restFrames = math.clamp((int)math.round(_restingFrameCount.value), 1, 255);
-            uint packedRestFrames = (uint)restFrames << BuoyancyDisplacementConstants.SleepSdfConfigRestFrameOverrideShift;
-            configValue.Flags = (configValue.Flags & ~BuoyancyDisplacementConstants.SleepSdfConfigRestFrameOverrideMask) | packedRestFrames | BuoyancyDisplacementConstants.FlagActive;
-            float stir = math.max(0.0001f, _currentStirThreshold.value);
-            configValue.AmbientStirThresholdSq = stir * stir;
-            sdfConfig[0] = configValue;
+            runtime.TryApplySleepTelemetryEditorTuning(_baseSleepThreshold.value, restFrames, _currentStirThreshold.value);
         }
 
         private static void SetSliderWithoutNotify(Slider slider, float value)
@@ -142,8 +133,8 @@ namespace Hecton8.Physics.Editor
                 if (!BuoyancyDisplacementRuntime.TryGetActiveRuntimeInstance(out BuoyancyDisplacementRuntime runtime) ||
                     !runtime.TryOpenSleepTelemetryEditorViews(
                         out _,
-                        out NativeArray<SleepStateTelemetryEntry> telemetry,
-                        out NativeArray<int> cursor,
+                        out NativeArray<SleepStateTelemetryEntry>.ReadOnly telemetry,
+                        out NativeArray<int>.ReadOnly cursor,
                         out _) ||
                     telemetry.Length <= 0 ||
                     cursor.Length <= 0)

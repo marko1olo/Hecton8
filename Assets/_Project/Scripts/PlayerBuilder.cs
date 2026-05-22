@@ -3080,7 +3080,7 @@ namespace Hecton8.Building
             _lastConstructionWorldSampler = worldSampler;
 
             IDataVault telemetryVault = _shinobuSocketVault;
-            if (ModularBaseConstructionValidator.TryReadTelemetryRing(telemetryVault, out var telemetryRing))
+            if (ModularBaseConstructionValidator.EnsureTelemetryRing(telemetryVault, out var telemetryRing))
             {
                 ModularBaseConstructionValidator.WriteTelemetry(
                     telemetryRing,

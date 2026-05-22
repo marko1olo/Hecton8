@@ -972,3 +972,27 @@ Cinematic Cheats used: No extra propulsion simulation or managed diagnostic mirr
 Exact Microseconds saved: 0 us measured. Static outcome: broad audit dropped `nativeCollectionPublicMutableApiExposure` from `136` to `134`, `nativeApiExposureBuildPlayerRuntime` from `123` to `121`, `nativeApiExposureOutRefMutable` from `105` to `103`, `nativeApiRiskRuntimeDiagnosticNamedMutableView` from `20` to `19`, and `nativeApiRiskRuntimeOutRefMutableView` from `65` to `64`.
 
 Evidence: Focused scan found read-only seaglide editor resolver signatures and no `GetUnsafePtr()` in the seaglide editor path. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_after_seaglide_editor_readonly.json` returned `PASS_WITH_WARNINGS` with `nativeCollectionPublicMutableApiExposure=134`, `nativeApiExposureBuildPlayerRuntime=121`, `nativeApiExposureOutRefMutable=103`, `nativeApiRiskRuntimeDiagnosticNamedMutableView=19`, and `nativeApiRiskRuntimeOutRefMutableView=64`. `git diff --check` on touched files reported only LF/CRLF normalization warnings. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Animation Tuning Read-Only Editor Views
+
+What was wrong: Procedural bone and kinetic character public tuning editor APIs returned mutable Vault-backed native arrays. Editor windows used those mutable aliases to write tuning rows directly, mixing diagnostic read views with mutation authority.
+
+What was done: Converted both public tuning accessors to `NativeArray<T>.ReadOnly`. Added `TryApplyEditorTuning` owner methods and private mutable tuning resolvers for CSV/import paths inside each runtime.
+
+Cinematic Cheats used: No extra animation solve, managed mirror, or GPU upload path was added. Editors still read compact tuning DTO rows and submit a single owner-side tuning row update.
+
+Exact Microseconds saved: 0 us measured. Static outcome: broad audit dropped `nativeCollectionPublicMutableApiExposure` from `134` to `132`, `nativeApiExposureBuildPlayerRuntime` from `121` to `119`, `nativeApiExposureOutRefMutable` from `103` to `101`, and `nativeApiRiskRuntimeDiagnosticNamedMutableView` from `19` to `17`.
+
+Evidence: Focused scan found read-only public tuning views, private mutable CSV resolvers, and editor calls routed through `TryApplyEditorTuning`. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_after_animation_tuning_readonly.json` returned `PASS_WITH_WARNINGS` with `nativeCollectionPublicMutableApiExposure=132`, `nativeApiExposureBuildPlayerRuntime=119`, `nativeApiExposureOutRefMutable=101`, and `nativeApiRiskRuntimeDiagnosticNamedMutableView=17`. `git diff --check` on touched files reported only LF/CRLF normalization warnings. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Buoyancy Editor Read-Only Views and Owner Apply Routes
+
+What was wrong: `BuoyancyDisplacementRuntime` editor APIs exposed main tuning, counters, telemetry, sleep telemetry/config, and SIMD scalar fallback tuning as mutable native arrays to editor/X-Ray windows. Designer sliders and sleep-state tuning were writing through borrowed views instead of explicit owner mutation routes.
+
+What was done: Converted public buoyancy editor outputs to `NativeArray<T>.ReadOnly`. Added `TryApplyEditorTuning`, `TryApplySleepTelemetryEditorTuning`, and `TryApplySimdScalarFallbackEditorTuning` so editor UI writes bounded scalar/DTO values through the owner runtime.
+
+Cinematic Cheats used: No extra buoyancy simulation, managed editor cache, or physics probe was added. The editor stays on compact Vault rows and X-Ray telemetry as a diagnostic proxy.
+
+Exact Microseconds saved: 0 us measured. Static outcome: broad audit dropped `nativeCollectionPublicMutableApiExposure` from `132` to `128`, `nativeApiExposureBuildPlayerRuntime` from `119` to `115`, `nativeApiExposureOutRefMutable` from `101` to `97`, `nativeApiRiskRuntimeDiagnosticNamedMutableView` from `17` to `14`, and `nativeApiRiskRuntimeOutRefMutableView` from `64` to `63`.
+
+Evidence: Focused scan found read-only buoyancy editor route signatures, owner apply methods, and no direct editor native writes. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_after_buoyancy_editor_readonly.json` returned `PASS_WITH_WARNINGS` with `nativeCollectionPublicMutableApiExposure=128`, `nativeApiExposureBuildPlayerRuntime=115`, `nativeApiExposureOutRefMutable=97`, `nativeApiRiskRuntimeDiagnosticNamedMutableView=14`, and `nativeApiRiskRuntimeOutRefMutableView=63`. `git diff --check` on touched files reported only LF/CRLF normalization warnings. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.

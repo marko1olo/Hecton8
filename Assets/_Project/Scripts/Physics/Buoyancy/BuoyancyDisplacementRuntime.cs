@@ -126,12 +126,12 @@ namespace Hecton8.Physics
         /// <param name="cursor">Opened buoyancy telemetry cursor.</param>
         /// <remarks>Editor-only cold surface; gameplay phases do not call this accessor.</remarks>
         public bool TryOpenEditorViews(
-            out NativeArray<BuoyancyTuningDTO> tuning,
-            out NativeArray<BuoyancyCounterDTO> counters,
-            out NativeArray<BuoyancyTelemetryEntry> telemetry,
-            out NativeArray<int> cursor)
+            out NativeArray<BuoyancyTuningDTO>.ReadOnly tuning,
+            out NativeArray<BuoyancyCounterDTO>.ReadOnly counters,
+            out NativeArray<BuoyancyTelemetryEntry>.ReadOnly telemetry,
+            out NativeArray<int>.ReadOnly cursor)
         {
-            NativeArray<SleepStateTelemetryEntry> unused;
+            NativeArray<SleepStateTelemetryEntry>.ReadOnly unused;
             return TryOpenEditorViews(out tuning, out counters, out telemetry, out unused, out cursor);
         }
 
@@ -143,11 +143,11 @@ namespace Hecton8.Physics
         /// <param name="cursor">Opened telemetry cursor.</param>
         /// <remarks>Editor-only cold surface; returned buffers are not a read-only gameplay API.</remarks>
         public bool TryOpenEditorViews(
-            out NativeArray<BuoyancyTuningDTO> tuning,
-            out NativeArray<BuoyancyCounterDTO> counters,
-            out NativeArray<BuoyancyTelemetryEntry> telemetry,
-            out NativeArray<SleepStateTelemetryEntry> sleepTelemetry,
-            out NativeArray<int> cursor)
+            out NativeArray<BuoyancyTuningDTO>.ReadOnly tuning,
+            out NativeArray<BuoyancyCounterDTO>.ReadOnly counters,
+            out NativeArray<BuoyancyTelemetryEntry>.ReadOnly telemetry,
+            out NativeArray<SleepStateTelemetryEntry>.ReadOnly sleepTelemetry,
+            out NativeArray<int>.ReadOnly cursor)
         {
             tuning = default;
             counters = default;
@@ -158,16 +158,26 @@ namespace Hecton8.Physics
             if (vault == null || !HandlesReady(vault))
                 return false;
 
-            tuning = ResolveVaultBuffer(vault, in _tuningHandle);
-            counters = ResolveVaultBuffer(vault, in _countersHandle);
-            telemetry = ResolveVaultBuffer(vault, in _telemetryRingHandle);
-            sleepTelemetry = ResolveVaultBuffer(vault, in _sleepTelemetryRingHandle);
-            cursor = ResolveVaultBuffer(vault, in _telemetryCursorHandle);
-            return tuning.IsCreated && tuning.Length > 0 &&
-                   counters.IsCreated && counters.Length > 0 &&
-                   telemetry.IsCreated && telemetry.Length > 0 &&
-                   sleepTelemetry.IsCreated && sleepTelemetry.Length > 0 &&
-                   cursor.IsCreated && cursor.Length > 0;
+            NativeArray<BuoyancyTuningDTO> tuningBuffer = ResolveVaultBuffer(vault, in _tuningHandle);
+            NativeArray<BuoyancyCounterDTO> counterBuffer = ResolveVaultBuffer(vault, in _countersHandle);
+            NativeArray<BuoyancyTelemetryEntry> telemetryBuffer = ResolveVaultBuffer(vault, in _telemetryRingHandle);
+            NativeArray<SleepStateTelemetryEntry> sleepTelemetryBuffer = ResolveVaultBuffer(vault, in _sleepTelemetryRingHandle);
+            NativeArray<int> cursorBuffer = ResolveVaultBuffer(vault, in _telemetryCursorHandle);
+            if (!tuningBuffer.IsCreated || tuningBuffer.Length <= 0 ||
+                !counterBuffer.IsCreated || counterBuffer.Length <= 0 ||
+                !telemetryBuffer.IsCreated || telemetryBuffer.Length <= 0 ||
+                !sleepTelemetryBuffer.IsCreated || sleepTelemetryBuffer.Length <= 0 ||
+                !cursorBuffer.IsCreated || cursorBuffer.Length <= 0)
+            {
+                return false;
+            }
+
+            tuning = tuningBuffer.AsReadOnly();
+            counters = counterBuffer.AsReadOnly();
+            telemetry = telemetryBuffer.AsReadOnly();
+            sleepTelemetry = sleepTelemetryBuffer.AsReadOnly();
+            cursor = cursorBuffer.AsReadOnly();
+            return true;
         }
 
         /// <summary>Opens read-only editor views for SIMD benchmark telemetry and tolerance rows.</summary>
@@ -209,15 +219,19 @@ namespace Hecton8.Physics
         /// <summary>Opens the editor-only SIMD hydrodynamic tuning row.</summary>
         /// <param name="tuning">Opened SIMD hydrodynamic tuning row.</param>
         /// <remarks>Editor-only cold surface; not used by runtime gameplay phases.</remarks>
-        public bool TryOpenSimdTuningEditorView(out NativeArray<SimdHydrodynamicTuningDTO> tuning)
+        public bool TryOpenSimdTuningEditorView(out NativeArray<SimdHydrodynamicTuningDTO>.ReadOnly tuning)
         {
             tuning = default;
             IDataVault vault = _dataVault;
             if (vault == null || !HandlesReady(vault))
                 return false;
 
-            tuning = ResolveVaultBuffer(vault, in _simdHydrodynamicTuningHandle);
-            return tuning.IsCreated && tuning.Length > 0;
+            NativeArray<SimdHydrodynamicTuningDTO> tuningBuffer = ResolveVaultBuffer(vault, in _simdHydrodynamicTuningHandle);
+            if (!tuningBuffer.IsCreated || tuningBuffer.Length <= 0)
+                return false;
+
+            tuning = tuningBuffer.AsReadOnly();
+            return true;
         }
 
         /// <summary>Opens mutable editor views for SHINOBU_249 sleep telemetry and SDF tuning.</summary>
@@ -227,10 +241,10 @@ namespace Hecton8.Physics
         /// <param name="sdfConfig">Opened sleep SDF config row.</param>
         /// <remarks>Editor-only cold surface used by the Physics Sleep State X-Ray window.</remarks>
         public bool TryOpenSleepTelemetryEditorViews(
-            out NativeArray<BuoyancyTuningDTO> tuning,
-            out NativeArray<SleepStateTelemetryEntry> telemetry,
-            out NativeArray<int> cursor,
-            out NativeArray<BuoyancySleepSdfConfigDTO> sdfConfig)
+            out NativeArray<BuoyancyTuningDTO>.ReadOnly tuning,
+            out NativeArray<SleepStateTelemetryEntry>.ReadOnly telemetry,
+            out NativeArray<int>.ReadOnly cursor,
+            out NativeArray<BuoyancySleepSdfConfigDTO>.ReadOnly sdfConfig)
         {
             tuning = default;
             telemetry = default;
@@ -240,14 +254,91 @@ namespace Hecton8.Physics
             if (vault == null || !HandlesReady(vault))
                 return false;
 
-            tuning = ResolveVaultBuffer(vault, in _tuningHandle);
-            telemetry = ResolveVaultBuffer(vault, in _sleepTelemetryRingHandle);
-            cursor = ResolveVaultBuffer(vault, in _sleepTelemetryCursorHandle);
-            sdfConfig = ResolveVaultBuffer(vault, in _sleepSdfConfigHandle);
-            return tuning.IsCreated && tuning.Length > 0 &&
-                   telemetry.IsCreated && telemetry.Length > 0 &&
-                   cursor.IsCreated && cursor.Length > 0 &&
-                   sdfConfig.IsCreated && sdfConfig.Length > 0;
+            NativeArray<BuoyancyTuningDTO> tuningBuffer = ResolveVaultBuffer(vault, in _tuningHandle);
+            NativeArray<SleepStateTelemetryEntry> telemetryBuffer = ResolveVaultBuffer(vault, in _sleepTelemetryRingHandle);
+            NativeArray<int> cursorBuffer = ResolveVaultBuffer(vault, in _sleepTelemetryCursorHandle);
+            NativeArray<BuoyancySleepSdfConfigDTO> sdfConfigBuffer = ResolveVaultBuffer(vault, in _sleepSdfConfigHandle);
+            if (!tuningBuffer.IsCreated || tuningBuffer.Length <= 0 ||
+                !telemetryBuffer.IsCreated || telemetryBuffer.Length <= 0 ||
+                !cursorBuffer.IsCreated || cursorBuffer.Length <= 0 ||
+                !sdfConfigBuffer.IsCreated || sdfConfigBuffer.Length <= 0)
+            {
+                return false;
+            }
+
+            tuning = tuningBuffer.AsReadOnly();
+            telemetry = telemetryBuffer.AsReadOnly();
+            cursor = cursorBuffer.AsReadOnly();
+            sdfConfig = sdfConfigBuffer.AsReadOnly();
+            return true;
+        }
+
+        public bool TryApplyEditorTuning(in BuoyancyTuningDTO tuning)
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null || !HandlesReady(vault))
+                return false;
+
+            NativeArray<BuoyancyTuningDTO> tuningBuffer = ResolveVaultBuffer(vault, in _tuningHandle);
+            if (!tuningBuffer.IsCreated || tuningBuffer.Length <= 0)
+                return false;
+
+            BuoyancyTuningDTO value = tuning;
+            value.GlobalQualityWeight = math.saturate(math.select(1f, value.GlobalQualityWeight, math.isfinite(value.GlobalQualityWeight)));
+            value.WaterDensityKgPerM3 = math.clamp(math.select(BuoyancyDisplacementConstants.DefaultWaterDensityKgPerM3, value.WaterDensityKgPerM3, math.isfinite(value.WaterDensityKgPerM3)), 1f, 2000f);
+            value.GravityMetersPerSecondSq = math.max(0f, math.select(BuoyancyDisplacementConstants.DefaultGravityMetersPerSecondSq, value.GravityMetersPerSecondSq, math.isfinite(value.GravityMetersPerSecondSq)));
+            value.LinearDragCoefficient = math.max(0f, math.select(0f, value.LinearDragCoefficient, math.isfinite(value.LinearDragCoefficient)));
+            value.QuadraticDragCoefficient = math.max(0f, math.select(0f, value.QuadraticDragCoefficient, math.isfinite(value.QuadraticDragCoefficient)));
+            value.SurfaceDampening = math.saturate(math.select(0f, value.SurfaceDampening, math.isfinite(value.SurfaceDampening)));
+            value.FlowForceCoefficient = math.max(0f, math.select(0f, value.FlowForceCoefficient, math.isfinite(value.FlowForceCoefficient)));
+            value.ActiveStateCount = math.clamp(value.ActiveStateCount, 0, BuoyancyDisplacementConstants.StateCapacity);
+            tuningBuffer[0] = value;
+            return true;
+        }
+
+        public bool TryApplySleepTelemetryEditorTuning(float sleepSpeedSq, int restFrames, float currentStirThreshold)
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null || !HandlesReady(vault))
+                return false;
+
+            NativeArray<BuoyancyTuningDTO> tuningBuffer = ResolveVaultBuffer(vault, in _tuningHandle);
+            NativeArray<BuoyancySleepSdfConfigDTO> configBuffer = ResolveVaultBuffer(vault, in _sleepSdfConfigHandle);
+            if (!tuningBuffer.IsCreated || tuningBuffer.Length <= 0 ||
+                !configBuffer.IsCreated || configBuffer.Length <= 0)
+            {
+                return false;
+            }
+
+            BuoyancyTuningDTO tuningValue = tuningBuffer[0];
+            tuningValue.SleepSpeedSq = math.max(0.000001f, math.select(0.000001f, sleepSpeedSq, math.isfinite(sleepSpeedSq)));
+            tuningBuffer[0] = tuningValue;
+
+            BuoyancySleepSdfConfigDTO configValue = configBuffer[0];
+            int safeRestFrames = math.clamp(restFrames, 1, 255);
+            uint packedRestFrames = (uint)safeRestFrames << BuoyancyDisplacementConstants.SleepSdfConfigRestFrameOverrideShift;
+            configValue.Flags = (configValue.Flags & ~BuoyancyDisplacementConstants.SleepSdfConfigRestFrameOverrideMask) | packedRestFrames | BuoyancyDisplacementConstants.FlagActive;
+            float stir = math.max(0.0001f, math.select(0.0001f, currentStirThreshold, math.isfinite(currentStirThreshold)));
+            configValue.AmbientStirThresholdSq = stir * stir;
+            configBuffer[0] = configValue;
+            return true;
+        }
+
+        public bool TryApplySimdScalarFallbackEditorTuning(float scalarFallbackWeight01)
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null || !HandlesReady(vault))
+                return false;
+
+            NativeArray<SimdHydrodynamicTuningDTO> tuningBuffer = ResolveVaultBuffer(vault, in _simdHydrodynamicTuningHandle);
+            if (!tuningBuffer.IsCreated || tuningBuffer.Length <= 0)
+                return false;
+
+            SimdHydrodynamicTuningDTO value = tuningBuffer[0];
+            value.ScalarFallbackWeight01 = math.saturate(math.select(0f, scalarFallbackWeight01, math.isfinite(scalarFallbackWeight01)));
+            value.Flags = SimdVectorizationConstants.FlagActive;
+            tuningBuffer[0] = value;
+            return true;
         }
 #endif
 

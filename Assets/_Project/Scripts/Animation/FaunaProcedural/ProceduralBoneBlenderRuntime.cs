@@ -108,7 +108,26 @@ namespace Hecton8.Animation.FaunaProcedural
             return false;
         }
 
-        public bool TryResolveTuningForEditor(out NativeArray<ProceduralBoneRigTuningDTO> tuning)
+        public bool TryResolveTuningForEditor(out NativeArray<ProceduralBoneRigTuningDTO>.ReadOnly tuning)
+        {
+            tuning = default;
+            if (!TryResolveTuningMutable(out NativeArray<ProceduralBoneRigTuningDTO> mutableTuning))
+                return false;
+
+            tuning = mutableTuning.AsReadOnly();
+            return true;
+        }
+
+        public bool TryApplyEditorTuning(in ProceduralBoneRigTuningDTO tuning)
+        {
+            if (!TryResolveTuningMutable(out NativeArray<ProceduralBoneRigTuningDTO> mutableTuning))
+                return false;
+
+            mutableTuning[0] = ProceduralBoneSanitizer.SanitizeTuning(tuning);
+            return true;
+        }
+
+        private bool TryResolveTuningMutable(out NativeArray<ProceduralBoneRigTuningDTO> tuning)
         {
             tuning = default;
             IDataVault vault = _dataVault;
@@ -154,7 +173,7 @@ namespace Hecton8.Animation.FaunaProcedural
 
         public bool TryApplyCsvProfile(string csvText)
         {
-            if (string.IsNullOrEmpty(csvText) || !TryResolveTuningForEditor(out NativeArray<ProceduralBoneRigTuningDTO> tuning))
+            if (string.IsNullOrEmpty(csvText) || !TryResolveTuningMutable(out NativeArray<ProceduralBoneRigTuningDTO> tuning))
                 return false;
 
             IDataVault vault = _dataVault;

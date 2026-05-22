@@ -93,7 +93,7 @@ namespace Hecton8.Editor
             if (runtime.TryGetKineticGraphicsBuffer(out GraphicsBuffer buffer, out int uploadedMatrices))
                 matrixCount = math.min(uploadedMatrices, buffer != null ? buffer.count : 0);
 
-            if (runtime.TryResolveTuningForEditor(out NativeArray<KineticCharacterTuningDTO> tuning) &&
+            if (runtime.TryResolveTuningForEditor(out NativeArray<KineticCharacterTuningDTO>.ReadOnly tuning) &&
                 tuning.IsCreated &&
                 tuning.Length > 0)
             {
@@ -123,7 +123,7 @@ namespace Hecton8.Editor
         {
             if (!Application.isPlaying ||
                 !KineticCharacterAnimatorRuntime.TryGetActiveRuntimeInstance(out KineticCharacterAnimatorRuntime runtime) ||
-                !runtime.TryResolveTuningForEditor(out NativeArray<KineticCharacterTuningDTO> tuning) ||
+                !runtime.TryResolveTuningForEditor(out NativeArray<KineticCharacterTuningDTO>.ReadOnly tuning) ||
                 !tuning.IsCreated ||
                 tuning.Length <= 0)
             {
@@ -132,7 +132,7 @@ namespace Hecton8.Editor
 
             KineticCharacterTuningDTO dto = tuning[0];
             mutator(ref dto);
-            tuning[0] = KineticCharacterSanitizer.SanitizeTuning(dto);
+            runtime.TryApplyEditorTuning(dto);
         }
 
         private static void OnFrequencyChanged(float value)

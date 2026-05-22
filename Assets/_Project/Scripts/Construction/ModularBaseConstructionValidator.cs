@@ -553,14 +553,19 @@ namespace Hecton8.Construction
 
         public static bool TryReadTelemetryRing(
             IDataVault vault,
-            out NativeArray<ConstructionTelemetryEntry> telemetryRing)
+            out NativeArray<ConstructionTelemetryEntry>.ReadOnly telemetryRing)
         {
             telemetryRing = default;
             if (vault == null ||
-                !TryResolveCachedValidationBuffer(vault, in s_TelemetryHandle, 1, out telemetryRing))
+                !TryResolveCachedValidationBuffer(
+                    vault,
+                    in s_TelemetryHandle,
+                    1,
+                    out NativeArray<ConstructionTelemetryEntry> telemetryBuffer))
                 return false;
 
-            return telemetryRing.IsCreated && telemetryRing.Length > 0;
+            telemetryRing = telemetryBuffer.AsReadOnly();
+            return telemetryBuffer.IsCreated && telemetryBuffer.Length > 0;
         }
 
         public static bool EnsureTelemetryRing(

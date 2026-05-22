@@ -38,7 +38,7 @@ namespace Hecton8.Animation.FaunaProcedural.Editor
                 return;
             }
 
-            if (!runtime.TryResolveTuningForEditor(out NativeArray<ProceduralBoneRigTuningDTO> tuning) ||
+            if (!runtime.TryResolveTuningForEditor(out NativeArray<ProceduralBoneRigTuningDTO>.ReadOnly tuning) ||
                 !tuning.IsCreated ||
                 tuning.Length <= 0)
             {
@@ -63,7 +63,7 @@ namespace Hecton8.Animation.FaunaProcedural.Editor
             dto.ActiveSkeletonCount = EditorGUILayout.IntSlider("Active Skeletons", dto.ActiveSkeletonCount, 0, ProceduralBoneBlenderConstants.DefaultSkeletonCapacity);
             if (EditorGUI.EndChangeCheck())
             {
-                tuning[0] = ProceduralBoneSanitizer.SanitizeTuning(dto);
+                runtime.TryApplyEditorTuning(dto);
                 Repaint();
             }
 
@@ -97,7 +97,7 @@ namespace Hecton8.Animation.FaunaProcedural.Editor
 
             EditorGUILayout.LabelField("GPU Buffer Count", buffer.count.ToString());
             EditorGUILayout.LabelField("Matrix Upload Count", matrixCount.ToString());
-            if (runtime.TryResolveTuningForEditor(out NativeArray<ProceduralBoneRigTuningDTO> tuning) &&
+            if (runtime.TryResolveTuningForEditor(out NativeArray<ProceduralBoneRigTuningDTO>.ReadOnly tuning) &&
                 tuning.IsCreated &&
                 tuning.Length > 0)
             {

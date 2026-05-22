@@ -100,7 +100,7 @@ namespace Hecton8.Editor.Physics
         private void ResolveAndPullTuning()
         {
             if (!TryResolveViews(
-                    out NativeArray<BuoyancyTuningDTO> tuning,
+                    out NativeArray<BuoyancyTuningDTO>.ReadOnly tuning,
                     out _,
                     out _,
                     out _))
@@ -126,7 +126,7 @@ namespace Hecton8.Editor.Physics
         private void PushTuning()
         {
             if (!TryResolveViews(
-                    out NativeArray<BuoyancyTuningDTO> tuning,
+                    out NativeArray<BuoyancyTuningDTO>.ReadOnly tuning,
                     out _,
                     out _,
                     out _))
@@ -144,7 +144,8 @@ namespace Hecton8.Editor.Physics
             value.FlowForceCoefficient = math.max(0f, _flowForceSlider.value);
             value.SeafloorAUPY = _seafloorField.value;
             value.ActiveStateCount = math.clamp(_activeCountField.value, 0, BuoyancyDisplacementConstants.StateCapacity);
-            tuning[0] = value;
+            if (BuoyancyDisplacementRuntime.TryGetActiveRuntimeInstance(out BuoyancyDisplacementRuntime runtime))
+                runtime.TryApplyEditorTuning(value);
         }
 
         private void GenerateMock()
@@ -168,9 +169,9 @@ namespace Hecton8.Editor.Physics
 
             if (!TryResolveViews(
                     out _,
-                    out NativeArray<BuoyancyCounterDTO> counters,
-                    out NativeArray<BuoyancyTelemetryEntry> telemetry,
-                    out NativeArray<int> cursor))
+                    out NativeArray<BuoyancyCounterDTO>.ReadOnly counters,
+                    out NativeArray<BuoyancyTelemetryEntry>.ReadOnly telemetry,
+                    out NativeArray<int>.ReadOnly cursor))
             {
                 _telemetryLabel.text = "Play Mode runtime and GlobalDataVault required.";
                 return;
@@ -296,10 +297,10 @@ namespace Hecton8.Editor.Physics
         }
 
         private static bool TryResolveViews(
-            out NativeArray<BuoyancyTuningDTO> tuning,
-            out NativeArray<BuoyancyCounterDTO> counters,
-            out NativeArray<BuoyancyTelemetryEntry> telemetry,
-            out NativeArray<int> cursor)
+            out NativeArray<BuoyancyTuningDTO>.ReadOnly tuning,
+            out NativeArray<BuoyancyCounterDTO>.ReadOnly counters,
+            out NativeArray<BuoyancyTelemetryEntry>.ReadOnly telemetry,
+            out NativeArray<int>.ReadOnly cursor)
         {
             tuning = default;
             counters = default;
