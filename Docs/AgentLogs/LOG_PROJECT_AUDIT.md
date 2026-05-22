@@ -1032,3 +1032,39 @@ Cinematic Cheats used: No catalog object graph or managed byte mirror was added.
 Exact Microseconds saved: 0 us measured. Static outcome: broad audit dropped `nativeCollectionPublicMutableApiExposure` from `125` to `123`, `nativeApiExposureBuildPlayerRuntime` from `113` to `111`, `nativeApiExposureOutRefMutable` from `94` to `92`, and `nativeApiRiskRuntimeOutRefMutableView` from `61` to `59`.
 
 Evidence: Focused scan found no first-party call sites for the changed byte-load APIs. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_after_base_module_catalog_bytes_readonly.json` returned `PASS_WITH_WARNINGS` with `nativeCollectionPublicMutableApiExposure=123`, `nativeApiExposureBuildPlayerRuntime=111`, `nativeApiExposureOutRefMutable=92`, and `nativeApiRiskRuntimeOutRefMutableView=59`. `git diff --check` on the touched file reported only LF/CRLF normalization warnings. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Construction Socket Editor Read-Only Pass
+
+What was wrong: `ConstructionSocketEditorVaultReads.TryRead<T>` returned mutable native aliases from an editor-only read helper. Current consumers were UI/Gizmo read paths, not owner mutation paths.
+
+What was done: Converted the helper output to `NativeArray<T>.ReadOnly` and updated counters, telemetry, socket state, and socket AUP editor consumers to read-only aliases. Runtime construction writer/acquire routes were not touched.
+
+Cinematic Cheats used: None added. This is an authority/read-surface cleanup for editor diagnostics.
+
+Exact Microseconds saved: 0 us measured. Static hygiene gain: `nativeCollectionPublicMutableApiExposure` 123 -> 122 and `nativeApiExposureOutRefMutable` 92 -> 91 in `Docs/Reports/PROJECT_AUDIT_polish_after_construction_socket_editor_readonly.json`.
+
+Verification: Focused scan found only read-only construction socket editor consumers. Static audit status remained `PASS_WITH_WARNINGS`. `git diff --check` reported only LF/CRLF normalization warnings. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Hadal Preview Read-Only Pass
+
+What was wrong: `HadalTrenchPreviewStore.TryReadPreview` exported mutable editor preview fault and thermal vent arrays to the SceneView drawer even though the drawer only reads rows for preview visualization.
+
+What was done: Converted the preview fault and vent outputs to `NativeArray<T>.ReadOnly` and updated the drawer call site. Preview store allocations, H8Memory release, and generation jobs remain the only writer path.
+
+Cinematic Cheats used: Existing preview remains a SceneView optical proxy, drawing fault lines and vent caps instead of baking or simulating terrain during inspection.
+
+Exact Microseconds saved: 0 us measured. Static hygiene gain: `nativeCollectionPublicMutableApiExposure` 122 -> 121, `nativeApiExposureBuildEditorOnly` 4 -> 3, and `nativeApiExposureOutRefMutable` 91 -> 90 in `Docs/Reports/PROJECT_AUDIT_polish_after_hadal_preview_readonly.json`.
+
+Verification: Focused scan found only read-only Hadal preview outputs. Static audit status remained `PASS_WITH_WARNINGS`. `git diff --check` reported only LF/CRLF normalization warnings. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Lore Entity Reader Read-Only Pass
+
+What was wrong: `ScannableTarget.TryReadLoreEntityBuffers` returned mutable AUP/hash arrays from a public read accessor to `ScannerTool`, even though the scanner only reads them for scientific lore candidate scoring.
+
+What was done: Converted the public lore entity outputs and scalar evaluator inputs to `NativeArray<T>.ReadOnly`. Private owner-side Vault helpers remain mutable for publish and clear operations.
+
+Cinematic Cheats used: Existing scanner candidate resolution remains a cheap scalar cone/distance test over AUP-localized snapshots instead of physics queries over scene objects.
+
+Exact Microseconds saved: 0 us measured. Static hygiene gain: `nativeCollectionPublicMutableApiExposure` 121 -> 120, `nativeApiExposureBuildPlayerRuntime` 111 -> 110, and `nativeApiExposureOutRefMutable` 90 -> 89 in `Docs/Reports/PROJECT_AUDIT_polish_after_lore_entity_readonly.json`.
+
+Verification: Focused scan found read-only public lore reader signatures and unchanged private owner writer helpers. Static audit status remained `PASS_WITH_WARNINGS`. `git diff --check` reported only LF/CRLF normalization warnings. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.

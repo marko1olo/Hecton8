@@ -220,19 +220,26 @@ namespace Hecton8.Gameplay
         }
 
         public static bool TryReadLoreEntityBuffers(
-            out NativeArray<AbsoluteUniversePosition> loreEntityAups,
-            out NativeArray<uint> loreEntityHashes,
+            out NativeArray<AbsoluteUniversePosition>.ReadOnly loreEntityAups,
+            out NativeArray<uint>.ReadOnly loreEntityHashes,
             out int count)
         {
             loreEntityAups = default;
             loreEntityHashes = default;
             count = s_loreEntityCount;
-            return count > 0 &&
-                   TryReadLoreEntityVaultBuffers(out loreEntityAups, out loreEntityHashes) &&
-                   loreEntityAups.IsCreated &&
-                   loreEntityHashes.IsCreated &&
-                   loreEntityAups.Length >= count &&
-                   loreEntityHashes.Length >= count;
+            if (count <= 0 ||
+                !TryReadLoreEntityVaultBuffers(out NativeArray<AbsoluteUniversePosition> aups, out NativeArray<uint> hashes) ||
+                !aups.IsCreated ||
+                !hashes.IsCreated ||
+                aups.Length < count ||
+                hashes.Length < count)
+            {
+                return false;
+            }
+
+            loreEntityAups = aups.AsReadOnly();
+            loreEntityHashes = hashes.AsReadOnly();
+            return true;
         }
 
         public static ScannableTarget ResolveLoreEntityTarget(int index, uint hash)

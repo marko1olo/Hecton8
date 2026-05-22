@@ -138,7 +138,7 @@ namespace Hecton8.Editor
         {
             if (_manager == null)
                 ResolveManager();
-            if (_manager == null || !_manager.TryGetChunkResidencyDtos(out NativeArray<ChunkResidencyDTO> chunks, out int count))
+            if (_manager == null || !_manager.TryGetChunkResidencyDtos(out NativeArray<ChunkResidencyDTO>.ReadOnly chunks, out int count))
                 return;
 
             int safeCount = math.min(count, chunks.Length);

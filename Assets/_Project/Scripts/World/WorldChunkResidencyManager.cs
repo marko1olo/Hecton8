@@ -1026,9 +1026,10 @@ namespace Hecton8.World
             return points.Length > 0 && count > 0;
         }
 
-        public bool TryGetChunkResidencyDtos(out NativeArray<ChunkResidencyDTO> chunks, out int count)
+        public bool TryGetChunkResidencyDtos(out NativeArray<ChunkResidencyDTO>.ReadOnly chunks, out int count)
         {
-            chunks = ResolveChunkResidencyDtos();
+            NativeArray<ChunkResidencyDTO> resolved = ResolveChunkResidencyDtos();
+            chunks = resolved.IsCreated ? resolved.AsReadOnly() : default;
             count = _chunkCount;
             return !_residencyJobScheduled && chunks.IsCreated && count > 0;
         }

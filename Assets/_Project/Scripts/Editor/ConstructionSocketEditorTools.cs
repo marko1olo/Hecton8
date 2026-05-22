@@ -124,13 +124,13 @@ namespace Hecton8.Editor
             IDataVault vault = GlobalRegistry.DataVault;
             if (vault != null)
             {
-                if (ConstructionSocketEditorVaultReads.TryRead(vault, BufferID.ConstructionSocketCounters, out NativeArray<int> counters) &&
+                if (ConstructionSocketEditorVaultReads.TryRead(vault, BufferID.ConstructionSocketCounters, out NativeArray<int>.ReadOnly counters) &&
                     counters.Length > 1)
                 {
                     activeSockets = counters[1];
                 }
 
-                if (ConstructionSocketEditorVaultReads.TryRead(vault, BufferID.ConstructionSocketTelemetry, out NativeArray<ConstructionSocketTelemetryEntry> telemetry) &&
+                if (ConstructionSocketEditorVaultReads.TryRead(vault, BufferID.ConstructionSocketTelemetry, out NativeArray<ConstructionSocketTelemetryEntry>.ReadOnly telemetry) &&
                     telemetry.Length > 0)
                 {
                     solverUs = telemetry[(int)(Time.frameCount % telemetry.Length)].SolverMicroseconds;
@@ -474,14 +474,23 @@ namespace Hecton8.Editor
 
     internal static class ConstructionSocketEditorVaultReads
     {
-        internal static bool TryRead<T>(IDataVault vault, BufferID bufferId, out NativeArray<T> buffer)
+        internal static bool TryRead<T>(IDataVault vault, BufferID bufferId, out NativeArray<T>.ReadOnly buffer)
             where T : struct
         {
             buffer = default;
+            NativeArray<T> resolved = default;
             return vault != null &&
                    vault.TryGetGenerationHandle(bufferId, out VaultGenerationHandle<T> handle) &&
-                   vault.TryReadHandle(in handle, out buffer) &&
-                   buffer.IsCreated;
+                   vault.TryReadHandle(in handle, out resolved) &&
+                   resolved.IsCreated &&
+                   PublishReadOnly(resolved, out buffer);
+        }
+
+        private static bool PublishReadOnly<T>(NativeArray<T> resolved, out NativeArray<T>.ReadOnly buffer)
+            where T : struct
+        {
+            buffer = resolved.AsReadOnly();
+            return true;
         }
     }
 
@@ -492,8 +501,8 @@ namespace Hecton8.Editor
         {
             IDataVault vault = GlobalRegistry.DataVault;
             if (vault == null ||
-                !ConstructionSocketEditorVaultReads.TryRead(vault, BufferID.ConstructionSocketStates, out NativeArray<SocketStateDTO> sockets) ||
-                !ConstructionSocketEditorVaultReads.TryRead(vault, BufferID.ConstructionSocketAup, out NativeArray<double3> socketAups))
+                !ConstructionSocketEditorVaultReads.TryRead(vault, BufferID.ConstructionSocketStates, out NativeArray<SocketStateDTO>.ReadOnly sockets) ||
+                !ConstructionSocketEditorVaultReads.TryRead(vault, BufferID.ConstructionSocketAup, out NativeArray<double3>.ReadOnly socketAups))
             {
                 return;
             }

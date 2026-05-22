@@ -687,3 +687,86 @@ Rejected:
 - Hydration job signature changes.
 - Catalog binary format or DTO layout changes.
 - Managed byte mirrors.
+
+## 2026-05-22 Construction Socket Editor Read-Only Update
+
+Evidence class: STATIC_SOURCE / STATIC_TOOL only. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+Selected route:
+
+- `ConstructionSocketEditorVaultReads.TryRead<T>` is inside `#if UNITY_EDITOR`.
+- Focused call-site search found four read consumers: socket counters, socket telemetry, socket state, and socket AUP for UI/Gizmos.
+
+Patch:
+
+- The editor helper now returns `NativeArray<T>.ReadOnly`.
+- The helper keeps the mutable Vault borrow locally and publishes `.AsReadOnly()` only.
+- Four editor call sites were updated to read-only aliases.
+
+Updated static counts from `Docs/Reports/PROJECT_AUDIT_polish_after_construction_socket_editor_readonly.json`:
+
+- `nativeCollectionPublicMutableApiExposure`: 122, down from 123.
+- `nativeApiExposureOutRefMutable`: 91, down from 92.
+- `nativeApiRiskEditorOrProofSurface`: 11, down from 12.
+- `nativeApiExposureBuildPlayerRuntime`: unchanged at 111.
+
+Rejected:
+
+- Runtime construction writer routes.
+- Socket DTO layout changes.
+- Managed editor mirrors.
+
+## 2026-05-22 Hadal Preview Read-Only Update
+
+Evidence class: STATIC_SOURCE / STATIC_TOOL only. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+Selected route:
+
+- `HadalTrenchPreviewStore.TryReadPreview` is editor-only.
+- Focused call-site search found one consumer: `HadalTrenchPreviewDrawer.Draw`, which reads fault/vent preview rows for SceneView drawing.
+
+Patch:
+
+- Fault and vent preview outputs now return `NativeArray<T>.ReadOnly`.
+- The preview store remains the owner/writer for generated arrays.
+
+Updated static counts from `Docs/Reports/PROJECT_AUDIT_polish_after_hadal_preview_readonly.json`:
+
+- `nativeCollectionPublicMutableApiExposure`: 121, down from 122.
+- `nativeApiExposureBuildEditorOnly`: 3, down from 4.
+- `nativeApiExposureOutRefMutable`: 90, down from 91.
+- `nativeApiRiskEditorOrProofSurface`: 10, down from 11.
+
+Rejected:
+
+- Preview generation job changes.
+- H8Memory lifecycle changes.
+- Managed preview copies.
+
+## 2026-05-22 Lore Entity Reader Read-Only Update
+
+Evidence class: STATIC_SOURCE / STATIC_TOOL only. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+Selected route:
+
+- `ScannableTarget.TryReadLoreEntityBuffers` is a public read accessor.
+- Focused call-site search found one runtime consumer: `ScannerTool.TryResolveScientificLoreCandidate`, which reads AUP/hash rows for scalar cone scoring.
+- Owner writes remain on private `WriteLoreEntitySlot`, `ClearLoreEntitySlot`, and `TryReadLoreEntityVaultBuffers`.
+
+Patch:
+
+- Public AUP/hash outputs now return `NativeArray<T>.ReadOnly`.
+- `ScannerTool.EvaluateLoreCandidateScalar` now consumes read-only views.
+
+Updated static counts from `Docs/Reports/PROJECT_AUDIT_polish_after_lore_entity_readonly.json`:
+
+- `nativeCollectionPublicMutableApiExposure`: 120, down from 121.
+- `nativeApiExposureBuildPlayerRuntime`: 110, down from 111.
+- `nativeApiExposureOutRefMutable`: 89, down from 90.
+- `nativeApiRiskRuntimeOutRefMutableView`: 58, down from 59.
+
+Rejected:
+
+- Scanner math rewrites.
+- Private owner writer helper changes.
+- Managed lore snapshot mirrors.

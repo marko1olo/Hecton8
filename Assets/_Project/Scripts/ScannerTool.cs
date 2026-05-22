@@ -2856,8 +2856,8 @@ namespace Hecton8.Gameplay
             targetPosition = float3.zero;
             entityHash = 0u;
             if (!ScannableTarget.TryReadLoreEntityBuffers(
-                    out NativeArray<AbsoluteUniversePosition> loreEntityAups,
-                    out NativeArray<uint> loreEntityHashes,
+                    out NativeArray<AbsoluteUniversePosition>.ReadOnly loreEntityAups,
+                    out NativeArray<uint>.ReadOnly loreEntityHashes,
                     out int loreEntityCount))
             {
                 return false;
@@ -2886,8 +2886,8 @@ namespace Hecton8.Gameplay
         }
 
         private static LoreCandidateResult EvaluateLoreCandidateScalar(
-            NativeArray<AbsoluteUniversePosition> loreEntityAups,
-            NativeArray<uint> loreEntityHashes,
+            NativeArray<AbsoluteUniversePosition>.ReadOnly loreEntityAups,
+            NativeArray<uint>.ReadOnly loreEntityHashes,
             in AbsoluteUniversePosition cameraAup,
             float3 cameraForward,
             int count,

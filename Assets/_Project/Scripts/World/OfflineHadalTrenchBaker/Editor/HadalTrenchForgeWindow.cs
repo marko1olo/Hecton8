@@ -219,8 +219,8 @@ namespace Hecton8.World.OfflineHadalTrenchBaker.Editor
         public static void Draw()
         {
             if (!HadalTrenchPreviewStore.TryReadPreview(
-                    out NativeArray<FaultLineParamsDTO> faults,
-                    out NativeArray<ThermalVentSpawnDTO> vents,
+                    out NativeArray<FaultLineParamsDTO>.ReadOnly faults,
+                    out NativeArray<ThermalVentSpawnDTO>.ReadOnly vents,
                     out int faultCount,
                     out int ventCount,
                     out double3 previewOrigin))
@@ -348,14 +348,14 @@ namespace Hecton8.World.OfflineHadalTrenchBaker.Editor
         }
 
         public static bool TryReadPreview(
-            out NativeArray<FaultLineParamsDTO> faults,
-            out NativeArray<ThermalVentSpawnDTO> vents,
+            out NativeArray<FaultLineParamsDTO>.ReadOnly faults,
+            out NativeArray<ThermalVentSpawnDTO>.ReadOnly vents,
             out int faultCount,
             out int ventCount,
             out double3 previewOriginAUP)
         {
-            faults = s_faults;
-            vents = s_vents;
+            faults = s_faults.IsCreated ? s_faults.AsReadOnly() : default;
+            vents = s_vents.IsCreated ? s_vents.AsReadOnly() : default;
             faultCount = s_faultCount;
             ventCount = s_ventCount;
             previewOriginAUP = s_previewOriginAUP;
