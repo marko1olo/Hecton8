@@ -496,32 +496,44 @@ namespace Hecton8.Inventory
                 out constants);
         }
 
-        public static bool TryResolveCarryTotals(IDataVault vault, out NativeArray<ShinobuCarryTotalsDTO> totals)
+        public static bool TryResolveCarryTotals(IDataVault vault, out NativeArray<ShinobuCarryTotalsDTO>.ReadOnly totals)
         {
             totals = default;
             if (vault == null)
                 return false;
 
-            return OpenOrAcquireEconomyVaultBuffer(
-                BufferID.ShinobuInventoryCarryTotals,
-                1,
-                NativeArrayOptions.ClearMemory,
-                vault,
-                out totals);
+            if (!OpenOrAcquireEconomyVaultBuffer(
+                    BufferID.ShinobuInventoryCarryTotals,
+                    1,
+                    NativeArrayOptions.ClearMemory,
+                    vault,
+                    out NativeArray<ShinobuCarryTotalsDTO> mutableTotals))
+            {
+                return false;
+            }
+
+            totals = mutableTotals.AsReadOnly();
+            return true;
         }
 
-        public static bool TryResolveHotbarRoutes(IDataVault vault, int hotbarCapacity, out NativeArray<int> hotbarIndices)
+        public static bool TryResolveHotbarRoutes(IDataVault vault, int hotbarCapacity, out NativeArray<int>.ReadOnly hotbarIndices)
         {
             hotbarIndices = default;
             if (vault == null || hotbarCapacity <= 0)
                 return false;
 
-            return OpenOrAcquireEconomyVaultBuffer(
-                BufferID.ShinobuHotbarRoutes,
-                hotbarCapacity,
-                NativeArrayOptions.UninitializedMemory,
-                vault,
-                out hotbarIndices);
+            if (!OpenOrAcquireEconomyVaultBuffer(
+                    BufferID.ShinobuHotbarRoutes,
+                    hotbarCapacity,
+                    NativeArrayOptions.UninitializedMemory,
+                    vault,
+                    out NativeArray<int> mutableHotbarIndices))
+            {
+                return false;
+            }
+
+            hotbarIndices = mutableHotbarIndices.AsReadOnly();
+            return true;
         }
 
         public static bool TryResolveTelemetry(IDataVault vault, out NativeArray<EconomyTelemetryEntry>.ReadOnly telemetry)

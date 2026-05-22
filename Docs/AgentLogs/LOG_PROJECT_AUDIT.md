@@ -936,3 +936,15 @@ Cinematic Cheats used: No additional wave solver, scene probe, or managed mirror
 Exact Microseconds saved: 0 us measured. Static outcome: broad audit dropped `nativeCollectionPublicMutableApiExposure` from `140` to `139`, `nativeApiExposureBuildPlayerRuntime` from `127` to `126`, `nativeApiExposureOutRefMutable` from `109` to `108`, and `nativeApiRiskRuntimeDiagnosticNamedMutableView` from `22` to `21`.
 
 Evidence: Focused scan found only the read-only analytical wave editor view declaration and no first-party external caller. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_after_analytical_wave_editor_readonly.json` returned `PASS_WITH_WARNINGS` with `nativeCollectionPublicMutableApiExposure=139`, `nativeApiExposureBuildPlayerRuntime=126`, `nativeApiExposureOutRefMutable=108`, and `nativeApiRiskRuntimeDiagnosticNamedMutableView=21`. `git diff --check` on `AnalyticalGerstnerWaveRuntime.cs` reported only LF/CRLF normalization warnings. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Buoyancy SIMD X-Ray Read-Only View
+
+What was wrong: `BuoyancyDisplacementRuntime.TryOpenSimdEditorViews` returned mutable SIMD telemetry, cursor, and tolerance arrays to the Burst Vectorization X-Ray window, although the window only reads telemetry/cursor and tolerance loading is routed separately.
+
+What was done: Converted `TryOpenSimdEditorViews` outputs to `NativeArray<T>.ReadOnly` and updated the X-Ray window caller. `TryOpenSimdTuningEditorView` remains mutable because the scalar fallback slider writes through that explicit route.
+
+Cinematic Cheats used: No runtime solver or extra telemetry generation was added. The editor reads the existing SIMD black-box and tolerance DTO rows directly.
+
+Exact Microseconds saved: 0 us measured. Static outcome: broad audit dropped `nativeCollectionPublicMutableApiExposure` from `139` to `138`, `nativeApiExposureBuildPlayerRuntime` from `126` to `125`, `nativeApiExposureOutRefMutable` from `108` to `107`, and `nativeApiRiskRuntimeDiagnosticNamedMutableView` from `21` to `20`.
+
+Evidence: Focused scan found the read-only SIMD editor view and caller. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_after_buoyancy_simd_editor_readonly.json` returned `PASS_WITH_WARNINGS` with `nativeCollectionPublicMutableApiExposure=138`, `nativeApiExposureBuildPlayerRuntime=125`, `nativeApiExposureOutRefMutable=107`, and `nativeApiRiskRuntimeDiagnosticNamedMutableView=20`. `git diff --check` on touched files reported only LF/CRLF normalization warnings. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.

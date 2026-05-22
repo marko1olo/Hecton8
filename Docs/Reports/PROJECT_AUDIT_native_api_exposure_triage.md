@@ -458,3 +458,31 @@ Rejected:
 - Analytical solver job signature changes.
 - Gerstner DTO/request/result layout changes.
 - Managed editor snapshots or new allocation paths.
+
+## 2026-05-22 Buoyancy SIMD X-Ray Update
+
+Evidence class: STATIC_SOURCE / STATIC_TOOL only. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+Selected route:
+
+- `BuoyancyDisplacementRuntime.TryOpenSimdEditorViews` was consumed by `BurstVectorizationXRayWindow`.
+- The observed caller only reads telemetry and cursor rows; the tolerance output is discarded.
+- Scalar fallback tuning remains on `TryOpenSimdTuningEditorView`, which is an explicit editor writer route and was not narrowed.
+
+Patch:
+
+- SIMD editor view outputs now return read-only telemetry, cursor, and tolerance aliases.
+- `BurstVectorizationXRayWindow.RefreshTelemetry` consumes read-only telemetry/cursor aliases.
+
+Updated static counts from `Docs/Reports/PROJECT_AUDIT_polish_after_buoyancy_simd_editor_readonly.json`:
+
+- `nativeCollectionPublicMutableApiExposure`: 138, down from 139.
+- `nativeApiExposureBuildPlayerRuntime`: 125, down from 126.
+- `nativeApiExposureOutRefMutable`: 107, down from 108.
+- `nativeApiRiskRuntimeDiagnosticNamedMutableView`: 20, down from 21.
+
+Rejected:
+
+- `TryOpenSimdTuningEditorView`, because editor controls mutate scalar fallback tuning through it.
+- Sleep telemetry editor view narrowing, because `PhysicsSleepStateXRayWindow` writes tuning and SDF config through that route.
+- Managed graph copies or solver DTO layout changes.
