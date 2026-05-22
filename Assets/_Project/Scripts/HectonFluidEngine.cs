@@ -1189,9 +1189,9 @@ namespace Hecton8.Physics
             return maelstroms.IsCreated && activeCount > 0;
         }
 
-        public bool TryGetActiveWhirlpoolFlows(out NativeArray<WhirlpoolFlow> whirlpools, out int activeCount)
+        public bool TryGetActiveWhirlpoolFlows(out NativeArray<WhirlpoolFlow>.ReadOnly whirlpools, out int activeCount)
         {
-            whirlpools = _activeWhirlpools;
+            whirlpools = _activeWhirlpools.IsCreated ? _activeWhirlpools.AsReadOnly() : default;
             activeCount = _activeWhirlpoolFlowCount;
             return whirlpools.IsCreated && activeCount > 0;
         }
@@ -8074,7 +8074,7 @@ namespace Hecton8.Physics
 
         public static float3 SampleWhirlpoolVelocity(
             float3 samplePosition,
-            NativeArray<WhirlpoolFlow> whirlpools,
+            NativeArray<WhirlpoolFlow>.ReadOnly whirlpools,
             int whirlpoolCount,
             byte simplifiedMathEnabled,
             float maxVelocityMetersPerSecond)

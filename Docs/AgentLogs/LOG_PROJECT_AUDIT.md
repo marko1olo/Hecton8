@@ -864,3 +864,27 @@ Cinematic Cheats used: No thermal fluid simulation was added. The route remains 
 Exact Microseconds saved: 0 us measured. Static outcome: broad audit dropped `nativeCollectionPublicMutableApiExposure` from `147` to `145`, `nativeApiExposureBuildPlayerRuntime` from `134` to `132`, `nativeApiExposureOutRefMutable` from `115` to `113`, and `nativeApiRiskRuntimeDiagnosticNamedMutableView` from `27` to `25`.
 
 Evidence: Focused scan found read-only thermal readback signatures and no stale mutable thermal readback declarations in the touched route. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_after_thermal_readback_readonly.json` returned `PASS_WITH_WARNINGS` with `nativeCollectionPublicMutableApiExposure=145`, `nativeApiExposureBuildPlayerRuntime=132`, `nativeApiExposureOutRefMutable=113`, and `nativeApiRiskRuntimeDiagnosticNamedMutableView=25`. `git diff --check` on touched files reported only LF/CRLF normalization warnings. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Whirlpool Flow Read-Only Handoff
+
+What was wrong: `HectonFluidEngine.TryGetActiveWhirlpoolFlows()` exported the fluid-owned whirlpool flow rows as a mutable native array to player kinematics and submarine ballast jobs, even though those jobs only sample vortex velocity.
+
+What was done: Converted the active whirlpool flow accessor, `HectonAnalyticalFlowField.SampleWhirlpoolVelocity` overload, `PlayerKinematicsBodyJob.ActiveMaelstroms`, and `SubmarineAutoLevelPidJob.ActiveMaelstroms` to `NativeArray<WhirlpoolFlow>.ReadOnly`. Fluid owner mutation remains inside `HectonFluidEngine`.
+
+Cinematic Cheats used: No vortex physics solver was added. The route remains compact analytical whirlpool rows sampled as a velocity proxy instead of per-object fluid simulation.
+
+Exact Microseconds saved: 0 us measured. Static outcome: broad audit dropped `nativeCollectionPublicMutableApiExposure` from `145` to `144`, `nativeApiExposureBuildPlayerRuntime` from `132` to `131`, `nativeApiExposureOutRefMutable` from `113` to `112`, and `nativeApiRiskRuntimeOutRefMutableView` from `69` to `68`.
+
+Evidence: Focused scan found read-only whirlpool flow signatures in the fluid accessor, sampler, player job, and submarine job. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_after_whirlpool_readonly.json` returned `PASS_WITH_WARNINGS` with `nativeCollectionPublicMutableApiExposure=144`, `nativeApiExposureBuildPlayerRuntime=131`, `nativeApiExposureOutRefMutable=112`, and `nativeApiRiskRuntimeOutRefMutableView=68`. `git diff --check` on touched files reported only LF/CRLF normalization warnings. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Cave Signed-Distance Payload Read-Only Handoff
+
+What was wrong: `HectonCaveVoxelLightingVolume.TryGetPublishedSignedDistanceVoxelPayload()` returned the cave SDF volume as mutable native memory, while predator cognition only needed a read-only threat voxel source.
+
+What was done: Converted the cave signed-distance payload output to `NativeArray<byte>.ReadOnly` and updated predator cognition to cache the read-only alias directly.
+
+Cinematic Cheats used: No cave physics or collider query path was added. Predator cognition still samples an encoded SDF proxy instead of scene raycasts or mesh colliders.
+
+Exact Microseconds saved: 0 us measured. Static outcome: broad audit dropped `nativeCollectionPublicMutableApiExposure` from `144` to `143`, `nativeApiExposureBuildPlayerRuntime` from `131` to `130`, `nativeApiExposureOutRefMutable` from `112` to `111`, and `nativeApiRiskRuntimeOutRefMutableView` from `68` to `67`.
+
+Evidence: Focused scan found the read-only cave SDF payload signature and predator caller. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_after_cave_sdf_readonly.json` returned `PASS_WITH_WARNINGS` with `nativeCollectionPublicMutableApiExposure=143`, `nativeApiExposureBuildPlayerRuntime=130`, `nativeApiExposureOutRefMutable=111`, and `nativeApiRiskRuntimeOutRefMutableView=67`. `git diff --check` on touched files reported only LF/CRLF normalization warnings. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.

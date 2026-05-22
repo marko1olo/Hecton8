@@ -4599,9 +4599,9 @@ namespace Hecton8.AI
 
             HectonCaveVoxelLightingVolume caveLightingVolume = HectonCaveVoxelLightingVolume.ActiveRuntimeInstance;
             if (caveLightingVolume != null &&
-                caveLightingVolume.TryGetPublishedSignedDistanceVoxelPayload(out NativeArray<byte> signedDistanceVoxels, out Vector3Int sdfDimensions, out Vector3 sdfOrigin, out Vector3 sdfCellSize))
+                caveLightingVolume.TryGetPublishedSignedDistanceVoxelPayload(out NativeArray<byte>.ReadOnly signedDistanceVoxels, out Vector3Int sdfDimensions, out Vector3 sdfOrigin, out Vector3 sdfCellSize))
             {
-                _threatVoxelGrid = signedDistanceVoxels.IsCreated ? signedDistanceVoxels.AsReadOnly() : default;
+                _threatVoxelGrid = signedDistanceVoxels;
                 _threatVoxelDimensions = new int3(sdfDimensions.x, sdfDimensions.y, sdfDimensions.z);
                 _threatVoxelOrigin = new float3(sdfOrigin.x, sdfOrigin.y, sdfOrigin.z);
                 _threatVoxelCellSize = new float3(sdfCellSize.x, sdfCellSize.y, sdfCellSize.z);

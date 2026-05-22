@@ -76,7 +76,7 @@ namespace Hecton8.Gameplay
         [NoAlias] public NativeArray<float3> IntendedMovement;
         [NoAlias] public NativeArray<float3> FlowVelocity;
         [NoAlias] public NativeArray<float3> LastValidPositions;
-        [ReadOnly, NoAlias] public NativeArray<WhirlpoolFlow> ActiveMaelstroms;
+        [ReadOnly, NoAlias] public NativeArray<WhirlpoolFlow>.ReadOnly ActiveMaelstroms;
         [ReadOnly, NoAlias] public NativeArray<byte> VoxelSdfTexture3D;
         [NoAlias] public NativeArray<PlayerKinematicsRuntimeTelemetryEntry> Telemetry;
         [NoAlias] public NativeArray<int> TelemetryWriteIndex;
@@ -1154,10 +1154,10 @@ namespace Hecton8.Gameplay
                 AddFaultFlag(FaultNaN);
             }
 
-            NativeArray<WhirlpoolFlow> activeMaelstroms = default;
+            NativeArray<WhirlpoolFlow>.ReadOnly activeMaelstroms = default;
             int activeMaelstromCount = 0;
             if (_fluid != null &&
-                _fluid.TryGetActiveWhirlpoolFlows(out NativeArray<WhirlpoolFlow> fluidMaelstroms, out int fluidMaelstromCount))
+                _fluid.TryGetActiveWhirlpoolFlows(out NativeArray<WhirlpoolFlow>.ReadOnly fluidMaelstroms, out int fluidMaelstromCount))
             {
                 activeMaelstroms = fluidMaelstroms;
                 activeMaelstromCount = fluidMaelstromCount;

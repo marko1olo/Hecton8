@@ -288,3 +288,59 @@ Rejected:
 - Changing thermal diffusion front/back buffers or thermodynamics owner memory.
 - Copying 32x32x32 thermal grids into consumer-owned allocations.
 - Changing thermal DTO layout, vegetation thermal grids, or heat injection/sampling authority.
+
+## 2026-05-22 Whirlpool Flow Update
+
+Evidence class: STATIC_SOURCE / STATIC_TOOL only. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+Selected route:
+
+- `HectonFluidEngine.TryGetActiveWhirlpoolFlows` exposed owner whirlpool rows as mutable native memory.
+- Observed consumers are player kinematics and submarine auto-level PID jobs; both only sample `HectonAnalyticalFlowField.SampleWhirlpoolVelocity` and already treat the input as read-only.
+
+Patch:
+
+- Active whirlpool flows now return `NativeArray<WhirlpoolFlow>.ReadOnly`.
+- `PlayerKinematicsBodyJob`, `SubmarineAutoLevelPidJob`, and the analytical sampler overload now consume read-only whirlpool aliases.
+- `_activeWhirlpools`, active counts, and internal fluid owner jobs remain mutable inside `HectonFluidEngine`.
+
+Updated static counts from `Docs/Reports/PROJECT_AUDIT_polish_after_whirlpool_readonly.json`:
+
+- `nativeCollectionPublicMutableApiExposure`: 144, down from 145.
+- `nativeApiExposureBuildPlayerRuntime`: 131, down from 132.
+- `nativeApiExposureOutRefMutable`: 112, down from 113.
+- `nativeApiRiskRuntimeOutRefMutableView`: 68, down from 69.
+
+Rejected:
+
+- `TryGetActiveMaelstroms` float4 route because current VFX consumers still feed it into `GraphicsBufferUploadUtility.UploadNativeArray(NativeArray<T>)`.
+- Changing GPU upload helper signatures inside a fluid gameplay handoff pass.
+- Rewriting internal fluid writer buffers or active whirlpool generation jobs.
+
+## 2026-05-22 Cave Signed-Distance Payload Update
+
+Evidence class: STATIC_SOURCE / STATIC_TOOL only. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+Selected route:
+
+- `HectonCaveVoxelLightingVolume.TryGetPublishedSignedDistanceVoxelPayload` exposed the owner `_sdfVolume` buffer as mutable native memory.
+- Focused search found the only current first-party native consumer in `PredatorCognitionDomain`, and that consumer immediately converted the result to a read-only threat voxel view.
+
+Patch:
+
+- Cave signed-distance payload now returns `NativeArray<byte>.ReadOnly`.
+- Predator cognition stores the read-only alias directly.
+- Cave scan/finalize buffers and GPU texture publication remain owner-mutable inside `HectonCaveVoxelLightingVolume`.
+
+Updated static counts from `Docs/Reports/PROJECT_AUDIT_polish_after_cave_sdf_readonly.json`:
+
+- `nativeCollectionPublicMutableApiExposure`: 143, down from 144.
+- `nativeApiExposureBuildPlayerRuntime`: 130, down from 131.
+- `nativeApiExposureOutRefMutable`: 111, down from 112.
+- `nativeApiRiskRuntimeOutRefMutableView`: 67, down from 68.
+
+Rejected:
+
+- Broad sonar SDF payload conversion because audio, player, scanner, UI, and voxel delta paths still carry mutable native signatures.
+- Changing cave scan buffers, GPU SDF texture publication, or predator threat voxel math.
+- Copying SDF payloads into predator-owned buffers.

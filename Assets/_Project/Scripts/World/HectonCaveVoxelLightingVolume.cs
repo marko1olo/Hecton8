@@ -206,12 +206,12 @@ namespace Hecton8.World
         }
 
         internal bool TryGetPublishedSignedDistanceVoxelPayload(
-            out NativeArray<byte> signedDistanceVoxels,
+            out NativeArray<byte>.ReadOnly signedDistanceVoxels,
             out Vector3Int gridDimensions,
             out Vector3 gridOrigin,
             out Vector3 voxelCellSize)
         {
-            signedDistanceVoxels = _sdfVolume;
+            signedDistanceVoxels = _sdfVolume.IsCreated ? _sdfVolume.AsReadOnly() : default;
             int resolution = _resolutionRuntime;
             gridDimensions = new Vector3Int(resolution, resolution, resolution);
             gridOrigin = _publishedCenterWs - _publishedHalfExtents;

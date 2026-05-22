@@ -108,7 +108,7 @@ namespace Hecton8.Gameplay
             public byte CriticalFloodActive;
             public byte MaelstromApproximationTier;
             public int ActiveMaelstromCount;
-            [ReadOnly, NoAlias] public NativeArray<WhirlpoolFlow> ActiveMaelstroms;
+            [ReadOnly, NoAlias] public NativeArray<WhirlpoolFlow>.ReadOnly ActiveMaelstroms;
             [NoAlias] public NativeArray<PidJobOutput> Output;
 
             public void Execute()
@@ -1564,10 +1564,10 @@ namespace Hecton8.Gameplay
 
             Quaternion rotation = _hull.rotation;
             Vector3 angularVelocity = _hull.angularVelocity;
-            NativeArray<WhirlpoolFlow> activeMaelstroms = default;
+            NativeArray<WhirlpoolFlow>.ReadOnly activeMaelstroms = default;
             int activeMaelstromCount = 0;
             if (_fluid != null &&
-                _fluid.TryGetActiveWhirlpoolFlows(out NativeArray<WhirlpoolFlow> maelstroms, out int maelstromCount))
+                _fluid.TryGetActiveWhirlpoolFlows(out NativeArray<WhirlpoolFlow>.ReadOnly maelstroms, out int maelstromCount))
             {
                 activeMaelstroms = maelstroms;
                 activeMaelstromCount = maelstromCount;
