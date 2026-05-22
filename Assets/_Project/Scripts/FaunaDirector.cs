@@ -2125,9 +2125,7 @@ namespace Hecton8.AI
 
         private void InitializeDehydrationResidencyState()
         {
-            if (_faunaSimulationMemory.PoolSlots.IsCreated &&
-                _faunaSimulationMemory.LinearVelocities.IsCreated &&
-                _faunaSimulationMemory.SimulationFlags.IsCreated &&
+            if (_faunaSimulationMemory.HasResidentBuffers &&
                 _faunaSimulationMemory.FreeSlots.IsCreated &&
                 _dehydratedCreatureStates != null &&
                 _activeDehydrationSlots != null)
@@ -2267,7 +2265,7 @@ namespace Hecton8.AI
         private void ReleaseDehydrationSlot(int slotIndex)
         {
             if (slotIndex < 0 ||
-                !_faunaSimulationMemory.PoolSlots.IsCreated ||
+                !_faunaSimulationMemory.HasPoolSlot(slotIndex) ||
                 !_faunaSimulationMemory.FreeSlots.IsCreated ||
                 _dehydratedCreatureStates == null ||
                 slotIndex >= _dehydratedCreatureStates.Length)
@@ -2279,14 +2277,7 @@ namespace Hecton8.AI
                 return;
 
             RemoveActiveDehydrationSlot(slotIndex);
-            NativeArray<PoolSlotData> poolSlots = _faunaSimulationMemory.PoolSlots;
-            poolSlots[slotIndex] = default;
-            NativeArray<float3> linearVelocities = _faunaSimulationMemory.LinearVelocities;
-            if (linearVelocities.IsCreated && slotIndex < linearVelocities.Length)
-                linearVelocities[slotIndex] = default;
-            NativeArray<byte> simulationFlags = _faunaSimulationMemory.SimulationFlags;
-            if (simulationFlags.IsCreated && slotIndex < simulationFlags.Length)
-                simulationFlags[slotIndex] = 0;
+            _faunaSimulationMemory.TryClearSlot(slotIndex);
             _dehydratedCreatureStates[slotIndex] = default;
             _faunaSimulationMemory.FreeSlots.Enqueue(slotIndex);
         }
@@ -2345,20 +2336,22 @@ namespace Hecton8.AI
 
             _residentDataOnlyLodScheduled = false;
 
-            if (_dehydratedCreatureStates == null || !_faunaSimulationMemory.LinearVelocities.IsCreated)
+            if (_dehydratedCreatureStates == null)
                 return;
 
             for (int i = 0; i < _activeDehydrationSlotCount; i++)
             {
                 int slotIndex = _activeDehydrationSlots[i];
-                if (slotIndex < 0 || slotIndex >= _dehydratedCreatureStates.Length || slotIndex >= _faunaSimulationMemory.LinearVelocities.Length)
+                if (slotIndex < 0 || slotIndex >= _dehydratedCreatureStates.Length)
                     continue;
 
                 FaunaResidencyState state = _dehydratedCreatureStates[slotIndex];
                 if (!state.isResident || !state.isDehydrated)
                     continue;
 
-                float3 velocity = _faunaSimulationMemory.LinearVelocities[slotIndex];
+                if (!_faunaSimulationMemory.TryReadLinearVelocity(slotIndex, out float3 velocity))
+                    continue;
+
                 state.linearVelocity = new Vector3(velocity.x, velocity.y, velocity.z);
                 _dehydratedCreatureStates[slotIndex] = state;
             }
@@ -2385,26 +2378,24 @@ namespace Hecton8.AI
         {
             if (_residentDataOnlyLodScheduled ||
                 _activeDehydrationSlotCount <= 0 ||
-                !_faunaSimulationMemory.PoolSlots.IsCreated ||
-                !_faunaSimulationMemory.LinearVelocities.IsCreated ||
-                !_faunaSimulationMemory.SimulationFlags.IsCreated)
+                !_faunaSimulationMemory.HasResidentBuffers)
             {
                 return false;
             }
 
-            if (_faunaSimulationEngine == null)
+            if (!_faunaSimulationMemory.TryScheduleResidentDataOnlyLod(
+                    _faunaSimulationEngine,
+                    in playerAup,
+                    deltaTime,
+                    DehydrationDistanceSq,
+                    HibernationDistanceSq,
+                    ResidentSimulationFlag,
+                    DehydratedSimulationFlag,
+                    out _residentDataOnlyLodHandle))
+            {
                 return false;
+            }
 
-            _residentDataOnlyLodHandle = _faunaSimulationEngine.ScheduleResidentDataOnlyLod(
-                _faunaSimulationMemory.PoolSlots,
-                _faunaSimulationMemory.LinearVelocities,
-                _faunaSimulationMemory.SimulationFlags,
-                in playerAup,
-                deltaTime,
-                DehydrationDistanceSq,
-                HibernationDistanceSq,
-                ResidentSimulationFlag,
-                DehydratedSimulationFlag);
             _residentDataOnlyLodScheduled = true;
             return true;
         }
@@ -2584,7 +2575,7 @@ namespace Hecton8.AI
 
         private void UpdateResidencyStateFromActiveCreature(in ActiveCreature creature, in AbsoluteUniversePosition positionAup, bool markDehydrated)
         {
-            if (creature.dehydrationSlotIndex < 0 || creature.dehydrationSlotIndex >= _faunaSimulationMemory.PoolSlots.Length)
+            if (creature.dehydrationSlotIndex < 0 || !_faunaSimulationMemory.HasPoolSlot(creature.dehydrationSlotIndex))
                 return;
 
             UpdateResidencySlot(
@@ -2619,22 +2610,22 @@ namespace Hecton8.AI
             bool markDehydrated)
         {
             if (slotIndex < 0 ||
-                !_faunaSimulationMemory.PoolSlots.IsCreated ||
                 _dehydratedCreatureStates == null ||
-                slotIndex >= _faunaSimulationMemory.PoolSlots.Length)
+                !_faunaSimulationMemory.HasPoolSlot(slotIndex))
             {
                 return;
             }
 
-            NativeArray<PoolSlotData> poolSlots = _faunaSimulationMemory.PoolSlots;
-            PoolSlotData slotData = poolSlots[slotIndex];
+            if (!_faunaSimulationMemory.TryReadPoolSlot(slotIndex, out PoolSlotData slotData))
+                return;
+
             slotData.BoundGuid = unchecked((ulong)(slotIndex + 1));
             WritePoolSlotPosition(ref slotData, in positionAup);
             slotData.HydrationFrame = ReadDispatcherFrame16();
             slotData.RefCount = 1;
             slotData.StateFlags = markDehydrated ? (byte)1 : (byte)0;
             slotData.LastVisibleFrame = ReadDispatcherFrame16();
-            poolSlots[slotIndex] = slotData;
+            _faunaSimulationMemory.TryWritePoolSlot(slotIndex, in slotData);
 
             Vector3 linearVelocity = Vector3.zero;
             Vector3 angularVelocity = Vector3.zero;
@@ -2657,17 +2648,13 @@ namespace Hecton8.AI
                 }
             }
 
-            NativeArray<float3> linearVelocities = _faunaSimulationMemory.LinearVelocities;
-            if (linearVelocities.IsCreated && slotIndex < linearVelocities.Length)
-                linearVelocities[slotIndex] = new float3(linearVelocity.x, linearVelocity.y, linearVelocity.z);
-            NativeArray<byte> simulationFlags = _faunaSimulationMemory.SimulationFlags;
-            if (simulationFlags.IsCreated && slotIndex < simulationFlags.Length)
-            {
-                byte flags = ResidentSimulationFlag;
-                if (markDehydrated)
-                    flags |= DehydratedSimulationFlag;
-                simulationFlags[slotIndex] = flags;
-            }
+            _faunaSimulationMemory.TryWriteLinearVelocity(
+                slotIndex,
+                new float3(linearVelocity.x, linearVelocity.y, linearVelocity.z));
+            byte flags = ResidentSimulationFlag;
+            if (markDehydrated)
+                flags |= DehydratedSimulationFlag;
+            _faunaSimulationMemory.TryWriteSimulationFlag(slotIndex, flags);
 
             _dehydratedCreatureStates[slotIndex] = new FaunaResidencyState
             {
@@ -2723,7 +2710,12 @@ namespace Hecton8.AI
                     RemoveActiveDehydrationSlotAt(i);
                     continue;
                 }
-                PoolSlotData slotData = _faunaSimulationMemory.PoolSlots[slotIndex];
+                if (!_faunaSimulationMemory.TryReadPoolSlot(slotIndex, out PoolSlotData slotData))
+                {
+                    RemoveActiveDehydrationSlotAt(i);
+                    continue;
+                }
+
                 AbsoluteUniversePosition creatureAup = ReadPoolSlotPosition(in slotData);
                 if (AbsoluteUniversePosition.DistanceSq(in creatureAup, in playerAup) >= DehydrationDistanceSq)
                     continue;
@@ -2792,15 +2784,17 @@ namespace Hecton8.AI
                 state.hasPendingHibernationHuntTarget = false;
                 _dehydratedCreatureStates[slotIndex] = state;
 
-                NativeArray<PoolSlotData> poolSlots = _faunaSimulationMemory.PoolSlots;
-                slotData = poolSlots[slotIndex];
+                if (!_faunaSimulationMemory.TryReadPoolSlot(slotIndex, out slotData))
+                {
+                    RemoveActiveDehydrationSlotAt(i);
+                    continue;
+                }
+
                 slotData.StateFlags = 0;
                 slotData.HydrationFrame = ReadDispatcherFrame16();
                 slotData.LastVisibleFrame = ReadDispatcherFrame16();
-                poolSlots[slotIndex] = slotData;
-                NativeArray<byte> simulationFlags = _faunaSimulationMemory.SimulationFlags;
-                if (simulationFlags.IsCreated && slotIndex < simulationFlags.Length)
-                    simulationFlags[slotIndex] = ResidentSimulationFlag;
+                _faunaSimulationMemory.TryWritePoolSlot(slotIndex, in slotData);
+                _faunaSimulationMemory.TryWriteSimulationFlag(slotIndex, ResidentSimulationFlag);
 
                 RemoveActiveDehydrationSlotAt(i);
                 hydrated++;
@@ -2821,14 +2815,20 @@ namespace Hecton8.AI
             for (int i = _activeDehydrationSlotCount - 1; i >= 0; i--)
             {
                 int slotIndex = _activeDehydrationSlots[i];
-                if (slotIndex < 0 || slotIndex >= _dehydratedCreatureStates.Length || slotIndex >= _faunaSimulationMemory.PoolSlots.Length)
+                if (slotIndex < 0 ||
+                    slotIndex >= _dehydratedCreatureStates.Length ||
+                    !_faunaSimulationMemory.HasPoolSlot(slotIndex))
+                {
                     continue;
+                }
 
                 FaunaResidencyState state = _dehydratedCreatureStates[slotIndex];
                 if (!state.isResident || !state.isDehydrated)
                     continue;
 
-                PoolSlotData slotData = _faunaSimulationMemory.PoolSlots[slotIndex];
+                if (!_faunaSimulationMemory.TryReadPoolSlot(slotIndex, out PoolSlotData slotData))
+                    continue;
+
                 AbsoluteUniversePosition creatureAup = ReadPoolSlotPosition(in slotData);
                 if (AbsoluteUniversePosition.DistanceSq(in creatureAup, in playerAup) <= HibernationDistanceSq)
                     continue;
@@ -3076,9 +3076,8 @@ namespace Hecton8.AI
             savedState = default;
             if (slotIndex < 0 ||
                 _dehydratedCreatureStates == null ||
-                !_faunaSimulationMemory.PoolSlots.IsCreated ||
                 slotIndex >= _dehydratedCreatureStates.Length ||
-                slotIndex >= _faunaSimulationMemory.PoolSlots.Length)
+                !_faunaSimulationMemory.HasPoolSlot(slotIndex))
             {
                 return false;
             }
@@ -3094,7 +3093,9 @@ namespace Hecton8.AI
             if (speciesId == 0)
                 return false;
 
-            PoolSlotData slotData = _faunaSimulationMemory.PoolSlots[slotIndex];
+            if (!_faunaSimulationMemory.TryReadPoolSlot(slotIndex, out PoolSlotData slotData))
+                return false;
+
             AbsoluteUniversePosition position = ReadPoolSlotPosition(in slotData);
             savedState = new HibernatedFaunaStateDTO
             {
@@ -3169,14 +3170,12 @@ namespace Hecton8.AI
             restoredState.isPredator = entry.isPredator;
             _dehydratedCreatureStates[slotIndex] = restoredState;
 
-            NativeArray<float3> linearVelocities = _faunaSimulationMemory.LinearVelocities;
-            if (linearVelocities.IsCreated && slotIndex < linearVelocities.Length)
-            {
-                linearVelocities[slotIndex] = new float3(
+            _faunaSimulationMemory.TryWriteLinearVelocity(
+                slotIndex,
+                new float3(
                     savedState.linearVelocityX,
                     savedState.linearVelocityY,
-                    savedState.linearVelocityZ);
-            }
+                    savedState.linearVelocityZ));
 
             AddActiveDehydrationSlot(slotIndex);
             IncrementCreatureCounters(biomeData.biomeIndex, entry.creatureTypeIndex, biomeData);

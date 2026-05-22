@@ -1342,3 +1342,15 @@ Cinematic Cheats used: No new simulation. This preserves the existing drone flee
 Exact Microseconds saved: 0 us measured. Static API risk moved `nativeCollectionPublicMutableApiExposure=93->91`, `nativeApiExposureBuildPlayerRuntime=89->87`, `nativeApiExposureMutableReturn=25->24`, `nativeApiExposureOutRefMutable=68->67`, `nativeApiRiskRuntimeReturnMutableView=13->12`, and `nativeApiRiskRuntimeOutRefMutableView=45->44`.
 
 Evidence: `Docs/Reports/PROJECT_AUDIT_polish_after_drone_vault_helper_scope.json`; `python Tools\test_polish_mandate_static_audit.py` passed 12 tests; focused scan found no external `DroneFleetManager.ResolveDroneVaultBuffer` or `ReleaseDroneVaultBuffer` calls and no public/internal declarations; targeted `git diff --check` reported only LF/CRLF normalization warnings. Batch re-check found no `<AGENT_PROMPT id="PROJECT_AUDIT">` block. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Fluid Maelstrom Read-Only Upload Split
+
+What was wrong: `HectonFluidEngine.TryGetActiveMaelstroms` exposed mutable maelstrom rows to consumers that only read them or uploaded them to GPU buffers.
+
+What was done: Converted the accessor to `NativeArray<float4>.ReadOnly`, added owner-side `TryUploadActiveMaelstroms`, updated Sargassum threat sampling and marine snow binding, and prevented nonzero marine snow params when owner upload fails.
+
+Cinematic Cheats used: No new fluid simulation. The renderer still uses the existing maelstrom scalar rows to drive GPU-side marine snow flow instead of CPU particle/fluid work.
+
+Exact Microseconds saved: 0 us measured. Static API risk moved `nativeCollectionPublicMutableApiExposure=91->90`, `nativeApiExposureBuildPlayerRuntime=87->86`, `nativeApiExposureOutRefMutable=67->66`, and `nativeApiRiskRuntimeOutRefMutableView=44->43`.
+
+Evidence: `Docs/Reports/PROJECT_AUDIT_polish_after_fluid_maelstrom_readonly_upload.json`; `python Tools\test_polish_mandate_static_audit.py` passed 12 tests; focused scan found no mutable `out NativeArray<float4>` maelstrom route; targeted `git diff --check` reported only LF/CRLF normalization warnings. Batch re-check found no `<AGENT_PROMPT id="PROJECT_AUDIT">` block. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.

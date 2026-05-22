@@ -1179,14 +1179,30 @@ namespace Hecton8.Physics
         }
 
         public bool TryGetActiveMaelstroms(
-            out NativeArray<float4> maelstroms,
+            out NativeArray<float4>.ReadOnly maelstroms,
             out int activeCount,
             out Vector4 maelstromMeta)
         {
-            maelstroms = _activeMaelstroms;
+            maelstroms = _activeMaelstroms.IsCreated ? _activeMaelstroms.AsReadOnly() : default;
             activeCount = _activeMaelstromCount;
             maelstromMeta = _activeMaelstromMeta;
             return maelstroms.IsCreated && activeCount > 0;
+        }
+
+        public bool TryUploadActiveMaelstroms(GraphicsBuffer destination, int requestedCount)
+        {
+            if (destination == null || !_activeMaelstroms.IsCreated)
+                return false;
+
+            int safeCount = math.clamp(
+                requestedCount,
+                0,
+                math.min(MaxActiveMaelstromCount, math.min(_activeMaelstromCount, _activeMaelstroms.Length)));
+            if (safeCount <= 0)
+                return false;
+
+            GraphicsBufferUploadUtility.UploadNativeArray(destination, _activeMaelstroms, safeCount);
+            return true;
         }
 
         public bool TryGetActiveWhirlpoolFlows(out NativeArray<WhirlpoolFlow>.ReadOnly whirlpools, out int activeCount)

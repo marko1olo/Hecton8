@@ -3279,38 +3279,47 @@ namespace Hecton8.Environment
                 _maelstromBufferA != null &&
                 _maelstromBufferB != null &&
                 fluidEngine.TryGetActiveMaelstroms(
-                    out NativeArray<float4> maelstroms,
+                    out NativeArray<float4>.ReadOnly maelstroms,
                     out int maelstromCount,
                     out Vector4 publishedMeta))
             {
                 int uploadCount = math.clamp(maelstromCount, 0, HectonFluidEngine.MaxActiveMaelstromCount);
                 if (uploadCount > 0)
                 {
+                    bool hasBoundMaelstromBuffer = false;
                     uint uploadHash = BuildMaelstromUploadHash(maelstroms, uploadCount, publishedMeta);
                     if (uploadHash != _boundMaelstromUploadHash || uploadCount != _boundMaelstromUploadCount)
                     {
                         GraphicsBuffer writeBuffer = ResolveMaelstromWriteBuffer();
-                        GraphicsBufferUploadUtility.UploadNativeArray(writeBuffer, maelstroms, uploadCount);
-                        _boundMaelstromUploadHash = uploadHash;
-                        _boundMaelstromUploadCount = uploadCount;
-                        _maelstromWriteBufferIndex ^= 1;
-                        maelstromBuffer = writeBuffer;
+                        if (fluidEngine.TryUploadActiveMaelstroms(writeBuffer, uploadCount))
+                        {
+                            _boundMaelstromUploadHash = uploadHash;
+                            _boundMaelstromUploadCount = uploadCount;
+                            _maelstromWriteBufferIndex ^= 1;
+                            maelstromBuffer = writeBuffer;
+                            hasBoundMaelstromBuffer = true;
+                        }
                     }
                     else if (_boundSimulationMaelstromBuffer != null &&
                              _boundSimulationMaelstromBuffer != _emptyAbyssalFlowBuffer)
                     {
                         maelstromBuffer = _boundSimulationMaelstromBuffer;
+                        hasBoundMaelstromBuffer = true;
                     }
                     else
                     {
                         maelstromBuffer = ResolveMaelstromReadFallbackBuffer();
+                        hasBoundMaelstromBuffer = maelstromBuffer != null && maelstromBuffer != _emptyAbyssalFlowBuffer;
                     }
 
-                    maelstromParams = new Vector4(
-                        uploadCount,
-                        math.max(0f, publishedMeta.y),
-                        math.max(0f, publishedMeta.z),
-                        publishedMeta.w);
+                    if (hasBoundMaelstromBuffer)
+                    {
+                        maelstromParams = new Vector4(
+                            uploadCount,
+                            math.max(0f, publishedMeta.y),
+                            math.max(0f, publishedMeta.z),
+                            publishedMeta.w);
+                    }
                 }
             }
 
@@ -3339,7 +3348,7 @@ namespace Hecton8.Environment
             return (_maelstromWriteBufferIndex & 1) == 0 ? _maelstromBufferB : _maelstromBufferA;
         }
 
-        private static uint BuildMaelstromUploadHash(NativeArray<float4> maelstroms, int count, Vector4 meta)
+        private static uint BuildMaelstromUploadHash(NativeArray<float4>.ReadOnly maelstroms, int count, Vector4 meta)
         {
             uint hash = 2166136261u;
             hash = MixMaelstromUploadHash(hash, unchecked((uint)count));

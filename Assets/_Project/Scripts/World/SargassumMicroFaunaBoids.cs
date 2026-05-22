@@ -6199,7 +6199,7 @@ namespace Hecton8.World
         {
             if (_fluidEngine == null ||
                 !_fluidEngine.TryGetActiveMaelstroms(
-                    out NativeArray<float4> maelstroms,
+                    out NativeArray<float4>.ReadOnly maelstroms,
                     out int maelstromCount,
                     out Vector4 maelstromMeta))
             {

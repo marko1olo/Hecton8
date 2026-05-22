@@ -413,48 +413,156 @@ namespace Hecton8.AI
         public FaunaSimulationFreeSlotStack FreeSlots;
         public int Capacity;
 
-        public NativeArray<PoolSlotData> PoolSlots =>
-            FaunaVaultBufferRoutes.TryOpen(_vault, in _poolSlotsHandle, BufferID.FaunaSimulationPoolSlots, Capacity, out NativeArray<PoolSlotData> buffer)
-                ? buffer
-                : default;
-
-        public NativeArray<float3> LinearVelocities =>
-            FaunaVaultBufferRoutes.TryOpen(_vault, in _linearVelocitiesHandle, BufferID.FaunaSimulationLinearVelocities, Capacity, out NativeArray<float3> buffer)
-                ? buffer
-                : default;
-
-        public NativeArray<byte> SimulationFlags =>
-            FaunaVaultBufferRoutes.TryOpen(_vault, in _simulationFlagsHandle, BufferID.FaunaSimulationFlags, Capacity, out NativeArray<byte> buffer)
-                ? buffer
-                : default;
-
         public bool IsCreated =>
-            PoolSlots.IsCreated &&
-            LinearVelocities.IsCreated &&
-            SimulationFlags.IsCreated &&
+            HasResidentBuffers &&
             FreeSlots.IsCreated;
 
-        public ref PoolSlotData GetStateAsRef(int index)
+        public bool HasResidentBuffers =>
+            TryResolvePoolSlots(out NativeArray<PoolSlotData> poolSlots) &&
+            TryResolveLinearVelocities(out NativeArray<float3> linearVelocities) &&
+            TryResolveSimulationFlags(out NativeArray<byte> simulationFlags) &&
+            poolSlots.IsCreated &&
+            linearVelocities.IsCreated &&
+            simulationFlags.IsCreated;
+
+        public bool HasPoolSlot(int index)
         {
-            NativeArray<PoolSlotData> poolSlots = PoolSlots;
+            return TryResolvePoolSlots(out NativeArray<PoolSlotData> poolSlots) &&
+                   (uint)index < (uint)poolSlots.Length;
+        }
+
+        public bool TryReadPoolSlot(int index, out PoolSlotData slotData)
+        {
+            slotData = default;
+            NativeArray<PoolSlotData> poolSlots = ResolvePoolSlots();
+            if (!poolSlots.IsCreated || (uint)index >= (uint)poolSlots.Length)
+                return false;
+
+            slotData = poolSlots[index];
+            return true;
+        }
+
+        public bool TryWritePoolSlot(int index, in PoolSlotData slotData)
+        {
+            NativeArray<PoolSlotData> poolSlots = ResolvePoolSlots();
+            if (!poolSlots.IsCreated || (uint)index >= (uint)poolSlots.Length)
+                return false;
+
+            poolSlots[index] = slotData;
+            return true;
+        }
+
+        public bool TryReadLinearVelocity(int index, out float3 velocity)
+        {
+            velocity = default;
+            NativeArray<float3> linearVelocities = ResolveLinearVelocities();
+            if (!linearVelocities.IsCreated || (uint)index >= (uint)linearVelocities.Length)
+                return false;
+
+            velocity = linearVelocities[index];
+            return true;
+        }
+
+        public bool TryWriteLinearVelocity(int index, float3 velocity)
+        {
+            NativeArray<float3> linearVelocities = ResolveLinearVelocities();
+            if (!linearVelocities.IsCreated || (uint)index >= (uint)linearVelocities.Length)
+                return false;
+
+            linearVelocities[index] = velocity;
+            return true;
+        }
+
+        public bool TryWriteSimulationFlag(int index, byte flag)
+        {
+            NativeArray<byte> simulationFlags = ResolveSimulationFlags();
+            if (!simulationFlags.IsCreated || (uint)index >= (uint)simulationFlags.Length)
+                return false;
+
+            simulationFlags[index] = flag;
+            return true;
+        }
+
+        public bool TryClearSlot(int index)
+        {
+            bool wroteAny = false;
+            NativeArray<PoolSlotData> poolSlots = ResolvePoolSlots();
+            if (poolSlots.IsCreated && (uint)index < (uint)poolSlots.Length)
+            {
+                poolSlots[index] = default;
+                wroteAny = true;
+            }
+
+            NativeArray<float3> linearVelocities = ResolveLinearVelocities();
+            if (linearVelocities.IsCreated && (uint)index < (uint)linearVelocities.Length)
+            {
+                linearVelocities[index] = default;
+                wroteAny = true;
+            }
+
+            NativeArray<byte> simulationFlags = ResolveSimulationFlags();
+            if (simulationFlags.IsCreated && (uint)index < (uint)simulationFlags.Length)
+            {
+                simulationFlags[index] = 0;
+                wroteAny = true;
+            }
+
+            return wroteAny;
+        }
+
+        public bool TryScheduleResidentDataOnlyLod(
+            FaunaSimulationEngine engine,
+            in AbsoluteUniversePosition playerAup,
+            float deltaTime,
+            double dehydrationDistanceSq,
+            double hibernationDistanceSq,
+            byte residentSimulationFlag,
+            byte dehydratedSimulationFlag,
+            out JobHandle handle)
+        {
+            handle = default;
+            if (engine == null ||
+                !TryResolvePoolSlots(out NativeArray<PoolSlotData> poolSlots) ||
+                !TryResolveLinearVelocities(out NativeArray<float3> linearVelocities) ||
+                !TryResolveSimulationFlags(out NativeArray<byte> simulationFlags))
+            {
+                return false;
+            }
+
+            handle = engine.ScheduleResidentDataOnlyLod(
+                poolSlots,
+                linearVelocities,
+                simulationFlags,
+                in playerAup,
+                deltaTime,
+                dehydrationDistanceSq,
+                hibernationDistanceSq,
+                residentSimulationFlag,
+                dehydratedSimulationFlag);
+            return true;
+        }
+
+        private ref PoolSlotData GetStateAsRef(int index)
+        {
+            NativeArray<PoolSlotData> poolSlots = ResolvePoolSlots();
             if (!poolSlots.IsCreated || (uint)index >= (uint)poolSlots.Length)
                 FatalMemoryException.ThrowStaleVaultHandle();
 
             return ref FaunaVaultBufferRoutes.ElementAsRef(poolSlots, index);
         }
 
-        public ref float3 GetLinearVelocityAsRef(int index)
+        private ref float3 GetLinearVelocityAsRef(int index)
         {
-            NativeArray<float3> linearVelocities = LinearVelocities;
+            NativeArray<float3> linearVelocities = ResolveLinearVelocities();
             if (!linearVelocities.IsCreated || (uint)index >= (uint)linearVelocities.Length)
                 FatalMemoryException.ThrowStaleVaultHandle();
 
             return ref FaunaVaultBufferRoutes.ElementAsRef(linearVelocities, index);
         }
 
-        public ref byte GetSimulationFlagAsRef(int index)
+        private ref byte GetSimulationFlagAsRef(int index)
         {
-            NativeArray<byte> simulationFlags = SimulationFlags;
+            NativeArray<byte> simulationFlags = ResolveSimulationFlags();
             if (!simulationFlags.IsCreated || (uint)index >= (uint)simulationFlags.Length)
                 FatalMemoryException.ThrowStaleVaultHandle();
 
@@ -521,9 +629,9 @@ namespace Hecton8.AI
 
         public void Reset()
         {
-            NativeArray<PoolSlotData> poolSlots = PoolSlots;
-            NativeArray<float3> linearVelocities = LinearVelocities;
-            NativeArray<byte> simulationFlags = SimulationFlags;
+            NativeArray<PoolSlotData> poolSlots = ResolvePoolSlots();
+            NativeArray<float3> linearVelocities = ResolveLinearVelocities();
+            NativeArray<byte> simulationFlags = ResolveSimulationFlags();
             ClearArrays(poolSlots, linearVelocities, simulationFlags);
             FreeSlots.Reset();
         }
@@ -547,6 +655,51 @@ namespace Hecton8.AI
             FreeSlots.Dispose();
             _vault = null;
             Capacity = 0;
+        }
+
+        private NativeArray<PoolSlotData> ResolvePoolSlots()
+        {
+            return TryResolvePoolSlots(out NativeArray<PoolSlotData> buffer) ? buffer : default;
+        }
+
+        private NativeArray<float3> ResolveLinearVelocities()
+        {
+            return TryResolveLinearVelocities(out NativeArray<float3> buffer) ? buffer : default;
+        }
+
+        private NativeArray<byte> ResolveSimulationFlags()
+        {
+            return TryResolveSimulationFlags(out NativeArray<byte> buffer) ? buffer : default;
+        }
+
+        private bool TryResolvePoolSlots(out NativeArray<PoolSlotData> buffer)
+        {
+            return FaunaVaultBufferRoutes.TryOpen(
+                _vault,
+                in _poolSlotsHandle,
+                BufferID.FaunaSimulationPoolSlots,
+                Capacity,
+                out buffer);
+        }
+
+        private bool TryResolveLinearVelocities(out NativeArray<float3> buffer)
+        {
+            return FaunaVaultBufferRoutes.TryOpen(
+                _vault,
+                in _linearVelocitiesHandle,
+                BufferID.FaunaSimulationLinearVelocities,
+                Capacity,
+                out buffer);
+        }
+
+        private bool TryResolveSimulationFlags(out NativeArray<byte> buffer)
+        {
+            return FaunaVaultBufferRoutes.TryOpen(
+                _vault,
+                in _simulationFlagsHandle,
+                BufferID.FaunaSimulationFlags,
+                Capacity,
+                out buffer);
         }
 
         private static void ClearArrays(
