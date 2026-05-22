@@ -4298,3 +4298,37 @@ Mandates read before coding:
 - Brace/preprocessor counts are balanced: `PropwashGpuTunerWindow.cs` braces `30/30`, preprocessor `#if/#endif` `1/1`.
 - `git diff --check` passed for `PropwashGpuTunerWindow.cs`; CRLF warning only.
 - Build not relaunched: `VBCSCompiler.exe` is active, and full `Hecton8.slnx` is already blocked by the external Visor RenderGraph binding errors recorded in Compile State Update 232.
+
+## Loop 241 - World Chunk Residency Cold Array Descriptor Route
+- [x] Replaced the centralized WorldStreaming cold-array direct `GetBuffer<T>` route.
+  DOD practice: `WorldChunkResidencyManager.AcquireWorldStreamingArray<T>` now requests a `VaultGenerationHandle<T>` and resolves the phase-local native view through `TryResolveWorldStreamingVaultBuffer`, which validates exact BufferID, `SystemID.WorldStreaming`, nonzero generation, required length, and created view state.
+  Rejected: rewriting the residency array ownership model, retained handle storage, Addressables queueing, HLOD impostor math, ledger DTOs, or native release semantics. The defect was one private external-view acquisition helper, not the world-streaming job graph.
+  Estimate: one O(1) descriptor proof per cold allocation; no per-frame streaming loop cost added.
+- [x] Preserved fallback allocator behavior.
+  DOD practice: if the descriptor route cannot resolve, the existing `H8Memory.Allocate<T>` fallback and `_worldStreamingVaultArrayMask` semantics remain unchanged.
+  Rejected: releasing generation descriptors in `ReleaseWorldStreamingArray` because the old helper did not hold a refcount lease and changing disposal semantics would require a broader WorldStreaming ownership route card.
+  Estimate: 0 DTO/ABI/Addressables change.
+
+## Compile State Update 236
+- Focused direct/legacy route scan on `WorldChunkResidencyManager.cs` found zero `TryGetBuffer`, `GetBuffer<`, `GetBufferHandle`, `TryGetBufferHandle`, `VaultBufferHandle<`, `ResolvePointer`, `GetElementAsRef`, `GetElementAsReadOnlyRef`, or `.ptr` hits.
+- Descriptor route scan confirmed `VaultGenerationHandle<T>`, `GetGenerationHandle`, `TryResolveWorldStreamingVaultBuffer`, `TryResolveHandle`, and `SystemID.WorldStreaming`.
+- Brace/preprocessor counts are balanced: `WorldChunkResidencyManager.cs` braces `489/489`, preprocessor `#if/#endif` `15/15`.
+- `git diff --check` passed for `WorldChunkResidencyManager.cs`.
+- Build not relaunched: `VBCSCompiler.exe` is active, and full `Hecton8.slnx` is already blocked by the external Visor RenderGraph binding errors recorded in Compile State Update 232.
+
+## Loop 242 - Flora VFX Vault Descriptor Route
+- [x] Replaced Flora wake/sway pointer-bearing Vault handles.
+  DOD practice: `FloraInteractionManager.cs` now stores `VaultGenerationHandle<T>` for wake trail stamp commands, procedural wake sources, global wake scalar/vector buffers, wake blackbox, flora sway displacement field, sway metadata, sway blackbox, stiffness rules, and CSV scratch. Mutable phase-local views resolve through `TryResolveFloraVaultBuffer` after exact BufferID, `SystemID.Vfx`, nonzero generation, required length, compaction-fence rejection, and `TryResolveHandle`.
+  Rejected: entering `EcosystemDirector` or `SargassumMicroFaunaBoids` in the same loop because those are broader simulation-owner rewrites. Rewriting shader buffers, wake trail render textures, fluid/advection math, stiffness CSV schema, graphics buffers, or job topology was rejected because this loop targets stale Vault provenance only.
+  Estimate: one O(1) descriptor proof at VFX setup/resolve boundaries; no extra per-cell flora field validation.
+- [x] Preserved wake and flora blackbox payload identity.
+  DOD practice: `DataVaultGeneration` now records the 16-byte descriptor generation field instead of the legacy handle generation alias; telemetry entry layout and dump writers remain unchanged.
+  Rejected: adding descriptor release in teardown because the previous route did not own per-call leases and changing refcount lifecycle needs a separate VFX owner route card.
+  Estimate: 0 DTO/ABI/shader-format change.
+
+## Compile State Update 237
+- Focused direct/legacy route scan on `FloraInteractionManager.cs` found zero `TryGetBuffer(`, `GetBuffer<`, `GetBufferHandle`, `TryGetBufferHandle`, `VaultBufferHandle<`, `ResolvePointer`, `GetElementAsRef`, `GetElementAsReadOnlyRef`, `.ptr`, `.Resolve(dataVault)`, or `GenerationID` hits.
+- Descriptor route scan confirmed `VaultGenerationHandle<T>`, `TryEnsureFloraVaultBuffer`, `TryResolveFloraVaultBuffer`, `IsFloraVaultHandle`, `GetGenerationHandle`, `TryResolveHandle`, and `SystemID.Vfx`.
+- Brace/preprocessor counts are balanced: `FloraInteractionManager.cs` braces `619/619`, preprocessor `#if/#endif` `8/8`.
+- `git diff --check` passed for `FloraInteractionManager.cs`; CRLF warning only.
+- Build not relaunched: `VBCSCompiler.exe` is active, and full `Hecton8.slnx` is already blocked by the external Visor RenderGraph binding errors recorded in Compile State Update 232.

@@ -3,7 +3,7 @@
 Agent: SHINOBU_260
 Domain: CREST_VERSION_QUARANTINE_DIRECTOR / Echelon 9 Meta & Integration
 Task Count: 20
-Status: POLISH PASS LOOP 21 STATIC VERIFIED / TASK 12 BLOCKED BY DEPENDENCY / NO BUILD DUE ACTIVE csc+dotnet CPU GATE
+Status: POLISH PASS LOOP 23 STATIC VERIFIED / TASK 12 BLOCKED BY DEPENDENCY / LOOP 22 BUILD PASS / LOOP 23 REBUILD GATED BY ACTIVE VBCSCOMPILER
 Batch Source: Docs/Tasks/CURRENT_BATCH.md `<AGENT_PROMPT id="SHINOBU_260" role="CREST_VERSION_QUARANTINE_DIRECTOR">`
 
 ## Hygiene
@@ -446,3 +446,41 @@ Rule quote: `Hecton8.Core` and `Hecton8.Physics` must have zero direct assembly 
   - DOD practice: py_compile passed for the three Crest tools; dependency scanner reports `breach_count=0`, `global_scripting_define_hit_count=1`, `compliance_denylist_hit_count=6`, `vocabulary_debt_hit_count=111`; polish audit reports `failed_count=0`; exact file gates prove `Assets/profilermarkers.csv` absent, archived profiler CSV present, and no HDRP/PostProcessing donor references remain; domain hot-path rg scan found no Pack=1, hot auto-properties, foreach, hidden `.Complete()`, LINQ, `UnityEngine.Random`, or private native collection allocation hits in the checked Crest/Environment surfaces.
   - Rejected alternative: launching Unity/dotnet rebuild was rejected because the build gate sampled active `csc` and `dotnet` processes and CPU at 98.6 percent.
   - Estimated saving: avoids a forbidden compile-wall hit; runtime frame claim remains 0 microseconds for this proof loop.
+
+## Loop 22: Generated Project Compile Wall Closure
+
+- [x] Root generated Crest/WaveHarmonic project routes removed from broad MSBuild visibility.
+  - DOD practice: removed direct `Crest`, `Crest.Helpers.Editor`, and `WaveHarmonic.Crest*` project/package routes from root generated first-party `.csproj` files; moved root `WaveHarmonic.Crest*.csproj` files to `Docs/Archive/Crest_Version_Quarantine/GeneratedProject/`; left donor `Crest.csproj` and `Crest.Helpers.Editor.csproj` as the only donor/helper generated projects.
+  - Rejected alternative: leaving generated project references as IDE-only debt was rejected because `dotnet build Hecton8.slnx` consumes these files and can resurrect the compile wall outside Unity.
+  - Estimated saving: runtime 0 microseconds; editor/build saving is seconds to minutes of avoided donor project resolution fanout.
+- [x] Core-level MSBuild Crest shim removed.
+  - DOD practice: removed direct `Reference Include="Crest"` and `Reference Include="WaveHarmonic.Crest*"` blocks from `Directory.Build.targets`; retained only the missing-package prune target as a defensive cleanup rule.
+  - Rejected alternative: keeping a Core reference shim was rejected because it violates the rule that Crest enters first-party code only through the bridge assemblies.
+  - Estimated saving: runtime 0 microseconds; prevents Hecton8.Core from inheriting donor assembly churn.
+- [x] Scanner and polish audit now gate generated project routes.
+  - DOD practice: `Tools/Crest_Dependency_Scanner.py` now scans `.csproj`, `.lscache`, `.sln`, `.slnx`, `.props`, `.targets`, and `.rsp` surfaces, hard-fails generated project Crest routes outside donor/helper projects, and reports generated-project Crest scripting defines/prune rules as evidence. `Tools/Crest_Quarantine_Polish_Audit.py` gates those scanner buckets.
+  - Rejected alternative: relying on Unity asmdef proof alone was rejected because generated project files are a separate compile entrypoint.
+  - Estimated saving: runtime 0 microseconds; repeatable compile-wall proof now covers IDE/MSBuild surfaces.
+- [x] Guarded build executed after generated-project cleanup.
+  - DOD practice: build gate showed no active compiler process and CPU below threshold; `dotnet build Hecton8.slnx -nologo -clp:ErrorsOnly -maxcpucount:1` passed with 0 errors and 171 warnings in 00:02:20.78.
+  - Rejected alternative: skipping build after MSBuild-surface edits was rejected because this loop directly changed generated project routing.
+  - Estimated saving: no runtime claim; compile proof confirms the generated-project quarantine did not break the solution.
+
+## Loop 23: Metadata Payload And Shader Vendor Global Closure
+
+- [x] Non-bridge shader no longer samples a Crest-named global.
+  - DOD practice: `Assets/_Project/Art/Shaders/Hecton_DryVolumeRestore.shader` now samples `_OceanCameraColorTexture`; `HectonDryVolumeFeature` reads the active bridge `CameraColorTextureId` and republishes the texture into the vendor-neutral global before the restore pass.
+  - Rejected alternative: leaving `_Crest_CameraColorTexture` in a shared Art shader was rejected because shader globals are dependency vocabulary and can become copied donor contracts outside the bridge.
+  - Estimated saving: runtime frame claim 0 microseconds; compile/architecture gain is a clean non-bridge shader surface.
+- [x] Stale active metadata payloads archived outside Unity/MSBuild visibility.
+  - DOD practice: moved root `WaveHarmonic.Crest*.csproj.lscache` files, `Assets/profilermarkers.tvc(.meta)`, and active `Assets/_Project/Data/CrestMigration/Crest4SettingsDump.json(.meta)` plus folder meta to `Docs/Archive/Crest_Version_Quarantine/`.
+  - Rejected alternative: editing or ignoring generated payloads in place was rejected because they are stale tool output, not authoritative runtime source.
+  - Estimated saving: runtime 0 microseconds; reduces IDE/import false positives and stale donor evidence.
+- [x] Scanner and polish audit now gate shader globals, lscache, profiler payloads, and active migration dumps.
+  - DOD practice: dependency scanner hard-fails non-bridge `_Crest_*` shader globals, active `profilermarkers.*` payloads, active CrestMigration payloads, root `WaveHarmonic.Crest*.csproj.lscache`, and generated project Crest routes; polish audit mirrors every new wall.
+  - Rejected alternative: treating side-agent findings as one-off cleanup was rejected because future regressions need the normal proof tools.
+  - Estimated saving: runtime 0 microseconds; proof time is reduced because the scanner explains every remaining allowed donor symbol.
+- [x] Loop 23 post-compaction verification gate rerun.
+  - DOD practice: `git diff --check` passed for touched Loop 22/23 files; report JSON/XML parse passed; py_compile passed for the two changed scanners; dependency scanner reports `breach_count=0`, `allowed_hit_count=40`, `global_scripting_define_hit_count=1`, `generated_project_scripting_define_hit_count=67`, `generated_project_prune_rule_hit_count=6`, `compliance_denylist_hit_count=6`, `vocabulary_debt_hit_count=111`; polish audit reports `failed_count=0`.
+  - Rejected alternative: launching a second build after the shader/pass patch was rejected because the latest gate showed active `VBCSCompiler` with CPU at 89.8 percent.
+  - Estimated saving: avoids a forbidden compile-wall hit; C# compile proof after Loop 23 remains gated, while Loop 22 full build proof remains valid for the generated project cleanup.

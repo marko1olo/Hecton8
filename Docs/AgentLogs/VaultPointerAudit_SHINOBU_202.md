@@ -950,3 +950,17 @@ The scan proves repo-wide debt, not successful consumer migration. A full rename
 - Tuning mutation uses `VaultGenerationHandle<PropwashGpuTuningDTO>` with exact BufferID `PropwashGpuTuning`, `SystemID.Vfx`, nonzero generation, required length, compaction-fence rejection, and `TryAcquireWriteLock`.
 - Telemetry graph readback stores only `VaultGenerationHandle<PropwashTelemetryEntry>` and resolves a pure `TryReadHandle` view per repaint.
 - This entry does not change `PropwashGpuTuningDTO`, `PropwashTelemetryEntry`, BufferIDs `PropwashGpuTuning` / `PropwashGpuTelemetryRing`, telemetry capacity, shader property IDs, CSV parser bytes, GPU propwash fake math, or VFX authority.
+
+## 2026-05-22 World Chunk Residency Cold Array Descriptor Route
+
+- `Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs` no longer has direct `TryGetBuffer`, `GetBuffer<`, `GetBufferHandle`, `TryGetBufferHandle`, `VaultBufferHandle<`, `ResolvePointer`, `GetElementAsRef`, `GetElementAsReadOnlyRef`, or `.ptr` routes.
+- `AcquireWorldStreamingArray<T>` now acquires a `VaultGenerationHandle<T>` and resolves through `TryResolveWorldStreamingVaultBuffer` with exact BufferID, `SystemID.WorldStreaming`, nonzero generation, required length, and created view proof.
+- Existing `H8Memory.Allocate<T>` fallback and `_worldStreamingVaultArrayMask` release behavior remain unchanged.
+- This entry does not change chunk residency DTOs, AUP center storage, HLOD impostor DTOs, pager ticket DTOs, BufferIDs `70566..70583`, dehydration metadata bytes, Addressables authority, HLOD fake route, or WorldStreaming ownership.
+
+## 2026-05-22 Flora VFX Vault Descriptor Route
+
+- `Assets/_Project/Scripts/World/FloraInteractionManager.cs` no longer has direct `TryGetBuffer(`, `GetBuffer<`, `GetBufferHandle`, `TryGetBufferHandle`, `VaultBufferHandle<`, `.Resolve(dataVault)`, `ResolvePointer`, `GetElementAsRef`, `GetElementAsReadOnlyRef`, `.ptr`, or `GenerationID` routes.
+- Wake sources, global wake scalar/vector buffers, wake blackbox, wake trail stamp commands, flora sway displacement field, sway metadata, sway blackbox, stiffness rules, and CSV scratch use `VaultGenerationHandle<T>` descriptors.
+- Each route validates exact BufferID, `SystemID.Vfx`, nonzero generation, required length, inactive compaction fence, `TryResolveHandle`, and created view state before returning a phase-local `NativeArray<T>`.
+- This entry does not change `WakeSource`, `WakeTelemetryEntry`, `WakeTrailStampCommand`, `FloraDisplacementDTO`, `FloraSwayFieldTelemetryEntry`, `FloraStiffnessRuleDTO`, BufferIDs, CSV parser bytes, shader property IDs, graphics buffer ABI, render texture route, blackbox dump bytes, or VFX authority.

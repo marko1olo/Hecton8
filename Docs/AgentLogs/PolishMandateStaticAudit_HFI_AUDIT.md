@@ -20,17 +20,17 @@ Evidence class: STATIC_SOURCE. No Unity import, compile, Play Mode, profiler, GC
 | `linqSurface` | 0 | 0 |
 | `nativeApiExposureAmbiguousMutable` | 0 | 0 |
 | `nativeApiExposureBuildEditorOnly` | 5 | 4 |
-| `nativeApiExposureBuildPlayerRuntime` | 198 | 88 |
+| `nativeApiExposureBuildPlayerRuntime` | 190 | 86 |
 | `nativeApiExposureBuildQaDevProof` | 8 | 2 |
 | `nativeApiExposureMutableReturn` | 51 | 33 |
-| `nativeApiExposureOutRefMutable` | 160 | 75 |
+| `nativeApiExposureOutRefMutable` | 152 | 73 |
 | `nativeApiRiskCoreVaultOrAllocatorSurface` | 21 | 3 |
 | `nativeApiRiskEditorOrProofSurface` | 13 | 6 |
 | `nativeApiRiskRuntimeAmbiguousMutableView` | 0 | 0 |
-| `nativeApiRiskRuntimeDiagnosticNamedMutableView` | 53 | 33 |
+| `nativeApiRiskRuntimeDiagnosticNamedMutableView` | 45 | 31 |
 | `nativeApiRiskRuntimeOutRefMutableView` | 89 | 48 |
 | `nativeApiRiskRuntimeReturnMutableView` | 35 | 23 |
-| `nativeCollectionPublicMutableApiExposure` | 211 | 94 |
+| `nativeCollectionPublicMutableApiExposure` | 203 | 92 |
 | `noAlias` | 2192 | 218 |
 | `packOne` | 0 | 0 |
 | `privateNativeBuildEditorOnly` | 48 | 18 |
@@ -170,10 +170,10 @@ Evidence class: STATIC_SOURCE. No Unity import, compile, Play Mode, profiler, GC
 | Path | Count |
 |---|---:|
 | `Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementRuntime.cs` | 4 |
-| `Assets/_Project/Scripts/Lighting/DynamicPointLightCulling/DynamicPointLightCullingDirector.cs` | 3 |
-| `Assets/_Project/Scripts/Lighting/InteriorGIProbeVolumeRuntime.cs` | 3 |
 | `Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs` | 3 |
-| `Assets/_Project/Scripts/Animation/FaunaProcedural/ProceduralBoneBlenderRuntime.cs` | 2 |
+| `Assets/_Project/Scripts/Core/Data/H8StaticDataContracts.cs` | 2 |
+| `Assets/_Project/Scripts/Networking/HectonRollbackNetcodeRuntime.cs` | 2 |
+| `Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs` | 2 |
 
 ### nativeApiRiskRuntimeOutRefMutableView
 

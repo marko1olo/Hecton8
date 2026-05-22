@@ -5686,3 +5686,49 @@ Static verification:
 - Descriptor scan confirms `VaultGenerationHandle<T>`, `TryGetGenerationHandle`, `GetGenerationHandle`, `TryAcquireWriteLock`, `ReleaseWriteLock`, `TryReadHandle`, and `SystemID.Vfx`.
 - Brace/preprocessor counts are balanced: braces `30/30`, `#if/#endif` `1/1`. `git diff --check` passed with CRLF warning only.
 - Build was not relaunched because `VBCSCompiler.exe` is active and full `Hecton8.slnx` remains blocked by the external Visor RenderGraph texture-binding errors recorded after Loop 238.
+
+## 2026-05-22 - Loop 241 - World Chunk Residency Cold Array Descriptor Route
+
+What was wrong:
+- `Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs` still used direct `vault.GetBuffer<T>` in the private `AcquireWorldStreamingArray<T>` helper.
+- That helper is cold allocation, but direct `GetBuffer<T>` still marks an external DataVault view and is unnecessary when a generation descriptor resolver already exists in the same file.
+
+What was done:
+- Replaced the direct open with `VaultGenerationHandle<T> handle = vault.GetGenerationHandle<T>(...)`.
+- Resolved the phase-local native view through `TryResolveWorldStreamingVaultBuffer(vault, in handle, bufferId, length, out NativeArray<T> vaultArray)`.
+- Preserved `_worldStreamingVaultArrayMask` and `H8Memory.Allocate<T>` fallback behavior.
+
+Cinematic cheats used:
+- No new visual fake. Existing WorldStreaming HLOD/impostor residency remains the Dear Lie route: visual occupancy is presented through impostors and metadata rather than fully hydrated chunks.
+
+Exact microseconds saved:
+- No measured speedup claimed. Runtime hot loops are unchanged. Added work is one O(1) descriptor proof per cold array acquisition.
+
+Static verification:
+- Focused scan found zero `TryGetBuffer`, `GetBuffer<`, `GetBufferHandle`, `TryGetBufferHandle`, `VaultBufferHandle<`, `ResolvePointer`, `GetElementAsRef`, `GetElementAsReadOnlyRef`, or `.ptr` hits in `WorldChunkResidencyManager.cs`.
+- Descriptor scan confirms `VaultGenerationHandle<T>`, `GetGenerationHandle`, `TryResolveWorldStreamingVaultBuffer`, `TryResolveHandle`, and `SystemID.WorldStreaming`.
+- Brace/preprocessor counts are balanced: braces `489/489`, `#if/#endif` `15/15`. `git diff --check` passed.
+- Build was not relaunched because `VBCSCompiler.exe` is active and full `Hecton8.slnx` remains blocked by the external Visor RenderGraph texture-binding errors recorded after Loop 238.
+
+## 2026-05-22 - Loop 242 - Flora VFX Vault Descriptor Route
+
+What was wrong:
+- `Assets/_Project/Scripts/World/FloraInteractionManager.cs` retained ten pointer-era VFX Vault handles and resolved them through `.Resolve(dataVault)`.
+- These lanes feed procedural wake visuals, flora sway fields, GPU uploads, stiffness CSV parsing, and blackbox telemetry. A stale pointer after DataVault relocation can corrupt visual proof data even if gameplay truth is not owned here.
+
+What was done:
+- Converted wake trail stamp commands, wake sources, wake scalar/vector buffers, wake blackbox, flora sway displacement field, sway metadata, sway blackbox, stiffness rules, and CSV scratch from `VaultBufferHandle<T>` to `VaultGenerationHandle<T>`.
+- Added `TryEnsureFloraVaultBuffer`, `TryResolveFloraVaultBuffer`, and `IsFloraVaultHandle`.
+- Blackbox generation fields now use the descriptor `Generation` field.
+
+Cinematic cheats used:
+- No new fake. Existing wake/sway presentation remains shader/GPU-fed Dear Lie motion rather than CPU water or plant physics.
+
+Exact microseconds saved:
+- No measured speedup claimed. Runtime hot loops are unchanged; added cost is O(1) descriptor proof at setup/resolve boundaries.
+
+Static verification:
+- Focused scan found zero `TryGetBuffer(`, `GetBuffer<`, `GetBufferHandle`, `TryGetBufferHandle`, `VaultBufferHandle<`, `ResolvePointer`, `GetElementAsRef`, `GetElementAsReadOnlyRef`, `.ptr`, `.Resolve(dataVault)`, or `GenerationID` hits in `FloraInteractionManager.cs`.
+- Descriptor scan confirms `VaultGenerationHandle<T>`, `TryEnsureFloraVaultBuffer`, `TryResolveFloraVaultBuffer`, `IsFloraVaultHandle`, `GetGenerationHandle`, `TryResolveHandle`, and `SystemID.Vfx`.
+- Brace/preprocessor counts are balanced: braces `619/619`, `#if/#endif` `8/8`. `git diff --check` passed with CRLF warning only.
+- Build was not relaunched because `VBCSCompiler.exe` is active and full `Hecton8.slnx` remains blocked by the external Visor RenderGraph texture-binding errors recorded after Loop 238.

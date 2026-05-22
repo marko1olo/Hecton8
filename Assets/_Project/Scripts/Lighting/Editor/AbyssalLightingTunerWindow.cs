@@ -129,7 +129,7 @@ namespace Hecton8.Lighting.Editor
             }
 
             if (_target != null &&
-                _target.TryGetTelemetryReadback(out NativeArray<InteriorGITelemetryEntry> telemetry, out int cursor))
+                _target.TryGetTelemetryReadback(out NativeArray<InteriorGITelemetryEntry>.ReadOnly telemetry, out int cursor))
             {
                 _graph.LoadTelemetry(telemetry, cursor);
             }
@@ -180,9 +180,9 @@ namespace Hecton8.Lighting.Editor
                 generateVisualContent += OnGenerateVisualContent;
             }
 
-            public void LoadTelemetry(NativeArray<InteriorGITelemetryEntry> telemetry, int cursor)
+            public void LoadTelemetry(NativeArray<InteriorGITelemetryEntry>.ReadOnly telemetry, int cursor)
             {
-                if (!telemetry.IsCreated || telemetry.Length <= 0)
+                if (telemetry.Length <= 0)
                     return;
 
                 int length = math.min(SampleCount, telemetry.Length);

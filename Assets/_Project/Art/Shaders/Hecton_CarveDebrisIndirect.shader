@@ -109,13 +109,13 @@ Shader "Hecton8/VFX/CarveDebrisIndirect"
                 return (half)step(0.78, crystalField);
             }
 
-            half3 PerturbHighTierNormal(float3 positionWS, half3 normalWS, half crystalMask)
+            half3 PerturbVisualOverkillNormal(float3 positionWS, half3 normalWS, half crystalMask, half visualOverkill01)
             {
                 float3 grain = float3(
                     Triangle01(dot(positionWS.yz, float2(17.17, 9.31))) - 0.5,
                     Triangle01(dot(positionWS.zx, float2(13.73, 15.97))) - 0.5,
                     Triangle01(dot(positionWS.xy, float2(19.91, 7.83))) - 0.5);
-                float strength = lerp(0.12, 0.24, crystalMask);
+                float strength = lerp(0.12, 0.24, crystalMask) * saturate((float)visualOverkill01);
                 return (half3)HectonCoreLitSafeNormalize((float3)normalWS + grain * strength);
             }
 
@@ -129,35 +129,38 @@ Shader "Hecton8/VFX/CarveDebrisIndirect"
                 return HectonCoreLitSafeNormalize(lerp(basisTangent, viewTangent, viewTangentMask));
             }
 
-            half3 ResolveHighTierReliefNormal(float3 positionWS, half3 normalWS, half3 viewDirWS, half crystalMask, out half saltMask, out half occlusion)
+            half3 ResolveVisualOverkillReliefNormal(float3 positionWS, half3 normalWS, half3 viewDirWS, half crystalMask, half visualOverkill01, out half saltMask, out half occlusion)
             {
+                float detail01 = saturate((float)visualOverkill01);
                 float3 normal = HectonCoreLitSafeNormalize((float3)normalWS);
                 float3 viewDir = HectonCoreLitSafeNormalize((float3)viewDirWS);
                 float3 tangent = ResolveReliefTangent(normal, viewDir);
                 float3 bitangent = HectonCoreLitSafeNormalize(cross(normal, tangent));
                 float viewGrazing = 1.0 - saturate(dot(normal, viewDir));
-                float parallaxScale = lerp(0.004, 0.021, viewGrazing);
+                float parallaxScale = lerp(0.004, 0.021, viewGrazing) * detail01;
                 float relief = 0.0;
+                int tapCount = (int)round(lerp(0.0, 16.0, detail01));
+                float invTapCount = rcp(max((float)tapCount, 1.0));
 
-                [unroll]
-                for (int tap = 0; tap < 16; tap++)
+                [loop]
+                for (int tap = 0; tap < tapCount; tap++)
                 {
-                    float layer = ((float)tap + 0.5) * 0.0625;
+                    float layer = ((float)tap + 0.5) * invTapCount;
                     float3 samplePosition = positionWS + tangent * (layer * parallaxScale) - normal * (layer * 0.006);
                     float height = ResolveShardHeight(samplePosition);
                     relief += step(layer, height);
                 }
 
-                relief *= 0.0625;
-                float offset = 0.018;
+                relief *= invTapCount;
+                float offset = lerp(0.006, 0.018, detail01);
                 float center = ResolveShardHeight(positionWS);
                 float dx = ResolveShardHeight(positionWS + tangent * offset) - center;
                 float dy = ResolveShardHeight(positionWS + bitangent * offset) - center;
-                float salt = saturate(relief * 0.85 + (float)crystalMask * 0.45 + viewGrazing * 0.2);
-                saltMask = (half)step(0.64, salt);
-                occlusion = (half)lerp(1.0, 0.72, saturate(relief + center * 0.35));
+                float salt = saturate((relief * 0.85 + (float)crystalMask * 0.45 + viewGrazing * 0.2) * detail01);
+                saltMask = (half)saturate(step(0.64, salt) * detail01);
+                occlusion = (half)lerp(1.0, lerp(1.0, 0.72, saturate(relief + center * 0.35)), detail01);
                 float3 bumped = normal - tangent * dx * 2.8 - bitangent * dy * 2.8;
-                return (half3)HectonCoreLitSafeNormalize(bumped);
+                return (half3)HectonCoreLitSafeNormalize(lerp(normal, bumped, detail01));
             }
 
             half3 ResolveSaltSubsurfaceFake(float3 positionWS, half3 normalWS, half3 viewDirWS, half saltMask, half crystalMask)
@@ -169,7 +172,7 @@ Shader "Hecton8/VFX/CarveDebrisIndirect"
                 return half3(0.10h, 0.21h, 0.19h) * scatter;
             }
 
-            void BuildDebrisBasis(uint particleIndex, float timeSeconds, float lowTierMask, out float3 rightWS, out float3 upWS, out float3 forwardWS, out float edgeJitter)
+            void BuildDebrisBasis(uint particleIndex, float timeSeconds, float qualityPressure01, out float3 rightWS, out float3 upWS, out float3 forwardWS, out float edgeJitter)
             {
                 edgeJitter = Hash11(particleIndex ^ 0xC2B2AE35u);
                 float3 rawForward = float3(
@@ -183,22 +186,18 @@ Shader "Hecton8/VFX/CarveDebrisIndirect"
                 upWS = cross(forwardWS, rightWS);
                 float angularSpeed = lerp(-8.0, 8.0, Hash11(particleIndex ^ 0x27D4EB2Du));
                 float spinPhase = Hash11(particleIndex ^ 0x165667B1u) * 6.28318530718 + timeSeconds * angularSpeed;
-                float spinS;
-                float spinC;
-                [branch]
-                if (lowTierMask > 0.5)
-                {
-                    float lowPhase = spinPhase * 0.15915494309;
-                    spinS = TriangleSigned(lowPhase);
-                    spinC = TriangleSigned(lowPhase + 0.25);
-                    float spinInvLength = rsqrt(max(spinS * spinS + spinC * spinC, 0.0001));
-                    spinS *= spinInvLength;
-                    spinC *= spinInvLength;
-                }
-                else
-                {
-                    sincos(spinPhase, spinS, spinC);
-                }
+                float cheapPhase = spinPhase * 0.15915494309;
+                float cheapS = TriangleSigned(cheapPhase);
+                float cheapC = TriangleSigned(cheapPhase + 0.25);
+                float cheapInvLength = rsqrt(max(cheapS * cheapS + cheapC * cheapC, 0.0001));
+                cheapS *= cheapInvLength;
+                cheapC *= cheapInvLength;
+                float exactS;
+                float exactC;
+                sincos(spinPhase, exactS, exactC);
+                float spinQuality01 = saturate(1.0 - qualityPressure01);
+                float spinS = lerp(cheapS, exactS, spinQuality01);
+                float spinC = lerp(cheapC, exactC, spinQuality01);
 
                 float3 spunRight = rightWS * spinC + upWS * spinS;
                 upWS = upWS * spinC - rightWS * spinS;
@@ -238,12 +237,13 @@ Shader "Hecton8/VFX/CarveDebrisIndirect"
                 output.life = life;
                 output.edgeMask = (half)saturate(abs(input.normalOS.y) * 0.35 + edgeJitter * 0.25);
                 output.impactMask = 0.0h;
+                half visualOverkill01 = (half)saturate(_CarveDebrisMaterialParams.w);
                 [branch]
-                if (_CarveDebrisMaterialParams.w > 0.5)
+                if (visualOverkill01 > 0.0001h)
                 {
                     float3 velocityWS = _DebrisPhysicsBuffer[particleIndex].xyz;
                     float speedSq = dot(velocityWS, velocityWS);
-                    output.impactMask = (half)(saturate(speedSq * 0.055) * saturate(life * 1.2));
+                    output.impactMask = (half)(saturate(speedSq * 0.055) * saturate(life * 1.2) * visualOverkill01);
                 }
 
                 return output;
@@ -255,12 +255,13 @@ Shader "Hecton8/VFX/CarveDebrisIndirect"
                 half3 color = H8CustomLightProbeResolveAmbient(positionWS, normalWS, half3(0.015h, 0.025h, 0.035h)) * albedo * caveAmbientFactor;
                 Light mainLight;
                 half mainShadow = 1.0h;
+                half visualOverkill01 = (half)saturate(_CarveDebrisMaterialParams.w);
                 [branch]
-                if (_CarveDebrisMaterialParams.w > 0.5)
+                if (visualOverkill01 > 0.0001h)
                 {
                     float4 shadowCoord = TransformWorldToShadowCoord(positionWS);
                     mainLight = GetMainLight(shadowCoord);
-                    mainShadow = HectonCoreLitResolveMx350ShadowDither((half)mainLight.shadowAttenuation, positionCS);
+                    mainShadow = lerp(1.0h, HectonCoreLitResolveMx350ShadowDither((half)mainLight.shadowAttenuation, positionCS), visualOverkill01);
                 }
                 else
                 {
@@ -288,26 +289,27 @@ Shader "Hecton8/VFX/CarveDebrisIndirect"
                 half crystalMask = 0.0h;
                 half saltMask = 0.0h;
                 half reliefOcclusion = 1.0h;
+                half visualOverkill01 = (half)saturate(_CarveDebrisMaterialParams.w);
                 [branch]
-                if (_CarveDebrisMaterialParams.w > 0.5)
+                if (visualOverkill01 > 0.0001h)
                 {
-                    crystalMask = ResolveCrystalMask(input.positionWS, edgeMask, input.impactMask);
-                    normalWS = PerturbHighTierNormal(input.positionWS, normalWS, crystalMask);
-                    normalWS = ResolveHighTierReliefNormal(input.positionWS, normalWS, viewDirWS, crystalMask, saltMask, reliefOcclusion);
-                    edgeMask = saturate(edgeMask + crystalMask * 0.45h);
+                    crystalMask = ResolveCrystalMask(input.positionWS, edgeMask, input.impactMask) * visualOverkill01;
+                    normalWS = PerturbVisualOverkillNormal(input.positionWS, normalWS, crystalMask, visualOverkill01);
+                    normalWS = ResolveVisualOverkillReliefNormal(input.positionWS, normalWS, viewDirWS, crystalMask, visualOverkill01, saltMask, reliefOcclusion);
+                    edgeMask = saturate(edgeMask + crystalMask * 0.45h * visualOverkill01);
                 }
 
                 half3 albedo = lerp(_BaseColor.rgb, _EdgeColor.rgb, edgeMask);
                 half3 lit = EvaluateDebrisLighting(input.positionWS, input.positionCS, normalWS, viewDirWS, albedo);
                 [branch]
-                if (_CarveDebrisMaterialParams.w > 0.5)
+                if (visualOverkill01 > 0.0001h)
                 {
                     half rim = 1.0h - saturate(dot(normalWS, viewDirWS));
                     rim *= rim * rim;
-                    lit += half3(0.22h, 0.34h, 0.39h) * crystalMask * saturate(rim + input.impactMask * 0.5h);
-                    lit += ResolveSaltSubsurfaceFake(input.positionWS, normalWS, viewDirWS, saltMask, crystalMask);
-                    lit = lerp(lit, lit * half3(1.14h, 1.22h, 1.18h), saltMask);
-                    lit *= reliefOcclusion;
+                    lit += half3(0.22h, 0.34h, 0.39h) * crystalMask * saturate(rim + input.impactMask * 0.5h) * visualOverkill01;
+                    lit += ResolveSaltSubsurfaceFake(input.positionWS, normalWS, viewDirWS, saltMask, crystalMask) * visualOverkill01;
+                    lit = lerp(lit, lit * half3(1.14h, 1.22h, 1.18h), saltMask * visualOverkill01);
+                    lit *= lerp(1.0h, reliefOcclusion, visualOverkill01);
                 }
 
                 half3 finalColor = HectonCoreLitApplyNoirFog(lit, input.fogFactor, input.positionWS);
@@ -393,7 +395,7 @@ Shader "Hecton8/VFX/CarveDebrisIndirect"
                 return lerp(fallback, value * rsqrt(max(lengthSq, 0.000001)), validMask);
             }
 
-            void BuildDebrisBasis(uint particleIndex, float timeSeconds, float lowTierMask, out float3 rightWS, out float3 upWS, out float3 forwardWS)
+            void BuildDebrisBasis(uint particleIndex, float timeSeconds, float qualityPressure01, out float3 rightWS, out float3 upWS, out float3 forwardWS)
             {
                 float edgeJitter = Hash11(particleIndex ^ 0xC2B2AE35u);
                 float3 rawForward = float3(
@@ -407,22 +409,18 @@ Shader "Hecton8/VFX/CarveDebrisIndirect"
                 upWS = cross(forwardWS, rightWS);
                 float angularSpeed = lerp(-8.0, 8.0, Hash11(particleIndex ^ 0x27D4EB2Du));
                 float spinPhase = Hash11(particleIndex ^ 0x165667B1u) * 6.28318530718 + timeSeconds * angularSpeed;
-                float spinS;
-                float spinC;
-                [branch]
-                if (lowTierMask > 0.5)
-                {
-                    float lowPhase = spinPhase * 0.15915494309;
-                    spinS = TriangleSigned(lowPhase);
-                    spinC = TriangleSigned(lowPhase + 0.25);
-                    float spinInvLength = rsqrt(max(spinS * spinS + spinC * spinC, 0.0001));
-                    spinS *= spinInvLength;
-                    spinC *= spinInvLength;
-                }
-                else
-                {
-                    sincos(spinPhase, spinS, spinC);
-                }
+                float cheapPhase = spinPhase * 0.15915494309;
+                float cheapS = TriangleSigned(cheapPhase);
+                float cheapC = TriangleSigned(cheapPhase + 0.25);
+                float cheapInvLength = rsqrt(max(cheapS * cheapS + cheapC * cheapC, 0.0001));
+                cheapS *= cheapInvLength;
+                cheapC *= cheapInvLength;
+                float exactS;
+                float exactC;
+                sincos(spinPhase, exactS, exactC);
+                float spinQuality01 = saturate(1.0 - qualityPressure01);
+                float spinS = lerp(cheapS, exactS, spinQuality01);
+                float spinC = lerp(cheapC, exactC, spinQuality01);
 
                 float3 spunRight = rightWS * spinC + upWS * spinS;
                 upWS = upWS * spinC - rightWS * spinS;

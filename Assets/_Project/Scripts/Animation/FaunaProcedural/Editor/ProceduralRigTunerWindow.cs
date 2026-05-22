@@ -108,7 +108,7 @@ namespace Hecton8.Animation.FaunaProcedural.Editor
         private void OnDrawGizmosSceneHook(SceneView sceneView)
         {
             if (!ProceduralBoneBlenderRuntime.TryGetActiveRuntimeInstance(out ProceduralBoneBlenderRuntime runtime) ||
-                !runtime.TryResolveMatricesForEditor(out NativeArray<float4x4> matrices, out NativeArray<int> parents, out int count))
+                !runtime.TryResolveMatricesForEditor(out NativeArray<float4x4>.ReadOnly matrices, out NativeArray<int>.ReadOnly parents, out int count))
             {
                 return;
             }

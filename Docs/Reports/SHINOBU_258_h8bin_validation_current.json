@@ -1,7 +1,7 @@
 {
   "agent_id": "SHINOBU_258",
   "bytes_processed": 36096,
-  "elapsed_seconds": 1.013045,
+  "elapsed_seconds": 0.0314,
   "files": [
     {
       "bytes": 36096,
@@ -13,36 +13,6 @@
   ],
   "files_checked": 1,
   "findings": [
-    {
-      "code": "RUNTIME_TEXT_STREAMINGASSETS_LOAD",
-      "message": "Runtime C# source loads text from StreamingAssets: Assets/_Project/Scripts/Rendering/WaterOptics/WaterOpticsRuntime.cs:767: string path = Path.Combine(Application.streamingAssetsPath, \"Hecton8\", \"water_optics_profiles.csv\");",
-      "path": "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\Rendering\\WaterOptics\\WaterOpticsRuntime.cs",
-      "references": [
-        "Assets/_Project/Scripts/Rendering/WaterOptics/WaterOpticsRuntime.cs:767:string path = Path.Combine(Application.streamingAssetsPath, \"Hecton8\", \"water_optics_profiles.csv\");"
-      ],
-      "remediation": "Move the human-readable source file to editor/source-data ownership, bake it into static_data.h8bin or a domain .h8bin payload, and make runtime cold boot read binary/Vault bytes.",
-      "severity": "ERROR"
-    },
-    {
-      "code": "RUNTIME_TEXT_STREAMINGASSETS_LOAD",
-      "message": "Runtime C# source loads text from StreamingAssets: Assets/_Project/Scripts/Visor/HectonVisorARStencilRendererFeature.cs:166: private const string CsvProfileRelativePath = \"Assets/StreamingAssets/Hecton8/Visor/visor_hud_profiles.csv\";",
-      "path": "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\Visor\\HectonVisorARStencilRendererFeature.cs",
-      "references": [
-        "Assets/_Project/Scripts/Visor/HectonVisorARStencilRendererFeature.cs:166:private const string CsvProfileRelativePath = \"Assets/StreamingAssets/Hecton8/Visor/visor_hud_profiles.csv\";"
-      ],
-      "remediation": "Move the human-readable source file to editor/source-data ownership, bake it into static_data.h8bin or a domain .h8bin payload, and make runtime cold boot read binary/Vault bytes.",
-      "severity": "ERROR"
-    },
-    {
-      "code": "RUNTIME_TEXT_STREAMINGASSETS_LOAD",
-      "message": "Runtime C# source loads text from StreamingAssets: Assets/_Project/Scripts/Visor/HectonVisorARStencilRendererFeature.cs:802: string path = Path.Combine(Application.streamingAssetsPath, \"Hecton8\", \"Visor\", \"visor_hud_profiles.csv\");",
-      "path": "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\Visor\\HectonVisorARStencilRendererFeature.cs",
-      "references": [
-        "Assets/_Project/Scripts/Visor/HectonVisorARStencilRendererFeature.cs:802:string path = Path.Combine(Application.streamingAssetsPath, \"Hecton8\", \"Visor\", \"visor_hud_profiles.csv\");"
-      ],
-      "remediation": "Move the human-readable source file to editor/source-data ownership, bake it into static_data.h8bin or a domain .h8bin payload, and make runtime cold boot read binary/Vault bytes.",
-      "severity": "ERROR"
-    },
     {
       "code": "STATIC_DATA_MISSING",
       "message": "required Data Monolith payload is absent: C:\\hades\\Hecton8\\Assets\\StreamingAssets\\Hecton8\\DataMonolith\\static_data.h8bin",
@@ -60,26 +30,10 @@
   "migration_summary": {
     "active_runtime_payload": "Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin",
     "blocking_counts": {
-      "RUNTIME_TEXT_STREAMINGASSETS_LOAD": 3,
       "STATIC_DATA_MISSING": 1
     },
-    "owner_count": 1,
-    "owners": [
-      {
-        "artifact_count": 0,
-        "artifacts": [],
-        "loader_site_count": 3,
-        "loader_sites": [
-          "Assets/_Project/Scripts/Rendering/WaterOptics/WaterOpticsRuntime.cs:767:string path = Path.Combine(Application.streamingAssetsPath, \"Hecton8\", \"water_optics_profiles.csv\");",
-          "Assets/_Project/Scripts/Visor/HectonVisorARStencilRendererFeature.cs:166:private const string CsvProfileRelativePath = \"Assets/StreamingAssets/Hecton8/Visor/visor_hud_profiles.csv\";",
-          "Assets/_Project/Scripts/Visor/HectonVisorARStencilRendererFeature.cs:802:string path = Path.Combine(Application.streamingAssetsPath, \"Hecton8\", \"Visor\", \"visor_hud_profiles.csv\");"
-        ],
-        "next_action": "Move human-readable sources to the listed source_root, bake an aligned binary payload, then remove runtime StreamingAssets text loaders or isolate editor-only facades.",
-        "owner": "Unclassified",
-        "runtime_route": "owner-domain .h8bin or static_data.h8bin section loaded before runtime use",
-        "source_root": "Assets/_SourceData/<owner>"
-      }
-    ],
+    "owner_count": 0,
+    "owners": [],
     "schema": "h8bin_validator.migration_summary.v1"
   },
   "primary_struct_layouts": {

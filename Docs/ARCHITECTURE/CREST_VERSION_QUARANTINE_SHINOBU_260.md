@@ -168,3 +168,30 @@ Task 12 status: blocked by dependency. Full suppression of Crest `OceanRenderer.
 - asmdef JSON parse check: passed for touched asmdefs.
 - Unity/dotnet rebuild check: skipped by explicit build gate because active `csc` and `dotnet` processes were present during final verification.
 - dotnet/Unity compile: skipped because the latest gate found active `dotnet`/`csc` processes and CPU sampled at 88; build gate forbids `dotnet`/`csc` under load.
+
+## Loop 22/23 Addendum: Generated Project And Payload Wall
+
+Generated project quarantine:
+
+- Root `WaveHarmonic.Crest*.csproj` and `WaveHarmonic.Crest*.csproj.lscache` files are archived under `Docs/Archive/Crest_Version_Quarantine/GeneratedProject/`.
+- Broad root generated first-party `.csproj` files no longer carry direct `Crest.csproj`, `Crest.Helpers.Editor.csproj`, `WaveHarmonic.Crest*.csproj`, or `Packages/com.waveharmonic.crest` routes.
+- `Directory.Build.targets` no longer injects `Crest` or `WaveHarmonic.Crest*` references into `Hecton8.Core`; only the missing-package prune target remains.
+- `Tools/Crest_Dependency_Scanner.py` scans `.csproj`, `.lscache`, `.sln`, `.slnx`, `.props`, `.targets`, and `.rsp` for hard generated-project Crest routes outside donor/helper boundaries. Current report keeps generated-project `CREST_OCEAN` / `CREST_URP` symbols as evidence only: `generated_project_scripting_define_hit_count=67`, `generated_project_prune_rule_hit_count=6`.
+
+Shader and stale-payload quarantine:
+
+- `Assets/_Project/Art/Shaders/Hecton_DryVolumeRestore.shader` samples `_OceanCameraColorTexture`, not `_Crest_CameraColorTexture`.
+- `Assets/_Project/Scripts/Visor/HectonDryVolumeFeature.cs` reads `IOceanVisualBridge.CameraColorTextureId` and republishes the source texture to the vendor-neutral global for the shared shader pass.
+- `Assets/profilermarkers.tvc(.meta)`, active `Assets/_Project/Data/CrestMigration/Crest4SettingsDump.json(.meta)`, and `Assets/_Project/Data/CrestMigration.meta` are archived outside Unity visibility.
+- The active `Assets/_Project/Data/CrestMigration/` folder has been removed after verifying it was empty.
+- The dependency scanner hard-fails non-bridge `_Crest_*` shader globals, active `profilermarkers.*`, active CrestMigration payloads, and root WaveHarmonic generated-project/lscache files. The polish audit gates all of these walls.
+
+Latest proof after Loop 23:
+
+- `git diff --check` for Loop 22/23 touched files: passed.
+- Report parse: `Docs/Reports/ARCHITECTURE_OPTIMIZATION_REPORT.json`, `Docs/Reports/CREST_QUARANTINE_POLISH_AUDIT.json`, `Docs/Reports/CREST_QUARANTINE_REPORT.json`, and `Docs/Reports/SHINOBU_260_SELF_AUDIT.xml` parse successfully.
+- `python -m py_compile Tools/Crest_Dependency_Scanner.py Tools/Crest_Quarantine_Polish_Audit.py`: passed.
+- `python Tools/Crest_Dependency_Scanner.py`: passed with `breach_count=0`, `allowed_hit_count=40`, `global_scripting_define_hit_count=1`, `generated_project_scripting_define_hit_count=67`, `generated_project_prune_rule_hit_count=6`, `compliance_denylist_hit_count=6`, `vocabulary_debt_hit_count=111`.
+- `python Tools/Crest_Quarantine_Polish_Audit.py`: passed with `failed_count=0`.
+- Full `dotnet build Hecton8.slnx -nologo -clp:ErrorsOnly -maxcpucount:1` was executed after Loop 22 generated-project cleanup when the gate opened: 0 errors, 171 warnings, elapsed 00:02:20.78.
+- A second build after the Loop 23 C# render-pass/shader patch was not launched because the latest gate found active `VBCSCompiler` and CPU sampled at 89.8 percent. This is recorded as a gated compile proof gap, not hidden success.

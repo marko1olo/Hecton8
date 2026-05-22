@@ -240,7 +240,14 @@ namespace Hecton8.UI
 
             s_stencilRenderGraphActive = active;
             if (active && s_activeRuntimeInstance != null)
+            {
+                s_activeRuntimeInstance.ClearStencilCrossDomainProviders();
                 s_activeRuntimeInstance.HideRenderedSlots();
+            }
+            else if (!active && s_activeRuntimeInstance != null)
+            {
+                s_activeRuntimeInstance.CacheLegacyWaypointProvidersCold();
+            }
         }
 
         public static int CopyStencilTargetSources(NativeArray<StencilTargetSourceDTO> destination, int maxCount)
@@ -326,7 +333,8 @@ namespace Hecton8.UI
         {
             s_activeRuntimeInstance = this;
             CacheRegistryServicesCold();
-            TryResolveVegetationBridgeCold();
+            if (!s_stencilRenderGraphActive)
+                CacheLegacyWaypointProvidersCold();
             TryRegisterHotSwapListener();
             TryRegisterWaypointService();
             ResolveOwners(allowHierarchySearch: true);
@@ -341,7 +349,8 @@ namespace Hecton8.UI
 
         private void Start()
         {
-            TryResolveVegetationBridgeCold();
+            if (!s_stencilRenderGraphActive)
+                CacheLegacyWaypointProvidersCold();
             ResolveOwners(allowHierarchySearch: true);
             if (!s_stencilRenderGraphActive)
                 EnsureUiBuilt(allowCreate: true);
@@ -417,7 +426,8 @@ namespace Hecton8.UI
             _viewCamera = null;
             _uiBuilt = false;
             _root = null;
-            TryResolveVegetationBridgeCold();
+            if (!s_stencilRenderGraphActive)
+                CacheLegacyWaypointProvidersCold();
             ResolveOwners(allowHierarchySearch: true);
             if (!s_stencilRenderGraphActive)
                 EnsureUiBuilt(allowCreate: true);
@@ -442,11 +452,11 @@ namespace Hecton8.UI
 
         private void ResolveOwners(bool allowHierarchySearch)
         {
-            if (allowHierarchySearch)
-                TryResolveVegetationBridgeCold();
-
             if (s_stencilRenderGraphActive)
             {
+                if (allowHierarchySearch)
+                    ClearStencilCrossDomainProviders();
+
                 IPlayerRuntimeContext playerContext = _cachedPlayerContext;
                 if (_viewCamera == null && playerContext != null)
                     _viewCamera = playerContext.PlayerCamera;
@@ -454,6 +464,9 @@ namespace Hecton8.UI
                     _playerTransform = playerContext.PlayerTransform;
                 return;
             }
+
+            if (allowHierarchySearch)
+                CacheLegacyWaypointProvidersCold();
 
             if (allowHierarchySearch || _targetCanvas == null || _viewCamera == null)
             {
@@ -520,13 +533,17 @@ namespace Hecton8.UI
 
             if (serviceSlot == GlobalRegistryServiceSlot.EmergencyRelayRuntime)
             {
-                _cachedEmergencyRelay = currentService as EmergencyServiceRelayDirector;
+                _cachedEmergencyRelay = s_stencilRenderGraphActive
+                    ? null
+                    : currentService as EmergencyServiceRelayDirector;
                 return;
             }
 
             if (serviceSlot == GlobalRegistryServiceSlot.MapMagicVegetationRuntime)
             {
-                _vegetationBridge = currentService as HectonMapMagicVegetationBridge;
+                _vegetationBridge = s_stencilRenderGraphActive
+                    ? null
+                    : currentService as HectonMapMagicVegetationBridge;
                 return;
             }
 
@@ -554,13 +571,33 @@ namespace Hecton8.UI
         private void CacheRegistryServicesCold()
         {
             _cachedPlayerContext = GlobalRegistry.Player;
-            _cachedEmergencyRelay = GlobalRegistry.EmergencyRelay;
             if (_cachedPlayerContext != null && _playerTransform == null)
                 _playerTransform = _cachedPlayerContext.PlayerTransform;
         }
 
+        private void CacheLegacyWaypointProvidersCold()
+        {
+            if (s_stencilRenderGraphActive)
+            {
+                ClearStencilCrossDomainProviders();
+                return;
+            }
+
+            _cachedEmergencyRelay = GlobalRegistry.EmergencyRelay;
+            TryResolveVegetationBridgeCold();
+        }
+
+        private void ClearStencilCrossDomainProviders()
+        {
+            _cachedEmergencyRelay = null;
+            _vegetationBridge = null;
+        }
+
         private void TryResolveVegetationBridgeCold()
         {
+            if (s_stencilRenderGraphActive)
+                return;
+
             if (_vegetationBridge != null)
                 return;
 
@@ -660,36 +697,39 @@ namespace Hecton8.UI
         {
             int count = 0;
 
-            EmergencyServiceRelayDirector relayDirector = _cachedEmergencyRelay;
-            EmergencyServiceRelay relayTarget = relayDirector != null ? relayDirector.GetActiveRouteTarget() : null;
-            if (relayTarget != null && relayTarget.isActiveAndEnabled && count < _runtimeWaypoints.Length)
+            if (!s_stencilRenderGraphActive)
             {
-                RuntimeWaypoint waypoint = _runtimeWaypoints[count];
-                waypoint.PositionAup = relayTarget.RelayAup;
-                waypoint.Label = DefaultRelayLabel;
-                waypoint.Color = RelayColor;
-                waypoint.Active = true;
-                waypoint.Occluded = count < _waypointCount && _runtimeWaypoints[count].Occluded;
-                _runtimeWaypoints[count] = waypoint;
-                count++;
-            }
-
-            if (_vegetationBridge != null &&
-                _vegetationBridge.TryGetActiveAbyssalAnchorAupPayload(out NativeArray<AbsoluteUniversePosition>.ReadOnly anchorAups, out int anchorAupCount) &&
-                anchorAups.Length > 0 &&
-                anchorAupCount > 0)
-            {
-                int visibleAnchors = math.min(MaxAnchorWaypoints, math.min(anchorAupCount, anchorAups.Length));
-                for (int i = 0; i < visibleAnchors && count < _runtimeWaypoints.Length; i++)
+                EmergencyServiceRelayDirector relayDirector = _cachedEmergencyRelay;
+                EmergencyServiceRelay relayTarget = relayDirector != null ? relayDirector.GetActiveRouteTarget() : null;
+                if (relayTarget != null && relayTarget.isActiveAndEnabled && count < _runtimeWaypoints.Length)
                 {
                     RuntimeWaypoint waypoint = _runtimeWaypoints[count];
-                    waypoint.PositionAup = anchorAups[i];
-                    waypoint.Label = DefaultAnchorLabel;
-                    waypoint.Color = AnchorColor;
+                    waypoint.PositionAup = relayTarget.RelayAup;
+                    waypoint.Label = DefaultRelayLabel;
+                    waypoint.Color = RelayColor;
                     waypoint.Active = true;
                     waypoint.Occluded = count < _waypointCount && _runtimeWaypoints[count].Occluded;
                     _runtimeWaypoints[count] = waypoint;
                     count++;
+                }
+
+                if (_vegetationBridge != null &&
+                    _vegetationBridge.TryGetActiveAbyssalAnchorAupPayload(out NativeArray<AbsoluteUniversePosition>.ReadOnly anchorAups, out int anchorAupCount) &&
+                    anchorAups.Length > 0 &&
+                    anchorAupCount > 0)
+                {
+                    int visibleAnchors = math.min(MaxAnchorWaypoints, math.min(anchorAupCount, anchorAups.Length));
+                    for (int i = 0; i < visibleAnchors && count < _runtimeWaypoints.Length; i++)
+                    {
+                        RuntimeWaypoint waypoint = _runtimeWaypoints[count];
+                        waypoint.PositionAup = anchorAups[i];
+                        waypoint.Label = DefaultAnchorLabel;
+                        waypoint.Color = AnchorColor;
+                        waypoint.Active = true;
+                        waypoint.Occluded = count < _waypointCount && _runtimeWaypoints[count].Occluded;
+                        _runtimeWaypoints[count] = waypoint;
+                        count++;
+                    }
                 }
             }
 

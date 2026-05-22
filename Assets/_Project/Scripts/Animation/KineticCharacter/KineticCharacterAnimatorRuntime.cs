@@ -143,7 +143,7 @@ namespace Hecton8.Animation.KineticCharacter
                 out tuning);
         }
 
-        public bool TryResolveMatricesForEditor(out NativeArray<float4x4> matrices, out NativeArray<int> parents, out int matrixCount)
+        public bool TryResolveMatricesForEditor(out NativeArray<float4x4>.ReadOnly matrices, out NativeArray<int>.ReadOnly parents, out int matrixCount)
         {
             matrices = default;
             parents = default;
@@ -155,12 +155,14 @@ namespace Hecton8.Animation.KineticCharacter
             if (vault == null)
                 return false;
 
-            if (!TryResolveVaultBuffer(vault, in _matricesHandle, 1, out matrices) ||
-                !TryResolveVaultBuffer(vault, in _parentIndicesHandle, 1, out parents))
+            if (!TryResolveVaultBuffer(vault, in _matricesHandle, 1, out NativeArray<float4x4> mutableMatrices) ||
+                !TryResolveVaultBuffer(vault, in _parentIndicesHandle, 1, out NativeArray<int> mutableParents))
             {
                 return false;
             }
 
+            matrices = mutableMatrices.AsReadOnly();
+            parents = mutableParents.AsReadOnly();
             matrixCount = math.min(math.min(_activeMatrixUploadCount, matrices.Length), parents.Length);
             return matrixCount > 0;
         }
@@ -1309,7 +1311,7 @@ namespace Hecton8.Animation.KineticCharacter
 
         private void OnDrawGizmosSelected()
         {
-            if (!TryResolveMatricesForEditor(out NativeArray<float4x4> matrices, out NativeArray<int> parents, out int count))
+            if (!TryResolveMatricesForEditor(out NativeArray<float4x4>.ReadOnly matrices, out NativeArray<int>.ReadOnly parents, out int count))
                 return;
 
             int drawCount = math.min(count, 128);

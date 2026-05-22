@@ -1395,16 +1395,16 @@ namespace Hecton8.World
         private Vector4 _wakeTrailWorldRect;
         private Vector2 _wakeTrailCenterXZ;
         private Vector2 _pendingWakeTrailScrollUv;
-        private VaultBufferHandle<WakeTrailStampCommand> _wakeTrailStampCommandsHandle;
-        private VaultBufferHandle<WakeSource> _proceduralWakePointsHandle;
-        private VaultBufferHandle<float4> _globalWakeBufferHandle;
-        private VaultBufferHandle<float4> _globalWakeVectorBufferHandle;
-        private VaultBufferHandle<WakeTelemetryEntry> _wakeBlackBoxHandle;
-        private VaultBufferHandle<FloraDisplacementDTO> _floraSwayFieldHandle;
-        private VaultBufferHandle<float4> _floraSwayFieldMetaHandle;
-        private VaultBufferHandle<FloraSwayFieldTelemetryEntry> _floraSwayFieldBlackBoxHandle;
-        private VaultBufferHandle<FloraStiffnessRuleDTO> _floraStiffnessRulesHandle;
-        private VaultBufferHandle<byte> _floraStiffnessCsvScratchHandle;
+        private VaultGenerationHandle<WakeTrailStampCommand> _wakeTrailStampCommandsHandle;
+        private VaultGenerationHandle<WakeSource> _proceduralWakePointsHandle;
+        private VaultGenerationHandle<float4> _globalWakeBufferHandle;
+        private VaultGenerationHandle<float4> _globalWakeVectorBufferHandle;
+        private VaultGenerationHandle<WakeTelemetryEntry> _wakeBlackBoxHandle;
+        private VaultGenerationHandle<FloraDisplacementDTO> _floraSwayFieldHandle;
+        private VaultGenerationHandle<float4> _floraSwayFieldMetaHandle;
+        private VaultGenerationHandle<FloraSwayFieldTelemetryEntry> _floraSwayFieldBlackBoxHandle;
+        private VaultGenerationHandle<FloraStiffnessRuleDTO> _floraStiffnessRulesHandle;
+        private VaultGenerationHandle<byte> _floraStiffnessCsvScratchHandle;
         private IDataVault _wakeDataVault;
         private Vector4[] _proceduralWakeShaderBuffer;
         private Vector4[] _globalWakeShaderBuffer;
@@ -3805,15 +3805,13 @@ namespace Hecton8.World
             if (dataVault == null)
                 return false;
 
-            if (!_floraStiffnessRulesHandle.IsCreated)
-                _floraStiffnessRulesHandle = dataVault.GetBufferHandle<FloraStiffnessRuleDTO>(
-                    FloraStiffnessRulesBufferId,
-                    FloraStiffnessRuleCapacity,
-                    SystemID.Vfx,
-                    NativeArrayOptions.UninitializedMemory);
-
-            rules = _floraStiffnessRulesHandle.Resolve(dataVault);
-            return rules.IsCreated;
+            return TryEnsureFloraVaultBuffer(
+                dataVault,
+                ref _floraStiffnessRulesHandle,
+                FloraStiffnessRulesBufferId,
+                FloraStiffnessRuleCapacity,
+                NativeArrayOptions.UninitializedMemory,
+                out rules);
         }
 
         private bool TryResolveFloraCsvScratch(out NativeArray<byte> scratch)
@@ -3823,15 +3821,13 @@ namespace Hecton8.World
             if (dataVault == null)
                 return false;
 
-            if (!_floraStiffnessCsvScratchHandle.IsCreated)
-                _floraStiffnessCsvScratchHandle = dataVault.GetBufferHandle<byte>(
-                    FloraStiffnessCsvScratchBufferId,
-                    FloraCsvScratchBytes,
-                    SystemID.Vfx,
-                    NativeArrayOptions.UninitializedMemory);
-
-            scratch = _floraStiffnessCsvScratchHandle.Resolve(dataVault);
-            return scratch.IsCreated;
+            return TryEnsureFloraVaultBuffer(
+                dataVault,
+                ref _floraStiffnessCsvScratchHandle,
+                FloraStiffnessCsvScratchBufferId,
+                FloraCsvScratchBytes,
+                NativeArrayOptions.UninitializedMemory,
+                out scratch);
         }
 
         private static FloraStiffnessRuleDTO BuildFloraStiffnessRule(uint plantHash, float stiffness, float damping)
@@ -4332,7 +4328,7 @@ namespace Hecton8.World
             entry.MaxRadius = maxRadius;
             entry.Flags = flags;
             entry.StateHash = stateHash;
-            entry.DataVaultGeneration = _proceduralWakePointsHandle.GenerationID;
+            entry.DataVaultGeneration = _proceduralWakePointsHandle.Generation;
             entry.AupShiftSequence = HectonFloatingOrigin.CurrentShiftSequence;
             entry.SystemStress01 = HomeostasisBrain.SystemHealthIndex01;
             entry.BudgetPressure01 = ResolveWakeBudgetPressure01();
@@ -4480,7 +4476,7 @@ namespace Hecton8.World
             entry.SystemStress01 = HomeostasisBrain.SystemHealthIndex01;
             entry.Flags = flags;
             entry.StateHash = stateHash;
-            entry.DataVaultGeneration = _floraSwayFieldHandle.GenerationID;
+            entry.DataVaultGeneration = _floraSwayFieldHandle.Generation;
             entry.AupShiftSequence = HectonFloatingOrigin.CurrentShiftSequence;
             entry.CpuMicroseconds = _floraSwayFieldLastCpuMicroseconds;
             blackBox[cursor] = entry;
@@ -7658,37 +7654,44 @@ namespace Hecton8.World
             NativeArrayOptions options = clearExisting
                 ? NativeArrayOptions.ClearMemory
                 : NativeArrayOptions.UninitializedMemory;
-            _proceduralWakePointsHandle = dataVault.GetBufferHandle<WakeSource>(
-                BufferID.WakeSources,
-                MaxProceduralWakePoints,
-                SystemID.Vfx,
-                options);
-            _globalWakeBufferHandle = dataVault.GetBufferHandle<float4>(
-                BufferID.WakeGlobalBuffer,
-                MaxProceduralWakePoints,
-                SystemID.Vfx,
-                options);
-            _globalWakeVectorBufferHandle = dataVault.GetBufferHandle<float4>(
-                BufferID.WakeVectorBuffer,
-                MaxProceduralWakePoints,
-                SystemID.Vfx,
-                options);
-            _wakeBlackBoxHandle = dataVault.GetBufferHandle<WakeTelemetryEntry>(
-                BufferID.WakeBlackBox,
-                WakeBlackBoxCapacity,
-                SystemID.Vfx,
-                options);
-            _wakeTrailStampCommandsHandle = dataVault.GetBufferHandle<WakeTrailStampCommand>(
-                BufferID.WakeTrailStampCommands,
-                WakeTrailStampCommandCapacity,
-                SystemID.Vfx,
-                options);
-
-            if (!TryResolveProceduralWakeBuffer(out NativeArray<WakeSource> wakeSources) ||
-                !TryResolveGlobalWakeBuffers(out NativeArray<float4> globalWakes, out NativeArray<float4> globalWakeVectors) ||
-                !TryResolveWakeBlackBox(out NativeArray<WakeTelemetryEntry> wakeBlackBox) ||
-                !TryResolveWakeTrailStampCommands(out NativeArray<WakeTrailStampCommand> wakeTrailStampCommands))
+            if (!TryEnsureFloraVaultBuffer(
+                    dataVault,
+                    ref _proceduralWakePointsHandle,
+                    BufferID.WakeSources,
+                    MaxProceduralWakePoints,
+                    options,
+                    out NativeArray<WakeSource> wakeSources) ||
+                !TryEnsureFloraVaultBuffer(
+                    dataVault,
+                    ref _globalWakeBufferHandle,
+                    BufferID.WakeGlobalBuffer,
+                    MaxProceduralWakePoints,
+                    options,
+                    out NativeArray<float4> globalWakes) ||
+                !TryEnsureFloraVaultBuffer(
+                    dataVault,
+                    ref _globalWakeVectorBufferHandle,
+                    BufferID.WakeVectorBuffer,
+                    MaxProceduralWakePoints,
+                    options,
+                    out NativeArray<float4> globalWakeVectors) ||
+                !TryEnsureFloraVaultBuffer(
+                    dataVault,
+                    ref _wakeBlackBoxHandle,
+                    BufferID.WakeBlackBox,
+                    WakeBlackBoxCapacity,
+                    options,
+                    out NativeArray<WakeTelemetryEntry> wakeBlackBox) ||
+                !TryEnsureFloraVaultBuffer(
+                    dataVault,
+                    ref _wakeTrailStampCommandsHandle,
+                    BufferID.WakeTrailStampCommands,
+                    WakeTrailStampCommandCapacity,
+                    options,
+                    out NativeArray<WakeTrailStampCommand> wakeTrailStampCommands))
+            {
                 return false;
+            }
 
             if (clearExisting)
             {
@@ -7713,11 +7716,12 @@ namespace Hecton8.World
         {
             wakeSources = default;
             IDataVault dataVault = _wakeDataVault;
-            if (dataVault == null || !_proceduralWakePointsHandle.IsCreated)
-                return false;
-
-            wakeSources = _proceduralWakePointsHandle.Resolve(dataVault);
-            return wakeSources.IsCreated;
+            return TryResolveFloraVaultBuffer(
+                dataVault,
+                in _proceduralWakePointsHandle,
+                BufferID.WakeSources,
+                MaxProceduralWakePoints,
+                out wakeSources);
         }
 
         private bool TryResolveGlobalWakeBuffers(out NativeArray<float4> globalWakes, out NativeArray<float4> globalWakeVectors)
@@ -7725,30 +7729,37 @@ namespace Hecton8.World
             globalWakes = default;
             globalWakeVectors = default;
             IDataVault dataVault = _wakeDataVault;
-            if (dataVault == null ||
-                !_globalWakeBufferHandle.IsCreated ||
-                !_globalWakeVectorBufferHandle.IsCreated)
-                return false;
-
-            globalWakes = _globalWakeBufferHandle.Resolve(dataVault);
-            globalWakeVectors = _globalWakeVectorBufferHandle.Resolve(dataVault);
-            return globalWakes.IsCreated && globalWakeVectors.IsCreated;
+            return TryResolveFloraVaultBuffer(
+                       dataVault,
+                       in _globalWakeBufferHandle,
+                       BufferID.WakeGlobalBuffer,
+                       MaxProceduralWakePoints,
+                       out globalWakes) &&
+                   TryResolveFloraVaultBuffer(
+                       dataVault,
+                       in _globalWakeVectorBufferHandle,
+                       BufferID.WakeVectorBuffer,
+                       MaxProceduralWakePoints,
+                       out globalWakeVectors);
         }
 
         private bool TryResolveWakeBlackBox(out NativeArray<WakeTelemetryEntry> wakeBlackBox)
         {
             wakeBlackBox = default;
             IDataVault dataVault = _wakeDataVault;
-            if (dataVault == null || !_wakeBlackBoxHandle.IsCreated)
-                return false;
-
-            wakeBlackBox = _wakeBlackBoxHandle.Resolve(dataVault);
-            return wakeBlackBox.IsCreated;
+            return TryResolveFloraVaultBuffer(
+                dataVault,
+                in _wakeBlackBoxHandle,
+                BufferID.WakeBlackBox,
+                WakeBlackBoxCapacity,
+                out wakeBlackBox);
         }
 
         private bool EnsureFloraSwayFieldResources()
         {
-            if (!_floraSwayFieldHandle.IsCreated || !_floraSwayFieldMetaHandle.IsCreated || !_floraSwayFieldBlackBoxHandle.IsCreated)
+            if (!IsFloraVaultHandle(in _floraSwayFieldHandle, FloraSwayDisplacementFieldBufferId) ||
+                !IsFloraVaultHandle(in _floraSwayFieldMetaHandle, FloraSwayFieldMetaBufferId) ||
+                !IsFloraVaultHandle(in _floraSwayFieldBlackBoxHandle, FloraSwayFieldBlackBoxBufferId))
             {
                 if (!ResolveFloraSwayFieldVaultBuffer(clearExisting: false))
                     return false;
@@ -7781,34 +7792,41 @@ namespace Hecton8.World
             NativeArrayOptions options = clearExisting
                 ? NativeArrayOptions.ClearMemory
                 : NativeArrayOptions.UninitializedMemory;
-            _floraSwayFieldHandle = dataVault.GetBufferHandle<FloraDisplacementDTO>(
-                FloraSwayDisplacementFieldBufferId,
-                FloraSwayFieldMaxNodeCount,
-                SystemID.Vfx,
-                options);
-            _floraSwayFieldMetaHandle = dataVault.GetBufferHandle<float4>(
-                FloraSwayFieldMetaBufferId,
-                FloraSwayFieldMetaVectorCount,
-                SystemID.Vfx,
-                options);
-            _floraSwayFieldBlackBoxHandle = dataVault.GetBufferHandle<FloraSwayFieldTelemetryEntry>(
-                FloraSwayFieldBlackBoxBufferId,
-                FloraSwayFieldBlackBoxCapacity,
-                SystemID.Vfx,
-                options);
-            _floraStiffnessRulesHandle = dataVault.GetBufferHandle<FloraStiffnessRuleDTO>(
-                FloraStiffnessRulesBufferId,
-                FloraStiffnessRuleCapacity,
-                SystemID.Vfx,
-                options);
-            _floraStiffnessCsvScratchHandle = dataVault.GetBufferHandle<byte>(
-                FloraStiffnessCsvScratchBufferId,
-                FloraCsvScratchBytes,
-                SystemID.Vfx,
-                options);
-
-            if (!TryResolveFloraSwayFieldBuffers(out NativeArray<FloraDisplacementDTO> fieldValues, out NativeArray<float4> fieldMeta) ||
-                !TryResolveFloraSwayFieldBlackBox(out NativeArray<FloraSwayFieldTelemetryEntry> blackBox))
+            if (!TryEnsureFloraVaultBuffer(
+                    dataVault,
+                    ref _floraSwayFieldHandle,
+                    FloraSwayDisplacementFieldBufferId,
+                    FloraSwayFieldMaxNodeCount,
+                    options,
+                    out NativeArray<FloraDisplacementDTO> fieldValues) ||
+                !TryEnsureFloraVaultBuffer(
+                    dataVault,
+                    ref _floraSwayFieldMetaHandle,
+                    FloraSwayFieldMetaBufferId,
+                    FloraSwayFieldMetaVectorCount,
+                    options,
+                    out NativeArray<float4> fieldMeta) ||
+                !TryEnsureFloraVaultBuffer(
+                    dataVault,
+                    ref _floraSwayFieldBlackBoxHandle,
+                    FloraSwayFieldBlackBoxBufferId,
+                    FloraSwayFieldBlackBoxCapacity,
+                    options,
+                    out NativeArray<FloraSwayFieldTelemetryEntry> blackBox) ||
+                !TryEnsureFloraVaultBuffer(
+                    dataVault,
+                    ref _floraStiffnessRulesHandle,
+                    FloraStiffnessRulesBufferId,
+                    FloraStiffnessRuleCapacity,
+                    options,
+                    out NativeArray<FloraStiffnessRuleDTO> _) ||
+                !TryEnsureFloraVaultBuffer(
+                    dataVault,
+                    ref _floraStiffnessCsvScratchHandle,
+                    FloraStiffnessCsvScratchBufferId,
+                    FloraCsvScratchBytes,
+                    options,
+                    out NativeArray<byte> _))
             {
                 return false;
             }
@@ -7833,27 +7851,30 @@ namespace Hecton8.World
             fieldValues = default;
             fieldMeta = default;
             IDataVault dataVault = _wakeDataVault;
-            if (dataVault == null ||
-                !_floraSwayFieldHandle.IsCreated ||
-                !_floraSwayFieldMetaHandle.IsCreated)
-            {
-                return false;
-            }
-
-            fieldValues = _floraSwayFieldHandle.Resolve(dataVault);
-            fieldMeta = _floraSwayFieldMetaHandle.Resolve(dataVault);
-            return fieldValues.IsCreated && fieldMeta.IsCreated;
+            return TryResolveFloraVaultBuffer(
+                       dataVault,
+                       in _floraSwayFieldHandle,
+                       FloraSwayDisplacementFieldBufferId,
+                       FloraSwayFieldMaxNodeCount,
+                       out fieldValues) &&
+                   TryResolveFloraVaultBuffer(
+                       dataVault,
+                       in _floraSwayFieldMetaHandle,
+                       FloraSwayFieldMetaBufferId,
+                       FloraSwayFieldMetaVectorCount,
+                       out fieldMeta);
         }
 
         private bool TryResolveFloraSwayFieldBlackBox(out NativeArray<FloraSwayFieldTelemetryEntry> blackBox)
         {
             blackBox = default;
             IDataVault dataVault = _wakeDataVault;
-            if (dataVault == null || !_floraSwayFieldBlackBoxHandle.IsCreated)
-                return false;
-
-            blackBox = _floraSwayFieldBlackBoxHandle.Resolve(dataVault);
-            return blackBox.IsCreated;
+            return TryResolveFloraVaultBuffer(
+                dataVault,
+                in _floraSwayFieldBlackBoxHandle,
+                FloraSwayFieldBlackBoxBufferId,
+                FloraSwayFieldBlackBoxCapacity,
+                out blackBox);
         }
 
         private bool EnsureFloraSwayFieldGraphicsBuffers()
@@ -7885,17 +7906,19 @@ namespace Hecton8.World
                 return false;
             }
 
-            NativeArrayOptions options = !_wakeTrailStampCommandsHandle.IsCreated || clearExisting
+            NativeArrayOptions options = !IsFloraVaultHandle(in _wakeTrailStampCommandsHandle, BufferID.WakeTrailStampCommands) || clearExisting
                 ? NativeArrayOptions.ClearMemory
                 : NativeArrayOptions.UninitializedMemory;
-            _wakeTrailStampCommandsHandle = dataVault.GetBufferHandle<WakeTrailStampCommand>(
-                BufferID.WakeTrailStampCommands,
-                WakeTrailStampCommandCapacity,
-                SystemID.Vfx,
-                options);
-
-            if (!TryResolveWakeTrailStampCommands(out NativeArray<WakeTrailStampCommand> stampCommands))
+            if (!TryEnsureFloraVaultBuffer(
+                    dataVault,
+                    ref _wakeTrailStampCommandsHandle,
+                    BufferID.WakeTrailStampCommands,
+                    WakeTrailStampCommandCapacity,
+                    options,
+                    out NativeArray<WakeTrailStampCommand> stampCommands))
+            {
                 return false;
+            }
 
             if (clearExisting)
             {
@@ -7910,11 +7933,79 @@ namespace Hecton8.World
         {
             stampCommands = default;
             IDataVault dataVault = _wakeDataVault;
-            if (dataVault == null || !_wakeTrailStampCommandsHandle.IsCreated)
-                return false;
+            return TryResolveFloraVaultBuffer(
+                dataVault,
+                in _wakeTrailStampCommandsHandle,
+                BufferID.WakeTrailStampCommands,
+                WakeTrailStampCommandCapacity,
+                out stampCommands);
+        }
 
-            stampCommands = _wakeTrailStampCommandsHandle.Resolve(dataVault);
-            return stampCommands.IsCreated;
+        private static bool TryEnsureFloraVaultBuffer<T>(
+            IDataVault dataVault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            NativeArrayOptions options,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            if (dataVault == null ||
+                requiredLength <= 0 ||
+                dataVault.IsCompactionFenceActive)
+            {
+                return false;
+            }
+
+            if (!TryResolveFloraVaultBuffer(dataVault, in handle, bufferId, requiredLength, out buffer))
+            {
+                handle = dataVault.GetGenerationHandle<T>(
+                    bufferId,
+                    requiredLength,
+                    SystemID.Vfx,
+                    options);
+            }
+
+            if (!TryResolveFloraVaultBuffer(dataVault, in handle, bufferId, requiredLength, out buffer))
+            {
+                handle = default;
+                buffer = default;
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool TryResolveFloraVaultBuffer<T>(
+            IDataVault dataVault,
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            if (dataVault == null ||
+                requiredLength <= 0 ||
+                dataVault.IsCompactionFenceActive ||
+                !IsFloraVaultHandle(in handle, bufferId) ||
+                !dataVault.TryResolveHandle(in handle, out buffer) ||
+                !buffer.IsCreated ||
+                buffer.Length < requiredLength)
+            {
+                buffer = default;
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool IsFloraVaultHandle<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId) where T : struct
+        {
+            return handle.BufferID == (uint)bufferId &&
+                   handle.SystemID == (uint)SystemID.Vfx &&
+                   handle.Generation != 0u;
         }
 
         private void TryRegisterCullingHotSwapListener()

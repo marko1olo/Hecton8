@@ -576,3 +576,27 @@ Cinematic Cheats used: No simulation was added. The ocean surface debug path rem
 Exact Microseconds saved: 0 us measured. Static outcome: broad audit dropped `nativeCollectionPublicMutableApiExposure` from `213` to `211`, and `nativeApiExposureOutRefMutable` from `162` to `160`.
 
 Evidence: Focused scans found no stale mutable declarations for the two public atmosphere snapshot APIs. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_after_atmosphere_readonly_snapshots.json` returned `PASS_WITH_WARNINGS` with `nativeCollectionPublicMutableApiExposure=211`, `nativeApiExposureBuildPlayerRuntime=198`, `nativeApiExposureOutRefMutable=160`, and `nativeApiRiskRuntimeOutRefMutableView=89`. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Animation Matrix Editor-View Read-Only Narrowing
+
+What was wrong: Procedural bone and kinetic character runtime editor matrix resolvers returned mutable matrix/parent native arrays to gizmo-only readers.
+
+What was done: Converted both `TryResolveMatricesForEditor` APIs and their runtime/editor gizmo consumers to `NativeArray<T>.ReadOnly`. Tuning editor resolvers and runtime solve/upload buffers remain mutable because they write DTOs or feed owner jobs/GPU upload.
+
+Cinematic Cheats used: No simulation was added. Animation debugging remains a cheap matrix-line gizmo projection instead of copied managed skeleton data or scene object probes.
+
+Exact Microseconds saved: 0 us measured. Static outcome: broad audit dropped `nativeCollectionPublicMutableApiExposure` from `211` to `209`, and `nativeApiExposureOutRefMutable` from `160` to `158`.
+
+Evidence: Focused scans found no stale mutable call-site declarations for `TryResolveMatricesForEditor`. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_after_animation_matrix_readonly.json` returned `PASS_WITH_WARNINGS` with `nativeCollectionPublicMutableApiExposure=209`, `nativeApiExposureBuildPlayerRuntime=196`, `nativeApiExposureOutRefMutable=158`, and `nativeApiRiskRuntimeDiagnosticNamedMutableView=51`. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Lighting Readback Read-Only Narrowing
+
+What was wrong: Dynamic point-light and interior GI readback APIs exposed diagnostic/probe/light native views as mutable arrays to editor and gizmo consumers.
+
+What was done: Converted six lighting readback APIs and observed consumers to `NativeArray<T>.ReadOnly`: dynamic point-light telemetry, states/sources, fake-bounce lights, interior GI probe grid, occlusion, and telemetry. Owner write lanes remain mutable.
+
+Cinematic Cheats used: No simulation was added. The lighting debug path remains compact readback/gizmo projection; fake-bounce probe lights stay an owner-local scalar stream rather than a cross-owner job or scene-object light simulation.
+
+Exact Microseconds saved: 0 us measured. Static outcome: broad audit dropped `nativeCollectionPublicMutableApiExposure` from `209` to `203`, and `nativeApiExposureOutRefMutable` from `158` to `152`.
+
+Evidence: Focused scans found only read-only signatures/call sites for the narrowed lighting readbacks. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_after_lighting_readonly_readbacks.json` returned `PASS_WITH_WARNINGS` with `nativeCollectionPublicMutableApiExposure=203`, `nativeApiExposureBuildPlayerRuntime=190`, `nativeApiExposureOutRefMutable=152`, and `nativeApiRiskRuntimeDiagnosticNamedMutableView=45`. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.

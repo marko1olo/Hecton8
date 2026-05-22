@@ -7,7 +7,7 @@
 #define HECTON_BUBBLE_POPPED_FLAG 256u
 #define HECTON_DEBRIS_RESTING_FLAG 512u
 #define HECTON_DYNAMIC_WAKE_CAPACITY 16
-#define HECTON_DYNAMIC_WAKE_LOW_TIER_CAPACITY 4
+#define HECTON_DYNAMIC_WAKE_MIN_QUALITY_CAPACITY 4
 #define HECTON_CARVE_DEBRIS_MAX_SPEED 3.5
 #define HECTON_CARVE_DEBRIS_MAX_STEP 0.20
 #define HECTON_CARVE_DEBRIS_DEFAULT_BOUNCE 0.4
@@ -60,17 +60,17 @@ Texture3D<float> _VoxelSdfTexture3D;
 SamplerState sampler_VoxelSdfTexture3D;
 
 float4 _FluidAdvectionCounts;        // x=silt, y=bubbles, z=debris, w=max dispatch count
-float4 _FluidAdvectionParams;        // x=dt, y=low tier, z=flow active, w=sdf active
+float4 _FluidAdvectionParams;        // x=dt, y=quality pressure, z=flow weight, w=sdf weight
 float4 _FluidAdvectionBuoyancy;      // x=silt, y=bubble, z=debris, w=drag
 float4 _FluidAdvectionAupShiftDelta; // xyz=runtime rebase delta applied before integration
 float4 _CarveDebrisCounts;           // x=capacity, y=cpu-active mirror, z=max visible, w=frame
-float4 _CarveDebrisParams;           // x=dt, y=low tier, z=sdf active, w=flow drag
+float4 _CarveDebrisParams;           // x=dt, y=quality pressure, z=sdf weight, w=flow drag
 float4 _CarveDebrisForces;           // xyz=gravity, w=life decay per second
 float4 _CarveDebrisAupShiftDelta;    // xyz=runtime rebase delta applied before integration
 float4 _CarveDebrisCameraParams;     // xyz=camera, w=max render distance squared
 float4 _CarveDebrisCullParams;       // xyz=camera forward, w=min forward dot
 float4 _CarveDebrisDrawArgsParams;   // x=index count, y=start index, z=base vertex, w=max instances
-float4 _DynamicWakeParams;           // x=slot limit, y=low tier, z=active count, w=stress
+float4 _DynamicWakeParams;           // x=slot limit, y=quality pressure, z=active count, w=stress
 float4 _AbyssalGridResolution;       // xyz=grid resolution, w=flattened count
 float4 _AbyssalFlowCenter;           // xyz=center
 float4 _AbyssalFlowSpacing;          // xyz=spacing
@@ -113,14 +113,15 @@ float3 BounceCarveDebrisVelocity(float3 velocity, float3 normalWS, float bounce)
 
 float3 SampleAbyssalFlow(float3 positionWS)
 {
-    if (_FluidAdvectionParams.z <= 0.5)
+    float flowWeight01 = saturate(_FluidAdvectionParams.z);
+    if (flowWeight01 <= 0.0001)
         return float3(0.0, 0.0, 0.0);
 
     if (_AbyssalFlowTextureActive > 0.5 && _AbyssalFlowTextureParams.w > 0.0)
     {
         float3 uvw = (positionWS - _AbyssalFlowCenter.xyz) * _AbyssalFlowTextureParams.w + 0.5;
         if (all(uvw >= 0.0) && all(uvw <= 1.0))
-            return Sanitize(_AbyssalFlowFieldTexture.SampleLevel(sampler_AbyssalFlowFieldTexture, uvw, 0.0).xyz);
+            return Sanitize(_AbyssalFlowFieldTexture.SampleLevel(sampler_AbyssalFlowFieldTexture, uvw, 0.0).xyz) * flowWeight01;
     }
 
     if (_AbyssalGridResolution.w <= 0.5 || any(_AbyssalFlowSpacing.xyz <= 0.0))
@@ -134,14 +135,16 @@ float3 SampleAbyssalFlow(float3 positionWS)
     if (flatIndex >= (uint)_AbyssalGridResolution.w)
         return float3(0.0, 0.0, 0.0);
 
-    return Sanitize(_AbyssalFlowFieldResult[flatIndex].xyz);
+    return Sanitize(_AbyssalFlowFieldResult[flatIndex].xyz) * flowWeight01;
 }
 
 float3 ApplyDynamicWakes(float3 positionWS, float3 flow)
 {
+    float qualityPressure01 = saturate(_DynamicWakeParams.y);
+    float visualWakeChurn01 = smoothstep(0.35, 1.0, 1.0 - qualityPressure01);
     int rawSlotLimit = min((int)max(0.0, _DynamicWakeParams.x), HECTON_DYNAMIC_WAKE_CAPACITY);
-    float lowTierMask = step(0.5, _DynamicWakeParams.y);
-    int slotLimit = min(rawSlotLimit, (int)lerp((float)HECTON_DYNAMIC_WAKE_CAPACITY, (float)HECTON_DYNAMIC_WAKE_LOW_TIER_CAPACITY, lowTierMask));
+    int qualitySlotLimit = max(0, (int)round(lerp((float)HECTON_DYNAMIC_WAKE_CAPACITY, (float)HECTON_DYNAMIC_WAKE_MIN_QUALITY_CAPACITY, qualityPressure01)));
+    int slotLimit = min(rawSlotLimit, qualitySlotLimit);
     if (slotLimit <= 0)
         return Sanitize(flow);
 
@@ -173,7 +176,7 @@ float3 ApplyDynamicWakes(float3 positionWS, float3 flow)
         float3 push = pushAxis * (intensity * falloff * (0.55 + directionalGate * 0.45));
         flow += push + vortex;
 
-        if (_DynamicWakeParams.y <= 0.5)
+        if (visualWakeChurn01 > 0.0001)
         {
             float core = saturate(1.0 - distSq * rcp(max(radiusSq * 0.18, 0.0001)));
             float3 sheetAxis = SafeNormalize(cross(pushAxis, float3(0.0, 1.0, 0.0)), float3(1.0, 0.0, 0.0));
@@ -184,7 +187,7 @@ float3 ApplyDynamicWakes(float3 positionWS, float3 flow)
             float triangleB = abs(frac(dot(positionWS.xy, float2(0.067, 0.109)) + (float)i * 0.211) * 2.0 - 1.0);
             float3 churnAxis = SafeNormalize(cross(radial + pushAxis, sheetAxis), pushAxis);
             float3 turbulence = (churnAxis * (triangleA - 0.5) + radial * (triangleB - 0.5)) * (intensity * falloff * highIntensityGate * 0.34);
-            flow += shear + billow + turbulence;
+            flow += (shear + billow + turbulence) * visualWakeChurn01;
         }
     }
 
@@ -193,7 +196,7 @@ float3 ApplyDynamicWakes(float3 positionWS, float3 flow)
 
 bool IsSolidVoxel(float3 positionWS)
 {
-    if (_FluidAdvectionParams.w <= 0.5 || _FluidAdvectionSdfParams.x <= 0.5)
+    if (_FluidAdvectionParams.w <= 0.0001 || _FluidAdvectionSdfParams.x <= 0.0001)
         return false;
 
     if (any(_VoxelSdfInvDoubleHalfExtents.xyz <= 0.0))
@@ -252,7 +255,7 @@ void AdvectFluidParticles(uint3 id : SV_DispatchThreadID)
     {
         Bubble particle = _BubbleRead[index];
         float3 previousPosition = particle.PositionWS + shiftDelta;
-        float3 flow = _FluidAdvectionParams.y > 0.5 ? float3(0.0, 0.0, 0.0) : SampleAbyssalFlow(previousPosition);
+        float3 flow = SampleAbyssalFlow(previousPosition) * saturate(1.0 - _FluidAdvectionParams.y);
         flow = ApplyDynamicWakes(previousPosition, flow);
         float3 velocity = IntegrateVelocity(particle.VelocityWS, flow, _FluidAdvectionBuoyancy.y);
         float3 nextPosition = previousPosition + velocity * dt;
@@ -278,7 +281,7 @@ void AdvectFluidParticles(uint3 id : SV_DispatchThreadID)
     {
         Debris particle = _DebrisRead[index];
         float3 previousPosition = particle.PositionWS + shiftDelta;
-        float3 flow = _FluidAdvectionParams.y > 0.5 ? float3(0.0, 0.0, 0.0) : SampleAbyssalFlow(previousPosition);
+        float3 flow = SampleAbyssalFlow(previousPosition) * saturate(1.0 - _FluidAdvectionParams.y);
         flow = ApplyDynamicWakes(previousPosition, flow);
         float3 velocity = IntegrateVelocity(particle.VelocityWS, flow, _FluidAdvectionBuoyancy.z);
         float3 nextPosition = previousPosition + velocity * dt;
@@ -327,17 +330,18 @@ void AdvectCarveDebris(uint3 id : SV_DispatchThreadID)
     float liveMask = step(0.000001, particle.w);
     float3 previousPosition = particle.xyz + _CarveDebrisAupShiftDelta.xyz;
     float3 velocity = Sanitize(velocityPacked.xyz);
-    float3 flow = float3(0.0, 0.0, 0.0);
-    if (_CarveDebrisParams.y <= 0.5)
-        flow = ApplyDynamicWakes(previousPosition, SampleAbyssalFlow(previousPosition));
-    float flowBlend = saturate(max(0.0, _CarveDebrisParams.w) * dt);
+    float qualityPressure01 = saturate(_CarveDebrisParams.y);
+    float flowInfluence01 = saturate(1.0 - qualityPressure01);
+    float3 flow = ApplyDynamicWakes(previousPosition, SampleAbyssalFlow(previousPosition)) * flowInfluence01;
+    float flowBlend = saturate(max(0.0, _CarveDebrisParams.w) * dt * flowInfluence01);
     velocity = Sanitize(lerp(velocity, flow, flowBlend) + _CarveDebrisForces.xyz * dt);
     velocity = ClampCarveDebrisVelocity(velocity, dt);
     float3 nextPosition = previousPosition + velocity * dt;
     float lifeDecay = max(0.0, _CarveDebrisForces.w) * dt;
 
-    float solidMask = (_CarveDebrisParams.y <= 0.5 && _CarveDebrisParams.z > 0.5 && IsSolidVoxel(nextPosition)) ? 1.0 : 0.0;
-    float planeMask = (_CarveDebrisParams.z <= 0.5 && nextPosition.y < 0.0) ? 1.0 : 0.0;
+    float sdfWeight01 = saturate(_CarveDebrisParams.z);
+    float solidMask = (sdfWeight01 > 0.0001 && IsSolidVoxel(nextPosition)) ? sdfWeight01 : 0.0;
+    float planeMask = (sdfWeight01 <= 0.0001 && nextPosition.y < 0.0) ? 1.0 : 0.0;
     float collisionMask = max(solidMask, planeMask);
     float3 resolvedPosition = lerp(Sanitize(nextPosition), previousPosition, collisionMask);
     resolvedPosition.y = lerp(resolvedPosition.y, max(resolvedPosition.y, 0.0), planeMask);

@@ -126,8 +126,8 @@ namespace Hecton8.Animation.FaunaProcedural
         }
 
         public bool TryResolveMatricesForEditor(
-            out NativeArray<float4x4> matrices,
-            out NativeArray<int> parentIndices,
+            out NativeArray<float4x4>.ReadOnly matrices,
+            out NativeArray<int>.ReadOnly parentIndices,
             out int matrixCount)
         {
             matrices = default;
@@ -140,12 +140,14 @@ namespace Hecton8.Animation.FaunaProcedural
             if (vault == null)
                 return false;
 
-            if (!TryResolveVaultBuffer(vault, in _boneMatricesHandle, 1, out matrices) ||
-                !TryResolveVaultBuffer(vault, in _parentIndicesHandle, 1, out parentIndices))
+            if (!TryResolveVaultBuffer(vault, in _boneMatricesHandle, 1, out NativeArray<float4x4> mutableMatrices) ||
+                !TryResolveVaultBuffer(vault, in _parentIndicesHandle, 1, out NativeArray<int> mutableParentIndices))
             {
                 return false;
             }
 
+            matrices = mutableMatrices.AsReadOnly();
+            parentIndices = mutableParentIndices.AsReadOnly();
             matrixCount = math.min(math.min(_activeMatrixUploadCount, matrices.Length), parentIndices.Length);
             return matrixCount > 0;
         }
@@ -1106,7 +1108,7 @@ namespace Hecton8.Animation.FaunaProcedural
 
         private void OnDrawGizmosSelected()
         {
-            if (!TryResolveMatricesForEditor(out NativeArray<float4x4> matrices, out NativeArray<int> parents, out int count))
+            if (!TryResolveMatricesForEditor(out NativeArray<float4x4>.ReadOnly matrices, out NativeArray<int>.ReadOnly parents, out int count))
                 return;
 
             int drawCount = math.min(count, 512);

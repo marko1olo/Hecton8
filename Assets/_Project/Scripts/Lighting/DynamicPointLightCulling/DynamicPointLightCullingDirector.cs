@@ -352,19 +352,23 @@ namespace Hecton8.Lighting
         }
 
         /// <summary>Reads the telemetry ring without allocating.</summary>
-        public bool TryGetTelemetryReadback(out NativeArray<DynamicPointLightCullingTelemetryEntry> telemetry, out int cursor)
+        public bool TryGetTelemetryReadback(out NativeArray<DynamicPointLightCullingTelemetryEntry>.ReadOnly telemetry, out int cursor)
         {
             telemetry = default;
             cursor = _telemetryWriteCursor;
             if (_jobActive || !HasDynamicPointLightHandle(in _telemetryRing, DynamicPointLightCullingVaultIds.TelemetryRing))
                 return false;
 
-            telemetry = ResolveArray(ref _telemetryRing);
-            return telemetry.IsCreated;
+            NativeArray<DynamicPointLightCullingTelemetryEntry> mutableTelemetry = ResolveArray(ref _telemetryRing);
+            if (!mutableTelemetry.IsCreated)
+                return false;
+
+            telemetry = mutableTelemetry.AsReadOnly();
+            return telemetry.Length > 0;
         }
 
         /// <summary>Reads culling states for editor diagnostics.</summary>
-        public bool TryGetStatesReadback(out NativeArray<LightCullStateDTO> states, out NativeArray<DynamicPointLightSourceDTO> sources, out int count)
+        public bool TryGetStatesReadback(out NativeArray<LightCullStateDTO>.ReadOnly states, out NativeArray<DynamicPointLightSourceDTO>.ReadOnly sources, out int count)
         {
             states = default;
             sources = default;
@@ -374,11 +378,13 @@ namespace Hecton8.Lighting
                 !HasDynamicPointLightHandle(in _sources, DynamicPointLightCullingVaultIds.Sources))
                 return false;
 
-            states = ResolveArray(ref _states);
-            sources = ResolveArray(ref _sources);
-            if (!states.IsCreated || !sources.IsCreated)
+            NativeArray<LightCullStateDTO> mutableStates = ResolveArray(ref _states);
+            NativeArray<DynamicPointLightSourceDTO> mutableSources = ResolveArray(ref _sources);
+            if (!mutableStates.IsCreated || !mutableSources.IsCreated)
                 return false;
 
+            states = mutableStates.AsReadOnly();
+            sources = mutableSources.AsReadOnly();
             count = math.min(ReadCommittedSourceCount(), math.min(states.Length, sources.Length));
             return true;
         }
@@ -414,7 +420,7 @@ namespace Hecton8.Lighting
         }
 
         /// <summary>Exposes the owner-local fake bounce stream for the probe-grid owner without scheduling cross-owner jobs.</summary>
-        public bool TryGetProbeBounceReadback(out NativeArray<CustomDynamicProbeLightDTO> lights, out int count)
+        public bool TryGetProbeBounceReadback(out NativeArray<CustomDynamicProbeLightDTO>.ReadOnly lights, out int count)
         {
             lights = default;
             count = 0;
@@ -424,10 +430,11 @@ namespace Hecton8.Lighting
             if (!TryGetCountersCopy(out DynamicPointLightRuntimeCountersDTO counters))
                 return false;
 
-            lights = ResolveArray(ref _dynamicProbeLights);
-            if (!lights.IsCreated)
+            NativeArray<CustomDynamicProbeLightDTO> mutableLights = ResolveArray(ref _dynamicProbeLights);
+            if (!mutableLights.IsCreated)
                 return false;
 
+            lights = mutableLights.AsReadOnly();
             count = math.clamp(counters.SubmittedLights, 0, math.min(lights.Length, DynamicPointLightCullingMath.MaximumActiveLights));
             return count > 0;
         }
@@ -1599,7 +1606,7 @@ namespace Hecton8.Lighting
             if (!drawDebugGizmos || !Application.isPlaying || _jobActive)
                 return;
 
-            if (!TryGetStatesReadback(out NativeArray<LightCullStateDTO> states, out NativeArray<DynamicPointLightSourceDTO> sources, out int count))
+            if (!TryGetStatesReadback(out NativeArray<LightCullStateDTO>.ReadOnly states, out NativeArray<DynamicPointLightSourceDTO>.ReadOnly sources, out int count))
                 return;
 
             int limit = math.min(math.min(count, states.Length), math.min(sources.Length, debugGizmoMaxLights));

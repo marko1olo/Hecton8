@@ -1102,3 +1102,47 @@ Verification:
   <TASK id="19" result="PASS">Polish audit gates the presence of project-side baseline archive records.</TASK>
   <TASK id="20" result="PASS_WITH_BUILD_GATE">Static proof and disk logs updated; Unity compile remains gated by active compiler processes.</TASK>
 </SELF_AUDIT_UPDATE>
+
+## 2026-05-22 Generated Project And Payload Wall
+
+What was wrong:
+
+- Root generated MSBuild surfaces still carried stale Crest/WaveHarmonic routes after the Unity asmdef wall was clean.
+- `Directory.Build.targets` still injected direct donor references into `Hecton8.Core`.
+- Shared dry-volume shader code sampled a Crest-named global directly.
+- Active stale metadata payloads remained visible: `WaveHarmonic.Crest*.csproj.lscache`, `Assets/profilermarkers.tvc(.meta)`, and `Assets/_Project/Data/CrestMigration/Crest4SettingsDump.json(.meta)`.
+
+What was done:
+
+- Removed broad generated `.csproj` direct routes to `Crest.csproj`, `Crest.Helpers.Editor.csproj`, `WaveHarmonic.Crest*.csproj`, and `Packages/com.waveharmonic.crest`.
+- Archived root `WaveHarmonic.Crest*.csproj` and `WaveHarmonic.Crest*.csproj.lscache` under `Docs/Archive/Crest_Version_Quarantine/GeneratedProject/`.
+- Removed direct `Crest` / `WaveHarmonic.Crest*` Core reference shims from `Directory.Build.targets`.
+- Replaced non-bridge `_Crest_CameraColorTexture` shader sampling with `_OceanCameraColorTexture`; `HectonDryVolumeFeature` now reads the active bridge texture ID and publishes the vendor-neutral global.
+- Archived active stale profiler `.tvc` payloads and active `CrestMigration` dump payloads outside Unity visibility.
+- Widened `Crest_Dependency_Scanner.py` and `Crest_Quarantine_Polish_Audit.py` to gate generated project routes, lscache files, non-bridge `_Crest_*` shader globals, active profiler payloads, and active CrestMigration payloads.
+
+Cinematic Cheats used:
+
+- No runtime water simulation was added. The dry-volume pass uses a bridge-fed presentation texture alias instead of making shared render code understand a Crest donor property name.
+
+Exact Microseconds saved:
+
+- Runtime steady-state saving: 0 us claimed for this cleanup.
+- Editor/build saving: prevents generated-project Crest routes from reintroducing donor compile fanout; expected gain is seconds to minutes of avoided MSBuild/IDE resolution churn on low-end developer hardware.
+
+Verification:
+
+- `dotnet build Hecton8.slnx -nologo -clp:ErrorsOnly -maxcpucount:1`: PASS after generated-project cleanup, 0 errors, 171 warnings, 00:02:20.78.
+- `git diff --check` for Loop 22/23 touched files: PASS.
+- JSON/XML report parse: PASS.
+- `python -m py_compile Tools\Crest_Dependency_Scanner.py Tools\Crest_Quarantine_Polish_Audit.py`: PASS.
+- `python Tools\Crest_Dependency_Scanner.py`: PASS, `breach_count=0`, `allowed_hit_count=40`, `generated_project_scripting_define_hit_count=67`, `generated_project_prune_rule_hit_count=6`, `compliance_denylist_hit_count=6`, `vocabulary_debt_hit_count=111`.
+- `python Tools\Crest_Quarantine_Polish_Audit.py`: PASS, `failed_count=0`.
+- Second build after the Loop 23 C# render-pass patch was not launched: latest gate found active `VBCSCompiler` and CPU at 89.8 percent.
+
+<SELF_AUDIT_UPDATE agent_id="SHINOBU_260" scope="GENERATED_PROJECT_AND_PAYLOAD_WALL">
+  <TASK id="03" result="PASS">Compile wall now covers Unity asmdefs, asmrefs, generated MSBuild projects, lscache files, Directory.Build targets, and donor/helper generated-project exceptions.</TASK>
+  <TASK id="06" result="PASS">Non-bridge dry-volume render code reads the active ocean bridge texture ID and feeds a vendor-neutral shader global.</TASK>
+  <TASK id="19" result="PASS">Dependency scanner reports breach_count=0 and gates generated-project, shader-global, profiler-payload, and CrestMigration-payload regressions.</TASK>
+  <TASK id="20" result="PASS_WITH_BUILD_GATE">Loop 22 solution build passed; Loop 23 post-patch rebuild is gated by active VBCSCompiler and recorded as such.</TASK>
+</SELF_AUDIT_UPDATE>

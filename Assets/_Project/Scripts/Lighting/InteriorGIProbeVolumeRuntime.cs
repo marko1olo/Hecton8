@@ -480,7 +480,7 @@ namespace Hecton8.Lighting
             _cachedQualityTier = payload.CurrentQualityTier;
         }
 
-        public bool TryGetProbeGridReadback(out NativeArray<CustomLightProbeDTO> probes, out int resolution, out double3 rootAup, out float cellSize, out int version)
+        public bool TryGetProbeGridReadback(out NativeArray<CustomLightProbeDTO>.ReadOnly probes, out int resolution, out double3 rootAup, out float cellSize, out int version)
         {
             probes = default;
             resolution = _activeResolution;
@@ -490,30 +490,42 @@ namespace Hecton8.Lighting
             if (_scheduledBootClear || _simulationJobActive || !HasInteriorGIHandle(in _probeFront, ProbeFrontBuffer))
                 return false;
 
-            probes = ResolveProbeFront();
-            return probes.IsCreated;
+            NativeArray<CustomLightProbeDTO> mutableProbes = ResolveProbeFront();
+            if (!mutableProbes.IsCreated)
+                return false;
+
+            probes = mutableProbes.AsReadOnly();
+            return probes.Length > 0;
         }
 
-        public bool TryGetOcclusionReadback(out NativeArray<InteriorGIOcclusionCellDTO> occlusion, out int resolution)
+        public bool TryGetOcclusionReadback(out NativeArray<InteriorGIOcclusionCellDTO>.ReadOnly occlusion, out int resolution)
         {
             occlusion = default;
             resolution = _activeResolution;
             if (_scheduledBootClear || _simulationJobActive || !HasInteriorGIHandle(in _occlusion, ProbeOcclusionBuffer))
                 return false;
 
-            occlusion = ResolveOcclusion();
-            return occlusion.IsCreated;
+            NativeArray<InteriorGIOcclusionCellDTO> mutableOcclusion = ResolveOcclusion();
+            if (!mutableOcclusion.IsCreated)
+                return false;
+
+            occlusion = mutableOcclusion.AsReadOnly();
+            return occlusion.Length > 0;
         }
 
-        public bool TryGetTelemetryReadback(out NativeArray<InteriorGITelemetryEntry> telemetry, out int cursor)
+        public bool TryGetTelemetryReadback(out NativeArray<InteriorGITelemetryEntry>.ReadOnly telemetry, out int cursor)
         {
             telemetry = default;
             cursor = _telemetryCursor;
             if (_simulationJobActive || !HasInteriorGIHandle(in _telemetryRing, ProbeTelemetryRingBuffer))
                 return false;
 
-            telemetry = ResolveTelemetryRing();
-            return telemetry.IsCreated;
+            NativeArray<InteriorGITelemetryEntry> mutableTelemetry = ResolveTelemetryRing();
+            if (!mutableTelemetry.IsCreated)
+                return false;
+
+            telemetry = mutableTelemetry.AsReadOnly();
+            return telemetry.Length > 0;
         }
 
         public bool TryGetTuningCopy(out InteriorGITuningDTO tuning)
@@ -1873,7 +1885,7 @@ namespace Hecton8.Lighting
 
         private void OnDrawGizmosSelected()
         {
-            if (!drawProbeGizmos || !TryGetProbeGridReadback(out NativeArray<CustomLightProbeDTO> probes, out int resolution, out double3 root, out float cell, out _))
+            if (!drawProbeGizmos || !TryGetProbeGridReadback(out NativeArray<CustomLightProbeDTO>.ReadOnly probes, out int resolution, out double3 root, out float cell, out _))
                 return;
 
             int count = resolution * resolution * resolution;

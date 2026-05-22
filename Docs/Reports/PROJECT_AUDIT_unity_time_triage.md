@@ -475,6 +475,62 @@ Updated static counts from that artifact:
 
 This is static-source proof only. No Unity import, Console, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
 
+## 2026-05-22 Lighting Readback Native API Follow-Up
+
+Additional native API narrowing after the animation matrix pass:
+
+- `DynamicPointLightCullingDirector.TryGetTelemetryReadback` now returns a read-only telemetry ring view.
+- `DynamicPointLightCullingDirector.TryGetStatesReadback` now returns read-only state/source views.
+- `DynamicPointLightCullingDirector.TryGetProbeBounceReadback` now returns a read-only fake-bounce light view.
+- `InteriorGIProbeVolumeRuntime.TryGetProbeGridReadback`, `TryGetOcclusionReadback`, and `TryGetTelemetryReadback` now return read-only views.
+- Editor/gizmo consumers now consume read-only views.
+
+Rejected:
+
+- Lighting source commits, occlusion writes, tuning, runtime resolve helpers, telemetry recording, owner job buffers, and GPU upload lanes because they are owner-write paths.
+- Copied managed snapshots, because they would add allocation/churn to debug paths.
+
+Focused proof:
+
+- Focused scans found only read-only signatures/call sites for the narrowed lighting readbacks.
+- Broad artifact: `Docs/Reports/PROJECT_AUDIT_polish_after_lighting_readonly_readbacks.json`.
+
+Updated static counts from that artifact:
+
+- `nativeCollectionPublicMutableApiExposure`: 203, down from 209.
+- `nativeApiExposureBuildPlayerRuntime`: 190, down from 196.
+- `nativeApiExposureOutRefMutable`: 152, down from 158.
+- `nativeApiRiskRuntimeDiagnosticNamedMutableView`: 45, down from 51.
+
+This is static-source proof only. No Unity import, Console, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 Animation Matrix Native API Follow-Up
+
+Additional native API narrowing after the atmosphere snapshot pass:
+
+- `ProceduralBoneBlenderRuntime.TryResolveMatricesForEditor` now returns read-only matrix and parent-index views.
+- `KineticCharacterAnimatorRuntime.TryResolveMatricesForEditor` now returns read-only matrix and parent-index views.
+- Runtime/editor gizmo consumers now consume read-only views.
+
+Rejected:
+
+- `TryResolveTuningForEditor` in both systems, because CSV profile apply paths write tuning DTOs.
+- Runtime solve, telemetry, IK target, graphics upload, and Vault acquire paths, because they are owner-write paths.
+
+Focused proof:
+
+- Focused scans found no stale mutable call-site declarations for `TryResolveMatricesForEditor`.
+- Broad artifact: `Docs/Reports/PROJECT_AUDIT_polish_after_animation_matrix_readonly.json`.
+
+Updated static counts from that artifact:
+
+- `nativeCollectionPublicMutableApiExposure`: 209, down from 211.
+- `nativeApiExposureBuildPlayerRuntime`: 196, down from 198.
+- `nativeApiExposureOutRefMutable`: 158, down from 160.
+- `nativeApiRiskRuntimeDiagnosticNamedMutableView`: 51, down from 53.
+
+This is static-source proof only. No Unity import, Console, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
 ## 2026-05-22 Atmosphere Snapshot Native API Follow-Up
 
 Additional native API narrowing after the Data Monolith resident blob pass:

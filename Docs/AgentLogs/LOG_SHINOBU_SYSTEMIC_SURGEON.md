@@ -3443,3 +3443,40 @@ Verification:
     Targeted scan found no active scalability listener/callback/registration, `QualityTier`, `ScalabilityTier`, `LowTier`, runtime `lowTier`, `LOW LOD`, or hard `<= 0.3f` telemetry cutoff in `OpenXRManualOverrideLever.cs`; only the `FormerlySerializedAs("lowTierIkBlend")` migration string remains. `git diff --check` passed with line-ending warning only. Build was not launched because CPU probe returned 58 percent.
   </VERIFICATION>
 </SELF_AUDIT>
+
+<SELF_AUDIT id="SHINOBU_SYSTEMIC_SURGEON" pass="CarveDebrisComputeQualityContinuum">
+  <WHAT_WAS_WRONG>
+    `CarveDebrisComputeRenderer` and its two shaders still encoded visual quality as binary low/high tier state: lifecycle `ScalabilityEvents` listener routing, cached tier candidates, low/high tier shader params, 0.5 gates for wake/SDF/flow, and high-tier-only crystal relief.
+  </WHAT_WAS_WRONG>
+  <WHAT_WAS_DONE>
+    Runtime debris compute/render quality now comes from `SignalBusRegistry.GlobalQualityWeight01` only. The C# path derives `qualityPressure01` and `visualOverkill01`, writes them to compute/material params, and keeps telemetry bit position 1 as quality-pressure state. `Hecton_FluidAdvection.compute` now consumes quality pressure, flow weight, SDF weight, and weighted wake slot limits. `Hecton_CarveDebrisIndirect.shader` blends triangle spin to exact `sincos` and drives crystal relief, salt fake, shadows, rim, and motion-vector spin from `visualOverkill01`.
+  </WHAT_WAS_DONE>
+  <TASK_RECONCILIATION>
+    01 [PASS] Prompt re-read from disk status/rationale/current batch state before edits. 02 [PASS] Listener route removed. 03 [PASS] No sibling asmdef/reference added. 04 [PASS] No DTO ABI changed. 05 [PASS] No `Pack=1`. 06 [PASS] DTOs remain 64-byte explicit layouts. 07 [PASS] No private `NativeArray`/`NativeList`/`NativeHashMap` added. 08 [PASS] Vault handles unchanged. 09 [PASS] No hot `GlobalRegistry` poll added. 10 [PASS] SignalBus scalar is quality source. 11 [PASS] No `UnityEngine.Random`; existing deterministic `Unity.Mathematics.Random` remains request-seed based. 12 [PASS] AUP shift path unchanged and finite-guarded. 13 [PASS] Dear Lie preserved through GPU indirect debris. 14 [PASS] Flow/SDF/wake collapse continuously. 15 [PASS] Visual-overkill relief scales from scalar. 16 [PASS] `[NoAlias]` job fields remain. 17 [PASS] No `.Schedule()`/`.Complete()` added. 18 [PASS] 300-frame blackbox remains. 19 [PASS] Shader variant count unchanged. 20 [PASS] Build not forced while compiler process active.
+  </TASK_RECONCILIATION>
+  <STRUCT_LAYOUT>
+    `CarveDebrisRequest` is `[StructLayout(LayoutKind.Explicit, Size = 64)]`: offset 0 `float3 Center` 12 bytes; 12 `float3 EjectionAxis` 12; 24 `float Radius` 4; 28 `int ParticlesToInject` 4; 32 `float InitialSpeed` 4; 36 `float Life` 4; 40 `uint Seed` 4; 44/48/52/56/60 five `uint` pads = 20 padding bytes. Total 64 bytes, one L1 cache line.
+    `CarveDebrisTelemetryEntry` is `[StructLayout(LayoutKind.Explicit, Size = 64)]`: 0 `uint FrameIndex`; 4/8/12 three ints; 16 `uint Flags`; 20 `uint StateHash`; 24 `float3 AppliedAupShift` 12; 36..60 seven `uint` pads = 28 padding bytes. Total 64 bytes, one L1 cache line.
+  </STRUCT_LAYOUT>
+  <SCALABILITY_CURVE>
+    Below quality 0.3, `qualityPressure01` approaches 1, flow/SDF weights smoothstep toward zero, wake capacity lerps toward four slots, cull forward dot tightens toward zero, and indirect debris spin prefers the cheap triangle approximation. `visualOverkill01` remains zero until the high-quality shoulder, so crystal relief taps, shadowed lighting, salt fake, and rim polish are bypassed. Middle quality ramps wake slots, SDF collision weight, flow influence, and relief taps. At 1.0, the renderer reaches full active debris cap, sixteen wake slots, exact spin, shadows, crystal normals, rim/salt fake, and fake subsurface polish.
+  </SCALABILITY_CURVE>
+  <H_PHI_VAULT_STATUS>
+    No private native array/list/hashmap allocation was added. Existing Vault generation handles remain the memory route: `BufferID.CarveDebris`, `BufferID.CarveDebrisVelocity`, `BufferID.CarveDebrisRequests`, `BufferID.CarveDebrisJobState`, and `BufferID.CarveDebrisBlackBox`. Lifecycle stays through `EnsureCarveDebrisVaultBuffer`, `TryResolveCarveDebrisVaultBuffer`, and `ReleaseCarveDebrisVaultHandle`.
+  </H_PHI_VAULT_STATUS>
+  <POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+    Existing `AgeCarveDebrisMirrorJob` and `CarveDebrisInjectBatchJob` remain `[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]`; job fields keep `[NoAlias]` on positions, velocities, requests, and job state where applicable. The file still uses synchronous `.Execute()` for local mirror/injection work and has no `.Schedule()` or `.Complete()` in this pass.
+  </POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+  <COMPILE_GUARD>
+    No asmdef, sibling runtime reference, SignalBus DTO, BufferID, save identity, or GlobalRegistry contract changed. Build was skipped because CPU was 22 percent but `VBCSCompiler` process 47044 was active.
+  </COMPILE_GUARD>
+  <CINEMATIC_CHEATS>
+    The fake remains GPU indirect debris: CPU only drains typed signals into vault-backed requests and uploads dirty ranges; GPU compute handles advection/cull/indirect args; the shader fakes shard spin, crystal relief, salt, rim, and subsurface from scalar fields. Rejected route: per-shard GameObjects, MeshColliders, or CPU physics. Complexity stays O(active GPU particles) plus one indirect draw; rejected CPU route would be O(shards * physics contacts) with managed object churn.
+  </CINEMATIC_CHEATS>
+  <MICROSECONDS_SAVED estimate="0">
+    No measured speed claim. Static proof only: listener removed, binary shader gates removed, `git diff --check` passed with CRLF warnings, targeted scans clean. GPU/CPU timing requires Unity profiler capture.
+  </MICROSECONDS_SAVED>
+  <VERIFICATION>
+    Targeted C# scan found no `ScalabilityEvents`, `IScalabilityChangedEventListener`, `ScalabilityChangedEvent`, `GlobalRegistry.Scalability`, `H8_LOW_MEMORY_PROFILE`, `.Schedule`, `.Complete`, private native allocation, `UnityEngine.Random`, or `Pack=1` in `CarveDebrisComputeRenderer.cs`. Targeted shader scan found no debris low/high tier gates in `Hecton_FluidAdvection.compute` or `Hecton_CarveDebrisIndirect.shader`; remaining `0.5` checks are texture/grid/visibility validity gates, not quality policy.
+  </VERIFICATION>
+</SELF_AUDIT>

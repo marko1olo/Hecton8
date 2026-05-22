@@ -125,7 +125,7 @@ namespace Hecton8.Lighting.Editor
             if (!_drawSceneProbes || _target == null)
                 return;
 
-            if (!_target.TryGetProbeGridReadback(out NativeArray<CustomLightProbeDTO> probes, out int resolution, out double3 rootAup, out float cellSize, out int version))
+            if (!_target.TryGetProbeGridReadback(out NativeArray<CustomLightProbeDTO>.ReadOnly probes, out int resolution, out double3 rootAup, out float cellSize, out int version))
                 return;
 
             int count = resolution * resolution * resolution;

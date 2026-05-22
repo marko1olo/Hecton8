@@ -1,6 +1,6 @@
 # Rationale_SHINOBU_260
 
-Status: POLISH PASS LOOP 21 STATIC VERIFIED / TASK 12 BLOCKED BY DEPENDENCY / NO BUILD DUE ACTIVE csc+dotnet CPU GATE
+Status: POLISH PASS LOOP 23 STATIC VERIFIED / TASK 12 BLOCKED BY DEPENDENCY / LOOP 22 BUILD PASS / LOOP 23 REBUILD GATED BY ACTIVE VBCSCOMPILER
 
 ## Decision 001: Resolve Duplicate SHINOBU_260 Prompt By ID And Role
 
@@ -218,3 +218,35 @@ Solution: Rerun static gates only: py_compile, dependency scanner, polish audit,
 Rejected Alternatives: Launching a dotnet/Unity rebuild was rejected because it violates the explicit compiler-process/CPU gate and would add compile-wall pressure without new C# dependency evidence.
 Scalability potential: Low/Middle/High/Ultra runtime behavior is unchanged. The scanner/audit wall remains repeatable without forcing every proof pass into a rebuild.
 Hardware Impact: Runtime frame saving is 0 microseconds. Developer hardware impact is avoided rebuild contention while csc/dotnet are already active; static proof reports `breach_count=0` and `failed_count=0`.
+
+## Decision 028: Treat Generated MSBuild Projects As Part Of The Crest Compile Wall
+
+Problem: Unity asmdefs were clean, but root generated `.csproj`, `.lscache`, `Directory.Build.targets`, and solution surfaces still carried stale direct `Crest`, `Crest.Helpers.Editor`, `WaveHarmonic.Crest*`, or archived package routes. `dotnet build Hecton8.slnx` can consume those files without Unity's asmdef importer, so they are a separate compile-wall route.
+Solution: Remove direct donor project/package references from broad generated first-party projects, remove the direct Hecton8.Core Crest reference shim from `Directory.Build.targets`, archive root `WaveHarmonic.Crest*.csproj` and `WaveHarmonic.Crest*.csproj.lscache`, and widen `Crest_Dependency_Scanner.py` plus the polish audit to hard-fail reintroduced generated project routes.
+Rejected Alternatives: Treating generated project files as disposable IDE output was rejected because this repository builds through `Hecton8.slnx`. Deleting donor `Crest.csproj` / `Crest.Helpers.Editor.csproj` was rejected because active Crest4 remains the selected donor and helper assembly boundary.
+Scalability potential: Low/Middle/High/Ultra runtime behavior is unchanged. Developer scalability improves because generated project churn no longer drags Crest into Hecton8.Core or broad first-party assemblies.
+Hardware Impact: Runtime frame saving is 0 microseconds. Build proof after the cleanup passed with 0 errors and 171 warnings in 00:02:20.78; expected developer-hardware gain is avoided seconds-to-minutes MSBuild resolution fanout on weak machines.
+
+## Decision 029: Replace Non-Bridge Crest Shader Global With Vendor-Neutral Ocean Texture Route
+
+Problem: `Hecton_DryVolumeRestore.shader` lived under shared Art shaders and sampled `_Crest_CameraColorTexture` directly. Even without a C# assembly reference, a Crest-named shader global outside the bridge is a donor contract leak and can be copied into unrelated render code.
+Solution: Keep the vendor-specific ID inside the active `IOceanVisualBridge` implementation, have `HectonDryVolumeFeature` read the bridge texture ID in cold render-pass setup, and republish the actual texture to `_OceanCameraColorTexture` before executing the non-bridge shader pass.
+Rejected Alternatives: Leaving the shader global as-is was rejected because shader globals are API surface. Renaming the Crest donor global itself was rejected because that belongs to the donor/bridge boundary and would risk breaking active Crest internals.
+Scalability potential: Low devices can still skip or cheapen dry-volume visual restore through existing quality controls; Middle/High/Ultra can use the same vendor-neutral texture route while the bridge decides which ocean donor supplies the source texture.
+Hardware Impact: Runtime frame saving is 0 microseconds. The benefit is route correctness: no gameplay truth, DTO layout, or save identity changed, and non-bridge shaders no longer depend on a Crest property name.
+
+## Decision 030: Archive Stale Profiler, Migration, And IDE Payloads Instead Of Editing Them In Place
+
+Problem: Side-agent audit found active stale payloads with Crest identities: C# Dev Kit `WaveHarmonic.Crest*.csproj.lscache`, `Assets/profilermarkers.tvc(.meta)`, and `Assets/_Project/Data/CrestMigration/Crest4SettingsDump.json(.meta)`. These are not authoritative runtime code, but they are Unity/IDE-visible evidence routes and can trigger false dependency reports.
+Solution: Move those payloads and metas into `Docs/Archive/Crest_Version_Quarantine/`, remove the empty active `CrestMigration` folder, and add scanner/audit hard gates for active profiler payloads, active CrestMigration payloads, root WaveHarmonic lscache files, generated project Crest routes, and non-bridge `_Crest_*` shader globals.
+Rejected Alternatives: Editing generated payloads in place was rejected because stale profiler/IDE/migration files should remain forensic artifacts, not active project input. Ignoring them was rejected because the user asked for a quarantine wall that survives microscopic inspection.
+Scalability potential: Low/Middle/High/Ultra runtime behavior is unchanged. The gain is asset/build hygiene: no hardware tier pays import or audit cost for inactive donor metadata.
+Hardware Impact: Runtime frame saving is 0 microseconds. Developer hardware impact is reduced stale scan/import/IDE noise; final proof reports `breach_count=0` and `failed_count=0`.
+
+## Decision 031: Keep Loop 23 Build Gated After C# Render-Pass Patch
+
+Problem: Loop 22 legitimately needed a build because it changed MSBuild project routing, and that build passed. Loop 23 then changed a C# render pass and shader route, but the latest build gate showed active `VBCSCompiler` and CPU at 89.8 percent.
+Solution: Do not launch a second `dotnet build`; record the gate result, rerun py_compile for changed Python tools, rerun dependency scanner, rerun polish audit, parse JSON/XML reports, and run `git diff --check` on touched Loop 22/23 surfaces.
+Rejected Alternatives: Forcing a second build under an active compiler process was rejected because it violates the explicit build discipline. Pretending Loop 23 has compile proof was rejected; status records it as static-verified with rebuild gated.
+Scalability potential: Low/Middle/High/Ultra runtime behavior is unchanged. The process protects developer iteration on weak machines without hiding the C# verification gap.
+Hardware Impact: Runtime frame saving is 0 microseconds. Avoided build contention while `VBCSCompiler` was active; static gates remain clean and the prior full solution build after generated-project cleanup passed.
