@@ -229,7 +229,7 @@ namespace Hecton8.Animation.IK
         /// <summary>
         /// Resolves all NativeArray lanes needed by <see cref="VRPhysicalHandPresenceJob"/>.
         /// </summary>
-        public static bool TryResolveBuffers(
+        private static bool TryResolveBuffers(
             IDataVault vault,
             out NativeArray<VRHandPresenceInput> inputs,
             out NativeArray<VRHandPresenceOutput> outputs,

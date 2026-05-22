@@ -1174,3 +1174,51 @@ Cinematic Cheats used: Existing cable tuning stays a scalar DTO and material has
 Exact Microseconds saved: 0 us measured. Static hygiene gain: `nativeCollectionPublicMutableApiExposure` 114 -> 112, `nativeApiExposureBuildPlayerRuntime` 104 -> 102, `nativeApiExposureOutRefMutable` 83 -> 81, and `nativeApiRiskRuntimeOutRefMutableView` 52 -> 50 in `Docs/Reports/PROJECT_AUDIT_polish_after_cable_editor_write_api.json`.
 
 Verification: Focused scan no longer reports cable public native view APIs. `python Tools\test_polish_mandate_static_audit.py` passed 12 tests. Static audit status remained `PASS_WITH_WARNINGS`. `git diff --check` reported only LF/CRLF normalization warnings. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - SignalWarden Mutable API Scope Split
+
+What was wrong: `SignalWardenRuntime` exposed public mutable CSV scratch `NativeArray<byte>` routes and a public mutable committed-signal opener even though focused source inventory showed same-file editor parser use or no external caller.
+
+What was done: Added `TryReadCsvBytesForLoad(string, out ReadOnlySpan<byte>)` owner bridges, made the CSV scratch openers private, routed both hot-swap parsers through spans, and narrowed the unused committed-signal mutable opener to private while keeping the read-only committed-signal accessor.
+
+Cinematic Cheats used: Scope/authority cleanup only. Runtime signal coalescence remains the existing scalar/SoA coalescence path, not scene object or managed event expansion.
+
+Exact Microseconds saved: 0 us measured. Static hygiene gain: `nativeCollectionPublicMutableApiExposure` 112 -> 109, `nativeApiExposureBuildPlayerRuntime` 102 -> 99, `nativeApiExposureOutRefMutable` 81 -> 78, and `nativeApiRiskRuntimeOutRefMutableView` 50 -> 47 in `Docs/Reports/PROJECT_AUDIT_polish_after_signal_warden_scope.json`.
+
+Verification: Focused public/internal `out NativeArray` scan no longer reports `SignalWardenRuntime`. `python Tools\test_polish_mandate_static_audit.py` passed 12 tests. Static audit status remained `PASS_WITH_WARNINGS`. `git diff --check` reported only LF/CRLF normalization warnings. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - VRSomatic Private Wrapper Scope Pass
+
+What was wrong: Private nested `VaultNativeArray<T>` in `VRSomaticProvider` exposed `TryResolve` and `TryRead` as public methods even though focused search found only same-struct callers.
+
+What was done: Changed both native resolver methods to private. The wrapper indexer, `AsNativeArray`, implicit operator, release behavior, Vault handles, and owner-local mutable path are unchanged.
+
+Cinematic Cheats used: Scope cleanup only. Existing VR somatic comfort remains shader scalar/vignette/haptic presentation plus owner-local collision samples; no new physical simulation was added.
+
+Exact Microseconds saved: 0 us measured. Static hygiene gain: focused public/internal `out NativeArray` scan no longer reports `VRSomaticProvider`; `nativeApiExposurePrivateNestedSuppressed` 9 -> 7 in `Docs/Reports/PROJECT_AUDIT_polish_after_vrsomatic_scope.json`.
+
+Verification: `python Tools\test_polish_mandate_static_audit.py` passed 12 tests. Static audit status remained `PASS_WITH_WARNINGS` with `nativeCollectionPublicMutableApiExposure=109`. `git diff --check` reported only LF/CRLF normalization warnings. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Biomimetic POI Acquire Scope Pass
+
+What was wrong: `ShinobuPoiVaultBridge` still exported three public mutable POI Vault acquire methods, and current whole-repo source search found no first-party caller for any of them.
+
+What was done: Narrowed `AcquirePoiTransformBuffer`, `AcquireRouteBuffer`, and `AcquireTelemetryRing` to private. The existing public read-only placement resolver, BufferIDs, DTO layouts, and private `AcquireWorldStreamingBuffer<T>` behavior are unchanged.
+
+Cinematic Cheats used: Existing POI architecture remains matrix/DTO placement and HZB/cull proxy data instead of scene prefab instantiation from consumers.
+
+Exact Microseconds saved: 0 us measured. Static hygiene gain: `nativeCollectionPublicMutableApiExposure` 109 -> 106, `nativeApiExposureBuildPlayerRuntime` 99 -> 96, `nativeApiExposureMutableReturn` 31 -> 28, and `nativeApiRiskRuntimeReturnMutableView` 17 -> 15 in `Docs/Reports/PROJECT_AUDIT_polish_after_biomimetic_acquire_scope.json`.
+
+Verification: Focused search found no public POI acquire methods and no dependent caller. `python Tools\test_polish_mandate_static_audit.py` passed 12 tests. Static audit status remained `PASS_WITH_WARNINGS`. `git diff --check` reported only LF/CRLF normalization warnings. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Animation IK Resolver Scope Pass
+
+What was wrong: `LeviathanTerrainIkVault.TryResolveBuffers` and `VRPhysicalHandPresenceVault.TryResolveBuffers` exported public mutable native Vault lanes, but active source search found no qualified caller. References exist only in archived batch logs.
+
+What was done: Narrowed both resolver methods to private. The layout sentinels, BufferIDs, telemetry DTOs, and lane resolution code are unchanged.
+
+Cinematic Cheats used: Existing IK route remains procedural math/Vault lane resolution rather than PhysX joints or scene query ownership. No new simulation was added.
+
+Exact Microseconds saved: 0 us measured. Static hygiene gain: `nativeCollectionPublicMutableApiExposure` 106 -> 104, `nativeApiExposureBuildPlayerRuntime` 96 -> 94, `nativeApiExposureOutRefMutable` 78 -> 76, and `nativeApiRiskRuntimeDiagnosticNamedMutableView` 13 -> 11 in `Docs/Reports/PROJECT_AUDIT_polish_after_animation_ik_scope.json`.
+
+Verification: Focused search found no public animation IK resolver declarations in touched files and no qualified active caller. `python Tools\test_polish_mandate_static_audit.py` passed 12 tests. Static audit status remained `PASS_WITH_WARNINGS`. `git diff --check` reported only LF/CRLF normalization warnings. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.

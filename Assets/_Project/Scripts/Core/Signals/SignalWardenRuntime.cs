@@ -301,8 +301,60 @@ namespace Hecton8.Core.Contracts.Signals
             UpsertProfile(ComputeLabelHash(nameof(CombatDamageSignal)), 16, 128, DefaultCoalescingRadiusMeters, 100);
         }
 
+        /// <summary>Reads editor CSV bytes into owner scratch and exposes only a span to the parser.</summary>
+        public static unsafe bool TryReadCsvBytesForLoad(string path, out ReadOnlySpan<byte> bytes)
+        {
+            bytes = default;
+#if UNITY_EDITOR
+            if (string.IsNullOrEmpty(path) || !File.Exists(path))
+                return false;
+
+            IDataVault vault = GlobalRegistry.DataVault;
+            Initialize(vault);
+            if (!TryOpenCsvScratchForLoad(out NativeArray<byte> scratch) || !scratch.IsCreated)
+                return false;
+
+            int bytesRead;
+            try
+            {
+                using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                {
+                    long streamLength = stream.Length;
+                    if (streamLength <= 0L || streamLength > scratch.Length)
+                        return false;
+
+                    int expectedBytes = (int)streamLength;
+                    Span<byte> scratchBytes = new Span<byte>(scratch.GetUnsafePtr(), expectedBytes);
+                    bytesRead = 0;
+                    while (bytesRead < expectedBytes)
+                    {
+                        int read = stream.Read(scratchBytes.Slice(bytesRead));
+                        if (read <= 0)
+                            return false;
+
+                        bytesRead += read;
+                    }
+                }
+            }
+            catch (IOException)
+            {
+                return false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return false;
+            }
+
+            bytes = new ReadOnlySpan<byte>(scratch.GetUnsafeReadOnlyPtr(), bytesRead);
+            return true;
+#else
+            _ = path;
+            return false;
+#endif
+        }
+
         /// <summary>Opens the mutable scratch buffer used by the zero-string CSV parser.</summary>
-        public static bool TryOpenCsvScratchForLoad(out NativeArray<byte> scratch)
+        private static bool TryOpenCsvScratchForLoad(out NativeArray<byte> scratch)
         {
             scratch = default;
             if (_initialized == 0 || _vault == null ||
@@ -493,46 +545,10 @@ namespace Hecton8.Core.Contracts.Signals
         public static unsafe bool TryLoad(string path)
         {
 #if UNITY_EDITOR
-            if (string.IsNullOrEmpty(path) || !File.Exists(path))
+            if (!SignalTuningTable.TryReadCsvBytesForLoad(path, out ReadOnlySpan<byte> bytes))
                 return false;
 
-            IDataVault vault = GlobalRegistry.DataVault;
-            SignalTuningTable.Initialize(vault);
-            if (!SignalTuningTable.TryOpenCsvScratchForLoad(out NativeArray<byte> scratch) || !scratch.IsCreated)
-                return false;
-
-            int bytesRead;
-            try
-            {
-                using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-                {
-                    long streamLength = stream.Length;
-                    if (streamLength <= 0L || streamLength > scratch.Length)
-                        return false;
-
-                    int expectedBytes = (int)streamLength;
-                    Span<byte> bytes = new Span<byte>(scratch.GetUnsafePtr(), expectedBytes);
-                    bytesRead = 0;
-                    while (bytesRead < expectedBytes)
-                    {
-                        int read = stream.Read(bytes.Slice(bytesRead));
-                        if (read <= 0)
-                            return false;
-
-                        bytesRead += read;
-                    }
-                }
-            }
-            catch (IOException)
-            {
-                return false;
-            }
-            catch (UnauthorizedAccessException)
-            {
-                return false;
-            }
-
-            return Parse(new ReadOnlySpan<byte>(scratch.GetUnsafeReadOnlyPtr(), bytesRead));
+            return Parse(bytes);
 #else
             _ = path;
             return false;
@@ -2634,7 +2650,7 @@ namespace Hecton8.Core.Contracts.Signals
             return true;
         }
 
-        public static bool TryOpenCommittedSignalsForOwner(out NativeArray<SignalWardenMockDamageSignal> signals, out int count)
+        private static bool TryOpenCommittedSignalsForOwner(out NativeArray<SignalWardenMockDamageSignal> signals, out int count)
         {
             return TryOpenCommittedSignalsBuffer(out signals, out count);
         }
@@ -2791,7 +2807,56 @@ namespace Hecton8.Core.Contracts.Signals
             return tuning.Magic == TuningMagic;
         }
 
-        public static bool TryOpenCsvScratchForLoad(out NativeArray<byte> scratch)
+        public static unsafe bool TryReadCsvBytesForLoad(string path, out ReadOnlySpan<byte> bytes)
+        {
+            bytes = default;
+#if UNITY_EDITOR
+            if (string.IsNullOrEmpty(path) || !File.Exists(path))
+                return false;
+
+            if (!TryOpenCsvScratchForLoad(out NativeArray<byte> scratch) || !scratch.IsCreated)
+                return false;
+
+            int bytesRead;
+            try
+            {
+                using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                {
+                    long streamLength = stream.Length;
+                    if (streamLength <= 0L || streamLength > scratch.Length)
+                        return false;
+
+                    int expectedBytes = (int)streamLength;
+                    Span<byte> scratchBytes = new Span<byte>(scratch.GetUnsafePtr(), expectedBytes);
+                    bytesRead = 0;
+                    while (bytesRead < expectedBytes)
+                    {
+                        int read = stream.Read(scratchBytes.Slice(bytesRead));
+                        if (read <= 0)
+                            return false;
+
+                        bytesRead += read;
+                    }
+                }
+            }
+            catch (IOException)
+            {
+                return false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return false;
+            }
+
+            bytes = new ReadOnlySpan<byte>(scratch.GetUnsafeReadOnlyPtr(), bytesRead);
+            return true;
+#else
+            _ = path;
+            return false;
+#endif
+        }
+
+        private static bool TryOpenCsvScratchForLoad(out NativeArray<byte> scratch)
         {
             scratch = default;
             if (!IsInitializedForRead() ||
@@ -3108,44 +3173,10 @@ namespace Hecton8.Core.Contracts.Signals
         public static unsafe bool TryLoad(string path)
         {
 #if UNITY_EDITOR
-            if (string.IsNullOrEmpty(path) || !File.Exists(path))
+            if (!SignalThreadLocalScratchpad.TryReadCsvBytesForLoad(path, out ReadOnlySpan<byte> bytes))
                 return false;
 
-            if (!SignalThreadLocalScratchpad.TryOpenCsvScratchForLoad(out NativeArray<byte> scratch) || !scratch.IsCreated)
-                return false;
-
-            int bytesRead;
-            try
-            {
-                using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-                {
-                    long streamLength = stream.Length;
-                    if (streamLength <= 0L || streamLength > scratch.Length)
-                        return false;
-
-                    int expectedBytes = (int)streamLength;
-                    Span<byte> bytes = new Span<byte>(scratch.GetUnsafePtr(), expectedBytes);
-                    bytesRead = 0;
-                    while (bytesRead < expectedBytes)
-                    {
-                        int read = stream.Read(bytes.Slice(bytesRead));
-                        if (read <= 0)
-                            return false;
-
-                        bytesRead += read;
-                    }
-                }
-            }
-            catch (IOException)
-            {
-                return false;
-            }
-            catch (UnauthorizedAccessException)
-            {
-                return false;
-            }
-
-            return Parse(new ReadOnlySpan<byte>(scratch.GetUnsafeReadOnlyPtr(), bytesRead));
+            return Parse(bytes);
 #else
             _ = path;
             return false;

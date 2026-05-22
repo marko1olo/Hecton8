@@ -555,19 +555,19 @@ namespace Hecton8.World.ShinobuBiomimetic
             return hasPoi;
         }
 
-        public static NativeArray<PoiTransformDTO> AcquirePoiTransformBuffer(int capacity)
+        private static NativeArray<PoiTransformDTO> AcquirePoiTransformBuffer(int capacity)
         {
             IDataVault vault = GlobalRegistry.DataVault;
             return AcquireWorldStreamingBuffer<PoiTransformDTO>(vault, PoiTransformsBufferId, capacity);
         }
 
-        public static NativeArray<PoiChunkRouteDTO> AcquireRouteBuffer(int capacity)
+        private static NativeArray<PoiChunkRouteDTO> AcquireRouteBuffer(int capacity)
         {
             IDataVault vault = GlobalRegistry.DataVault;
             return AcquireWorldStreamingBuffer<PoiChunkRouteDTO>(vault, PoiRoutesBufferId, capacity);
         }
 
-        public static NativeArray<PoiPlacementTelemetryEntry> AcquireTelemetryRing()
+        private static NativeArray<PoiPlacementTelemetryEntry> AcquireTelemetryRing()
         {
             IDataVault vault = GlobalRegistry.DataVault;
             return AcquireWorldStreamingBuffer<PoiPlacementTelemetryEntry>(vault, PoiTelemetryRingBufferId, BlackBoxFrameCount);

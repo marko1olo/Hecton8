@@ -278,7 +278,7 @@ namespace Hecton8.Animation.IK
 
     public static class LeviathanTerrainIkVault
     {
-        public static bool TryResolveBuffers(
+        private static bool TryResolveBuffers(
             IDataVault vault,
             int requestedSegmentCapacity,
             int requestedSdfVoxelCount,

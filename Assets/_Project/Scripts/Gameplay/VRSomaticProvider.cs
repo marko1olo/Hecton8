@@ -191,7 +191,7 @@ namespace Hecton8.Gameplay
                 return default;
             }
 
-            public bool TryResolve(out NativeArray<T> array)
+            private bool TryResolve(out NativeArray<T> array)
             {
                 array = default;
                 return IsHandleValid() &&
@@ -202,7 +202,7 @@ namespace Hecton8.Gameplay
                        array.Length >= _requiredLength;
             }
 
-            public bool TryRead(out NativeArray<T> array)
+            private bool TryRead(out NativeArray<T> array)
             {
                 array = default;
                 return IsHandleValid() &&
