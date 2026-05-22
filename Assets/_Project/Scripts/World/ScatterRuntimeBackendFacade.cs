@@ -76,8 +76,8 @@ namespace Hecton8.World
         /// <returns>True when scheduling succeeded; false when backend is unavailable or already busy.</returns>
         public bool TrySchedule(
             ScatterSimulationConfig config,
-            NativeArray<float> heightSamples,
-            NativeArray<ScatterSimulationCellState> cellStates)
+            NativeArray<float>.ReadOnly heightSamples,
+            NativeArray<ScatterSimulationCellState>.ReadOnly cellStates)
         {
             if (!IsInitialized || _simulationBackend == null)
                 return false;

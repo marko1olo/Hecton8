@@ -906,8 +906,8 @@ namespace Hecton8.Physics
 
         /// <summary>Kolichestvo zaregistrirovannyh obektov.</summary>
         public int ObjectCount => _objects.Count;
-        public NativeArray<float3> FloaterPositions => _positions;
-        public NativeArray<float> BuoyancyResults => _waveOffsets;
+        public NativeArray<float3>.ReadOnly FloaterPositions => _positions.IsCreated ? _positions.AsReadOnly() : default;
+        public NativeArray<float>.ReadOnly BuoyancyResults => _waveOffsets.IsCreated ? _waveOffsets.AsReadOnly() : default;
 
         public Vector3 GiantWakeCurrent => _debugGiantWakeCurrent;
 

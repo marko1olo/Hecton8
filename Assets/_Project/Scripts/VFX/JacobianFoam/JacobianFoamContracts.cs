@@ -80,8 +80,8 @@ namespace Hecton8.VFX
         [FieldOffset(36)] public float Intensity;
         [FieldOffset(40)] public float FoamLifetimeBias;
         [FieldOffset(44)] public float CrestSharpness;
-        [FieldOffset(48)] public float LowTierResolutionBias;
-        [FieldOffset(52)] public float UltraTierResolutionBias;
+        [FieldOffset(48)] public float MinimumQualityResolutionBias;
+        [FieldOffset(52)] public float MaximumQualityResolutionBias;
         [FieldOffset(56)] public uint Flags;
         [FieldOffset(60)] public uint Reserved0;
     }
@@ -149,8 +149,8 @@ namespace Hecton8.VFX
                 Intensity = 1.15f,
                 FoamLifetimeBias = 1f,
                 CrestSharpness = 1f,
-                LowTierResolutionBias = 1f,
-                UltraTierResolutionBias = 1f,
+                MinimumQualityResolutionBias = 1f,
+                MaximumQualityResolutionBias = 1f,
                 Flags = 1u,
                 Reserved0 = 0u
             };
@@ -420,8 +420,8 @@ namespace Hecton8.VFX
             profile.WakeGain = math.max(0.1f, profile.Intensity);
             profile.FoamLifetimeBias = 1f;
             profile.CrestSharpness = 1f;
-            profile.LowTierResolutionBias = 1f;
-            profile.UltraTierResolutionBias = 1f;
+            profile.MinimumQualityResolutionBias = 1f;
+            profile.MaximumQualityResolutionBias = 1f;
             profile.Flags = 1u;
             return profile.NameHash != 0u;
         }

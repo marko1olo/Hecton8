@@ -4372,3 +4372,18 @@ Mandates read before coding:
 - The file still contains unrelated pointer-era debt in the generic `VaultNativeArray<T>` wrapper and one heatmap bridge; those are not claimed as resolved by Loop 244.
 - Brace/preprocessor counts are balanced: `EcosystemDirector.cs` braces `560/560`, preprocessor `#if/#endif` `0/0`; `git diff --check` passed with CRLF warning only.
 - Guarded `dotnet build Hecton8.Core.csproj -nologo -clp:ErrorsOnly -maxcpucount:1` succeeded after the Ecosystem macro snapshot patch: 0 errors, 29 warnings, elapsed `00:00:54.15`.
+
+## Loop 245 - Ecosystem Director Owner-Local Vault Wrapper Descriptor Route
+- [x] Replaced the local `VaultNativeArray<T>` pointer handle wrapper in `EcosystemDirector.cs`.
+  DOD practice: the wrapper now stores a 16-byte `VaultGenerationHandle<T>` and resolves through `IDataVault.TryResolveHandle`; all owner-local AIEcology state allocations feeding the wrapper now use `GetGenerationHandle<T>`.
+  Rejected: removing the wrapper's cached `NativeArray<T>` view in this loop because many hot owner-local indexers and scheduled jobs rely on the existing contiguous view semantics. That is a separate H-Phi state-model migration, not a pointer-handle cleanup. Rewriting jobs, SoA DTOs, heatmap sampling, save snapshots, or quality curves was rejected.
+  Estimate: O(1) descriptor acquisition at boot/setup; no per-element validation added to hot loops.
+- [x] Removed the heatmap bridge direct buffer route.
+  DOD practice: `EcosystemSectorFoodHeatmapR8` now uses `GetGenerationHandle<byte>` plus `TryResolveHandle` before copying the source heatmap into the AIEcology-owned Vault row.
+  Rejected: publishing heatmap data through a new signal route because this method already owns the AIEcology heatmap row and only mirrors caller-provided bytes into that row.
+  Estimate: one O(1) descriptor proof per heatmap import; no added sampling cost.
+
+## Compile State Update 241
+- Focused direct/legacy route scan on `EcosystemDirector.cs` found zero `GetBufferHandle`, `TryGetBufferHandle`, `VaultBufferHandle<`, `.Resolve(vault)`, `GetBuffer<`, or `TryGetBuffer(` hits.
+- Brace/preprocessor counts are balanced after wrapper conversion: `EcosystemDirector.cs` braces `562/562`, preprocessor `#if/#endif` `0/0`; `git diff --check` passed with CRLF warning only.
+- Guarded `dotnet build Hecton8.Core.csproj -nologo -clp:ErrorsOnly -maxcpucount:1` succeeded after the wrapper conversion: 0 errors, 29 warnings, elapsed `00:00:54.55`.

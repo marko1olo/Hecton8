@@ -28,8 +28,8 @@ namespace Hecton8.World
         public int StructureFamilyIndex { get; private set; }
         public int SpawnFamilyIndex { get; private set; }
 
-        public NativeArray<float> HeightSamples => _heightSamples;
-        public NativeArray<ScatterSimulationCellState> CellStates => _cellStates;
+        public NativeArray<float>.ReadOnly HeightSamples => _heightSamples.IsCreated ? _heightSamples.AsReadOnly() : default;
+        public NativeArray<ScatterSimulationCellState>.ReadOnly CellStates => _cellStates.IsCreated ? _cellStates.AsReadOnly() : default;
 
         public void ResetLookup()
         {

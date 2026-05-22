@@ -19,8 +19,8 @@ namespace Hecton8.World.Dots
 
         public bool TrySchedule(
             ScatterSimulationConfig config,
-            NativeArray<float> heightSamples,
-            NativeArray<ScatterSimulationCellState> cellStates)
+            NativeArray<float>.ReadOnly heightSamples,
+            NativeArray<ScatterSimulationCellState>.ReadOnly cellStates)
         {
             return false;
         }

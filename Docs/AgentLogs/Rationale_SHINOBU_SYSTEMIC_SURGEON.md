@@ -1212,3 +1212,27 @@ Solution: Removed the cached tier and helper. The runtime now samples `Homeostas
 Rejected Alternatives: Keeping the tier cache as a 30-tick optimization was rejected because it is a hot presentation route and the owner tick can read one continuous scalar directly. Renaming shader property `_InternalWaterlineDistortion` was rejected because the vector ABI is already consumed by UberPost and does not need a material binding break.
 Scalability potential: Minimum devices see zero or near-zero waterline refraction with pressure marked continuously; middle devices interpolate refraction and comfort fallback; high/ultra reach the authored 0.0018 refraction strength while the same flood truth and crossing feedback remain unchanged.
 Hardware Impact: 0 us measured speed claim. Removes one registry tier poll and a binary branch; weak-device savings are from continuously collapsing refraction math in downstream visor shaders rather than changing habitat waterline truth.
+
+## Suit Visor HUD Quality Pressure Continuum
+
+Problem: `VisorHUDController` implemented scalability event listening, cached `HectonQualityTier`, read `GlobalRegistry.QualityTier`, and drove shader refraction/chromatic/dither through a Low/Mid/High switch. `SuitVisor.shader` also exposed `_HectonVisorLowTierDither`.
+Solution: Removed the listener route and tier cache. The controller now derives one continuous quality pressure from `HomeostasisBrain.GlobalQualityWeight` plus a smooth `SystemInfo.graphicsMemorySize` pressure floor, then maps that scalar to refraction, chromatic scale, and quality-pressure dither. The shader property and local variables now use `QualityPressureDither`.
+Rejected Alternatives: Keeping the tier listener as a cache invalidator was rejected because the controller already owns the material apply phase. Leaving the old shader property as an alias was rejected because the property name itself was the binary contract. A hard memory cutoff was rejected; the memory floor now ramps continuously below 2048 MB.
+Scalability potential: Minimum devices collapse refraction/chromatic scale toward zero and raise dither pressure; middle devices interpolate smoothly; high/ultra reach full refraction/chromatic scale with zero pressure dither while hazard and stress overlays continue through authored signals.
+Hardware Impact: 0 us measured speed claim. Removes one event subscription route and a tier switch. Weak-device visual savings come from continuous shader pressure, not from deleting HUD facts or changing player state.
+
+## Diegetic Visor Lens Compute Quality Naming Cleanup
+
+Problem: `Hecton_DiegeticVisorLens.compute` still called `_HectonDiegeticVisorLensComputeParams.z` `lowTier`, while the runtime route already provides continuous quality pressure from `GlobalQualityWeight`.
+Solution: Renamed the local compute variable to `qualityPressure01` and left the vector layout/math intact.
+Rejected Alternatives: Renaming the compute vector property was rejected because the existing runtime binding is stable and the ABI does not need to move.
+Scalability potential: Minimum quality still reduces dynamic visor mask weight through pressure; middle/high/ultra scale continuously through the same runtime scalar and overkill lane.
+Hardware Impact: 0 us measured speed claim. Semantic cleanup only; no new branch or shader variant.
+
+## Jacobian Foam Profile Quality Bias Rename
+
+Problem: `FoamAestheticProfileDTO` had explicit fields named `LowTierResolutionBias` and `UltraTierResolutionBias`, preserving tier semantics inside a 64-byte profile payload even though foam resolution already resolves from continuous `GlobalQualityWeight`.
+Solution: Renamed the fields at offsets 48 and 52 to `MinimumQualityResolutionBias` and `MaximumQualityResolutionBias`. Default profile creation and CSV profile hydration now write those names without changing offsets, type sizes, or profile capacity.
+Rejected Alternatives: Removing the fields was rejected because it would change the explicit profile payload contract. Keeping compatibility aliases was rejected because aliases preserve the forbidden vocabulary and the search target.
+Scalability potential: Minimum and maximum quality endpoints remain available for future profile shaping; continuous foam resolution still interpolates between aligned min/max resolution.
+Hardware Impact: 0 us measured speed claim. Payload semantics are cleaner; runtime math and memory bandwidth are unchanged. Guarded build passed with 0 errors.

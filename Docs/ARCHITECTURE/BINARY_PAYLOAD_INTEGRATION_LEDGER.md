@@ -5077,6 +5077,14 @@ Fault route: `ExosuitTelemetryEntry[300]` dumps fixed 64-byte rows to `Docs/Agen
 - Scope note: the unrelated `VaultNativeArray<T>` wrapper and heatmap bridge in `EcosystemDirector.cs` remain separate pointer-route debt and are not claimed by this entry.
 - Verification: focused macro scan found zero `VaultBufferHandle<MacroEcosystem...>` fields and zero `TryGetBufferHandle(BufferID.ShinobuMacroEcosystem...)` acquisitions; guarded `dotnet build Hecton8.Core.csproj -nologo -clp:ErrorsOnly -maxcpucount:1` succeeded with 0 errors and 29 warnings in `00:00:54.15`.
 
+## 2026-05-22 - SHINOBU_202 Ecosystem Director Owner-Local Vault Wrapper Descriptor Route
+
+- `Assets/_Project/Scripts/World/EcosystemDirector.cs` now routes its local `VaultNativeArray<T>` wrapper through `VaultGenerationHandle<T>` and `IDataVault.TryResolveHandle` instead of `VaultBufferHandle<T>` and cached pointer resolution.
+- Binary payload impact: none. Ecosystem sector state, biomass rows, macro swarm rows, mutation rows, headless entity SoA rows, apex overlap rows, flora predator AUP upload rows, save snapshot rows, heatmap bytes, DTO layout, BufferIDs, save identity, and AIEcology authority are unchanged.
+- Vault route impact: owner-local rows now acquire descriptors through `GetGenerationHandle<T>`. `EcosystemSectorFoodHeatmapR8` import uses `GetGenerationHandle<byte>` plus `TryResolveHandle`; no `GetBuffer<T>` or `TryGetBufferHandle` bridge remains in the file.
+- Scope note: the wrapper still caches a `NativeArray<T>` view for existing hot owner-local access. This entry removes pointer-handle provenance, not the full H-Phi view-cache migration.
+- Verification: focused direct/legacy scan found zero `GetBufferHandle`, `TryGetBufferHandle`, `VaultBufferHandle<`, `.Resolve(vault)`, `GetBuffer<`, or `TryGetBuffer(` hits in `EcosystemDirector.cs`; guarded `dotnet build Hecton8.Core.csproj -nologo -clp:ErrorsOnly -maxcpucount:1` succeeded with 0 errors and 29 warnings in `00:00:54.55`.
+
 ## 2026-05-22 - SHINOBU_SYSTEMIC_SURGEON Internal Flood Waterline Quality Pressure Continuum
 
 - `Assets/_Project/Scripts/Visor/InternalFloodWaterlineRuntime.cs` no longer caches `HectonQualityTier` or reads `GlobalRegistry.ScalabilityTier`.
@@ -5084,3 +5092,25 @@ Fault route: `ExosuitTelemetryEntry[300]` dumps fixed 64-byte rows to `Docs/Agen
 - Binary payload impact: `WaterlineTelemetryEntry` remains explicit 40 bytes. Offset 33 `Reserved0` now stores the quality byte instead of zero; dump field order, dump magic/version, shader property IDs, SignalBus payloads, and habitat/gas authority routes are unchanged.
 - Authority impact: HabitatGraph still owns room waterline facts; this runtime only publishes presentation globals and fixed blackbox rows.
 - Verification: targeted scans found no `HectonQualityTier`, `GlobalRegistry.ScalabilityTier`, `LowTierRefractionStrength`, `HighTierRefractionStrength`, `IsLowTier`, low-tier, or high-tier route in `InternalFloodWaterlineRuntime.cs`; focused `git diff --check` passed with CRLF warning only. Build was not launched because active `VBCSCompiler` process `34988` was present.
+
+## 2026-05-22 - SHINOBU_SYSTEMIC_SURGEON Suit Visor HUD Quality Pressure Continuum
+
+- `Assets/_Project/Scripts/Visor/VisorHUDController.cs` removed scalability-event listener registration, cached `HectonQualityTier`, direct `GlobalRegistry.QualityTier` reads, and the Low/Mid/High visor-glass scalar switch.
+- `Assets/_Project/Art/Shaders/SuitVisor.shader` renamed `_HectonVisorLowTierDither` to `_HectonVisorQualityPressureDither`; local shader variables now use quality-pressure names.
+- Binary payload impact: none. No DTO, SignalBus payload, Vault BufferID, save identity, or blackbox row changed. This is a material property and shader scalar rename.
+- Authority impact: HUD presentation now derives refraction/chromatic/dither pressure from continuous `HomeostasisBrain.GlobalQualityWeight` and a smooth memory-pressure floor; player, tool, submarine, trauma, and survival facts remain owned by their existing systems.
+- Verification: targeted scans found no scalability listener/callback/registration, `GlobalRegistry.QualityTier`, `HectonQualityTier`, low-tier/high-tier route, or `_HectonVisorLowTierDither` in `VisorHUDController.cs` and `SuitVisor.shader`; focused `git diff --check` passed with CRLF warnings only. Build was not launched because CPU sampled 100% with active `dotnet` and `csc`.
+
+## 2026-05-22 - SHINOBU_SYSTEMIC_SURGEON Diegetic Visor Lens Compute Quality Naming Cleanup
+
+- `Assets/_Project/Art/Shaders/Hecton_DiegeticVisorLens.compute` now names `_HectonDiegeticVisorLensComputeParams.z` as `qualityPressure01`.
+- Binary payload impact: none. Compute property identity, vector layout, runtime binding, kernel count, and shader variants are unchanged.
+- Authority impact: diegetic visor lens presentation still consumes the runtime-owned continuous quality scalar; no gameplay, SignalBus, Vault, or save route changed.
+- Verification: targeted scan found no low-tier/high-tier naming in the compute shader; focused `git diff --check` passed with CRLF warning only. Build was not launched because CPU sampled 57%.
+
+## 2026-05-22 - SHINOBU_SYSTEMIC_SURGEON Jacobian Foam Profile Quality Bias Rename
+
+- `Assets/_Project/Scripts/VFX/JacobianFoam/JacobianFoamContracts.cs` renamed `FoamAestheticProfileDTO` fields at offsets 48/52 to `MinimumQualityResolutionBias` and `MaximumQualityResolutionBias`.
+- Binary payload impact: none. `FoamAestheticProfileDTO` remains explicit 64 bytes, profile capacity remains 32, `BufferID.JacobianFoamProfiles` is unchanged, and CSV hydration writes the same float slots.
+- Authority impact: VFX remains owner of foam profiles; resolution still resolves from continuous `GlobalQualityWeight` through aligned min/max endpoints.
+- Verification: targeted scans found no `LowTierResolutionBias`, `UltraTierResolutionBias`, low-tier, or high-tier naming in `JacobianFoamContracts.cs`; focused `git diff --check` passed with CRLF warning only. Guarded `dotnet build .\Assembly-CSharp.csproj --no-restore --nologo -m:1 -clp:ErrorsOnly` succeeded with 0 errors and 142 warnings.

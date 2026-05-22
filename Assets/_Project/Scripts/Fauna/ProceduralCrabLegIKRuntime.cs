@@ -675,11 +675,11 @@ namespace Hecton8.AI
         private int _telemetryCursor;
         private float3 _pendingOriginShiftOffset;
 
-        internal NativeArray<float3> FootPositions =>
-            TryResolvePersistentBuffers(out CrabLegVaultBuffers buffers) ? buffers.FootPositions : default;
+        internal NativeArray<float3>.ReadOnly FootPositions =>
+            TryResolvePersistentBuffers(out CrabLegVaultBuffers buffers) ? buffers.FootPositions.AsReadOnly() : default;
 
-        internal NativeArray<float3> TargetFootPositions =>
-            TryResolvePersistentBuffers(out CrabLegVaultBuffers buffers) ? buffers.TargetFootPositions : default;
+        internal NativeArray<float3>.ReadOnly TargetFootPositions =>
+            TryResolvePersistentBuffers(out CrabLegVaultBuffers buffers) ? buffers.TargetFootPositions.AsReadOnly() : default;
 
         private int EntityCapacity => math.clamp(_maxEntities, 1, 4096);
 

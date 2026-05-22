@@ -62,7 +62,7 @@ void ResolveDiegeticVisorLensMask(uint3 dispatchThreadId : SV_DispatchThreadID)
     float2 uv = (float2((float)dispatchThreadId.x, (float)dispatchThreadId.y) + 0.5) / outputSize;
     float time = isfinite(_HectonDiegeticVisorLensComputeParams.x) ? _HectonDiegeticVisorLensComputeParams.x : 0.0;
     float maskBlend = Safe01(_HectonDiegeticVisorLensComputeParams.y);
-    float lowTier = Safe01(_HectonDiegeticVisorLensComputeParams.z);
+    float qualityPressure01 = Safe01(_HectonDiegeticVisorLensComputeParams.z);
     float overkill = Safe01(_HectonDiegeticVisorLensComputeParams.w);
 
     float condensationScalar = Safe01(_HectonDiegeticVisorLensState.x);
@@ -79,7 +79,7 @@ void ResolveDiegeticVisorLensMask(uint3 dispatchThreadId : SV_DispatchThreadID)
     float headSpeed = SafeNonNegative(_HectonDiegeticVisorLensParams2.z);
 
     float edge = VisorEdgeMask(uv);
-    float dynamicWeight = saturate(maskBlend * ((1.0 - lowTier) * (0.36 + quality * 0.64) + overkill * 0.2));
+    float dynamicWeight = saturate(maskBlend * ((1.0 - qualityPressure01) * (0.36 + quality * 0.64) + overkill * 0.2));
     float2 flow = float2(dropletGravity.x * 0.21 + headSpeed * 0.012, -0.035 - abs(dropletGravity.y) * 0.09);
     float fogNoise = ValueNoise(uv * lerp(float2(9.0, 15.0), float2(17.0, 27.0), overkill) + flow * time);
     float condensationMask = Safe01(condensationScalar * (0.46 + edge * 0.54) * (0.58 + fogNoise * 0.42));

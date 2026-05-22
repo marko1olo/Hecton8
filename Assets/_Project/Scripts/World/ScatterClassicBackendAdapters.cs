@@ -38,8 +38,8 @@ namespace Hecton8.World
 
         public bool TrySchedule(
             ScatterSimulationConfig config,
-            NativeArray<float> heightSamples,
-            NativeArray<ScatterSimulationCellState> cellStates)
+            NativeArray<float>.ReadOnly heightSamples,
+            NativeArray<ScatterSimulationCellState>.ReadOnly cellStates)
         {
             if (!IsInitialized || _evaluator.IsJobActive)
                 return false;

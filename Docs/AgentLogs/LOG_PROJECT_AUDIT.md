@@ -684,3 +684,51 @@ Cinematic Cheats used: No simulation was added. PDA/HLOD rendering still uses co
 Exact Microseconds saved: 0 us measured. Static outcome: broad audit dropped `nativeCollectionPublicMutableApiExposure` from `182` to `180`, `nativeApiExposureOutRefMutable` from `131` to `129`, and `nativeApiExposureBuildPlayerRuntime` from `169` to `167`.
 
 Evidence: Focused scans found only read-only streaming impostor signatures/call sites. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_after_streaming_impostor_readonly.json` returned `PASS_WITH_WARNINGS` with `nativeCollectionPublicMutableApiExposure=180`, `nativeApiExposureBuildPlayerRuntime=167`, `nativeApiExposureOutRefMutable=129`, and `nativeApiRiskRuntimeOutRefMutableView=80`. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Fluid Property Read-Only Native Return Narrowing
+
+What was wrong: `HectonFluidEngine.FloaterPositions` and `BuoyancyResults` exposed owner buffers as mutable public native-return properties.
+
+What was done: Converted both properties to `NativeArray<T>.ReadOnly` aliases with default returns for uncreated owner arrays. Fluid engine internal mutation and GPU upload ownership remain unchanged.
+
+Cinematic Cheats used: No simulation was added. The route remains a zero-copy owner-buffer view instead of creating debug copies or scene-object scans.
+
+Exact Microseconds saved: 0 us measured. Static outcome: broad audit dropped `nativeCollectionPublicMutableApiExposure` from `180` to `178`, `nativeApiExposureBuildPlayerRuntime` from `167` to `165`, `nativeApiExposureMutableReturn` from `51` to `49`, and `nativeApiRiskRuntimeReturnMutableView` from `35` to `33`.
+
+Evidence: Focused scan found no first-party call sites for those property names beyond the declarations and shader ID text. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_after_fluid_readonly_properties.json` returned `PASS_WITH_WARNINGS` with `nativeCollectionPublicMutableApiExposure=178`, `nativeApiExposureBuildPlayerRuntime=165`, `nativeApiExposureMutableReturn=49`, and `nativeApiRiskRuntimeReturnMutableView=33`. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Crab IK Property Read-Only Native Return Narrowing
+
+What was wrong: `ProceduralCrabLegIKRuntime.FootPositions` and `TargetFootPositions` exposed Vault-backed IK buffers as mutable internal native-return properties.
+
+What was done: Converted both property aliases to `NativeArray<float3>.ReadOnly`. Runtime-owned job buffers and writer phases remain mutable inside `ProceduralCrabLegIKRuntime`.
+
+Cinematic Cheats used: No physics simulation was added. The crab leg route remains a bounded IK/pose visual fake over Vault buffers, not GameObject leg physics.
+
+Exact Microseconds saved: 0 us measured. Static outcome: broad audit dropped `nativeCollectionPublicMutableApiExposure` from `178` to `176`, `nativeApiExposureBuildPlayerRuntime` from `165` to `163`, `nativeApiExposureMutableReturn` from `49` to `47`, and `nativeApiRiskRuntimeReturnMutableView` from `33` to `31`.
+
+Evidence: Focused scan found no external property consumers; remaining hits are owner/job buffer fields and writes. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_after_crab_ik_readonly_properties.json` returned `PASS_WITH_WARNINGS` with `nativeCollectionPublicMutableApiExposure=176`, `nativeApiExposureBuildPlayerRuntime=163`, `nativeApiExposureMutableReturn=47`, and `nativeApiRiskRuntimeReturnMutableView=31`. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Scatter Backend Input Read-Only Seam Narrowing
+
+What was wrong: `ScatterBackendBindingState.HeightSamples` and `CellStates` returned mutable binding buffers to the backend scheduling seam.
+
+What was done: Converted the binding-state properties and backend schedule signatures to `NativeArray<T>.ReadOnly`. `ScatterEvaluator` now copies the read-only height input into its owner-local `_heightSamples` buffer by index before scheduling the existing Burst job.
+
+Cinematic Cheats used: No placement simulation was added. The scatter backend still evaluates compact pre-sampled terrain/cell snapshots, not scene-object terrain queries.
+
+Exact Microseconds saved: 0 us measured. Static outcome: broad audit dropped `nativeCollectionPublicMutableApiExposure` from `176` to `174`, `nativeApiExposureBuildPlayerRuntime` from `163` to `161`, `nativeApiExposureMutableReturn` from `47` to `45`, and `nativeApiRiskRuntimeReturnMutableView` from `31` to `29`.
+
+Evidence: Focused scan found read-only scatter schedule signatures and no stale mutable binding properties. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_after_scatter_backend_readonly_inputs.json` returned `PASS_WITH_WARNINGS` with `nativeCollectionPublicMutableApiExposure=174`, `nativeApiExposureBuildPlayerRuntime=161`, `nativeApiExposureMutableReturn=45`, and `nativeApiRiskRuntimeReturnMutableView=29`. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Marching-Cubes Table Read-Only Native Return Narrowing
+
+What was wrong: `MCTables.EdgeTable` and `TriTable` returned mutable static lookup tables.
+
+What was done: Converted the static table properties and the two marching-cubes job table fields to `NativeArray<int>.ReadOnly`. Table initialization, sentinel registration, and disposal still own the underlying mutable arrays.
+
+Cinematic Cheats used: No terrain physics was added. The voxel pipeline continues to use direct SDF/marching-cubes lookup tables instead of collider or scene queries.
+
+Exact Microseconds saved: 0 us measured. Static outcome: broad audit dropped `nativeCollectionPublicMutableApiExposure` from `174` to `172`, `nativeApiExposureBuildPlayerRuntime` from `161` to `159`, `nativeApiExposureMutableReturn` from `45` to `43`, and `nativeApiRiskRuntimeReturnMutableView` from `29` to `27`.
+
+Evidence: Focused scan found read-only static table properties/job fields and unchanged table lifecycle. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_after_mctables_readonly.json` returned `PASS_WITH_WARNINGS` with `nativeCollectionPublicMutableApiExposure=172`, `nativeApiExposureBuildPlayerRuntime=159`, `nativeApiExposureMutableReturn=43`, and `nativeApiRiskRuntimeReturnMutableView=27`. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.

@@ -36,8 +36,8 @@ using UnityEditor;
 
 public static class MCTables
 {
-    public static NativeArray<int> EdgeTable => _edgeTable;
-    public static NativeArray<int> TriTable  => _triTable;
+    public static NativeArray<int>.ReadOnly EdgeTable => _edgeTable.IsCreated ? _edgeTable.AsReadOnly() : default;
+    public static NativeArray<int>.ReadOnly TriTable  => _triTable.IsCreated ? _triTable.AsReadOnly() : default;
     public static bool IsReady => Volatile.Read(ref _ready) == 1;
 
     static NativeArray<int> _edgeTable;
@@ -1795,8 +1795,8 @@ public struct VoxelMCCountJob : IJobParallelFor
     public float densityDecodeScale;
 
     [ReadOnly, NoAlias] public NativeArray<sbyte> density;
-    [ReadOnly, NoAlias] public NativeArray<int> edgeTable;
-    [ReadOnly, NoAlias] public NativeArray<int> triTable;
+    [ReadOnly, NoAlias] public NativeArray<int>.ReadOnly edgeTable;
+    [ReadOnly, NoAlias] public NativeArray<int>.ReadOnly triTable;
     [WriteOnly, NoAlias] public NativeArray<int> cellVertexCounts;
 
     public void Execute(int cellIdx)
@@ -1880,8 +1880,8 @@ public unsafe struct VoxelMCExtractJob : IJobParallelFor
     public float densityDecodeScale;
 
     [ReadOnly, NoAlias] public NativeArray<sbyte> density;
-    [ReadOnly, NoAlias] public NativeArray<int> edgeTable;
-    [ReadOnly, NoAlias] public NativeArray<int> triTable;
+    [ReadOnly, NoAlias] public NativeArray<int>.ReadOnly edgeTable;
+    [ReadOnly, NoAlias] public NativeArray<int>.ReadOnly triTable;
     [ReadOnly, NoAlias] public NativeArray<int> cellVertexOffsets;
     [ReadOnly, NoAlias] public NativeArray<int> cellVertexCounts;
 

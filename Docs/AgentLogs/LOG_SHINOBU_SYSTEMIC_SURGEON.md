@@ -3660,3 +3660,93 @@ Verification:
     Targeted scans found no remaining `HectonQualityTier`, `GlobalRegistry.ScalabilityTier`, `LowTierRefractionStrength`, `HighTierRefractionStrength`, `IsLowTier`, low-tier, or high-tier route in `InternalFloodWaterlineRuntime.cs`. Focused `git diff --check` passed with CRLF warning only.
   </VERIFICATION>
 </SELF_AUDIT>
+
+<SELF_AUDIT id="SHINOBU_SYSTEMIC_SURGEON" pass="SuitVisorHudQualityPressureContinuum">
+  <WHAT_WAS_WRONG>
+    `VisorHUDController` listened to `ScalabilityEvents`, cached `HectonQualityTier`, read `GlobalRegistry.QualityTier`, and resolved visor glass scalars through Low/Mid/High cases. `SuitVisor.shader` exposed `_HectonVisorLowTierDither`.
+  </WHAT_WAS_WRONG>
+  <WHAT_WAS_DONE>
+    Removed scalability listener lifecycle and tier cache. Replaced the tier switch with `ResolveVisorQualityPressure01`, which combines continuous `HomeostasisBrain.GlobalQualityWeight` with a smooth graphics-memory pressure floor. Refraction, chromatic scale, and dither now resolve from one scalar. Renamed shader property/local route to `_HectonVisorQualityPressureDither`.
+  </WHAT_WAS_DONE>
+  <TASK_RECONCILIATION>
+    01 [PASS] Status/rationale read before response and edit. 02 [PASS] Scalability listener route removed. 03 [PASS] No asmdef/reference changed. 04 [PASS] No DTO ABI changed. 05 [PASS] No `Pack=1`. 06 [PASS] No runtime struct layout changed. 07 [PASS] No native container added. 08 [PASS] No Vault route changed. 09 [PASS] Hot `GlobalRegistry.QualityTier` poll removed. 10 [PASS] Continuous `HomeostasisBrain.GlobalQualityWeight` is source. 11 [PASS] No RNG changed. 12 [PASS] AUP/player pose routes unchanged. 13 [PASS] Dear Lie remains shader HUD glass/refraction. 14 [PASS] Memory pressure floor is continuous, not a cutoff. 15 [PASS] High/ultra reaches full refraction/chromatic scale. 16 [PASS] No job aliasing changes. 17 [PASS] No jobs added. 18 [PASS] Existing telemetry/blackbox routes unchanged. 19 [PASS] Shader property renamed without adding variants. 20 [PASS] Build not launched because compiler guard failed.
+  </TASK_RECONCILIATION>
+  <STRUCT_LAYOUT>
+    No C# DTO changed. Shader scalar route changed name only: `_HectonVisorQualityPressureDither` is a single float replacing `_HectonVisorLowTierDither` in the same material/property-block lane.
+  </STRUCT_LAYOUT>
+  <SCALABILITY_CURVE>
+    Quality pressure is `max(1 - smoothstep(GlobalQualityWeight), 0.65 * smoothstep((2048 - graphicsMemoryMb) / 1536))`. Refraction scale is `smoothstep(1-pressure)`, chromatic scale is `smoothstep((1-pressure) * 1.08)`, and dither is `smoothstep(pressure)`. Quality below 0.3 collapses expensive refraction/chromatic work toward zero and raises dither pressure; middle quality interpolates; high/ultra reaches full glass fidelity with no pressure dither.
+  </SCALABILITY_CURVE>
+  <H_PHI_VAULT_STATUS>
+    No new private native memory was introduced. This route remains renderer material-property presentation; HUD facts, submarine state, tool state, trauma, and survival signals remain owned by their existing services.
+  </H_PHI_VAULT_STATUS>
+  <POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+    No Burst job or `JobHandle` changed. This pass edits a managed material property bridge and shader scalar use only.
+  </POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+  <COMPILE_GUARD>
+    No asmdef, SignalBus payload, BufferID, save identity, or DTO layout changed. Build was skipped because CPU was 100 percent with active `dotnet` and `csc`.
+  </COMPILE_GUARD>
+  <CINEMATIC_CHEATS>
+    Suit visor remains a full-screen shader illusion for glass refraction, chroma, dither, grime, and stress overlays. Rejected route: physical visor geometry distortion or camera-stack simulation. Complexity remains one material-property update plus shader math scaled by pressure.
+  </CINEMATIC_CHEATS>
+  <MICROSECONDS_SAVED estimate="0">
+    No measured speed claim. Static proof only: event subscription and tier switch removed; exact GPU savings require frame capture.
+  </MICROSECONDS_SAVED>
+  <VERIFICATION>
+    Targeted scans found no remaining scalability listener/callback/registration, `GlobalRegistry.QualityTier`, `HectonQualityTier`, low-tier/high-tier route, or `_HectonVisorLowTierDither` in `VisorHUDController.cs` and `SuitVisor.shader`. Focused `git diff --check` passed with CRLF warnings only.
+  </VERIFICATION>
+</SELF_AUDIT>
+
+<SELF_AUDIT id="SHINOBU_SYSTEMIC_SURGEON" pass="DiegeticVisorLensComputeQualityNamingCleanup">
+  <WHAT_WAS_WRONG>
+    `Hecton_DiegeticVisorLens.compute` named `_HectonDiegeticVisorLensComputeParams.z` as `lowTier` even though runtime input is continuous quality pressure.
+  </WHAT_WAS_WRONG>
+  <WHAT_WAS_DONE>
+    Renamed the local variable to `qualityPressure01` and updated the dynamic mask weight expression. The property name, vector layout, runtime binding, and compute kernel count are unchanged.
+  </WHAT_WAS_DONE>
+  <TASK_RECONCILIATION>
+    01 [PASS] Status/rationale read before response and edit. 02 [PASS] Binary shader naming removed. 03 [PASS] No asmdef/reference changed. 04 [PASS] Shader ABI unchanged. 05 [PASS] No `Pack=1`. 06 [PASS] No DTO changed. 07 [PASS] No native container added. 08 [PASS] No Vault route changed. 09 [PASS] No registry poll added. 10 [PASS] Continuous runtime scalar remains source. 11 [PASS] No RNG. 12 [PASS] AUP paths unchanged. 13 [PASS] Dear Lie remains compute mask fake. 14 [PASS] Pressure scales dynamic weight continuously. 15 [PASS] Overkill lane unchanged. 16 [PASS] No job aliasing changes. 17 [PASS] No jobs added. 18 [PASS] Telemetry unchanged. 19 [PASS] Shader variants unchanged. 20 [PASS] Build not launched because CPU guard failed.
+  </TASK_RECONCILIATION>
+  <STRUCT_LAYOUT>No C# DTO changed. `_HectonDiegeticVisorLensComputeParams` remains x time, y mask blend, z quality pressure, w overkill.</STRUCT_LAYOUT>
+  <SCALABILITY_CURVE>Dynamic mask weight remains `maskBlend * ((1-qualityPressure01) * (0.36 + quality * 0.64) + overkill * 0.2)`, so high pressure collapses dynamic mask work and high/ultra restores it continuously.</SCALABILITY_CURVE>
+  <H_PHI_VAULT_STATUS>No Vault or native memory route changed.</H_PHI_VAULT_STATUS>
+  <POINTER_ALIASING_AND_DEPENDENCY_GRAPH>No Burst job or `JobHandle` changed; shader-only rename.</POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+  <COMPILE_GUARD>No asmdef, payload, BufferID, or property name changed. Build skipped because CPU was 57 percent.</COMPILE_GUARD>
+  <CINEMATIC_CHEATS>Diegetic visor lens remains a compute/shader mask fake instead of CPU lens geometry.</CINEMATIC_CHEATS>
+  <MICROSECONDS_SAVED estimate="0">No measured speed claim. Semantic cleanup only.</MICROSECONDS_SAVED>
+  <VERIFICATION>Targeted scan found no remaining low-tier/high-tier naming in `Hecton_DiegeticVisorLens.compute`; focused `git diff --check` passed with CRLF warning only.</VERIFICATION>
+</SELF_AUDIT>
+
+<SELF_AUDIT id="SHINOBU_SYSTEMIC_SURGEON" pass="JacobianFoamProfileQualityBiasRename">
+  <WHAT_WAS_WRONG>
+    `FoamAestheticProfileDTO` named explicit profile fields as `LowTierResolutionBias` and `UltraTierResolutionBias`, preserving binary tier vocabulary in a 64-byte VFX profile payload.
+  </WHAT_WAS_WRONG>
+  <WHAT_WAS_DONE>
+    Renamed offset 48 to `MinimumQualityResolutionBias` and offset 52 to `MaximumQualityResolutionBias`. Updated default profile creation and CSV hydration assignments. No offset, field type, size, capacity, BufferID, or parser structure changed.
+  </WHAT_WAS_DONE>
+  <TASK_RECONCILIATION>
+    01 [PASS] Status/rationale read before response and edit. 02 [PASS] Tier field names removed. 03 [PASS] No asmdef/reference changed. 04 [PASS] DTO layout unchanged. 05 [PASS] No `Pack=1`. 06 [PASS] `FoamAestheticProfileDTO` remains explicit 64 bytes. 07 [PASS] No native container added. 08 [PASS] Vault handles unchanged. 09 [PASS] No registry poll added. 10 [PASS] Foam resolution still uses continuous quality. 11 [PASS] No RNG. 12 [PASS] AUP scroll route unchanged. 13 [PASS] Dear Lie remains GPU foam texture. 14 [PASS] Minimum/maximum endpoints replace low/ultra wording. 15 [PASS] High quality endpoint preserved. 16 [PASS] Existing `[NoAlias]` jobs unchanged. 17 [PASS] No jobs added. 18 [PASS] Telemetry unchanged. 19 [PASS] Shader variants unchanged. 20 [PASS] Guarded build passed.
+  </TASK_RECONCILIATION>
+  <STRUCT_LAYOUT>
+    `FoamAestheticProfileDTO` remains `[StructLayout(LayoutKind.Explicit, Size = 64)]`: offsets 0 `NameHash`, 4 `Version`, 8 `PinchThreshold`, 12 `DecayRate`, 16 `ShorelineDepthFade`, 20 `AdvectionSpeed`, 24 `WindX`, 28 `WindZ`, 32 `WakeGain`, 36 `Intensity`, 40 `FoamLifetimeBias`, 44 `CrestSharpness`, 48 `MinimumQualityResolutionBias`, 52 `MaximumQualityResolutionBias`, 56 `Flags`, 60 `Reserved0`. Total = 64 bytes.
+  </STRUCT_LAYOUT>
+  <SCALABILITY_CURVE>
+    Runtime resolution remains `ResolveFoamResolution(globalQualityWeight, minResolution, maxResolution)`, with aligned minimum and maximum endpoints blended by a smooth polynomial curve. This pass changes names only, preserving continuous quality behavior.
+  </SCALABILITY_CURVE>
+  <H_PHI_VAULT_STATUS>
+    Vault routes unchanged: `JacobianFoamParams`, `JacobianFoamTuning`, `JacobianFoamWakeImpacts`, `JacobianFoamTelemetryRing`, `JacobianFoamProfiles`, and `JacobianFoamCsvScratch`.
+  </H_PHI_VAULT_STATUS>
+  <POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+    Existing Burst jobs retain required compile flags and `[NoAlias]`. No `JobHandle`, `.Schedule()`, or `.Complete()` changed.
+  </POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+  <COMPILE_GUARD>
+    Guard sampled CPU 39 percent with no active compiler process. `dotnet build .\Assembly-CSharp.csproj --no-restore --nologo -m:1 -clp:ErrorsOnly` succeeded with 0 errors and 142 warnings in 00:01:57.58.
+  </COMPILE_GUARD>
+  <CINEMATIC_CHEATS>
+    Jacobian foam remains a GPU texture/compute visual fake. Rejected route: CPU foam particles or fluid-surface simulation.
+  </CINEMATIC_CHEATS>
+  <MICROSECONDS_SAVED estimate="0">No measured speed claim. Naming/layout proof only.</MICROSECONDS_SAVED>
+  <VERIFICATION>
+    Targeted scans found no `LowTierResolutionBias`, `UltraTierResolutionBias`, low-tier, or high-tier naming in `JacobianFoamContracts.cs`; focused `git diff --check` passed with CRLF warning only; guarded build passed.
+  </VERIFICATION>
+</SELF_AUDIT>

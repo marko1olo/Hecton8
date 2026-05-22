@@ -5798,3 +5798,29 @@ Verification:
 - Brace/preprocessor counts are balanced: braces `560/560`, `#if/#endif` `0/0`.
 - `git diff --check` passed with CRLF warning only.
 - Guarded `dotnet build Hecton8.Core.csproj -nologo -clp:ErrorsOnly -maxcpucount:1` succeeded: 0 errors, 29 warnings, elapsed `00:00:54.15`.
+
+## 2026-05-22 - Loop 245 - Ecosystem Director Owner-Local Vault Wrapper Descriptor Route
+
+What was wrong:
+- `EcosystemDirector.VaultNativeArray<T>` still stored `VaultBufferHandle<T>` and resolved through `handle.Resolve(vault)`.
+- `SetSectorFoodHeatmap` still used `GetBuffer<byte>` and `TryGetBufferHandle` for `EcosystemSectorFoodHeatmapR8`.
+
+What was done:
+- Converted the wrapper to store `VaultGenerationHandle<T>` and resolve through `IDataVault.TryResolveHandle`.
+- Mechanically switched all wrapper acquisitions from `GetBufferHandle<T>` to `GetGenerationHandle<T>`.
+- Converted the food heatmap import to `GetGenerationHandle<byte>` plus `TryResolveHandle`.
+
+Cinematic cheats used:
+- None added. Ecosystem simulation math, heatmap sampling, macro swarm hydration, save snapshots, and quality curves are unchanged.
+
+Exact microseconds saved:
+- No measured speedup claimed. Added descriptor proof is O(1) at setup/import boundaries; hot loops still use the existing contiguous native views.
+
+Verification:
+- Focused direct/legacy scan found zero `GetBufferHandle`, `TryGetBufferHandle`, `VaultBufferHandle<`, `.Resolve(vault)`, `GetBuffer<`, or `TryGetBuffer(` hits in `EcosystemDirector.cs`.
+- Brace/preprocessor counts are balanced: braces `562/562`, `#if/#endif` `0/0`.
+- `git diff --check` passed with CRLF warning only.
+- Guarded `dotnet build Hecton8.Core.csproj -nologo -clp:ErrorsOnly -maxcpucount:1` succeeded: 0 errors, 29 warnings, elapsed `00:00:54.55`.
+
+Residual risk:
+- The wrapper still caches a `NativeArray<T>` view for owner-local hot access. Full H-Phi eviction of that view cache is not claimed here and needs a separate data-access migration with profiler proof.

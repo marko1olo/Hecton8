@@ -987,3 +987,13 @@ The scan proves repo-wide debt, not successful consumer migration. A full rename
 - This entry does not claim the unrelated `VaultNativeArray<T>` wrapper or heatmap bridge in `EcosystemDirector.cs`; those remain separate Vault pointer debt.
 - This entry does not change `MacroEcosystemSectorVaultRecord`, `MacroEcosystemSectorIndexRecord`, `MacroEcosystemTuningVaultRecord`, sector hash math, biomass fallback behavior, BufferIDs `70433/70437/70439`, save identity, or AIEcology authority.
 - Verification: focused macro scan found zero `VaultBufferHandle<MacroEcosystem...>` fields and zero `TryGetBufferHandle(BufferID.ShinobuMacroEcosystem...)` acquisitions; guarded Core build succeeded with 0 errors and 29 warnings in `00:00:54.15`.
+
+## 2026-05-22 Ecosystem Director Owner-Local Vault Wrapper Descriptor Route
+
+- `Assets/_Project/Scripts/World/EcosystemDirector.cs` no longer has direct `GetBufferHandle`, `TryGetBufferHandle`, `VaultBufferHandle<`, `.Resolve(vault)`, `GetBuffer<`, or `TryGetBuffer(` routes.
+- Local `VaultNativeArray<T>` now stores `VaultGenerationHandle<T>` and resolves through `IDataVault.TryResolveHandle`.
+- AIEcology owner-local sector, biomass, macro swarm, mutation, headless entity, apex overlap, flora predator AUP upload, and save snapshot rows now acquire descriptors through `GetGenerationHandle<T>`.
+- `EcosystemSectorFoodHeatmapR8` import now uses `GetGenerationHandle<byte>` plus `TryResolveHandle`; no pointer handle reacquisition remains.
+- This entry does not change ecosystem DTO layouts, BufferIDs `Ecosystem*`, macro swarm contracts, heatmap byte format, save snapshot byte layout, job payloads, shader ABI, or AIEcology authority.
+- Residual risk: the wrapper still caches a `NativeArray<T>` view for existing hot owner-local access. This audit entry removes pointer-handle provenance only; it does not claim full persistent view eviction.
+- Verification: focused direct/legacy scan found zero `GetBufferHandle`, `TryGetBufferHandle`, `VaultBufferHandle<`, `.Resolve(vault)`, `GetBuffer<`, or `TryGetBuffer(` hits; guarded Core build succeeded with 0 errors and 29 warnings in `00:00:54.55`.

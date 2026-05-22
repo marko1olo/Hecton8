@@ -15,22 +15,22 @@ Evidence class: STATIC_SOURCE. No Unity import, compile, Play Mode, profiler, GC
 | `burstMissingCompileSynchronously` | 0 | 0 |
 | `burstMissingFloatMode` | 0 | 0 |
 | `burstMissingFloatPrecision` | 0 | 0 |
-| `globalQualityWeight` | 1904 | 429 |
+| `globalQualityWeight` | 1905 | 430 |
 | `jobHandleComplete` | 112 | 31 |
 | `linqSurface` | 0 | 0 |
 | `nativeApiExposureAmbiguousMutable` | 0 | 0 |
 | `nativeApiExposureBuildEditorOnly` | 5 | 4 |
-| `nativeApiExposureBuildPlayerRuntime` | 167 | 73 |
+| `nativeApiExposureBuildPlayerRuntime` | 159 | 71 |
 | `nativeApiExposureBuildQaDevProof` | 8 | 2 |
-| `nativeApiExposureMutableReturn` | 51 | 33 |
+| `nativeApiExposureMutableReturn` | 43 | 29 |
 | `nativeApiExposureOutRefMutable` | 129 | 60 |
 | `nativeApiRiskCoreVaultOrAllocatorSurface` | 21 | 3 |
 | `nativeApiRiskEditorOrProofSurface` | 13 | 6 |
 | `nativeApiRiskRuntimeAmbiguousMutableView` | 0 | 0 |
 | `nativeApiRiskRuntimeDiagnosticNamedMutableView` | 31 | 21 |
 | `nativeApiRiskRuntimeOutRefMutableView` | 80 | 43 |
-| `nativeApiRiskRuntimeReturnMutableView` | 35 | 23 |
-| `nativeCollectionPublicMutableApiExposure` | 180 | 79 |
+| `nativeApiRiskRuntimeReturnMutableView` | 27 | 19 |
+| `nativeCollectionPublicMutableApiExposure` | 172 | 77 |
 | `noAlias` | 2192 | 218 |
 | `packOne` | 0 | 0 |
 | `privateNativeBuildEditorOnly` | 48 | 18 |
@@ -192,8 +192,8 @@ Evidence class: STATIC_SOURCE. No Unity import, compile, Play Mode, profiler, GC
 | `Assets/_Project/Scripts/Core/GlobalSignals.cs` | 4 |
 | `Assets/_Project/Scripts/Fauna/FaunaSimulationEngine.cs` | 3 |
 | `Assets/_Project/Scripts/Core/ThreadSafeCommandQueue.cs` | 2 |
-| `Assets/_Project/Scripts/Fauna/ProceduralCrabLegIKRuntime.cs` | 2 |
-| `Assets/_Project/Scripts/HectonFluidEngine.cs` | 2 |
+| `Assets/_Project/Scripts/World/EcosystemDirector.cs` | 2 |
+| `Assets/_Project/Scripts/World/ShinobuBiomimetic/ShinobuBiomimeticArchitectureRuntime.cs` | 2 |
 
 ### nativeCollectionPublicMutableApiExposure
 

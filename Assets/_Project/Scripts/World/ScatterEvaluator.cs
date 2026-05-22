@@ -111,7 +111,7 @@ namespace Hecton8.World
         /// [REQ] Schedule() at start of frame. Complete() at end or next frame.
         /// [FORBID] Schedule()+Complete() in same method.
         /// </remarks>
-        public JobHandle ScheduleEvaluation(ScatterSimulationConfig config, NativeArray<float> heightSamples)
+        public JobHandle ScheduleEvaluation(ScatterSimulationConfig config, NativeArray<float>.ReadOnly heightSamples)
         {
             if (!_initialized)
             {
@@ -139,7 +139,8 @@ namespace Hecton8.World
             if (heightSamples.IsCreated && heightSamples.Length > 0)
             {
                 heightSampleCount = math.min(heightSamples.Length, _heightSamples.Length);
-                NativeArray<float>.Copy(heightSamples, _heightSamples, heightSampleCount);
+                for (int i = 0; i < heightSampleCount; i++)
+                    _heightSamples[i] = heightSamples[i];
             }
 
             int diameter = config.RadiusCells * 2 + 1;

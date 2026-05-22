@@ -940,3 +940,110 @@ Updated static counts from that artifact:
 - `nativeApiRiskRuntimeOutRefMutableView`: 95, down from 98.
 
 This is static-source proof only. No Unity import, Console, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 Fluid Property Native Return Follow-Up
+
+Additional native API narrowing after the streaming impostor pass:
+
+- `HectonFluidEngine.FloaterPositions` now returns `NativeArray<float3>.ReadOnly`.
+- `HectonFluidEngine.BuoyancyResults` now returns `NativeArray<float>.ReadOnly`.
+
+Rejected:
+
+- Active maelstrom/whirlpool route narrowing, because current gameplay consumers still pass mutable arrays into existing job fields.
+- Managed copies or GPU upload changes.
+
+Focused proof:
+
+- Focused scan found no first-party call sites for those property names beyond declarations and shader ID text.
+- Broad artifact: `Docs/Reports/PROJECT_AUDIT_polish_after_fluid_readonly_properties.json`.
+
+Updated static counts from that artifact:
+
+- `nativeCollectionPublicMutableApiExposure`: 178, down from 180.
+- `nativeApiExposureBuildPlayerRuntime`: 165, down from 167.
+- `nativeApiExposureMutableReturn`: 49, down from 51.
+- `nativeApiRiskRuntimeReturnMutableView`: 33, down from 35.
+
+This is static-source proof only. No Unity import, Console, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 Crab IK Native Return Follow-Up
+
+Additional native API narrowing after the fluid property pass:
+
+- `ProceduralCrabLegIKRuntime.FootPositions` now returns `NativeArray<float3>.ReadOnly`.
+- `ProceduralCrabLegIKRuntime.TargetFootPositions` now returns `NativeArray<float3>.ReadOnly`.
+
+Rejected:
+
+- Job field rewrites for writer phases.
+- Raycast, solve, body-pose, origin-shift, telemetry, or Vault handle ownership changes.
+
+Focused proof:
+
+- Focused scan found no external property consumers; remaining hits are owner/job buffer fields and writes.
+- Broad artifact: `Docs/Reports/PROJECT_AUDIT_polish_after_crab_ik_readonly_properties.json`.
+
+Updated static counts from that artifact:
+
+- `nativeCollectionPublicMutableApiExposure`: 176, down from 178.
+- `nativeApiExposureBuildPlayerRuntime`: 163, down from 165.
+- `nativeApiExposureMutableReturn`: 47, down from 49.
+- `nativeApiRiskRuntimeReturnMutableView`: 31, down from 33.
+
+This is static-source proof only. No Unity import, Console, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 Scatter Backend Input Seam Follow-Up
+
+Additional native API narrowing after the crab IK property pass:
+
+- `ScatterBackendBindingState.HeightSamples` now returns `NativeArray<float>.ReadOnly`.
+- `ScatterBackendBindingState.CellStates` now returns `NativeArray<ScatterSimulationCellState>.ReadOnly`.
+- `IScatterSimulationBackend.TrySchedule`, `ScatterRuntimeBackendFacade`, classic backend, DOTS placeholder, and `ScatterEvaluator.ScheduleEvaluation` now accept read-only input views.
+
+Rejected:
+
+- Mutable schedule aliases.
+- Candidate output buffer changes.
+- Broad allocator/queue/fauna writer route changes.
+
+Focused proof:
+
+- Focused scan found read-only scatter schedule signatures and no stale mutable binding properties.
+- Broad artifact: `Docs/Reports/PROJECT_AUDIT_polish_after_scatter_backend_readonly_inputs.json`.
+
+Updated static counts from that artifact:
+
+- `nativeCollectionPublicMutableApiExposure`: 174, down from 176.
+- `nativeApiExposureBuildPlayerRuntime`: 161, down from 163.
+- `nativeApiExposureMutableReturn`: 45, down from 47.
+- `nativeApiRiskRuntimeReturnMutableView`: 29, down from 31.
+
+This is static-source proof only. No Unity import, Console, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 Marching-Cubes Table Native Return Follow-Up
+
+Additional native API narrowing after the scatter backend pass:
+
+- `MCTables.EdgeTable` now returns `NativeArray<int>.ReadOnly`.
+- `MCTables.TriTable` now returns `NativeArray<int>.ReadOnly`.
+- The two marching-cubes Burst job table fields now consume read-only table views.
+
+Rejected:
+
+- Generated table payload changes.
+- Voxel SDF payload, mesh output, or collider output writer changes.
+
+Focused proof:
+
+- Focused scan found read-only static table properties/job fields and unchanged table lifecycle.
+- Broad artifact: `Docs/Reports/PROJECT_AUDIT_polish_after_mctables_readonly.json`.
+
+Updated static counts from that artifact:
+
+- `nativeCollectionPublicMutableApiExposure`: 172, down from 174.
+- `nativeApiExposureBuildPlayerRuntime`: 159, down from 161.
+- `nativeApiExposureMutableReturn`: 43, down from 45.
+- `nativeApiRiskRuntimeReturnMutableView`: 27, down from 29.
+
+This is static-source proof only. No Unity import, Console, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.

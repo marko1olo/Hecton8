@@ -306,8 +306,8 @@ namespace Hecton8.World
         void Initialize();
         bool TrySchedule(
             ScatterSimulationConfig config,
-            NativeArray<float> heightSamples,
-            NativeArray<ScatterSimulationCellState> cellStates);
+            NativeArray<float>.ReadOnly heightSamples,
+            NativeArray<ScatterSimulationCellState>.ReadOnly cellStates);
         bool TryComplete(out ScatterSimulationResult result);
 
         /// <summary>
