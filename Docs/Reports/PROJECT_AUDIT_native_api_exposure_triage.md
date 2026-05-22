@@ -486,3 +486,62 @@ Rejected:
 - `TryOpenSimdTuningEditorView`, because editor controls mutate scalar fallback tuning through it.
 - Sleep telemetry editor view narrowing, because `PhysicsSleepStateXRayWindow` writes tuning and SDF config through that route.
 - Managed graph copies or solver DTO layout changes.
+
+## 2026-05-22 Inventory No-Call Resolver Update
+
+Evidence class: STATIC_SOURCE / STATIC_TOOL only. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+Selected route:
+
+- `Shinobu19EconomyLedger.TryResolveCarryTotals` and `TryResolveHotbarRoutes` had no first-party call sites in focused search.
+- Both methods are read-accessor-shaped resolver routes and do not need to export mutation authority.
+
+Patch:
+
+- Carry totals now return `NativeArray<ShinobuCarryTotalsDTO>.ReadOnly`.
+- Hotbar routes now return `NativeArray<int>.ReadOnly`.
+- Mutable Vault aliases stay inside `OpenOrAcquireEconomyVaultBuffer` and are immediately converted with `.AsReadOnly()`.
+
+Updated static counts from `Docs/Reports/PROJECT_AUDIT_polish_after_inventory_no_call_readonly.json`:
+
+- `nativeCollectionPublicMutableApiExposure`: 136, down from 138.
+- `nativeApiExposureBuildPlayerRuntime`: 123, down from 125.
+- `nativeApiExposureOutRefMutable`: 105, down from 107.
+- `nativeApiRiskRuntimeOutRefMutableView`: 65, down from 67.
+
+Rejected:
+
+- `TryResolveVaultLedger`, because it exposes the inventory writer SoA route.
+- Recipe/ingredient/physical constants buffers, because editor tuning/import paths mutate them.
+- `ExportRleToVaultScratch`, because it writes into caller scratch.
+- FutureCommand byte-input narrowing, because the remaining counted findings are queue ref/writer bridge APIs.
+
+## 2026-05-22 Seaglide Editor View Update
+
+Evidence class: STATIC_SOURCE / STATIC_TOOL only. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+Selected route:
+
+- `SeaglideHydrodynamicsRuntime.TryResolveEditorViews` is consumed by `SeaglideHydrodynamicsXRayWindow`.
+- `TryResolveForcePacketEditorView` is consumed by `SeaglideCurrentDebugGizmo`.
+- The X-Ray slider path was the only observed mutation and used `GetUnsafePtr()` through the read resolver.
+
+Patch:
+
+- Editor tuning, counters, telemetry, cursor, audio, cavitation, and force packets now publish read-only aliases.
+- `SeaglideHydrodynamicsXRayWindow.ApplySliderValues` now calls `TryApplyEditorTuning` with finite scalar slider values instead of mutating a native pointer.
+- Runtime owner code still writes the single tuning row through its Vault handle.
+
+Updated static counts from `Docs/Reports/PROJECT_AUDIT_polish_after_seaglide_editor_readonly.json`:
+
+- `nativeCollectionPublicMutableApiExposure`: 134, down from 136.
+- `nativeApiExposureBuildPlayerRuntime`: 121, down from 123.
+- `nativeApiExposureOutRefMutable`: 103, down from 105.
+- `nativeApiRiskRuntimeDiagnosticNamedMutableView`: 19, down from 20.
+- `nativeApiRiskRuntimeOutRefMutableView`: 64, down from 65.
+
+Rejected:
+
+- Returning mutable tuning just for editor sliders.
+- Managed tuning/telemetry graph copies.
+- Runtime solver job buffer rewrites or force packet ownership changes.

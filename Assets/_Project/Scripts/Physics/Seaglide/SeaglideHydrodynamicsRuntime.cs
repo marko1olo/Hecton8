@@ -95,12 +95,12 @@ namespace Hecton8.Physics
         }
 
         public bool TryResolveEditorViews(
-            out NativeArray<SeaglideTuningDTO> tuning,
-            out NativeArray<SeaglideCounterDTO> counters,
-            out NativeArray<SeaglideTelemetryEntry> telemetry,
-            out NativeArray<int> cursor,
-            out NativeArray<SeaglideAudioSignalDTO> audio,
-            out NativeArray<SeaglideCavitationVfxSignalDTO> cavitation)
+            out NativeArray<SeaglideTuningDTO>.ReadOnly tuning,
+            out NativeArray<SeaglideCounterDTO>.ReadOnly counters,
+            out NativeArray<SeaglideTelemetryEntry>.ReadOnly telemetry,
+            out NativeArray<int>.ReadOnly cursor,
+            out NativeArray<SeaglideAudioSignalDTO>.ReadOnly audio,
+            out NativeArray<SeaglideCavitationVfxSignalDTO>.ReadOnly cavitation)
         {
             tuning = default;
             counters = default;
@@ -120,27 +120,61 @@ namespace Hecton8.Physics
                 return false;
             }
 
-            tuning = ResolveVaultBuffer(vault, in _tuningHandle);
-            counters = ResolveVaultBuffer(vault, in _countersHandle);
-            telemetry = ResolveVaultBuffer(vault, in _telemetryRingHandle);
-            cursor = ResolveVaultBuffer(vault, in _telemetryCursorHandle);
-            audio = ResolveVaultBuffer(vault, in _audioSignalsHandle);
-            cavitation = ResolveVaultBuffer(vault, in _cavitationSignalsHandle);
-            return tuning.IsCreated && tuning.Length > 0 &&
-                   counters.IsCreated && counters.Length > 0 &&
-                   telemetry.IsCreated && telemetry.Length > 0 &&
-                   cursor.IsCreated && cursor.Length > 0;
+            NativeArray<SeaglideTuningDTO> tuningBuffer = ResolveVaultBuffer(vault, in _tuningHandle);
+            NativeArray<SeaglideCounterDTO> counterBuffer = ResolveVaultBuffer(vault, in _countersHandle);
+            NativeArray<SeaglideTelemetryEntry> telemetryBuffer = ResolveVaultBuffer(vault, in _telemetryRingHandle);
+            NativeArray<int> cursorBuffer = ResolveVaultBuffer(vault, in _telemetryCursorHandle);
+            NativeArray<SeaglideAudioSignalDTO> audioBuffer = ResolveVaultBuffer(vault, in _audioSignalsHandle);
+            NativeArray<SeaglideCavitationVfxSignalDTO> cavitationBuffer = ResolveVaultBuffer(vault, in _cavitationSignalsHandle);
+            if (!tuningBuffer.IsCreated || tuningBuffer.Length <= 0 ||
+                !counterBuffer.IsCreated || counterBuffer.Length <= 0 ||
+                !telemetryBuffer.IsCreated || telemetryBuffer.Length <= 0 ||
+                !cursorBuffer.IsCreated || cursorBuffer.Length <= 0)
+            {
+                return false;
+            }
+
+            tuning = tuningBuffer.AsReadOnly();
+            counters = counterBuffer.AsReadOnly();
+            telemetry = telemetryBuffer.AsReadOnly();
+            cursor = cursorBuffer.AsReadOnly();
+            audio = audioBuffer.AsReadOnly();
+            cavitation = cavitationBuffer.AsReadOnly();
+            return true;
         }
 
-        public bool TryResolveForcePacketEditorView(out NativeArray<SeaglideForcePacketDTO> forcePackets)
+        public bool TryResolveForcePacketEditorView(out NativeArray<SeaglideForcePacketDTO>.ReadOnly forcePackets)
         {
             forcePackets = default;
             IDataVault vault = _dataVault;
             if (vault == null || !HasHandle(in _forcePacketsHandle))
                 return false;
 
-            forcePackets = ResolveVaultBuffer(vault, in _forcePacketsHandle);
-            return forcePackets.IsCreated && forcePackets.Length > 0;
+            NativeArray<SeaglideForcePacketDTO> forcePacketBuffer = ResolveVaultBuffer(vault, in _forcePacketsHandle);
+            if (!forcePacketBuffer.IsCreated || forcePacketBuffer.Length <= 0)
+                return false;
+
+            forcePackets = forcePacketBuffer.AsReadOnly();
+            return true;
+        }
+
+        public bool TryApplyEditorTuning(float maxThrustN, float quadraticDragCoefficient, float flowForceCoefficient)
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null || !HasHandle(in _tuningHandle))
+                return false;
+
+            NativeArray<SeaglideTuningDTO> tuning = ResolveVaultBuffer(vault, in _tuningHandle);
+            if (!tuning.IsCreated || tuning.Length <= 0)
+                return false;
+
+            SeaglideTuningDTO dto = tuning[0];
+            dto.MaxThrustN = math.max(1f, math.select(dto.MaxThrustN, maxThrustN, math.isfinite(maxThrustN)));
+            dto.QuadraticDragCoefficient = math.max(0f, math.select(dto.QuadraticDragCoefficient, quadraticDragCoefficient, math.isfinite(quadraticDragCoefficient)));
+            dto.FlowForceCoefficient = math.max(0f, math.select(dto.FlowForceCoefficient, flowForceCoefficient, math.isfinite(flowForceCoefficient)));
+            dto.ProfileHash = SeaglideHydrodynamicsConstants.SourceHash;
+            tuning[0] = dto;
+            return true;
         }
 
         private void Awake()

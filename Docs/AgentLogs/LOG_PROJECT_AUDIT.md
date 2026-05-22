@@ -948,3 +948,27 @@ Cinematic Cheats used: No runtime solver or extra telemetry generation was added
 Exact Microseconds saved: 0 us measured. Static outcome: broad audit dropped `nativeCollectionPublicMutableApiExposure` from `139` to `138`, `nativeApiExposureBuildPlayerRuntime` from `126` to `125`, `nativeApiExposureOutRefMutable` from `108` to `107`, and `nativeApiRiskRuntimeDiagnosticNamedMutableView` from `21` to `20`.
 
 Evidence: Focused scan found the read-only SIMD editor view and caller. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_after_buoyancy_simd_editor_readonly.json` returned `PASS_WITH_WARNINGS` with `nativeCollectionPublicMutableApiExposure=138`, `nativeApiExposureBuildPlayerRuntime=125`, `nativeApiExposureOutRefMutable=107`, and `nativeApiRiskRuntimeDiagnosticNamedMutableView=20`. `git diff --check` on touched files reported only LF/CRLF normalization warnings. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Inventory No-Call Resolver Read-Only Handoff
+
+What was wrong: `Shinobu19EconomyLedger.TryResolveCarryTotals` and `TryResolveHotbarRoutes` exposed carry total and hotbar route Vault buffers as mutable native arrays from read-accessor-shaped methods. Focused search found no first-party callers that require mutation authority.
+
+What was done: Converted both outputs to `NativeArray<T>.ReadOnly` aliases. The ledger still resolves the owner Vault buffers internally through mutable locals, then publishes immutable views only.
+
+Cinematic Cheats used: No inventory mirror, managed hotbar cache, or per-slot object graph was added. The route remains compact native SoA data exposed as zero-copy read aliases.
+
+Exact Microseconds saved: 0 us measured. Static outcome: broad audit dropped `nativeCollectionPublicMutableApiExposure` from `138` to `136`, `nativeApiExposureBuildPlayerRuntime` from `125` to `123`, `nativeApiExposureOutRefMutable` from `107` to `105`, and `nativeApiRiskRuntimeOutRefMutableView` from `67` to `65`.
+
+Evidence: Focused scan found only read-only declarations for the selected inventory resolver methods. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_after_inventory_no_call_readonly.json` returned `PASS_WITH_WARNINGS` with `nativeCollectionPublicMutableApiExposure=136`, `nativeApiExposureBuildPlayerRuntime=123`, `nativeApiExposureOutRefMutable=105`, and `nativeApiRiskRuntimeOutRefMutableView=65`. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Seaglide Editor Read-Only Views and Scalar Tuning Writer
+
+What was wrong: `SeaglideHydrodynamicsRuntime.TryResolveEditorViews` exposed live seaglide tuning and telemetry buffers as mutable arrays to the X-Ray window. The slider path used `GetUnsafePtr()` on the tuning view, so a diagnostic read route doubled as a write authority lane. `TryResolveForcePacketEditorView` also gave a gizmo reader mutable force-packet access.
+
+What was done: Converted editor tuning, counter, telemetry, cursor, audio, cavitation, and force-packet outputs to `NativeArray<T>.ReadOnly`. Added `TryApplyEditorTuning` so sliders submit finite scalar values into the owner runtime instead of writing through a borrowed native pointer.
+
+Cinematic Cheats used: No extra propulsion simulation or managed diagnostic mirror was added. The X-Ray window still reads compact Vault rows and the gizmo samples the latest force packet as a visual proxy.
+
+Exact Microseconds saved: 0 us measured. Static outcome: broad audit dropped `nativeCollectionPublicMutableApiExposure` from `136` to `134`, `nativeApiExposureBuildPlayerRuntime` from `123` to `121`, `nativeApiExposureOutRefMutable` from `105` to `103`, `nativeApiRiskRuntimeDiagnosticNamedMutableView` from `20` to `19`, and `nativeApiRiskRuntimeOutRefMutableView` from `65` to `64`.
+
+Evidence: Focused scan found read-only seaglide editor resolver signatures and no `GetUnsafePtr()` in the seaglide editor path. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_after_seaglide_editor_readonly.json` returned `PASS_WITH_WARNINGS` with `nativeCollectionPublicMutableApiExposure=134`, `nativeApiExposureBuildPlayerRuntime=121`, `nativeApiExposureOutRefMutable=103`, `nativeApiRiskRuntimeDiagnosticNamedMutableView=19`, and `nativeApiRiskRuntimeOutRefMutableView=64`. `git diff --check` on touched files reported only LF/CRLF normalization warnings. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.

@@ -119,8 +119,8 @@ namespace Hecton8.Physics.Editor
         {
             if (!SeaglideHydrodynamicsRuntime.TryGetActiveRuntime(out SeaglideHydrodynamicsRuntime runtime) ||
                 !runtime.TryResolveEditorViews(
-                    out NativeArray<SeaglideTuningDTO> tuning,
-                    out NativeArray<SeaglideCounterDTO> counters,
+                    out NativeArray<SeaglideTuningDTO>.ReadOnly tuning,
+                    out NativeArray<SeaglideCounterDTO>.ReadOnly counters,
                     out _,
                     out _,
                     out _,
@@ -147,28 +147,10 @@ namespace Hecton8.Physics.Editor
                 slider.SetValueWithoutNotify(value);
         }
 
-        private unsafe void ApplySliderValues()
+        private void ApplySliderValues()
         {
-            if (!SeaglideHydrodynamicsRuntime.TryGetActiveRuntime(out SeaglideHydrodynamicsRuntime runtime) ||
-                !runtime.TryResolveEditorViews(
-                    out NativeArray<SeaglideTuningDTO> tuning,
-                    out _,
-                    out _,
-                    out _,
-                    out _,
-                    out _) ||
-                !tuning.IsCreated ||
-                tuning.Length <= 0)
-            {
-                return;
-            }
-
-            SeaglideTuningDTO* ptr = (SeaglideTuningDTO*)tuning.GetUnsafePtr();
-            ref SeaglideTuningDTO dto = ref UnsafeUtility.AsRef<SeaglideTuningDTO>(ptr);
-            dto.MaxThrustN = math.max(1f, _thrust.value);
-            dto.QuadraticDragCoefficient = math.max(0f, _drag.value);
-            dto.FlowForceCoefficient = math.max(0f, _current.value);
-            dto.ProfileHash = SeaglideHydrodynamicsConstants.SourceHash;
+            if (SeaglideHydrodynamicsRuntime.TryGetActiveRuntime(out SeaglideHydrodynamicsRuntime runtime))
+                runtime.TryApplyEditorTuning(_thrust.value, _drag.value, _current.value);
         }
 
         private static void GenerateMock()
@@ -185,8 +167,8 @@ namespace Hecton8.Physics.Editor
                 !runtime.TryResolveEditorViews(
                     out _,
                     out _,
-                    out NativeArray<SeaglideTelemetryEntry> telemetry,
-                    out NativeArray<int> cursor,
+                    out NativeArray<SeaglideTelemetryEntry>.ReadOnly telemetry,
+                    out NativeArray<int>.ReadOnly cursor,
                     out _,
                     out _) ||
                 !telemetry.IsCreated ||
@@ -509,7 +491,7 @@ namespace Hecton8.Physics.Editor
         private static void DrawSceneGizmo(SceneView sceneView)
         {
             if (!SeaglideHydrodynamicsRuntime.TryGetActiveRuntime(out SeaglideHydrodynamicsRuntime runtime) ||
-                !runtime.TryResolveForcePacketEditorView(out NativeArray<SeaglideForcePacketDTO> packets) ||
+                !runtime.TryResolveForcePacketEditorView(out NativeArray<SeaglideForcePacketDTO>.ReadOnly packets) ||
                 !packets.IsCreated ||
                 packets.Length <= 0)
             {
