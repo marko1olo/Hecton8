@@ -264,10 +264,10 @@ namespace Hecton8.Physics
         }
 
         public bool TryOpenEditorViews(
-            out NativeArray<ReadbackTuningDTO> tuning,
-            out NativeArray<ReadbackTelemetryEntry> telemetry,
-            out NativeArray<int> cursor,
-            out NativeArray<AsyncReadbackCounterDTO> counters)
+            out NativeArray<ReadbackTuningDTO>.ReadOnly tuning,
+            out NativeArray<ReadbackTelemetryEntry>.ReadOnly telemetry,
+            out NativeArray<int>.ReadOnly cursor,
+            out NativeArray<AsyncReadbackCounterDTO>.ReadOnly counters)
         {
             tuning = default;
             telemetry = default;
@@ -276,11 +276,18 @@ namespace Hecton8.Physics
             if (!IsRuntimeReady())
                 return false;
 
-            tuning = ReadVaultBuffer(_dataVault, in _tuningHandle);
-            telemetry = ReadVaultBuffer(_dataVault, in _telemetryRingHandle);
-            cursor = ReadVaultBuffer(_dataVault, in _telemetryCursorHandle);
-            counters = ReadVaultBuffer(_dataVault, in _counterHandle);
-            return tuning.IsCreated && telemetry.IsCreated && cursor.IsCreated && counters.IsCreated;
+            NativeArray<ReadbackTuningDTO> mutableTuning = ReadVaultBuffer(_dataVault, in _tuningHandle);
+            NativeArray<ReadbackTelemetryEntry> mutableTelemetry = ReadVaultBuffer(_dataVault, in _telemetryRingHandle);
+            NativeArray<int> mutableCursor = ReadVaultBuffer(_dataVault, in _telemetryCursorHandle);
+            NativeArray<AsyncReadbackCounterDTO> mutableCounters = ReadVaultBuffer(_dataVault, in _counterHandle);
+            if (!mutableTuning.IsCreated || !mutableTelemetry.IsCreated || !mutableCursor.IsCreated || !mutableCounters.IsCreated)
+                return false;
+
+            tuning = mutableTuning.AsReadOnly();
+            telemetry = mutableTelemetry.AsReadOnly();
+            cursor = mutableCursor.AsReadOnly();
+            counters = mutableCounters.AsReadOnly();
+            return true;
         }
 #endif
 

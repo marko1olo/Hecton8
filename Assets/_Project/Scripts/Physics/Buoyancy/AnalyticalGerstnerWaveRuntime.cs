@@ -82,11 +82,11 @@ namespace Hecton8.Physics
         }
 
         public bool TryOpenEditorViews(
-            out NativeArray<GerstnerWaveTuningDTO> tuning,
-            out NativeArray<WaveMathTelemetryEntry> telemetry,
-            out NativeArray<int> cursor,
-            out NativeArray<OceanSampleRequestDTO> requests,
-            out NativeArray<OceanSampleResultDTO> results)
+            out NativeArray<GerstnerWaveTuningDTO>.ReadOnly tuning,
+            out NativeArray<WaveMathTelemetryEntry>.ReadOnly telemetry,
+            out NativeArray<int>.ReadOnly cursor,
+            out NativeArray<OceanSampleRequestDTO>.ReadOnly requests,
+            out NativeArray<OceanSampleResultDTO>.ReadOnly results)
         {
             tuning = default;
             telemetry = default;
@@ -97,16 +97,29 @@ namespace Hecton8.Physics
             if (vault == null || !HandlesReady(vault))
                 return false;
 
-            tuning = ResolveVaultBuffer(vault, in _tuningHandle);
-            telemetry = ResolveVaultBuffer(vault, in _telemetryHandle);
-            cursor = ResolveVaultBuffer(vault, in _telemetryCursorHandle);
-            requests = ResolveVaultBuffer(vault, in _requestsHandle);
-            results = ResolveVaultBuffer(vault, in _resultsHandle);
-            return tuning.IsCreated && tuning.Length > 0 &&
-                   telemetry.IsCreated && telemetry.Length > 0 &&
-                   cursor.IsCreated && cursor.Length > 0 &&
-                   requests.IsCreated &&
-                   results.IsCreated;
+            NativeArray<GerstnerWaveTuningDTO> mutableTuning = ResolveVaultBuffer(vault, in _tuningHandle);
+            NativeArray<WaveMathTelemetryEntry> mutableTelemetry = ResolveVaultBuffer(vault, in _telemetryHandle);
+            NativeArray<int> mutableCursor = ResolveVaultBuffer(vault, in _telemetryCursorHandle);
+            NativeArray<OceanSampleRequestDTO> mutableRequests = ResolveVaultBuffer(vault, in _requestsHandle);
+            NativeArray<OceanSampleResultDTO> mutableResults = ResolveVaultBuffer(vault, in _resultsHandle);
+            if (!mutableTuning.IsCreated ||
+                mutableTuning.Length <= 0 ||
+                !mutableTelemetry.IsCreated ||
+                mutableTelemetry.Length <= 0 ||
+                !mutableCursor.IsCreated ||
+                mutableCursor.Length <= 0 ||
+                !mutableRequests.IsCreated ||
+                !mutableResults.IsCreated)
+            {
+                return false;
+            }
+
+            tuning = mutableTuning.AsReadOnly();
+            telemetry = mutableTelemetry.AsReadOnly();
+            cursor = mutableCursor.AsReadOnly();
+            requests = mutableRequests.AsReadOnly();
+            results = mutableResults.AsReadOnly();
+            return true;
         }
 #endif
 

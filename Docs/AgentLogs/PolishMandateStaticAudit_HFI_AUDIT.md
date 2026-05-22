@@ -20,18 +20,18 @@ Evidence class: STATIC_SOURCE. No Unity import, compile, Play Mode, profiler, GC
 | `linqSurface` | 0 | 0 |
 | `nativeApiExposureAmbiguousMutable` | 0 | 0 |
 | `nativeApiExposureBuildEditorOnly` | 5 | 4 |
-| `nativeApiExposureBuildPlayerRuntime` | 128 | 58 |
+| `nativeApiExposureBuildPlayerRuntime` | 125 | 56 |
 | `nativeApiExposureBuildQaDevProof` | 8 | 2 |
 | `nativeApiExposureMutableReturn` | 31 | 19 |
-| `nativeApiExposureOutRefMutable` | 110 | 55 |
+| `nativeApiExposureOutRefMutable` | 107 | 53 |
 | `nativeApiExposurePrivateNestedSuppressed` | 9 | 6 |
 | `nativeApiRiskCoreVaultOrAllocatorSurface` | 21 | 3 |
 | `nativeApiRiskEditorOrProofSurface` | 13 | 6 |
 | `nativeApiRiskRuntimeAmbiguousMutableView` | 0 | 0 |
-| `nativeApiRiskRuntimeDiagnosticNamedMutableView` | 23 | 16 |
+| `nativeApiRiskRuntimeDiagnosticNamedMutableView` | 20 | 14 |
 | `nativeApiRiskRuntimeOutRefMutableView` | 67 | 40 |
 | `nativeApiRiskRuntimeReturnMutableView` | 17 | 10 |
-| `nativeCollectionPublicMutableApiExposure` | 141 | 64 |
+| `nativeCollectionPublicMutableApiExposure` | 138 | 62 |
 | `noAlias` | 2192 | 218 |
 | `packOne` | 0 | 0 |
 | `privateNativeBuildEditorOnly` | 48 | 18 |
@@ -144,9 +144,9 @@ Evidence class: STATIC_SOURCE. No Unity import, compile, Play Mode, profiler, GC
 |---|---:|
 | `Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs` | 7 |
 | `Assets/_Project/Scripts/Inventory/Shinobu19EconomyLedger.cs` | 7 |
-| `Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementRuntime.cs` | 5 |
 | `Assets/_Project/Scripts/Construction/ModularBaseConstructionValidator.cs` | 4 |
 | `Assets/_Project/Scripts/Core/HectonArenaAllocator.cs` | 4 |
+| `Assets/_Project/Scripts/Core/Memory/H8Memory.cs` | 4 |
 
 ### nativeApiExposurePrivateNestedSuppressed
 
@@ -180,7 +180,7 @@ Evidence class: STATIC_SOURCE. No Unity import, compile, Play Mode, profiler, GC
 
 | Path | Count |
 |---|---:|
-| `Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementRuntime.cs` | 4 |
+| `Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementRuntime.cs` | 3 |
 | `Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs` | 3 |
 | `Assets/_Project/Scripts/Core/Data/H8StaticDataContracts.cs` | 2 |
 | `Assets/_Project/Scripts/Quest/QuestManager.cs` | 2 |

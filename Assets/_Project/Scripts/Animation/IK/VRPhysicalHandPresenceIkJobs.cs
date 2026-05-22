@@ -317,8 +317,8 @@ namespace Hecton8.Animation.IK
         /// </summary>
         public static bool TryDumpTelemetry(
             string path,
-            NativeArray<VRHandIkTelemetryEntry> telemetryRing,
-            NativeArray<int> telemetryCursor)
+            NativeArray<VRHandIkTelemetryEntry>.ReadOnly telemetryRing,
+            NativeArray<int>.ReadOnly telemetryCursor)
         {
             if (string.IsNullOrEmpty(path) ||
                 !VRPhysicalHandPresenceLayout.Validate() ||
@@ -388,9 +388,9 @@ namespace Hecton8.Animation.IK
         /// </summary>
         public static bool TryDumpTelemetryOnFault(
             string path,
-            NativeArray<VRHandPresenceOutput> outputs,
-            NativeArray<VRHandIkTelemetryEntry> telemetryRing,
-            NativeArray<int> telemetryCursor)
+            NativeArray<VRHandPresenceOutput>.ReadOnly outputs,
+            NativeArray<VRHandIkTelemetryEntry>.ReadOnly telemetryRing,
+            NativeArray<int>.ReadOnly telemetryCursor)
         {
             if (!outputs.IsCreated)
                 return false;

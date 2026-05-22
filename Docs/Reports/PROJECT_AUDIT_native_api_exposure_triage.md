@@ -403,3 +403,58 @@ Rejected:
 - Telemetry writer route narrowing, because `RecordTelemetry` writes the black-box ring.
 - `EconomyTelemetryEntry` layout changes, because the struct is already explicit 64-byte telemetry payload.
 - Managed copies, Vault handle changes, or new allocation paths.
+
+## 2026-05-22 IK Black-Box and Async Buoyancy X-Ray Update
+
+Evidence class: STATIC_SOURCE / STATIC_TOOL only. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+Selected route:
+
+- `LeviathanTerrainIkBlackBox` and `VRPhysicalHandPresenceBlackBox` dump helpers only read black-box telemetry and output rows.
+- `AsyncBuoyancyReadbackRuntime.TryOpenEditorViews` is an editor/X-ray read view; mutation is already routed through `ApplyEditorTuning`.
+
+Patch:
+
+- IK black-box dump/fault-dump methods now accept `NativeArray<T>.ReadOnly` telemetry/cursor/output views.
+- Async buoyancy X-ray view now returns read-only tuning, telemetry, cursor, and counter aliases.
+- `AsyncGpuReadbackXRayWindow.UpdateWaterfall` consumes a read-only telemetry ring.
+
+Updated static counts from `Docs/Reports/PROJECT_AUDIT_polish_after_async_buoyancy_editor_readonly.json`:
+
+- `nativeCollectionPublicMutableApiExposure`: 140, down from 141.
+- `nativeApiExposureBuildPlayerRuntime`: 127, down from 128.
+- `nativeApiExposureOutRefMutable`: 109, down from 110.
+- `nativeApiRiskRuntimeDiagnosticNamedMutableView`: 22, down from 23.
+
+Rejected:
+
+- IK `TryResolveBuffers` and telemetry job field narrowing, because those are writer/resolver paths.
+- Async GPU readback result-state ownership changes.
+- Managed diagnostic mirrors or DTO layout changes.
+
+## 2026-05-22 Analytical Wave Editor View Update
+
+Evidence class: STATIC_SOURCE / STATIC_TOOL only. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+Selected route:
+
+- `AnalyticalGerstnerWaveRuntime.TryOpenEditorViews` was a public editor view returning mutable tuning, telemetry, cursor, request, and result buffers.
+- Focused search found no first-party callers of the analytical runtime editor view. The active analytical wave editor reads/writes the Vault through its own dedicated read/write helpers.
+
+Patch:
+
+- `TryOpenEditorViews` now returns read-only aliases for all five analytical wave buffers.
+- The method still validates owner buffer creation and length before publishing aliases.
+
+Updated static counts from `Docs/Reports/PROJECT_AUDIT_polish_after_analytical_wave_editor_readonly.json`:
+
+- `nativeCollectionPublicMutableApiExposure`: 139, down from 140.
+- `nativeApiExposureBuildPlayerRuntime`: 126, down from 127.
+- `nativeApiExposureOutRefMutable`: 108, down from 109.
+- `nativeApiRiskRuntimeDiagnosticNamedMutableView`: 21, down from 22.
+
+Rejected:
+
+- Analytical solver job signature changes.
+- Gerstner DTO/request/result layout changes.
+- Managed editor snapshots or new allocation paths.

@@ -136,10 +136,10 @@ namespace Hecton8.Physics.Editor
 
             if (!AsyncBuoyancyReadbackRuntime.TryGetActiveRuntimeInstance(out AsyncBuoyancyReadbackRuntime runtime) ||
                 !runtime.TryOpenEditorViews(
-                    out NativeArray<ReadbackTuningDTO> tuning,
-                    out NativeArray<ReadbackTelemetryEntry> telemetry,
-                    out NativeArray<int> cursor,
-                    out NativeArray<AsyncReadbackCounterDTO> counters))
+                    out NativeArray<ReadbackTuningDTO>.ReadOnly tuning,
+                    out NativeArray<ReadbackTelemetryEntry>.ReadOnly telemetry,
+                    out NativeArray<int>.ReadOnly cursor,
+                    out NativeArray<AsyncReadbackCounterDTO>.ReadOnly counters))
             {
                 SetRuntimeMissing();
                 return;
@@ -217,7 +217,7 @@ namespace Hecton8.Physics.Editor
                 _qualitySlider.value);
         }
 
-        private void UpdateWaterfall(NativeArray<ReadbackTelemetryEntry> telemetry, int cursor)
+        private void UpdateWaterfall(NativeArray<ReadbackTelemetryEntry>.ReadOnly telemetry, int cursor)
         {
             if (!telemetry.IsCreated || telemetry.Length <= 0)
                 return;

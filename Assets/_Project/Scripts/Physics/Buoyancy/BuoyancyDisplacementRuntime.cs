@@ -170,15 +170,15 @@ namespace Hecton8.Physics
                    cursor.IsCreated && cursor.Length > 0;
         }
 
-        /// <summary>Opens mutable editor views for SIMD benchmark telemetry and tolerance rows.</summary>
+        /// <summary>Opens read-only editor views for SIMD benchmark telemetry and tolerance rows.</summary>
         /// <param name="telemetry">Opened SIMD telemetry ring.</param>
         /// <param name="cursor">Opened SIMD telemetry cursor.</param>
         /// <param name="tolerances">Opened SIMD tolerance rows.</param>
         /// <remarks>Editor-only cold surface used by Burst Vectorization X-Ray tooling.</remarks>
         public bool TryOpenSimdEditorViews(
-            out NativeArray<SimdTelemetryEntry> telemetry,
-            out NativeArray<int> cursor,
-            out NativeArray<SimdMathToleranceDTO> tolerances)
+            out NativeArray<SimdTelemetryEntry>.ReadOnly telemetry,
+            out NativeArray<int>.ReadOnly cursor,
+            out NativeArray<SimdMathToleranceDTO>.ReadOnly tolerances)
         {
             telemetry = default;
             cursor = default;
@@ -187,12 +187,23 @@ namespace Hecton8.Physics
             if (vault == null || !HandlesReady(vault))
                 return false;
 
-            telemetry = ResolveVaultBuffer(vault, in _simdTelemetryRingHandle);
-            cursor = ResolveVaultBuffer(vault, in _simdTelemetryCursorHandle);
-            tolerances = ResolveVaultBuffer(vault, in _simdMathTolerancesHandle);
-            return telemetry.IsCreated && telemetry.Length > 0 &&
-                   cursor.IsCreated && cursor.Length > 0 &&
-                   tolerances.IsCreated && tolerances.Length > 0;
+            NativeArray<SimdTelemetryEntry> mutableTelemetry = ResolveVaultBuffer(vault, in _simdTelemetryRingHandle);
+            NativeArray<int> mutableCursor = ResolveVaultBuffer(vault, in _simdTelemetryCursorHandle);
+            NativeArray<SimdMathToleranceDTO> mutableTolerances = ResolveVaultBuffer(vault, in _simdMathTolerancesHandle);
+            if (!mutableTelemetry.IsCreated ||
+                mutableTelemetry.Length <= 0 ||
+                !mutableCursor.IsCreated ||
+                mutableCursor.Length <= 0 ||
+                !mutableTolerances.IsCreated ||
+                mutableTolerances.Length <= 0)
+            {
+                return false;
+            }
+
+            telemetry = mutableTelemetry.AsReadOnly();
+            cursor = mutableCursor.AsReadOnly();
+            tolerances = mutableTolerances.AsReadOnly();
+            return true;
         }
 
         /// <summary>Opens the editor-only SIMD hydrodynamic tuning row.</summary>

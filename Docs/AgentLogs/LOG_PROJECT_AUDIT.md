@@ -912,3 +912,27 @@ Cinematic Cheats used: No inventory replay, managed telemetry mirror, or per-ite
 Exact Microseconds saved: 0 us measured. Static outcome: broad audit dropped `nativeCollectionPublicMutableApiExposure` from `142` to `141`, `nativeApiExposureBuildPlayerRuntime` from `129` to `128`, `nativeApiExposureOutRefMutable` from `111` to `110`, and `nativeApiRiskRuntimeDiagnosticNamedMutableView` from `24` to `23`.
 
 Evidence: Focused scan found read-only economy telemetry resolver/dump signatures and no first-party external callers requiring mutable views. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_after_economy_telemetry_readonly.json` returned `PASS_WITH_WARNINGS` with `nativeCollectionPublicMutableApiExposure=141`, `nativeApiExposureBuildPlayerRuntime=128`, `nativeApiExposureOutRefMutable=110`, and `nativeApiRiskRuntimeDiagnosticNamedMutableView=23`. `git diff --check` on `Shinobu19EconomyLedger.cs` reported only LF/CRLF normalization warnings. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - IK Black-Box and Async Buoyancy X-Ray Read-Only Views
+
+What was wrong: IK black-box dump helpers accepted mutable telemetry arrays, and `AsyncBuoyancyReadbackRuntime.TryOpenEditorViews` exposed async readback X-ray buffers as mutable arrays even though the X-ray window only reads them.
+
+What was done: Converted Leviathan terrain IK and VR physical hand-presence black-box dump/fault-dump inputs to read-only native aliases. Converted async buoyancy editor/X-ray view outputs and waterfall graph input to `NativeArray<T>.ReadOnly`; tuning edits still go through `ApplyEditorTuning`.
+
+Cinematic Cheats used: No new physics, GPU readback, or managed mirror was added. Diagnostics continue to read fixed native rings and scalar counters instead of scene or object graph probes.
+
+Exact Microseconds saved: 0 us measured. Static outcome: the final async audit dropped `nativeCollectionPublicMutableApiExposure` from `141` to `140`, `nativeApiExposureBuildPlayerRuntime` from `128` to `127`, `nativeApiExposureOutRefMutable` from `110` to `109`, and `nativeApiRiskRuntimeDiagnosticNamedMutableView` from `23` to `22`. The IK dump-only hardening did not change counters because the remaining IK findings are the mutable resolver/job writer surfaces.
+
+Evidence: Focused scans found read-only async editor view outputs and read-only IK black-box dump signatures. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_after_async_buoyancy_editor_readonly.json` returned `PASS_WITH_WARNINGS` with `nativeCollectionPublicMutableApiExposure=140`, `nativeApiExposureBuildPlayerRuntime=127`, `nativeApiExposureOutRefMutable=109`, and `nativeApiRiskRuntimeDiagnosticNamedMutableView=22`. `git diff --check` on touched files reported only LF/CRLF normalization warnings. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Analytical Wave Editor View Read-Only Handoff
+
+What was wrong: `AnalyticalGerstnerWaveRuntime.TryOpenEditorViews` exposed analytical wave Vault buffers as mutable native arrays despite no first-party callers and separate editor write tooling for wave tuning.
+
+What was done: Converted the editor view outputs for tuning, telemetry, cursor, requests, and results to `NativeArray<T>.ReadOnly`, resolving owner buffers locally and publishing immutable aliases only.
+
+Cinematic Cheats used: No additional wave solver, scene probe, or managed mirror was added. The editor path still reads compact Gerstner request/result and telemetry DTO rows.
+
+Exact Microseconds saved: 0 us measured. Static outcome: broad audit dropped `nativeCollectionPublicMutableApiExposure` from `140` to `139`, `nativeApiExposureBuildPlayerRuntime` from `127` to `126`, `nativeApiExposureOutRefMutable` from `109` to `108`, and `nativeApiRiskRuntimeDiagnosticNamedMutableView` from `22` to `21`.
+
+Evidence: Focused scan found only the read-only analytical wave editor view declaration and no first-party external caller. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_after_analytical_wave_editor_readonly.json` returned `PASS_WITH_WARNINGS` with `nativeCollectionPublicMutableApiExposure=139`, `nativeApiExposureBuildPlayerRuntime=126`, `nativeApiExposureOutRefMutable=108`, and `nativeApiRiskRuntimeDiagnosticNamedMutableView=21`. `git diff --check` on `AnalyticalGerstnerWaveRuntime.cs` reported only LF/CRLF normalization warnings. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.

@@ -117,8 +117,8 @@ namespace Hecton8.Editor.Physics
 
             if (!BuoyancyDisplacementRuntime.TryGetActiveRuntimeInstance(out BuoyancyDisplacementRuntime runtime) ||
                 !runtime.TryOpenSimdEditorViews(
-                    out NativeArray<SimdTelemetryEntry> telemetry,
-                    out NativeArray<int> cursor,
+                    out NativeArray<SimdTelemetryEntry>.ReadOnly telemetry,
+                    out NativeArray<int>.ReadOnly cursor,
                     out _))
             {
                 if (!_runtimeUnavailableStatusShown)

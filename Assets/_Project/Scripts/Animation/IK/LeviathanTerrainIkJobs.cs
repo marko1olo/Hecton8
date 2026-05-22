@@ -148,8 +148,8 @@ namespace Hecton8.Animation.IK
 
         public static bool TryDumpTelemetry(
             string path,
-            NativeArray<LeviathanTerrainIkTelemetryEntry> telemetryRing,
-            NativeArray<int> telemetryCursor)
+            NativeArray<LeviathanTerrainIkTelemetryEntry>.ReadOnly telemetryRing,
+            NativeArray<int>.ReadOnly telemetryCursor)
         {
             if (string.IsNullOrEmpty(path) ||
                 !LeviathanTerrainIkLayout.Validate() ||
@@ -215,8 +215,8 @@ namespace Hecton8.Animation.IK
 
         public static bool TryDumpTelemetryOnFault(
             string path,
-            NativeArray<LeviathanTerrainIkTelemetryEntry> telemetryRing,
-            NativeArray<int> telemetryCursor)
+            NativeArray<LeviathanTerrainIkTelemetryEntry>.ReadOnly telemetryRing,
+            NativeArray<int>.ReadOnly telemetryCursor)
         {
             if (!telemetryRing.IsCreated ||
                 !telemetryCursor.IsCreated ||
