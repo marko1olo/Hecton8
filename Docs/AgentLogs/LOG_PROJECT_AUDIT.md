@@ -1306,3 +1306,39 @@ Cinematic Cheats used: No new simulation. Existing organic yield remains a deter
 Exact Microseconds saved: 0 us measured. Static API risk moved `nativeCollectionPublicMutableApiExposure=97->96`, `nativeApiExposureBuildPlayerRuntime=93->92`, `nativeApiExposureMutableReturn=27->26`, and `nativeApiRiskRuntimeReturnMutableView=15->14`.
 
 Evidence: `Docs/Reports/PROJECT_AUDIT_polish_after_dropbuffer_owner_schedule.json`; `python Tools\test_polish_mandate_static_audit.py` passed 12 tests; focused scan found no `DropBuffer.AsParallelWriter` API and only owner-local `_queue.AsParallelWriter()` inside `DropBuffer.ScheduleEntropyYieldJob`; targeted `git diff --check` reported only LF/CRLF normalization warnings. Batch re-check found no `<AGENT_PROMPT id="PROJECT_AUDIT">` block. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Cable Mock Owner Schedule Split
+
+What was wrong: `TetherManager` opened the cable mock Vault buffers and SignalBus physics-event writer directly before scheduling the mock job. The caller was acting as a buffer broker instead of a schedule requester.
+
+What was done: Added `CablePhysicsSolver132.TryHasMockBuffers` and `TryScheduleMockFromVault`, made `TryResolveMockBuffers` and `AcquirePhysicsEventWriter` private, and routed `TetherManager` through the owner scheduler while preserving dispatcher completion and black-box timing.
+
+Cinematic Cheats used: No new physical simulation. The existing cable mock remains a cheap owner-scheduled presentation/telemetry path, and the edit removes raw mutable buffer transit rather than adding CPU physics.
+
+Exact Microseconds saved: 0 us measured. Static API risk moved `nativeCollectionPublicMutableApiExposure=96->94`, `nativeApiExposureBuildPlayerRuntime=92->90`, `nativeApiExposureMutableReturn=26->25`, `nativeApiExposureOutRefMutable=70->69`, `nativeApiRiskRuntimeDiagnosticNamedMutableView=11->10`, and `nativeApiRiskRuntimeReturnMutableView=14->13`.
+
+Evidence: `Docs/Reports/PROJECT_AUDIT_polish_after_cable_mock_owner_schedule.json`; `python Tools\test_polish_mandate_static_audit.py` passed 12 tests; focused scan found no external `CablePhysicsSolver132.TryResolveMockBuffers`, `AcquirePhysicsEventWriter`, or direct `ScheduleMock` call; targeted `git diff --check` reported only LF/CRLF normalization warnings. Batch re-check found no `<AGENT_PROMPT id="PROJECT_AUDIT">` block. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Inventory Ledger Writer Route Scope Pass
+
+What was wrong: `Shinobu19EconomyLedger.TryResolveVaultLedger` publicly exposed mutable inventory hash, quantity, and durability SoA buffers, but source search found no active first-party caller.
+
+What was done: Narrowed `TryResolveVaultLedger` to private and left active editor recipe/ingredient/physical-constants routes unchanged for a separate owner-facade pass.
+
+Cinematic Cheats used: No new simulation. This is route sovereignty cleanup; inventory still uses rollback-compatible SoA buffers and deterministic transaction math.
+
+Exact Microseconds saved: 0 us measured. Static API risk moved `nativeCollectionPublicMutableApiExposure=94->93`, `nativeApiExposureBuildPlayerRuntime=90->89`, `nativeApiExposureOutRefMutable=69->68`, and `nativeApiRiskRuntimeOutRefMutableView=46->45`.
+
+Evidence: `Docs/Reports/PROJECT_AUDIT_polish_after_inventory_ledger_writer_scope.json`; `python Tools\test_polish_mandate_static_audit.py` passed 12 tests; focused search found only the private `TryResolveVaultLedger` declaration; targeted `git diff --check` reported only LF/CRLF normalization warnings. Batch re-check found no `<AGENT_PROMPT id="PROJECT_AUDIT">` block. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Drone Fleet Vault Helper Scope Pass
+
+What was wrong: `DroneFleetManager.ResolveDroneVaultBuffer` and `ReleaseDroneVaultBuffer` were internal generic mutable native helper APIs. Same-file `HectonDroneFleetEvents` needed two payload lanes, but not the whole generic fleet helper surface.
+
+What was done: Added private snapshot-event resolve/release helpers inside `HectonDroneFleetEvents`, then narrowed the generic DroneFleetManager helpers to private. Vault handle validation, H8Memory fallback, Sentinel registration, and listener dispatch behavior are unchanged.
+
+Cinematic Cheats used: No new simulation. This preserves the existing drone fleet DataVault/BRG/telemetry architecture and only closes the generic mutable helper route.
+
+Exact Microseconds saved: 0 us measured. Static API risk moved `nativeCollectionPublicMutableApiExposure=93->91`, `nativeApiExposureBuildPlayerRuntime=89->87`, `nativeApiExposureMutableReturn=25->24`, `nativeApiExposureOutRefMutable=68->67`, `nativeApiRiskRuntimeReturnMutableView=13->12`, and `nativeApiRiskRuntimeOutRefMutableView=45->44`.
+
+Evidence: `Docs/Reports/PROJECT_AUDIT_polish_after_drone_vault_helper_scope.json`; `python Tools\test_polish_mandate_static_audit.py` passed 12 tests; focused scan found no external `DroneFleetManager.ResolveDroneVaultBuffer` or `ReleaseDroneVaultBuffer` calls and no public/internal declarations; targeted `git diff --check` reported only LF/CRLF normalization warnings. Batch re-check found no `<AGENT_PROMPT id="PROJECT_AUDIT">` block. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.

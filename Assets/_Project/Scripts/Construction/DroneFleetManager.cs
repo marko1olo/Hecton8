@@ -215,7 +215,7 @@ namespace Hecton8.Construction
         {
             if (_pendingEvents.IsCreated)
             {
-                DroneFleetManager.ReleaseDroneVaultBuffer(
+                ReleaseSnapshotVaultBuffer(
                     ref _pendingEvents,
                     ref _pendingEventsHandle,
                     ref _pendingEventsVaultBacked,
@@ -224,7 +224,7 @@ namespace Hecton8.Construction
 
             if (_nextFrameEvents.IsCreated)
             {
-                DroneFleetManager.ReleaseDroneVaultBuffer(
+                ReleaseSnapshotVaultBuffer(
                     ref _nextFrameEvents,
                     ref _nextFrameEventsHandle,
                     ref _nextFrameEventsVaultBacked,
@@ -364,7 +364,7 @@ namespace Hecton8.Construction
         {
             if (!_pendingEvents.IsCreated)
             {
-                _pendingEvents = DroneFleetManager.ResolveDroneVaultBuffer(
+                _pendingEvents = ResolveSnapshotVaultBuffer(
                     PendingEventBufferId,
                     PendingEventCapacity,
                     NativeArrayOptions.ClearMemory,
@@ -378,7 +378,7 @@ namespace Hecton8.Construction
 
             if (!_nextFrameEvents.IsCreated)
             {
-                _nextFrameEvents = DroneFleetManager.ResolveDroneVaultBuffer(
+                _nextFrameEvents = ResolveSnapshotVaultBuffer(
                     NextFrameEventBufferId,
                     PendingEventCapacity,
                     NativeArrayOptions.ClearMemory,
@@ -389,6 +389,107 @@ namespace Hecton8.Construction
                     _nextFrameEventsVaultBacked,
                     nameof(_nextFrameEvents));
             }
+        }
+
+        private static NativeArray<T> ResolveSnapshotVaultBuffer<T>(
+            BufferID bufferId,
+            int length,
+            NativeArrayOptions allocationNativeArrayOptions,
+            ref VaultGenerationHandle<T> handle,
+            out bool vaultBacked) where T : struct
+        {
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (vault != null)
+            {
+                if (TryOpenSnapshotVaultBuffer(vault, in handle, bufferId, length, out NativeArray<T> buffer))
+                {
+                    vaultBacked = true;
+                    return buffer;
+                }
+
+                if (vault.TryGetGenerationHandle<T>(bufferId, out VaultGenerationHandle<T> existingHandle))
+                {
+                    handle = existingHandle;
+                    if (TryOpenSnapshotVaultBuffer(vault, in handle, bufferId, length, out buffer))
+                    {
+                        vaultBacked = true;
+                        return buffer;
+                    }
+                }
+
+                handle = vault.GetGenerationHandle<T>(
+                    bufferId,
+                    length,
+                    SystemID.Construction,
+                    allocationNativeArrayOptions);
+                if (TryOpenSnapshotVaultBuffer(vault, in handle, bufferId, length, out buffer))
+                {
+                    vaultBacked = true;
+                    return buffer;
+                }
+
+                handle = default;
+            }
+
+            vaultBacked = false;
+            return H8Memory.Allocate<T>(
+                length,
+                SystemID.Construction,
+                Allocator.Persistent,
+                allocationNativeArrayOptions);
+        }
+
+        private static bool TryOpenSnapshotVaultBuffer<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            buffer = default;
+            if (vault == null ||
+                requiredLength <= 0 ||
+                handle.BufferID != unchecked((uint)(int)bufferId) ||
+                handle.Generation == 0u)
+            {
+                return false;
+            }
+
+            if (!vault.TryResolveHandle(in handle, out buffer) || !buffer.IsCreated || buffer.Length < requiredLength)
+            {
+                buffer = default;
+                return false;
+            }
+
+            return true;
+        }
+
+        private static void ReleaseSnapshotVaultBuffer<T>(
+            ref NativeArray<T> array,
+            ref VaultGenerationHandle<T> handle,
+            ref bool vaultBacked,
+            string label) where T : struct
+        {
+            if (!array.IsCreated)
+            {
+                handle = default;
+                vaultBacked = false;
+                return;
+            }
+
+            if (vaultBacked)
+            {
+                array = default;
+                handle = default;
+                vaultBacked = false;
+                return;
+            }
+
+            NativeMemorySentinel.UnregisterNativeArray(array);
+            H8Memory.Release(ref array, SystemID.Construction);
+            handle = default;
+            vaultBacked = false;
         }
 
         private static bool Enqueue(in HectonDroneFleetSnapshotPayload payload)
@@ -1581,7 +1682,7 @@ namespace Hecton8.Construction
                 out s_DroneCullingStatesVaultBacked);
         }
 
-        internal static NativeArray<T> ResolveDroneVaultBuffer<T>(
+        private static NativeArray<T> ResolveDroneVaultBuffer<T>(
             BufferID bufferId,
             int length,
             NativeArrayOptions allocationNativeArrayOptions,
@@ -1643,7 +1744,7 @@ namespace Hecton8.Construction
             RegisterNativeArray(array, label);
         }
 
-        internal static void ReleaseDroneVaultBuffer<T>(
+        private static void ReleaseDroneVaultBuffer<T>(
             ref NativeArray<T> array,
             ref VaultGenerationHandle<T> handle,
             ref bool vaultBacked,

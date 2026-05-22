@@ -384,7 +384,7 @@ namespace Hecton8.Inventory
                    UnsafeUtility.SizeOf<DebrisSpatialEntry>() == 32;
         }
 
-        public static bool TryResolveVaultLedger(
+        private static bool TryResolveVaultLedger(
             IDataVault vault,
             int capacity,
             out NativeArray<uint> hashes,
