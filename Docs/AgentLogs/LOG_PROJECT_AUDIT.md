@@ -1510,3 +1510,39 @@ Cinematic Cheats used: No new simulation. Laser cutter remains analytical ray/de
 Exact Microseconds saved: 0 us measured. Static API risk moved `nativeCollectionPublicMutableApiExposure=71->69`, `nativeApiExposureBuildPlayerRuntime=67->65`, `nativeApiExposureOutRefMutable=50->48`, and `nativeApiRiskRuntimeOutRefMutableView=27->25`.
 
 Evidence: `Docs/Reports/PROJECT_AUDIT_polish_after_laser_cutter_csv_ingest_scope.json`; `python Tools\test_polish_mandate_static_audit.py` passed 12 tests; focused scan found only private declarations; targeted `git diff --check` reported only LF/CRLF normalization warnings. Batch re-check found no `<AGENT_PROMPT id="PROJECT_AUDIT">` block. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - NavGrid Snapshot Dispose Ref Removal
+
+What was wrong: `VoxelDynamicNavGridRuntime.DisposeObstacleSnapshot(ref NativeArray<NavObstaclePrimitive>)` exposed two mutable `ref NativeArray` cleanup APIs.
+
+What was done: Converted both disposer overloads to by-value snapshots and cleared caller locals/fields explicitly after disposal or disposal scheduling.
+
+Cinematic Cheats used: No new simulation. Nav-grid obstacle stamping still consumes a bounded TempJob snapshot instead of querying scene colliders inside the Burst voxel loop.
+
+Exact Microseconds saved: 0 us measured. Static API risk moved `nativeCollectionPublicMutableApiExposure=69->67`, `nativeApiExposureBuildPlayerRuntime=65->63`, `nativeApiExposureOutRefMutable=48->46`, and `nativeApiRiskRuntimeDiagnosticNamedMutableView=10->8`.
+
+Evidence: `Docs/Reports/PROJECT_AUDIT_polish_after_navgrid_snapshot_dispose_ref_removal.json`; `python Tools\test_polish_mandate_static_audit.py` passed 12 tests; focused scan found no `DisposeObstacleSnapshot(ref` route; targeted `git diff --check` reported only LF/CRLF normalization warnings. Batch re-check found no `<AGENT_PROMPT id="PROJECT_AUDIT">` block. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Scatter Completion Owner Result
+
+What was wrong: `ScatterEvaluator.CompleteAndGetResults(out NativeArray<ScatterSimulationCandidate>)` exposed the evaluator-owned candidate buffer directly to the classic backend adapter.
+
+What was done: Replaced it with `TryComplete(out ScatterSimulationResult)` and moved parity hashing into `ScatterEvaluator`.
+
+Cinematic Cheats used: No new simulation. Scatter shadow execution remains Burst candidate/parity evaluation, not scene-object placement or GameObject iteration.
+
+Exact Microseconds saved: 0 us measured. Static API risk moved `nativeCollectionPublicMutableApiExposure=67->66`, `nativeApiExposureBuildPlayerRuntime=63->62`, `nativeApiExposureOutRefMutable=46->45`, and `nativeApiRiskRuntimeOutRefMutableView=25->24`.
+
+Evidence: `Docs/Reports/PROJECT_AUDIT_polish_after_scatter_completion_owner_result.json`; `python Tools\test_polish_mandate_static_audit.py` passed 12 tests; focused scan found no `CompleteAndGetResults` route; targeted `git diff --check` reported only LF/CRLF normalization warnings. Batch re-check found no `<AGENT_PROMPT id="PROJECT_AUDIT">` block. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Vegetation FlowField Owner Upload
+
+What was wrong: `TryGetEcosystemFlowFieldPayload` exposed a writable `NativeArray<float2>` to flora and marine-snow consumers that only needed GPU upload.
+
+What was done: Returned `NativeArray<float2>.ReadOnly` from the accessor and added `TryUploadEcosystemFlowFieldPayload(GraphicsBuffer,int)` on the vegetation bridge owner.
+
+Cinematic Cheats used: No new simulation. The flow field remains a cheap shader/compute sampling payload for flora and marine snow, not per-particle CPU current simulation.
+
+Exact Microseconds saved: 0 us measured. Static API risk moved `nativeCollectionPublicMutableApiExposure=66->65`, `nativeApiExposureBuildPlayerRuntime=62->61`, `nativeApiExposureOutRefMutable=45->44`, and `nativeApiRiskRuntimeOutRefMutableView=24->23`.
+
+Evidence: `Docs/Reports/PROJECT_AUDIT_polish_after_vegetation_flowfield_owner_upload.json`; `python Tools\test_polish_mandate_static_audit.py` passed 12 tests; focused scan shows read-only payload and owner upload call sites; targeted `git diff --check` reported only LF/CRLF normalization warnings. Batch re-check found no `<AGENT_PROMPT id="PROJECT_AUDIT">` block. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.

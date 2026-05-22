@@ -655,7 +655,7 @@ namespace Hecton8.World
                 VoxelDynamicNavGridRuntime.DisposeTrackedNativeArray(ref NextDistance);
                 VoxelDynamicNavGridRuntime.DisposeTrackedNativeArray(ref PureVoidBlockFlags);
 
-                VoxelDynamicNavGridRuntime.DisposeObstacleSnapshot(ref PendingObstacleSnapshot);
+                VoxelDynamicNavGridRuntime.DisposeObstacleSnapshot(PendingObstacleSnapshot);
 
                 Current = default;
                 Next = default;
@@ -1035,18 +1035,17 @@ namespace Hecton8.World
             return snapshot;
         }
 
-        internal static void DisposeObstacleSnapshot(ref NativeArray<NavObstaclePrimitive> snapshot)
+        internal static void DisposeObstacleSnapshot(NativeArray<NavObstaclePrimitive> snapshot)
         {
             if (!snapshot.IsCreated)
                 return;
 
             NativeMemorySentinel.UnregisterNativeArray(snapshot);
             snapshot.Dispose();
-            snapshot = default;
         }
 
         internal static JobHandle DisposeObstacleSnapshot(
-            ref NativeArray<NavObstaclePrimitive> snapshot,
+            NativeArray<NavObstaclePrimitive> snapshot,
             JobHandle dependency)
         {
             if (!snapshot.IsCreated)
@@ -1054,7 +1053,6 @@ namespace Hecton8.World
 
             NativeMemorySentinel.UnregisterNativeArray(snapshot);
             JobHandle disposeHandle = snapshot.Dispose(dependency);
-            snapshot = default;
             return disposeHandle;
         }
 
@@ -1162,7 +1160,8 @@ namespace Hecton8.World
                 record.NextDistance = distanceSwap;
                 EvaluatePureVoidState(record);
 
-                DisposeObstacleSnapshot(ref record.PendingObstacleSnapshot);
+                DisposeObstacleSnapshot(record.PendingObstacleSnapshot);
+                record.PendingObstacleSnapshot = default;
 
                 record.PendingRegionMin = int3.zero;
                 record.PendingRegionMax = int3.zero;
@@ -1220,7 +1219,8 @@ namespace Hecton8.World
                 NativeArray<byte>.Copy(record.Current, record.Next, requiredCellCount);
                 NativeArray<ushort>.Copy(record.CurrentDistance, record.NextDistance, requiredCellCount);
 
-                DisposeObstacleSnapshot(ref record.PendingObstacleSnapshot);
+                DisposeObstacleSnapshot(record.PendingObstacleSnapshot);
+                record.PendingObstacleSnapshot = default;
 
                 record.PendingObstacleSnapshot = CreateObstacleSnapshot(Allocator.TempJob);
                 record.PendingRegionMin = regionMin;

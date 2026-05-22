@@ -18,21 +18,41 @@ namespace Hecton8.World
     public sealed partial class HectonMapMagicVegetationBridge
     {
         public bool TryGetEcosystemFlowFieldPayload(
-            out NativeArray<float2> flowVectors,
+            out NativeArray<float2>.ReadOnly flowVectors,
             out int gridResolution,
             out Vector3 gridCenter,
             out float cellSize)
         {
-            flowVectors = _nativeMemory.EcosystemFlowFieldCurrentNative;
+            NativeArray<float2> currentFlowField = _nativeMemory.EcosystemFlowFieldCurrentNative;
+            flowVectors = currentFlowField.IsCreated ? currentFlowField.AsReadOnly() : default;
             gridResolution = _ecosystemThreatGridResolution;
             gridCenter = _ecosystemFlowFieldCenter;
             cellSize = threatGridCellSize;
             return _flowFieldInitialized &&
-                   flowVectors.IsCreated &&
-                   HasCompleteEcosystemSquareGridState(flowVectors.Length) &&
+                   currentFlowField.IsCreated &&
+                   HasCompleteEcosystemSquareGridState(currentFlowField.Length) &&
                    cellSize > 0f &&
                    math.isfinite(cellSize) &&
                    IsFinite(gridCenter);
+        }
+
+        public bool TryUploadEcosystemFlowFieldPayload(GraphicsBuffer destination, int count)
+        {
+            NativeArray<float2> currentFlowField = _nativeMemory.EcosystemFlowFieldCurrentNative;
+            if (destination == null ||
+                count <= 0 ||
+                !currentFlowField.IsCreated ||
+                !HasCompleteEcosystemSquareGridState(currentFlowField.Length))
+            {
+                return false;
+            }
+
+            int uploadCount = math.min(count, currentFlowField.Length);
+            if (uploadCount <= 0)
+                return false;
+
+            GraphicsBufferUploadUtility.UploadNativeArray(destination, currentFlowField, uploadCount);
+            return true;
         }
 
         /// <summary>

@@ -2693,7 +2693,7 @@ namespace Hecton8.Environment
             }
 
             bool hasPayload = bridge.TryGetEcosystemFlowFieldPayload(
-                out NativeArray<float2> flowVectors,
+                out NativeArray<float2>.ReadOnly flowVectors,
                 out int gridResolution,
                 out Vector3 gridCenter,
                 out float cellSize);
@@ -2735,7 +2735,12 @@ namespace Hecton8.Environment
             if (!forceUpload)
                 return;
 
-            GraphicsBufferUploadUtility.UploadNativeArray(_flowFieldBuffer, flowVectors, uploadCount);
+            if (!bridge.TryUploadEcosystemFlowFieldPayload(_flowFieldBuffer, uploadCount))
+            {
+                ResetFlowFieldSamplingState();
+                return;
+            }
+
             _lastUploadedFlowFieldCenterWS = gridCenter;
             _flowFieldUploadTimer = math.max(0.05f, flowFieldUploadInterval);
         }

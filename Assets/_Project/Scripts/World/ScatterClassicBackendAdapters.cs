@@ -10,8 +10,6 @@ namespace Hecton8.World
     /// </summary>
     internal sealed class ScatterClassicSimulationBackend : IScatterSimulationBackend
     {
-        private const ulong FnvOffset = 14695981039346656037UL;
-        private const ulong FnvPrime = 1099511628211UL;
         private readonly ScatterEvaluator _evaluator;
         private bool _disposed;
         private bool _initialized;
@@ -54,9 +52,7 @@ namespace Hecton8.World
             if (!IsInitialized || !_evaluator.IsJobActive || !_evaluator.IsJobCompleted)
                 return false;
 
-            int candidateCount = _evaluator.CompleteAndGetResults(out NativeArray<ScatterSimulationCandidate> candidates);
-            result = new ScatterSimulationResult(candidates, candidateCount, BuildParitySnapshot(candidates, candidateCount));
-            return true;
+            return _evaluator.TryComplete(out result);
         }
 
         public void ForceComplete()
@@ -75,40 +71,6 @@ namespace Hecton8.World
             _evaluator.Dispose();
             _disposed = true;
             _initialized = false;
-        }
-
-        private static ScatterSimulationParitySnapshot BuildParitySnapshot(
-            NativeArray<ScatterSimulationCandidate> candidates,
-            int candidateCount)
-        {
-            ScatterSimulationParitySnapshot snapshot = default;
-            ulong hash = FnvOffset;
-            for (int i = 0; i < candidateCount; i++)
-            {
-                ScatterSimulationCandidate candidate = candidates[i];
-                switch (candidate.LayerIndex)
-                {
-                    case 0:
-                        snapshot.GroundCount++;
-                        break;
-                    case 1:
-                        snapshot.ClusterCount++;
-                        break;
-                    case 2:
-                        snapshot.StructureCount++;
-                        break;
-                    case 3:
-                        snapshot.SpawnCount++;
-                        break;
-                }
-
-                hash = (hash ^ (ulong)candidate.CellKey) * FnvPrime;
-                hash = (hash ^ (ulong)(uint)candidate.LayerIndex) * FnvPrime;
-            }
-
-            snapshot.CandidateCount = candidateCount;
-            snapshot.CandidateChecksum = hash;
-            return snapshot;
         }
     }
 }

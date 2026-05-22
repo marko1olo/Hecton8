@@ -6902,7 +6902,7 @@ namespace Hecton8.World
             }
 
             bool hasPayload = _vegetationBridge.TryGetEcosystemFlowFieldPayload(
-                out NativeArray<float2> flowVectors,
+                out NativeArray<float2>.ReadOnly flowVectors,
                 out int gridResolution,
                 out Vector3 gridCenter,
                 out float cellSize);
@@ -6935,7 +6935,9 @@ namespace Hecton8.World
                     _flowFieldBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float2>(requiredCount); // COLD ALLOC: GraphicsBuffer[flowVectors.Length] - authoritative ecosystem flow-field GPU staging for flora shading - owner: FloraInteractionManager
                 }
 
-                GraphicsBufferUploadUtility.UploadNativeArray(_flowFieldBuffer, flowVectors, requiredCount);
+                if (!_vegetationBridge.TryUploadEcosystemFlowFieldPayload(_flowFieldBuffer, requiredCount))
+                    return;
+
                 _lastUploadedFlowFieldCenterWS = gridCenter;
                 _flowFieldUploadTimer = FlowFieldUploadIntervalSeconds;
             }

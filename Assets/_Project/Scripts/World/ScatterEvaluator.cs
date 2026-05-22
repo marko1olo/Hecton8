@@ -41,6 +41,8 @@ namespace Hecton8.World
         private const int MaxCandidatesPerEvaluation = 4096; // COLD ALLOC budget
         private const string NativeMemoryOwner = nameof(ScatterEvaluator);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
+        private const ulong FnvOffset = 14695981039346656037UL;
+        private const ulong FnvPrime = 1099511628211UL;
 
         // ══════════════════════════════════════════════════════════
         //  NATIVE CONTAINERS (Persistent lifetime)
@@ -167,24 +169,29 @@ namespace Hecton8.World
         /// Completes the active evaluation job and returns candidate data.
         /// Call on main thread at end of frame or next frame.
         /// </summary>
-        /// <param name="results">Output slice of valid candidates.</param>
-        /// <returns>Number of valid candidates.</returns>
-        public int CompleteAndGetResults(out NativeArray<ScatterSimulationCandidate> results)
+        /// <param name="result">Completed candidate result owned by the evaluator backend.</param>
+        /// <returns>True when the completed result was produced.</returns>
+        public bool TryComplete(out ScatterSimulationResult result)
         {
-            results = _candidates;
+            result = default;
 
             if (!_hasActiveJob || !_initialized)
-                return 0;
+                return false;
 
             if (!_activeHandle.IsCompleted)
-                return 0;
+                return false;
 
             if (!DispatcherJobSwap.TryComplete(ref _activeHandle, forceComplete: false))
-                return 0;
+                return false;
 
             _hasActiveJob = false;
 
-            return math.min(_candidateCount[0].Count, _candidates.Length);
+            int candidateCount = math.min(_candidateCount[0].Count, _candidates.Length);
+            result = new ScatterSimulationResult(
+                _candidates,
+                candidateCount,
+                BuildParitySnapshot(_candidates, candidateCount));
+            return true;
         }
 
         /// <summary>
@@ -232,6 +239,40 @@ namespace Hecton8.World
                 array.Dispose();
 
             array = default;
+        }
+
+        private static ScatterSimulationParitySnapshot BuildParitySnapshot(
+            NativeArray<ScatterSimulationCandidate> candidates,
+            int candidateCount)
+        {
+            ScatterSimulationParitySnapshot snapshot = default;
+            ulong hash = FnvOffset;
+            for (int i = 0; i < candidateCount; i++)
+            {
+                ScatterSimulationCandidate candidate = candidates[i];
+                switch (candidate.LayerIndex)
+                {
+                    case 0:
+                        snapshot.GroundCount++;
+                        break;
+                    case 1:
+                        snapshot.ClusterCount++;
+                        break;
+                    case 2:
+                        snapshot.StructureCount++;
+                        break;
+                    case 3:
+                        snapshot.SpawnCount++;
+                        break;
+                }
+
+                hash = (hash ^ (ulong)candidate.CellKey) * FnvPrime;
+                hash = (hash ^ (ulong)(uint)candidate.LayerIndex) * FnvPrime;
+            }
+
+            snapshot.CandidateCount = candidateCount;
+            snapshot.CandidateChecksum = hash;
+            return snapshot;
         }
 
         // ══════════════════════════════════════════════════════════

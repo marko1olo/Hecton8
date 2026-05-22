@@ -6739,7 +6739,8 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         {
             if (navObstacleSnapshot.IsCreated)
             {
-                VoxelDynamicNavGridRuntime.DisposeObstacleSnapshot(ref navObstacleSnapshot, firstPhaseHandle);
+                VoxelDynamicNavGridRuntime.DisposeObstacleSnapshot(navObstacleSnapshot, firstPhaseHandle);
+                navObstacleSnapshot = default;
             }
 
             throw;
@@ -6747,7 +6748,8 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
 
         if (navObstacleSnapshot.IsCreated)
         {
-            VoxelDynamicNavGridRuntime.DisposeObstacleSnapshot(ref navObstacleSnapshot);
+            VoxelDynamicNavGridRuntime.DisposeObstacleSnapshot(navObstacleSnapshot);
+            navObstacleSnapshot = default;
         }
         if (navGridScheduled)
             VoxelDynamicNavGridRuntime.CommitBuild(data.SourceVolume, data.SourceRuntimeStamp);
