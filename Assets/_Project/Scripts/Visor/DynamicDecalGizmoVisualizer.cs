@@ -11,7 +11,7 @@ namespace Hecton8.Visor
         private void OnDrawGizmos()
         {
             if (!drawDecalVolumes ||
-                !DynamicDecalVaultRuntime.TryAcquireDecalBufferRead(out Unity.Collections.NativeArray<VisorDecalDTO> decals, out _, out Vector3 cameraWorldPosition))
+                !DynamicDecalVaultRuntime.TryAcquireDecalBufferRead(out Unity.Collections.NativeArray<VisorDecalDTO>.ReadOnly decals, out _, out Vector3 cameraWorldPosition))
             {
                 return;
             }

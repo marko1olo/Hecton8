@@ -25,10 +25,11 @@ namespace Hecton8.World
         private const Allocator DataVaultExemptAbyssalNodeAllocator = Allocator.Persistent;
         private const Allocator DataVaultExemptAbyssalTelemetryAllocator = Allocator.Persistent;
 
-        public bool TryGetLatestAbyssalPathPayload(out NativeArray<Vector3> path, out int count)
+        public bool TryGetLatestAbyssalPathPayload(out NativeArray<Vector3>.ReadOnly path, out int count)
         {
             CompleteAbyssalPathJob(forceComplete: false);
-            path = _nativeMemory.AbyssalPathSnapshotNative;
+            NativeArray<Vector3> snapshot = _nativeMemory.AbyssalPathSnapshotNative;
+            path = snapshot.IsCreated ? snapshot.AsReadOnly() : default;
             count = _abyssalPathCount;
             return count > 0 && path.IsCreated;
         }
@@ -745,10 +746,11 @@ namespace Hecton8.World
         /// <summary>
         /// Returns the current frustum-culled HLOD payload for distant rendering consumers.
         /// </summary>
-        public bool TryGetVisibleHLODPayload(out NativeArray<HLODData> entries, out int count)
+        public bool TryGetVisibleHLODPayload(out NativeArray<HLODData>.ReadOnly entries, out int count)
         {
             CompleteHLODCullJob(forceComplete: false);
-            entries = _nativeMemory.VisibleHlodSnapshotNative;
+            NativeArray<HLODData> visible = _nativeMemory.VisibleHlodSnapshotNative;
+            entries = visible.IsCreated ? visible.AsReadOnly() : default;
             count = _visibleHlodCount;
             return count > 0 && entries.IsCreated;
         }

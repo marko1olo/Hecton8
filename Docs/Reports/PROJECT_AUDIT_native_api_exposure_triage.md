@@ -770,3 +770,113 @@ Rejected:
 - Scanner math rewrites.
 - Private owner writer helper changes.
 - Managed lore snapshot mirrors.
+
+## 2026-05-22 Residency DTO Read-Only Update
+
+Evidence class: STATIC_SOURCE / STATIC_TOOL only. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+Selected route:
+
+- `WorldChunkResidencyManager.TryGetChunkResidencyDtos` is a public readback route.
+- Focused call-site search found one editor consumer: `ResidencyStreamingTunerWindow.DrawSceneGrid`.
+- Runtime mutation remains on private `ResolveChunkResidencyDtos` and scheduled residency jobs.
+
+Patch:
+
+- Public chunk residency output now returns `NativeArray<ChunkResidencyDTO>.ReadOnly`.
+- The editor tuner call site was updated to the immutable alias.
+
+Updated static counts from `Docs/Reports/PROJECT_AUDIT_polish_after_residency_dtos_readonly.json`:
+
+- `nativeCollectionPublicMutableApiExposure`: 119, down from 120.
+- `nativeApiExposureBuildPlayerRuntime`: 109, down from 110.
+- `nativeApiExposureOutRefMutable`: 88, down from 89.
+- `nativeApiRiskRuntimeOutRefMutableView`: 57, down from 58.
+
+Rejected:
+
+- Streaming job DTO layout changes.
+- Hydration/dehydration logic changes.
+- Managed residency mirrors.
+
+## 2026-05-22 Abyssal Path Payload Read-Only Update
+
+Evidence class: STATIC_SOURCE / STATIC_TOOL only. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+Selected route:
+
+- `HectonMapMagicVegetationBridge.TryGetLatestAbyssalPathPayload` is a public path snapshot readback route.
+- Focused call-site search found one consumer: `SargassumMicroFaunaBoids`, which copies path rows into its own scratch buffer.
+
+Patch:
+
+- Public path output now returns `NativeArray<Vector3>.ReadOnly`.
+- `ScheduleLeviathanNodeBuild` now accepts the read-only view before copying to scratch.
+
+Updated static counts from `Docs/Reports/PROJECT_AUDIT_polish_after_abyssal_path_readonly.json`:
+
+- `nativeCollectionPublicMutableApiExposure`: 118, down from 119.
+- `nativeApiExposureBuildPlayerRuntime`: 108, down from 109.
+- `nativeApiExposureOutRefMutable`: 87, down from 88.
+- `nativeApiRiskRuntimeOutRefMutableView`: 56, down from 57.
+
+Rejected:
+
+- Abyssal path job completion changes.
+- Managed path copies.
+- Leviathan node job field rewrites.
+
+## 2026-05-22 Visible HLOD Payload Read-Only Update
+
+Evidence class: STATIC_SOURCE / STATIC_TOOL only. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+Selected route:
+
+- `TryGetVisibleHLODPayload` had no first-party call sites in focused search.
+- The adjacent HLOD registry payload route already returned `NativeArray<HLODData>.ReadOnly`.
+
+Patch:
+
+- Visible HLOD output now returns `NativeArray<HLODData>.ReadOnly`.
+- Mutable snapshot ownership stays in the vegetation bridge HLOD cull/write path.
+
+Updated static counts from `Docs/Reports/PROJECT_AUDIT_polish_after_visible_hlod_readonly.json`:
+
+- `nativeCollectionPublicMutableApiExposure`: 117, down from 118.
+- `nativeApiExposureBuildPlayerRuntime`: 107, down from 108.
+- `nativeApiExposureOutRefMutable`: 86, down from 87.
+- `nativeApiRiskRuntimeOutRefMutableView`: 55, down from 56.
+
+Rejected:
+
+- HLOD cull job changes.
+- Renderer binding API changes.
+- Managed HLOD mirrors.
+
+## 2026-05-22 Dynamic Decal Read-Lock Read-Only Update
+
+Evidence class: STATIC_SOURCE / STATIC_TOOL only. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+Selected route:
+
+- `DynamicDecalVaultRuntime.TryAcquireDecalBufferRead` is editor-only and already uses read-lock/release semantics.
+- Focused call-site search found two consumers: `DynamicDecalGizmoVisualizer` and `ScreenSpaceDecalTunerWindow`, both read decal rows for Gizmo drawing.
+
+Patch:
+
+- Editor read-lock output now returns `NativeArray<VisorDecalDTO>.ReadOnly`.
+- Mutable Vault borrow stays internal to the locked route.
+- Read-lock release lifecycle is unchanged.
+
+Updated static counts from `Docs/Reports/PROJECT_AUDIT_polish_after_dynamic_decal_readonly.json`:
+
+- `nativeCollectionPublicMutableApiExposure`: 116, down from 117.
+- `nativeApiExposureBuildPlayerRuntime`: 106, down from 107.
+- `nativeApiExposureOutRefMutable`: 85, down from 86.
+- `nativeApiRiskRuntimeOutRefMutableView`: 54, down from 55.
+
+Rejected:
+
+- Decal writer/job changes.
+- Lock lifecycle changes.
+- Managed decal mirrors.

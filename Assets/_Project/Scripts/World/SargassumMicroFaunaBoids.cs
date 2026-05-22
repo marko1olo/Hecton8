@@ -3702,7 +3702,7 @@ namespace Hecton8.World
             _debugLeviathanThreatLevel = hotspotThreat;
             _debugLeviathanHotspotWS = hotspotPosition;
 
-            if (_mapMagicVegetationBridge.TryGetLatestAbyssalPathPayload(out NativeArray<Vector3> path, out int pathCount) &&
+            if (_mapMagicVegetationBridge.TryGetLatestAbyssalPathPayload(out NativeArray<Vector3>.ReadOnly path, out int pathCount) &&
                 pathCount > 1)
             {
                 ScheduleLeviathanNodeBuild(path, pathCount);
@@ -3712,7 +3712,7 @@ namespace Hecton8.World
             _debugLeviathanNodeCount = _leviathanPathNodeCount;
         }
 
-        private void ScheduleLeviathanNodeBuild(NativeArray<Vector3> path, int pathCount)
+        private void ScheduleLeviathanNodeBuild(NativeArray<Vector3>.ReadOnly path, int pathCount)
         {
             int safePathCount = math.min(pathCount, path.Length);
             var leviathanNodeBack = ResolveSargassumVaultArray(in _leviathanNodeBackHandle, BufferID.SargassumLeviathanNodeBack, leviathanNodeCapacity);

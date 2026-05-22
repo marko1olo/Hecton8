@@ -1327,7 +1327,7 @@ namespace Hecton8.Scavenging
             return true;
         }
 
-        public static bool TryRunDistributionSelfAudit(out NativeArray<uint> auditCounts)
+        public static bool TryRunDistributionSelfAudit(out NativeArray<uint>.ReadOnly auditCounts)
         {
             auditCounts = default;
             ScavengingLootOracleRuntime host = EnsureHost();
@@ -1357,7 +1357,7 @@ namespace Hecton8.Scavenging
             JobHandle handle = auditJob.Schedule(dependency);
             // COLD SYNC JOB: editor self-audit returns the Vault audit buffer to the inspector button.
             DispatcherJobFence.TryComplete(ref handle, forceComplete: true);
-            auditCounts = views.DistributionAudit;
+            auditCounts = views.DistributionAudit.AsReadOnly();
             return true;
         }
 
@@ -1948,7 +1948,7 @@ namespace Hecton8.Scavenging.Editor
             if (_auditLabel == null)
                 return;
 
-            if (!ScavengingLootOracleRuntime.TryRunDistributionSelfAudit(out NativeArray<uint> counts) || !counts.IsCreated)
+            if (!ScavengingLootOracleRuntime.TryRunDistributionSelfAudit(out NativeArray<uint>.ReadOnly counts) || !counts.IsCreated)
             {
                 _auditLabel.text = "Audit unavailable: Vault not created.";
                 return;

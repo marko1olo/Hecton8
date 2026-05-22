@@ -1068,3 +1068,51 @@ Cinematic Cheats used: Existing scanner candidate resolution remains a cheap sca
 Exact Microseconds saved: 0 us measured. Static hygiene gain: `nativeCollectionPublicMutableApiExposure` 121 -> 120, `nativeApiExposureBuildPlayerRuntime` 111 -> 110, and `nativeApiExposureOutRefMutable` 90 -> 89 in `Docs/Reports/PROJECT_AUDIT_polish_after_lore_entity_readonly.json`.
 
 Verification: Focused scan found read-only public lore reader signatures and unchanged private owner writer helpers. Static audit status remained `PASS_WITH_WARNINGS`. `git diff --check` reported only LF/CRLF normalization warnings. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Residency DTO Read-Only Pass
+
+What was wrong: `WorldChunkResidencyManager.TryGetChunkResidencyDtos` returned mutable chunk residency DTOs through a public readback route used by the editor SceneView tuner.
+
+What was done: Converted the public readback route and editor consumer to `NativeArray<ChunkResidencyDTO>.ReadOnly`. Private owner resolver and streaming jobs remain mutable where they write state.
+
+Cinematic Cheats used: Existing SceneView residency grid remains a lightweight visualization proxy over DTO rows instead of scene-object scans or streaming object traversal.
+
+Exact Microseconds saved: 0 us measured. Static hygiene gain: `nativeCollectionPublicMutableApiExposure` 120 -> 119, `nativeApiExposureBuildPlayerRuntime` 110 -> 109, and `nativeApiExposureOutRefMutable` 89 -> 88 in `Docs/Reports/PROJECT_AUDIT_polish_after_residency_dtos_readonly.json`.
+
+Verification: Focused scan found read-only public residency DTO accessor and unchanged private writer resolver. Static audit status remained `PASS_WITH_WARNINGS`. `git diff --check` reported only LF/CRLF normalization warnings. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Abyssal Path Payload Read-Only Pass
+
+What was wrong: `TryGetLatestAbyssalPathPayload` returned a mutable native path snapshot to the sargassum boid system, although the consumer only copied the rows into its own scratch buffer.
+
+What was done: Converted the public path snapshot output and `ScheduleLeviathanNodeBuild` input to `NativeArray<Vector3>.ReadOnly`. Vegetation bridge remains the only owner of the mutable snapshot.
+
+Cinematic Cheats used: Existing leviathan guidance remains a cheap path-snapshot copy into fixed scratch before node construction, avoiding scene path object traversal.
+
+Exact Microseconds saved: 0 us measured. Static hygiene gain: `nativeCollectionPublicMutableApiExposure` 119 -> 118, `nativeApiExposureBuildPlayerRuntime` 109 -> 108, and `nativeApiExposureOutRefMutable` 88 -> 87 in `Docs/Reports/PROJECT_AUDIT_polish_after_abyssal_path_readonly.json`.
+
+Verification: Focused scan found read-only public path payload and consumer input. Static audit status remained `PASS_WITH_WARNINGS`. `git diff --check` reported only LF/CRLF normalization warnings. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Visible HLOD Payload Read-Only Pass
+
+What was wrong: `TryGetVisibleHLODPayload` exposed visible HLOD snapshot memory as a mutable public native output despite having no current first-party consumers.
+
+What was done: Converted the output to `NativeArray<HLODData>.ReadOnly`. HLOD culling and snapshot write ownership remain unchanged inside the vegetation bridge.
+
+Cinematic Cheats used: Existing HLOD visibility remains a culled snapshot proxy for distant rendering rather than per-consumer scene traversal.
+
+Exact Microseconds saved: 0 us measured. Static hygiene gain: `nativeCollectionPublicMutableApiExposure` 118 -> 117, `nativeApiExposureBuildPlayerRuntime` 108 -> 107, and `nativeApiExposureOutRefMutable` 87 -> 86 in `Docs/Reports/PROJECT_AUDIT_polish_after_visible_hlod_readonly.json`.
+
+Verification: Focused scan found only read-only HLOD payload declarations. Static audit status remained `PASS_WITH_WARNINGS`. `git diff --check` reported only LF/CRLF normalization warnings. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Dynamic Decal Read-Lock Read-Only Pass
+
+What was wrong: `TryAcquireDecalBufferRead` used read-lock semantics but returned mutable decal instance memory to editor Gizmo/tuner consumers.
+
+What was done: Converted the read-lock output and two editor consumers to `NativeArray<VisorDecalDTO>.ReadOnly`. Mutable Vault access remains internal; `ReleaseDecalBufferRead` lifecycle is unchanged.
+
+Cinematic Cheats used: Existing decal editor visualization remains a Gizmo proxy over DTO rows instead of inspecting scene decals or runtime renderer internals.
+
+Exact Microseconds saved: 0 us measured. Static hygiene gain: `nativeCollectionPublicMutableApiExposure` 117 -> 116, `nativeApiExposureBuildPlayerRuntime` 107 -> 106, and `nativeApiExposureOutRefMutable` 86 -> 85 in `Docs/Reports/PROJECT_AUDIT_polish_after_dynamic_decal_readonly.json`.
+
+Verification: Focused scan found only read-only decal editor consumers. Static audit status remained `PASS_WITH_WARNINGS`. `git diff --check` reported only LF/CRLF normalization warnings. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.

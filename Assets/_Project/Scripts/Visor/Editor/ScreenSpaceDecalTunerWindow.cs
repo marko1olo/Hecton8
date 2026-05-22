@@ -367,7 +367,7 @@ namespace Hecton8.Visor.Editor
             if (_drawGizmoToggle == null || !_drawGizmoToggle.value || sceneView == null)
                 return;
 
-            if (!DynamicDecalVaultRuntime.TryAcquireDecalBufferRead(out Unity.Collections.NativeArray<VisorDecalDTO> decals, out _, out Vector3 cameraWorldPosition))
+            if (!DynamicDecalVaultRuntime.TryAcquireDecalBufferRead(out Unity.Collections.NativeArray<VisorDecalDTO>.ReadOnly decals, out _, out Vector3 cameraWorldPosition))
                 return;
 
             Matrix4x4 previousMatrix = Handles.matrix;

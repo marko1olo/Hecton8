@@ -855,7 +855,7 @@ namespace Hecton8.Visor
 
 #if UNITY_EDITOR
         public static bool TryAcquireDecalBufferRead(
-            out NativeArray<VisorDecalDTO> decals,
+            out NativeArray<VisorDecalDTO>.ReadOnly decals,
             out int activeCount,
             out Vector3 cameraWorldPosition)
         {
@@ -871,14 +871,15 @@ namespace Hecton8.Visor
             bool success = false;
             try
             {
-                if (!TryResolveDynamicDecalVaultBuffer(ref _instancesHandle, DynamicDecalVaultBufferIds.Instances, MaxCapacity, out decals) ||
+                if (!TryResolveDynamicDecalVaultBuffer(ref _instancesHandle, DynamicDecalVaultBufferIds.Instances, MaxCapacity, out NativeArray<VisorDecalDTO> resolvedDecals) ||
                     !TryResolveDynamicDecalVaultBuffer(ref _stateHandle, DynamicDecalVaultBufferIds.RuntimeState, 1, out NativeArray<DecalRuntimeStateDTO> stateArray))
                 {
                     return false;
                 }
 
                 DecalRuntimeStateDTO state = stateArray[0];
-                activeCount = math.clamp(state.ActiveCount, 0, math.min(decals.Length, MaxCapacity));
+                activeCount = math.clamp(state.ActiveCount, 0, math.min(resolvedDecals.Length, MaxCapacity));
+                decals = resolvedDecals.AsReadOnly();
                 success = true;
                 return true;
             }
