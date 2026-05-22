@@ -112,7 +112,8 @@ namespace Hecton8.Dev
             CheckContains(registrySource, "_mapMagicRuntime = null;", "globalregistry-mapmagic-reset");
             CheckContains(registryContractsSource, "MapMagicRuntime = 102", "globalregistry-mapmagic-slot");
             CheckNotContains(voxelStreamingSource, "$\"VoxelCave_", "voxel-streaming-hotpath-string-purged");
-            CheckContains(volumetricComputeSource, "clamp((int)round(_HectonVolumetricShadowParams.x), 1, 7)", "volumetric-shadow-step-cap-mx350");
+            CheckContains(volumetricComputeSource, "clamp((int)round(_HectonVolumetricShadowParams.x), 1, HECTON_VOLUMETRIC_LIGHT_MAX_STEPS)", "volumetric-shadow-step-continuous-quality-cap");
+            CheckNotContains(volumetricComputeSource, "_MATH_LOD" + "_LOW", "volumetric-light-no-binary-math-lod");
             CheckContains(retinaShaderSource, "_QUALITY_MX350", "retina-mx350-mode-toggle");
             CheckNotContains(causticsRuntimeSource, "TrySampleWaveKinematics", "caustics-ocean-kinematics-sample-purged");
             CheckContains(causticsRuntimeSource, "RunPendingCausticsKernel(job);", "caustics-one-dto-job-run-path");

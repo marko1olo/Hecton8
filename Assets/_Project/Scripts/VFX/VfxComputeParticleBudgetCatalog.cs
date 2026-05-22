@@ -16,92 +16,92 @@ namespace Hecton8.VFX
         /// <summary>Default portable compute group size for particle kernels.</summary>
         public const int DefaultThreadsPerGroup = 64;
 
-        /// <summary>MX350 soft group cap. Larger tier totals must be split by pool.</summary>
+        /// <summary>MX350 soft group cap. Larger quality totals must be split by pool.</summary>
         public const int Mx350SoftGroupsPerDispatch = 512;
 
-        /// <summary>Low-tier total particle ceiling.</summary>
-        public const int LowParticleCount = 8512;
+        /// <summary>Minimum-quality total particle ceiling.</summary>
+        public const int MinimumQualityParticleCount = 8512;
 
-        /// <summary>Mid-tier total particle ceiling.</summary>
-        public const int MidParticleCount = 16384;
+        /// <summary>Middle-quality total particle ceiling.</summary>
+        public const int MiddleQualityParticleCount = 16384;
 
-        /// <summary>High-tier total particle ceiling.</summary>
-        public const int HighParticleCount = 104096;
+        /// <summary>Maximum-quality total particle ceiling.</summary>
+        public const int MaximumQualityParticleCount = 104096;
 
-        /// <summary>Ultra-tier total particle ceiling.</summary>
-        public const int UltraParticleCount = 105120;
+        /// <summary>Visual-overkill total particle ceiling.</summary>
+        public const int OverkillQualityParticleCount = 105120;
 
-        /// <summary>Low-tier marine-snow pool ceiling.</summary>
-        public const int LowMarineSnowCount = 8000;
+        /// <summary>Minimum-quality marine-snow pool ceiling.</summary>
+        public const int MinimumQualityMarineSnowCount = 8000;
 
-        /// <summary>Mid-tier marine-snow pool ceiling.</summary>
-        public const int MidMarineSnowCount = 14336;
+        /// <summary>Middle-quality marine-snow pool ceiling.</summary>
+        public const int MiddleQualityMarineSnowCount = 14336;
 
-        /// <summary>High-tier marine-snow pool ceiling.</summary>
-        public const int HighMarineSnowCount = 100000;
+        /// <summary>Maximum-quality marine-snow pool ceiling.</summary>
+        public const int MaximumQualityMarineSnowCount = 100000;
 
-        /// <summary>Ultra-tier marine-snow pool ceiling.</summary>
-        public const int UltraMarineSnowCount = 100000;
+        /// <summary>Visual-overkill marine-snow pool ceiling.</summary>
+        public const int OverkillQualityMarineSnowCount = 100000;
 
-        /// <summary>Low-tier bubble pool ceiling.</summary>
-        public const int LowBubbleCount = 384;
+        /// <summary>Minimum-quality bubble pool ceiling.</summary>
+        public const int MinimumQualityBubbleCount = 384;
 
-        /// <summary>Mid-tier bubble pool ceiling.</summary>
-        public const int MidBubbleCount = 1536;
+        /// <summary>Middle-quality bubble pool ceiling.</summary>
+        public const int MiddleQualityBubbleCount = 1536;
 
-        /// <summary>High-tier bubble pool ceiling.</summary>
-        public const int HighBubbleCount = 3072;
+        /// <summary>Maximum-quality bubble pool ceiling.</summary>
+        public const int MaximumQualityBubbleCount = 3072;
 
-        /// <summary>Ultra-tier bubble pool ceiling.</summary>
-        public const int UltraBubbleCount = 4096;
+        /// <summary>Visual-overkill bubble pool ceiling.</summary>
+        public const int OverkillQualityBubbleCount = 4096;
 
-        /// <summary>Low-tier debris pool ceiling.</summary>
-        public const int LowDebrisCount = 128;
+        /// <summary>Minimum-quality debris pool ceiling.</summary>
+        public const int MinimumQualityDebrisCount = 128;
 
-        /// <summary>Mid-tier debris pool ceiling.</summary>
-        public const int MidDebrisCount = 512;
+        /// <summary>Middle-quality debris pool ceiling.</summary>
+        public const int MiddleQualityDebrisCount = 512;
 
-        /// <summary>High-tier debris pool ceiling.</summary>
-        public const int HighDebrisCount = 1024;
+        /// <summary>Maximum-quality debris pool ceiling.</summary>
+        public const int MaximumQualityDebrisCount = 1024;
 
-        /// <summary>Ultra-tier debris pool ceiling.</summary>
-        public const int UltraDebrisCount = 1024;
+        /// <summary>Visual-overkill debris pool ceiling.</summary>
+        public const int OverkillQualityDebrisCount = 1024;
 
-        /// <summary>Low-tier collision/integration step distance in meters.</summary>
-        public const float LowStepDistanceMeters = 0.40f;
+        /// <summary>Minimum-quality collision/integration step distance in meters.</summary>
+        public const float MinimumQualityStepDistanceMeters = 0.40f;
 
-        /// <summary>Mid-tier collision/integration step distance in meters.</summary>
-        public const float MidStepDistanceMeters = 0.25f;
+        /// <summary>Middle-quality collision/integration step distance in meters.</summary>
+        public const float MiddleQualityStepDistanceMeters = 0.25f;
 
-        /// <summary>High-tier collision/integration step distance in meters.</summary>
-        public const float HighStepDistanceMeters = 0.16f;
+        /// <summary>Maximum-quality collision/integration step distance in meters.</summary>
+        public const float MaximumQualityStepDistanceMeters = 0.16f;
 
-        /// <summary>Ultra-tier collision/integration step distance in meters.</summary>
-        public const float UltraStepDistanceMeters = 0.10f;
+        /// <summary>Visual-overkill collision/integration step distance in meters.</summary>
+        public const float OverkillQualityStepDistanceMeters = 0.10f;
 
-        /// <summary>Low-tier fake depth/fog occlusion tap count.</summary>
-        public const int LowShadowTaps = 0;
+        /// <summary>Minimum-quality fake depth/fog occlusion tap count.</summary>
+        public const int MinimumQualityShadowTaps = 0;
 
-        /// <summary>Mid-tier fake depth/fog occlusion tap count.</summary>
-        public const int MidShadowTaps = 1;
+        /// <summary>Middle-quality fake depth/fog occlusion tap count.</summary>
+        public const int MiddleQualityShadowTaps = 1;
 
-        /// <summary>High-tier fake depth/fog occlusion tap count.</summary>
-        public const int HighShadowTaps = 2;
+        /// <summary>Maximum-quality fake depth/fog occlusion tap count.</summary>
+        public const int MaximumQualityShadowTaps = 2;
 
-        /// <summary>Ultra-tier fake depth/fog occlusion tap count.</summary>
-        public const int UltraShadowTaps = 4;
+        /// <summary>Visual-overkill fake depth/fog occlusion tap count.</summary>
+        public const int OverkillQualityShadowTaps = 4;
 
-        /// <summary>Low-tier flow resample cadence in frames. Zero means disabled.</summary>
-        public const int LowFlowResampleFrames = 0;
+        /// <summary>Minimum-quality flow resample cadence in frames. Zero means disabled.</summary>
+        public const int MinimumQualityFlowResampleFrames = 0;
 
-        /// <summary>Mid-tier flow resample cadence in frames.</summary>
-        public const int MidFlowResampleFrames = 8;
+        /// <summary>Middle-quality flow resample cadence in frames.</summary>
+        public const int MiddleQualityFlowResampleFrames = 8;
 
-        /// <summary>High-tier flow resample cadence in frames.</summary>
-        public const int HighFlowResampleFrames = 4;
+        /// <summary>Maximum-quality flow resample cadence in frames.</summary>
+        public const int MaximumQualityFlowResampleFrames = 4;
 
-        /// <summary>Ultra-tier flow resample cadence in frames.</summary>
-        public const int UltraFlowResampleFrames = 2;
+        /// <summary>Visual-overkill flow resample cadence in frames.</summary>
+        public const int OverkillQualityFlowResampleFrames = 2;
 
         /// <summary>Emergency MarineSnow multiplier encoded as permille to avoid float policy drift.</summary>
         public const int EmergencyMarineSnowMultiplierPermille = 500;
@@ -146,45 +146,24 @@ namespace Hecton8.VFX
         public const float BlueNoise4x4_33 = 0.21875f;
 
         /// <summary>
-        /// Resolves the static budget for a project quality tier before homeostasis pressure is applied.
+        /// Resolves the budget row from a continuous global quality weight before homeostasis pressure is applied.
         /// </summary>
-        /// <param name="qualityTier">Current hardware quality tier.</param>
+        /// <param name="globalQualityWeight">Continuous visual quality weight, 0..1.</param>
         /// <returns>Compute-particle budget row.</returns>
-        public static VfxComputeParticleBudget ResolveBudget(HectonQualityTier qualityTier)
+        public static VfxComputeParticleBudget ResolveBudget(float globalQualityWeight)
         {
-            switch (qualityTier)
-            {
-                case HectonQualityTier.Ultra:
-                    return VfxComputeParticleBudget.Ultra;
-                case HectonQualityTier.High:
-                    return VfxComputeParticleBudget.High;
-                case HectonQualityTier.Mid:
-                    return VfxComputeParticleBudget.Mid;
-                case HectonQualityTier.Low:
-                case HectonQualityTier.Mx350:
-                case HectonQualityTier.Unknown:
-                default:
-                    return VfxComputeParticleBudget.Low;
-            }
+            return ResolveContinuousBudget(globalQualityWeight, 0f);
         }
 
         /// <summary>
-        /// Resolves the budget row after homeostasis pressure has clamped the visual tier.
+        /// Resolves the budget row after homeostasis pressure has continuously compressed the visual budget.
         /// </summary>
-        /// <param name="qualityTier">Selected quality tier.</param>
-        /// <param name="pressureLevel">Homeostasis pressure level.</param>
+        /// <param name="globalQualityWeight">Continuous visual quality weight, 0..1.</param>
+        /// <param name="pressureLevel">Homeostasis pressure level encoded as 0..3.</param>
         /// <returns>Pressure-gated compute-particle budget row.</returns>
-        public static VfxComputeParticleBudget ResolveBudgetForPressure(HectonQualityTier qualityTier, byte pressureLevel)
+        public static VfxComputeParticleBudget ResolveBudgetForPressure(float globalQualityWeight, byte pressureLevel)
         {
-            if (pressureLevel >= 2)
-                return VfxComputeParticleBudget.Low;
-            if (pressureLevel == 1)
-            {
-                VfxComputeParticleBudget selected = ResolveBudget(qualityTier);
-                return selected.ParticleCount > MidParticleCount ? VfxComputeParticleBudget.Mid : selected;
-            }
-
-            return ResolveBudget(qualityTier);
+            return ResolveContinuousBudget(globalQualityWeight, math.saturate(pressureLevel * 0.33333334f));
         }
 
         /// <summary>
@@ -208,17 +187,129 @@ namespace Hecton8.VFX
         /// <summary>
         /// Resolves the pool capacity for the requested fluid class.
         /// </summary>
-        /// <param name="qualityTier">Selected quality tier.</param>
+        /// <param name="globalQualityWeight">Continuous visual quality weight, 0..1.</param>
         /// <param name="pressureLevel">Homeostasis pressure level.</param>
         /// <param name="fluidType">Fluid class emitted by the GPU particle owner.</param>
         /// <returns>Pool capacity for that class and pressure state.</returns>
         public static int ResolvePoolCapacity(
-            HectonQualityTier qualityTier,
+            float globalQualityWeight,
             byte pressureLevel,
             VFXEmissionProfile.FluidType fluidType)
         {
-            VfxComputeParticleBudget budget = ResolveBudgetForPressure(qualityTier, pressureLevel);
+            VfxComputeParticleBudget budget = ResolveBudgetForPressure(globalQualityWeight, pressureLevel);
             return budget.ResolvePoolCapacity(fluidType);
+        }
+
+        private static VfxComputeParticleBudget ResolveContinuousBudget(float globalQualityWeight, float pressure01)
+        {
+            float q = math.saturate(globalQualityWeight);
+            float minToMiddle = math.smoothstep(0f, 0.45f, q);
+            float middleToMaximum = math.smoothstep(0.35f, 0.85f, q);
+            float maximumToOverkill = math.smoothstep(0.72f, 1f, q);
+            float middlePressure01 = math.smoothstep(0.18f, 0.45f, math.saturate(pressure01));
+            float emergencyPressure01 = math.smoothstep(0.48f, 0.90f, math.saturate(pressure01));
+
+            int marineSnowCount = ResolveContinuousBudgetCount(
+                MinimumQualityMarineSnowCount,
+                MiddleQualityMarineSnowCount,
+                MaximumQualityMarineSnowCount,
+                OverkillQualityMarineSnowCount,
+                minToMiddle,
+                middleToMaximum,
+                maximumToOverkill,
+                middlePressure01,
+                emergencyPressure01);
+            int bubbleCount = ResolveContinuousBudgetCount(
+                MinimumQualityBubbleCount,
+                MiddleQualityBubbleCount,
+                MaximumQualityBubbleCount,
+                OverkillQualityBubbleCount,
+                minToMiddle,
+                middleToMaximum,
+                maximumToOverkill,
+                middlePressure01,
+                emergencyPressure01);
+            int debrisCount = ResolveContinuousBudgetCount(
+                MinimumQualityDebrisCount,
+                MiddleQualityDebrisCount,
+                MaximumQualityDebrisCount,
+                OverkillQualityDebrisCount,
+                minToMiddle,
+                middleToMaximum,
+                maximumToOverkill,
+                middlePressure01,
+                emergencyPressure01);
+            float stepDistanceMeters = ResolveContinuousBudgetFloat(
+                MinimumQualityStepDistanceMeters,
+                MiddleQualityStepDistanceMeters,
+                MaximumQualityStepDistanceMeters,
+                OverkillQualityStepDistanceMeters,
+                minToMiddle,
+                middleToMaximum,
+                maximumToOverkill);
+            stepDistanceMeters = math.lerp(stepDistanceMeters, math.max(stepDistanceMeters, MiddleQualityStepDistanceMeters), middlePressure01);
+            stepDistanceMeters = math.lerp(stepDistanceMeters, MinimumQualityStepDistanceMeters, emergencyPressure01);
+
+            float shadowTapFloat = ResolveContinuousBudgetFloat(
+                MinimumQualityShadowTaps,
+                MiddleQualityShadowTaps,
+                MaximumQualityShadowTaps,
+                OverkillQualityShadowTaps,
+                minToMiddle,
+                middleToMaximum,
+                maximumToOverkill);
+            shadowTapFloat = math.lerp(shadowTapFloat, math.min(shadowTapFloat, MiddleQualityShadowTaps), middlePressure01);
+            shadowTapFloat = math.lerp(shadowTapFloat, MinimumQualityShadowTaps, emergencyPressure01);
+
+            float flowFramesFloat = ResolveContinuousBudgetFloat(
+                MinimumQualityFlowResampleFrames,
+                MiddleQualityFlowResampleFrames,
+                MaximumQualityFlowResampleFrames,
+                OverkillQualityFlowResampleFrames,
+                minToMiddle,
+                middleToMaximum,
+                maximumToOverkill);
+            flowFramesFloat = math.lerp(flowFramesFloat, MinimumQualityFlowResampleFrames, emergencyPressure01);
+
+            return new VfxComputeParticleBudget(
+                marineSnowCount + bubbleCount + debrisCount,
+                marineSnowCount,
+                bubbleCount,
+                debrisCount,
+                math.max(0.05f, stepDistanceMeters),
+                math.clamp((int)(shadowTapFloat + 0.5f), 0, OverkillQualityShadowTaps),
+                math.clamp((int)(flowFramesFloat + 0.5f), 0, MiddleQualityFlowResampleFrames));
+        }
+
+        private static int ResolveContinuousBudgetCount(
+            int minimum,
+            int middle,
+            int maximum,
+            int overkill,
+            float minToMiddle,
+            float middleToMaximum,
+            float maximumToOverkill,
+            float middlePressure01,
+            float emergencyPressure01)
+        {
+            float value = ResolveContinuousBudgetFloat(minimum, middle, maximum, overkill, minToMiddle, middleToMaximum, maximumToOverkill);
+            value = math.lerp(value, math.min(value, middle), middlePressure01);
+            value = math.lerp(value, minimum, emergencyPressure01);
+            return math.max(0, (int)(value + 0.5f));
+        }
+
+        private static float ResolveContinuousBudgetFloat(
+            float minimum,
+            float middle,
+            float maximum,
+            float overkill,
+            float minToMiddle,
+            float middleToMaximum,
+            float maximumToOverkill)
+        {
+            float value = math.lerp(minimum, middle, minToMiddle);
+            value = math.lerp(value, maximum, middleToMaximum);
+            return math.lerp(value, overkill, maximumToOverkill);
         }
 
         /// <summary>
@@ -289,45 +380,45 @@ namespace Hecton8.VFX
     [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct VfxComputeParticleBudget
     {
-        /// <summary>Low-tier budget row.</summary>
-        public static readonly VfxComputeParticleBudget Low = new VfxComputeParticleBudget(
-            VfxComputeParticleBudgetCatalog.LowParticleCount,
-            VfxComputeParticleBudgetCatalog.LowMarineSnowCount,
-            VfxComputeParticleBudgetCatalog.LowBubbleCount,
-            VfxComputeParticleBudgetCatalog.LowDebrisCount,
-            VfxComputeParticleBudgetCatalog.LowStepDistanceMeters,
-            VfxComputeParticleBudgetCatalog.LowShadowTaps,
-            VfxComputeParticleBudgetCatalog.LowFlowResampleFrames);
+        /// <summary>Minimum-quality budget row.</summary>
+        public static readonly VfxComputeParticleBudget MinimumQuality = new VfxComputeParticleBudget(
+            VfxComputeParticleBudgetCatalog.MinimumQualityParticleCount,
+            VfxComputeParticleBudgetCatalog.MinimumQualityMarineSnowCount,
+            VfxComputeParticleBudgetCatalog.MinimumQualityBubbleCount,
+            VfxComputeParticleBudgetCatalog.MinimumQualityDebrisCount,
+            VfxComputeParticleBudgetCatalog.MinimumQualityStepDistanceMeters,
+            VfxComputeParticleBudgetCatalog.MinimumQualityShadowTaps,
+            VfxComputeParticleBudgetCatalog.MinimumQualityFlowResampleFrames);
 
-        /// <summary>Mid-tier budget row.</summary>
-        public static readonly VfxComputeParticleBudget Mid = new VfxComputeParticleBudget(
-            VfxComputeParticleBudgetCatalog.MidParticleCount,
-            VfxComputeParticleBudgetCatalog.MidMarineSnowCount,
-            VfxComputeParticleBudgetCatalog.MidBubbleCount,
-            VfxComputeParticleBudgetCatalog.MidDebrisCount,
-            VfxComputeParticleBudgetCatalog.MidStepDistanceMeters,
-            VfxComputeParticleBudgetCatalog.MidShadowTaps,
-            VfxComputeParticleBudgetCatalog.MidFlowResampleFrames);
+        /// <summary>Middle-quality budget row.</summary>
+        public static readonly VfxComputeParticleBudget MiddleQuality = new VfxComputeParticleBudget(
+            VfxComputeParticleBudgetCatalog.MiddleQualityParticleCount,
+            VfxComputeParticleBudgetCatalog.MiddleQualityMarineSnowCount,
+            VfxComputeParticleBudgetCatalog.MiddleQualityBubbleCount,
+            VfxComputeParticleBudgetCatalog.MiddleQualityDebrisCount,
+            VfxComputeParticleBudgetCatalog.MiddleQualityStepDistanceMeters,
+            VfxComputeParticleBudgetCatalog.MiddleQualityShadowTaps,
+            VfxComputeParticleBudgetCatalog.MiddleQualityFlowResampleFrames);
 
-        /// <summary>High-tier budget row.</summary>
-        public static readonly VfxComputeParticleBudget High = new VfxComputeParticleBudget(
-            VfxComputeParticleBudgetCatalog.HighParticleCount,
-            VfxComputeParticleBudgetCatalog.HighMarineSnowCount,
-            VfxComputeParticleBudgetCatalog.HighBubbleCount,
-            VfxComputeParticleBudgetCatalog.HighDebrisCount,
-            VfxComputeParticleBudgetCatalog.HighStepDistanceMeters,
-            VfxComputeParticleBudgetCatalog.HighShadowTaps,
-            VfxComputeParticleBudgetCatalog.HighFlowResampleFrames);
+        /// <summary>Maximum-quality budget row.</summary>
+        public static readonly VfxComputeParticleBudget MaximumQuality = new VfxComputeParticleBudget(
+            VfxComputeParticleBudgetCatalog.MaximumQualityParticleCount,
+            VfxComputeParticleBudgetCatalog.MaximumQualityMarineSnowCount,
+            VfxComputeParticleBudgetCatalog.MaximumQualityBubbleCount,
+            VfxComputeParticleBudgetCatalog.MaximumQualityDebrisCount,
+            VfxComputeParticleBudgetCatalog.MaximumQualityStepDistanceMeters,
+            VfxComputeParticleBudgetCatalog.MaximumQualityShadowTaps,
+            VfxComputeParticleBudgetCatalog.MaximumQualityFlowResampleFrames);
 
-        /// <summary>Ultra-tier budget row.</summary>
-        public static readonly VfxComputeParticleBudget Ultra = new VfxComputeParticleBudget(
-            VfxComputeParticleBudgetCatalog.UltraParticleCount,
-            VfxComputeParticleBudgetCatalog.UltraMarineSnowCount,
-            VfxComputeParticleBudgetCatalog.UltraBubbleCount,
-            VfxComputeParticleBudgetCatalog.UltraDebrisCount,
-            VfxComputeParticleBudgetCatalog.UltraStepDistanceMeters,
-            VfxComputeParticleBudgetCatalog.UltraShadowTaps,
-            VfxComputeParticleBudgetCatalog.UltraFlowResampleFrames);
+        /// <summary>Visual-overkill budget row.</summary>
+        public static readonly VfxComputeParticleBudget OverkillQuality = new VfxComputeParticleBudget(
+            VfxComputeParticleBudgetCatalog.OverkillQualityParticleCount,
+            VfxComputeParticleBudgetCatalog.OverkillQualityMarineSnowCount,
+            VfxComputeParticleBudgetCatalog.OverkillQualityBubbleCount,
+            VfxComputeParticleBudgetCatalog.OverkillQualityDebrisCount,
+            VfxComputeParticleBudgetCatalog.OverkillQualityStepDistanceMeters,
+            VfxComputeParticleBudgetCatalog.OverkillQualityShadowTaps,
+            VfxComputeParticleBudgetCatalog.OverkillQualityFlowResampleFrames);
 
         /// <summary>Total particle count budget.</summary>
         [FieldOffset(0)]

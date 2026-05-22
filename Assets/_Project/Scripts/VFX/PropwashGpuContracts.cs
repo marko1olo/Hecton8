@@ -174,9 +174,9 @@ namespace Hecton8.VFX
             float q = math.saturate(globalQualityWeight);
             float curved = q * q * (3f - 2f * q);
             return math.clamp((int)math.round(math.lerp(
-                VfxComputeParticleBudgetCatalog.LowMarineSnowCount,
-                VfxComputeParticleBudgetCatalog.UltraMarineSnowCount,
-                curved)), 64, VfxComputeParticleBudgetCatalog.UltraMarineSnowCount);
+                VfxComputeParticleBudgetCatalog.MinimumQualityMarineSnowCount,
+                VfxComputeParticleBudgetCatalog.OverkillQualityMarineSnowCount,
+                curved)), 64, VfxComputeParticleBudgetCatalog.OverkillQualityMarineSnowCount);
         }
 
         public static uint HashState(int frame, int eventCount, float qualityWeight, uint profileHash)

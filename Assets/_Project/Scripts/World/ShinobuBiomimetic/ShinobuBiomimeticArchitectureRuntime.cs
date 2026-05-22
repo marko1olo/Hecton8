@@ -531,9 +531,9 @@ namespace Hecton8.World.ShinobuBiomimetic
         public const int BlackBoxFrameCount = 300;
 
         public static bool TryResolveExistingPlacementBuffers(
-            out NativeArray<PoiTransformDTO> poiTransforms,
-            out NativeArray<NarrativeBeaconRuleDTO> narrativeRules,
-            out NativeArray<PoiPlacementTelemetryEntry> telemetryRing)
+            out NativeArray<PoiTransformDTO>.ReadOnly poiTransforms,
+            out NativeArray<NarrativeBeaconRuleDTO>.ReadOnly narrativeRules,
+            out NativeArray<PoiPlacementTelemetryEntry>.ReadOnly telemetryRing)
         {
             poiTransforms = default;
             narrativeRules = default;
@@ -542,9 +542,16 @@ namespace Hecton8.World.ShinobuBiomimetic
             if (vault == null)
                 return false;
 
-            bool hasPoi = TryOpenExistingWorldStreamingBuffer(vault, PoiTransformsBufferId, 1, out poiTransforms);
-            TryOpenExistingWorldStreamingBuffer(vault, PoiNarrativeRulesBufferId, 1, out narrativeRules);
-            TryOpenExistingWorldStreamingBuffer(vault, PoiTelemetryRingBufferId, BlackBoxFrameCount, out telemetryRing);
+            bool hasPoi = TryOpenExistingWorldStreamingBuffer(vault, PoiTransformsBufferId, 1, out NativeArray<PoiTransformDTO> poiBuffer);
+            if (hasPoi)
+                poiTransforms = poiBuffer.AsReadOnly();
+
+            if (TryOpenExistingWorldStreamingBuffer(vault, PoiNarrativeRulesBufferId, 1, out NativeArray<NarrativeBeaconRuleDTO> ruleBuffer))
+                narrativeRules = ruleBuffer.AsReadOnly();
+
+            if (TryOpenExistingWorldStreamingBuffer(vault, PoiTelemetryRingBufferId, BlackBoxFrameCount, out NativeArray<PoiPlacementTelemetryEntry> telemetryBuffer))
+                telemetryRing = telemetryBuffer.AsReadOnly();
+
             return hasPoi;
         }
 

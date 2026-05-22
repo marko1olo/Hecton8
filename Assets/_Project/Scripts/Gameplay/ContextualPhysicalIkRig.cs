@@ -107,7 +107,7 @@ namespace Hecton8.Gameplay
         private const float SpineSlopeLeanShare = 0.35f;
         private const int MaxAppendageIterations = 12;
 
-        [ReadOnly, NoAlias] public NativeArray<ContextualPhysicalIkTargetFrame> TargetFrames;
+        [ReadOnly, NoAlias] public NativeArray<ContextualPhysicalIkTargetFrame>.ReadOnly TargetFrames;
         [ReadOnly, NoAlias] public NativeArray<TransformStreamHandle> StreamHandles;
         [ReadOnly, NoAlias] public NativeArray<ContextualPhysicalIkTwoBoneSetup> TwoBoneSetups;
         [ReadOnly, NoAlias] public NativeArray<ContextualPhysicalIkAppendageChainRuntime> AppendageChains;
@@ -1346,7 +1346,7 @@ namespace Hecton8.Gameplay
         private NativeArray<ContextualPhysicalIkSecondaryState> _secondaryStates;
         private NativeArray<ContextualPhysicalIkCachedPoseState> _cachedLocalPoseStates;
         private NativeArray<float> _muscleBulgeOutput;
-        private NativeArray<ContextualPhysicalIkTargetFrame> _currentTargetFrames;
+        private NativeArray<ContextualPhysicalIkTargetFrame>.ReadOnly _currentTargetFrames;
 
         private Transform[] _appendageTargetSources;
         private Transform[] _appendageFallbackTips;
@@ -1588,14 +1588,14 @@ namespace Hecton8.Gameplay
             _terminalRightHandTargetBlend = 0.0f;
         }
 
-        internal void AssignEntitySlot(int entitySlot, NativeArray<ContextualPhysicalIkTargetFrame> targetFrames)
+        internal void AssignEntitySlot(int entitySlot, NativeArray<ContextualPhysicalIkTargetFrame>.ReadOnly targetFrames)
         {
             _entitySlot = entitySlot;
             _currentTargetFrames = targetFrames;
             UpdateJobDataTargetFrames();
         }
 
-        internal void OnTargetBufferSwapped(NativeArray<ContextualPhysicalIkTargetFrame> targetFrames)
+        internal void OnTargetBufferSwapped(NativeArray<ContextualPhysicalIkTargetFrame>.ReadOnly targetFrames)
         {
             _currentTargetFrames = targetFrames;
             UpdateJobDataTargetFrames();

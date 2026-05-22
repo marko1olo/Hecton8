@@ -37,11 +37,9 @@ namespace Hecton8.Environment
         private const int DefaultParticleThreadGroupSize = 64;
         private const int DefaultClearKernelTileSize = 8;
         private const int MaxParticleDispatchGroupsPerCall = 512;
-        private const int MinimumMarineSnowParticleCapacity = VfxComputeParticleBudgetCatalog.LowMarineSnowCount;
-        private const int MidMarineSnowParticleCapacity = VfxComputeParticleBudgetCatalog.MidMarineSnowCount;
-        private const int HighMarineSnowParticleCapacity = VfxComputeParticleBudgetCatalog.HighMarineSnowCount;
-        private const int UltraMarineSnowParticleCapacity = VfxComputeParticleBudgetCatalog.UltraMarineSnowCount;
-        private const int MaxMarineSnowParticleCapacity = UltraMarineSnowParticleCapacity;
+        private const int MinimumMarineSnowParticleCapacity = VfxComputeParticleBudgetCatalog.MinimumQualityMarineSnowCount;
+        private const int OverkillMarineSnowParticleCapacity = VfxComputeParticleBudgetCatalog.OverkillQualityMarineSnowCount;
+        private const int MaxMarineSnowParticleCapacity = OverkillMarineSnowParticleCapacity;
         private const int ParticleDataStride = 32;
         private const int ParticleRenderMetaStride = 32;
         private const int ProceduralIndirectArgsStride = 16;
@@ -593,7 +591,7 @@ namespace Hecton8.Environment
         private int _activeParticleCount;
         private int _allocatedParticleCapacity;
         private int _resolvedParticleCapacity = MinimumMarineSnowParticleCapacity;
-        private VfxComputeParticleBudget _resolvedPressureBudget = VfxComputeParticleBudget.Low;
+        private VfxComputeParticleBudget _resolvedPressureBudget = VfxComputeParticleBudget.MinimumQuality;
         private VFXEmissionProfile.FluidType _resolvedFluidType = (VFXEmissionProfile.FluidType)255;
         private byte _resolvedPressureLevel = byte.MaxValue;
         private float _resolvedGlobalQualityWeight = -1f;
@@ -4407,9 +4405,9 @@ namespace Hecton8.Environment
                 capacity,
                 ResolvePoolCapacityForRow(
                     fluidType,
-                    VfxComputeParticleBudgetCatalog.LowMarineSnowCount,
-                    VfxComputeParticleBudgetCatalog.LowBubbleCount,
-                    VfxComputeParticleBudgetCatalog.LowDebrisCount));
+                    VfxComputeParticleBudgetCatalog.MinimumQualityMarineSnowCount,
+                    VfxComputeParticleBudgetCatalog.MinimumQualityBubbleCount,
+                    VfxComputeParticleBudgetCatalog.MinimumQualityDebrisCount));
             capacity = math.clamp((int)(math.lerp(capacity, stressedCapacity, stressCapacityBlend) + 0.5f), 64, capacity);
             _debugHomeostasisPressureLevel = pressureLevel;
             _debugHomeostasisKillSwitchMaskLow32 = unchecked((uint)killSwitchMask);
@@ -4640,10 +4638,10 @@ namespace Hecton8.Environment
             float quality = math.saturate(qualityWeight);
             float particleDivisor = math.lerp(700f, 420f, quality);
             float wakeCostPerItem = math.lerp(4f, 12f, quality);
-            float tierBaseCost = math.lerp(72f, 150f, quality);
+            float qualityBaseCost = math.lerp(72f, 150f, quality);
             float particleCost = math.max(0, dispatchedParticleCount) / math.max(particleDivisor, 1f);
             float wakeCost = math.max(0, dynamicWakeCount) * wakeCostPerItem;
-            return math.clamp((int)(tierBaseCost + particleCost + wakeCost + 0.5f), 0, 5000);
+            return math.clamp((int)(qualityBaseCost + particleCost + wakeCost + 0.5f), 0, 5000);
         }
 
         private static string ResolveBlackBoxDumpPath()
@@ -4760,89 +4758,89 @@ namespace Hecton8.Environment
         {
             float q = math.saturate(globalQualityWeight);
             float pressure01 = math.saturate(pressureLevel * 0.33333334f);
-            float lowToMid = math.smoothstep(0f, 0.45f, q);
-            float midToHigh = math.smoothstep(0.35f, 0.85f, q);
-            float highToUltra = math.smoothstep(0.72f, 1f, q);
+            float minimumToMiddle = math.smoothstep(0f, 0.45f, q);
+            float middleToMaximum = math.smoothstep(0.35f, 0.85f, q);
+            float maximumToOverkill = math.smoothstep(0.72f, 1f, q);
             float midPressure01 = math.smoothstep(0.18f, 0.45f, pressure01);
             float emergencyPressure01 = math.smoothstep(0.48f, 0.90f, pressure01);
 
             int marineSnowCount = ResolveContinuousBudgetCount(
-                VfxComputeParticleBudgetCatalog.LowMarineSnowCount,
-                VfxComputeParticleBudgetCatalog.MidMarineSnowCount,
-                VfxComputeParticleBudgetCatalog.HighMarineSnowCount,
-                VfxComputeParticleBudgetCatalog.UltraMarineSnowCount,
-                lowToMid,
-                midToHigh,
-                highToUltra,
+                VfxComputeParticleBudgetCatalog.MinimumQualityMarineSnowCount,
+                VfxComputeParticleBudgetCatalog.MiddleQualityMarineSnowCount,
+                VfxComputeParticleBudgetCatalog.MaximumQualityMarineSnowCount,
+                VfxComputeParticleBudgetCatalog.OverkillQualityMarineSnowCount,
+                minimumToMiddle,
+                middleToMaximum,
+                maximumToOverkill,
                 midPressure01,
                 emergencyPressure01);
             int bubbleCount = ResolveContinuousBudgetCount(
-                VfxComputeParticleBudgetCatalog.LowBubbleCount,
-                VfxComputeParticleBudgetCatalog.MidBubbleCount,
-                VfxComputeParticleBudgetCatalog.HighBubbleCount,
-                VfxComputeParticleBudgetCatalog.UltraBubbleCount,
-                lowToMid,
-                midToHigh,
-                highToUltra,
+                VfxComputeParticleBudgetCatalog.MinimumQualityBubbleCount,
+                VfxComputeParticleBudgetCatalog.MiddleQualityBubbleCount,
+                VfxComputeParticleBudgetCatalog.MaximumQualityBubbleCount,
+                VfxComputeParticleBudgetCatalog.OverkillQualityBubbleCount,
+                minimumToMiddle,
+                middleToMaximum,
+                maximumToOverkill,
                 midPressure01,
                 emergencyPressure01);
             int debrisCount = ResolveContinuousBudgetCount(
-                VfxComputeParticleBudgetCatalog.LowDebrisCount,
-                VfxComputeParticleBudgetCatalog.MidDebrisCount,
-                VfxComputeParticleBudgetCatalog.HighDebrisCount,
-                VfxComputeParticleBudgetCatalog.UltraDebrisCount,
-                lowToMid,
-                midToHigh,
-                highToUltra,
+                VfxComputeParticleBudgetCatalog.MinimumQualityDebrisCount,
+                VfxComputeParticleBudgetCatalog.MiddleQualityDebrisCount,
+                VfxComputeParticleBudgetCatalog.MaximumQualityDebrisCount,
+                VfxComputeParticleBudgetCatalog.OverkillQualityDebrisCount,
+                minimumToMiddle,
+                middleToMaximum,
+                maximumToOverkill,
                 midPressure01,
                 emergencyPressure01);
             float stepDistanceMeters = ResolveContinuousBudgetFloat(
-                VfxComputeParticleBudgetCatalog.LowStepDistanceMeters,
-                VfxComputeParticleBudgetCatalog.MidStepDistanceMeters,
-                VfxComputeParticleBudgetCatalog.HighStepDistanceMeters,
-                VfxComputeParticleBudgetCatalog.UltraStepDistanceMeters,
-                lowToMid,
-                midToHigh,
-                highToUltra);
+                VfxComputeParticleBudgetCatalog.MinimumQualityStepDistanceMeters,
+                VfxComputeParticleBudgetCatalog.MiddleQualityStepDistanceMeters,
+                VfxComputeParticleBudgetCatalog.MaximumQualityStepDistanceMeters,
+                VfxComputeParticleBudgetCatalog.OverkillQualityStepDistanceMeters,
+                minimumToMiddle,
+                middleToMaximum,
+                maximumToOverkill);
             stepDistanceMeters = math.lerp(
                 stepDistanceMeters,
-                math.max(stepDistanceMeters, VfxComputeParticleBudgetCatalog.MidStepDistanceMeters),
+                math.max(stepDistanceMeters, VfxComputeParticleBudgetCatalog.MiddleQualityStepDistanceMeters),
                 midPressure01);
             stepDistanceMeters = math.lerp(
                 stepDistanceMeters,
-                VfxComputeParticleBudgetCatalog.LowStepDistanceMeters,
+                VfxComputeParticleBudgetCatalog.MinimumQualityStepDistanceMeters,
                 emergencyPressure01);
 
             float shadowTapFloat = ResolveContinuousBudgetFloat(
-                VfxComputeParticleBudgetCatalog.LowShadowTaps,
-                VfxComputeParticleBudgetCatalog.MidShadowTaps,
-                VfxComputeParticleBudgetCatalog.HighShadowTaps,
-                VfxComputeParticleBudgetCatalog.UltraShadowTaps,
-                lowToMid,
-                midToHigh,
-                highToUltra);
+                VfxComputeParticleBudgetCatalog.MinimumQualityShadowTaps,
+                VfxComputeParticleBudgetCatalog.MiddleQualityShadowTaps,
+                VfxComputeParticleBudgetCatalog.MaximumQualityShadowTaps,
+                VfxComputeParticleBudgetCatalog.OverkillQualityShadowTaps,
+                minimumToMiddle,
+                middleToMaximum,
+                maximumToOverkill);
             shadowTapFloat = math.lerp(
                 shadowTapFloat,
-                math.min(shadowTapFloat, VfxComputeParticleBudgetCatalog.MidShadowTaps),
+                math.min(shadowTapFloat, VfxComputeParticleBudgetCatalog.MiddleQualityShadowTaps),
                 midPressure01);
             shadowTapFloat = math.lerp(
                 shadowTapFloat,
-                VfxComputeParticleBudgetCatalog.LowShadowTaps,
+                VfxComputeParticleBudgetCatalog.MinimumQualityShadowTaps,
                 emergencyPressure01);
-            int shadowTaps = math.clamp((int)(shadowTapFloat + 0.5f), 0, VfxComputeParticleBudgetCatalog.UltraShadowTaps);
+            int shadowTaps = math.clamp((int)(shadowTapFloat + 0.5f), 0, VfxComputeParticleBudgetCatalog.OverkillQualityShadowTaps);
             if ((killSwitchMask & VfxComputeParticleBudgetCatalog.VolumetricFogHighResMask) != 0UL)
-                shadowTaps = math.min(shadowTaps, VfxComputeParticleBudgetCatalog.MidShadowTaps);
+                shadowTaps = math.min(shadowTaps, VfxComputeParticleBudgetCatalog.MiddleQualityShadowTaps);
 
             float flowFramesFloat = ResolveContinuousBudgetFloat(
-                VfxComputeParticleBudgetCatalog.LowFlowResampleFrames,
-                VfxComputeParticleBudgetCatalog.MidFlowResampleFrames,
-                VfxComputeParticleBudgetCatalog.HighFlowResampleFrames,
-                VfxComputeParticleBudgetCatalog.UltraFlowResampleFrames,
-                lowToMid,
-                midToHigh,
-                highToUltra);
-            flowFramesFloat = math.lerp(flowFramesFloat, VfxComputeParticleBudgetCatalog.LowFlowResampleFrames, emergencyPressure01);
-            int flowResampleFrames = math.clamp((int)(flowFramesFloat + 0.5f), 0, VfxComputeParticleBudgetCatalog.MidFlowResampleFrames);
+                VfxComputeParticleBudgetCatalog.MinimumQualityFlowResampleFrames,
+                VfxComputeParticleBudgetCatalog.MiddleQualityFlowResampleFrames,
+                VfxComputeParticleBudgetCatalog.MaximumQualityFlowResampleFrames,
+                VfxComputeParticleBudgetCatalog.OverkillQualityFlowResampleFrames,
+                minimumToMiddle,
+                middleToMaximum,
+                maximumToOverkill);
+            flowFramesFloat = math.lerp(flowFramesFloat, VfxComputeParticleBudgetCatalog.MinimumQualityFlowResampleFrames, emergencyPressure01);
+            int flowResampleFrames = math.clamp((int)(flowFramesFloat + 0.5f), 0, VfxComputeParticleBudgetCatalog.MiddleQualityFlowResampleFrames);
             if ((killSwitchMask & VfxComputeParticleBudgetCatalog.ParticleAdvectionMask) != 0UL)
                 flowResampleFrames = 0;
 
@@ -4857,34 +4855,34 @@ namespace Hecton8.Environment
         }
 
         private static int ResolveContinuousBudgetCount(
-            int low,
-            int mid,
-            int high,
-            int ultra,
-            float lowToMid,
-            float midToHigh,
-            float highToUltra,
+            int minimum,
+            int middle,
+            int maximum,
+            int overkill,
+            float minimumToMiddle,
+            float middleToMaximum,
+            float maximumToOverkill,
             float midPressure01,
             float emergencyPressure01)
         {
-            float value = ResolveContinuousBudgetFloat(low, mid, high, ultra, lowToMid, midToHigh, highToUltra);
-            value = math.lerp(value, math.min(value, mid), midPressure01);
-            value = math.lerp(value, low, emergencyPressure01);
+            float value = ResolveContinuousBudgetFloat(minimum, middle, maximum, overkill, minimumToMiddle, middleToMaximum, maximumToOverkill);
+            value = math.lerp(value, math.min(value, middle), midPressure01);
+            value = math.lerp(value, minimum, emergencyPressure01);
             return math.max(0, (int)(value + 0.5f));
         }
 
         private static float ResolveContinuousBudgetFloat(
-            float low,
-            float mid,
-            float high,
-            float ultra,
-            float lowToMid,
-            float midToHigh,
-            float highToUltra)
+            float minimum,
+            float middle,
+            float maximum,
+            float overkill,
+            float minimumToMiddle,
+            float middleToMaximum,
+            float maximumToOverkill)
         {
-            float value = math.lerp(low, mid, lowToMid);
-            value = math.lerp(value, high, midToHigh);
-            return math.lerp(value, ultra, highToUltra);
+            float value = math.lerp(minimum, middle, minimumToMiddle);
+            value = math.lerp(value, maximum, middleToMaximum);
+            return math.lerp(value, overkill, maximumToOverkill);
         }
 
         private static int ResolveContinuousPoolCapacity(
@@ -4892,16 +4890,16 @@ namespace Hecton8.Environment
             float globalQualityWeight)
         {
             float q = math.saturate(globalQualityWeight);
-            int low = ResolvePoolCapacityForRow(fluidType, VfxComputeParticleBudgetCatalog.LowMarineSnowCount, VfxComputeParticleBudgetCatalog.LowBubbleCount, VfxComputeParticleBudgetCatalog.LowDebrisCount);
-            int mid = ResolvePoolCapacityForRow(fluidType, VfxComputeParticleBudgetCatalog.MidMarineSnowCount, VfxComputeParticleBudgetCatalog.MidBubbleCount, VfxComputeParticleBudgetCatalog.MidDebrisCount);
-            int high = ResolvePoolCapacityForRow(fluidType, VfxComputeParticleBudgetCatalog.HighMarineSnowCount, VfxComputeParticleBudgetCatalog.HighBubbleCount, VfxComputeParticleBudgetCatalog.HighDebrisCount);
-            int ultra = ResolvePoolCapacityForRow(fluidType, VfxComputeParticleBudgetCatalog.UltraMarineSnowCount, VfxComputeParticleBudgetCatalog.UltraBubbleCount, VfxComputeParticleBudgetCatalog.UltraDebrisCount);
-            float lowToMid = math.smoothstep(0f, 0.45f, q);
-            float midToHigh = math.smoothstep(0.35f, 0.85f, q);
-            float highToUltra = math.smoothstep(0.72f, 1f, q);
-            float capacity = math.lerp(low, mid, lowToMid);
-            capacity = math.lerp(capacity, high, midToHigh);
-            capacity = math.lerp(capacity, ultra, highToUltra);
+            int minimum = ResolvePoolCapacityForRow(fluidType, VfxComputeParticleBudgetCatalog.MinimumQualityMarineSnowCount, VfxComputeParticleBudgetCatalog.MinimumQualityBubbleCount, VfxComputeParticleBudgetCatalog.MinimumQualityDebrisCount);
+            int middle = ResolvePoolCapacityForRow(fluidType, VfxComputeParticleBudgetCatalog.MiddleQualityMarineSnowCount, VfxComputeParticleBudgetCatalog.MiddleQualityBubbleCount, VfxComputeParticleBudgetCatalog.MiddleQualityDebrisCount);
+            int maximum = ResolvePoolCapacityForRow(fluidType, VfxComputeParticleBudgetCatalog.MaximumQualityMarineSnowCount, VfxComputeParticleBudgetCatalog.MaximumQualityBubbleCount, VfxComputeParticleBudgetCatalog.MaximumQualityDebrisCount);
+            int overkill = ResolvePoolCapacityForRow(fluidType, VfxComputeParticleBudgetCatalog.OverkillQualityMarineSnowCount, VfxComputeParticleBudgetCatalog.OverkillQualityBubbleCount, VfxComputeParticleBudgetCatalog.OverkillQualityDebrisCount);
+            float minimumToMiddle = math.smoothstep(0f, 0.45f, q);
+            float middleToMaximum = math.smoothstep(0.35f, 0.85f, q);
+            float maximumToOverkill = math.smoothstep(0.72f, 1f, q);
+            float capacity = math.lerp(minimum, middle, minimumToMiddle);
+            capacity = math.lerp(capacity, maximum, middleToMaximum);
+            capacity = math.lerp(capacity, overkill, maximumToOverkill);
             return math.clamp((int)(capacity + 0.5f), 64, MaxMarineSnowParticleCapacity);
         }
 

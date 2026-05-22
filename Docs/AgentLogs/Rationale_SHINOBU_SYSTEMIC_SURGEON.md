@@ -1268,3 +1268,19 @@ Solution: Removed the scalability listener interface, callback, registration, an
 Rejected Alternatives: Keeping the listener as a fast invalidation path was rejected because late-frame ownership already samples the continuous scalar. Leaving the boolean only for telemetry was rejected because it would keep binary hardware semantics in the blackbox row. Changing shader property names was rejected because `_HectonLightShaftQuality` is a stable vector ABI.
 Scalability potential: Minimum quality keeps the configured minimum tap endpoint and high quality pressure; middle quality interpolates tap count; high/ultra reaches maximum taps while soot/brownout/scatter intensity remain separate presentation scalars.
 Hardware Impact: 0 us measured speed claim. Static effect is removal of one event subscription route and one boolean branch key; GPU work remains bounded by the continuous sample budget.
+
+## Volumetric Light Compute Variant Collapse
+
+Problem: `Hecton_VolumetricLight.compute` still compiled `_MATH_LOD_LOW/_MATH_LOD_HIGH` variants and hard-capped raymarch/shadow steps through `HECTON_VOLUMETRIC_LIGHT_TIER_STEP_CAP`, even after the C# feature route moved to continuous `GlobalQualityWeight`.
+Solution: Removed the math-LOD multi-compile and tier cap define. Both compute loops now clamp the C#-resolved step counts directly against `HECTON_VOLUMETRIC_LIGHT_MAX_STEPS`. `VisualOmegaSmokeTester` now asserts the continuous cap token and negative-checks the binary keyword.
+Rejected Alternatives: Keeping binary shader variants for debug was rejected because it preserves runtime-warmup surface and allows hard visual pops. Moving the quality decision into the compute shader was rejected because the renderer already owns the scalar policy and dispatch parameters.
+Scalability potential: Minimum quality still submits four-ish C# resolved steps, middle quality interpolates, and high/ultra reaches the configured maximum without a shader variant snap. This preserves half-resolution compute god rays as the Dear Lie.
+Hardware Impact: 0 us measured speed claim. Static benefit is fewer shader variants and no binary clamp branch; exact warmup/frame savings require Unity shader variant and profiler capture.
+
+## VFX Particle Budget Catalog Quality Continuum
+
+Problem: `VfxComputeParticleBudgetCatalog` still exported hardware-tier budget resolvers and endpoint names such as low/high/ultra, while `HectonMarineSnowRenderer` already builds a continuous pressure budget from `HomeostasisBrain.GlobalQualityWeight`.
+Solution: Removed the `HectonQualityTier` resolver overloads. Renamed endpoints to `MinimumQuality*`, `MiddleQuality*`, `MaximumQuality*`, and `OverkillQuality*`. Added continuous `ResolveBudget(float)` and `ResolveBudgetForPressure(float, byte)` helpers using smoothstep segment blends and pressure compression. Updated marine snow and propwash callers to the renamed endpoints.
+Rejected Alternatives: Keeping obsolete aliases was rejected because aliases preserve the forbidden route and keep future call sites able to snap by hardware identity. Rewriting marine snow to call the catalog helper was rejected for now because its existing budget also folds in kill-switch masks and debug state; this pass keeps behavior unchanged while sanitizing the shared contract.
+Scalability potential: Minimum quality resolves 8k marine snow, 384 bubbles, 128 debris, 0 fake shadow taps, and disabled flow resampling; middle quality blends through 14,336 snow and one fake tap; maximum/overkill reaches 100k snow, 4,096 bubbles, 1,024 debris, smaller step distance, richer fake occlusion, and faster flow resampling.
+Hardware Impact: 0 us measured speed claim. Static weak-device benefit is contract hygiene preventing discrete tier callers; runtime marine snow remains GPU compute and continuous budgeted.

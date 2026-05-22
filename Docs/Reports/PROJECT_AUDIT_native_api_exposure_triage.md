@@ -83,3 +83,96 @@ Top runtime `out/ref NativeArray<T>` files:
 The codebase has many methods that look like read accessors but return mutable native views. That violates the global read-accessor doctrine: a read route must not hand out a write-capable surface unless the name and ownership contract prove that the caller is the writer.
 
 `HabitatGraphManager` graph SoA accessors are currently `NativeArray<T>.ReadOnly`, so they are no longer part of the direct mutable return/property top list. The diagnostic/editor-named bucket now separates 61 runtime-compiled mutable views with names or payloads such as `ForEditor`, `Debug`, `Readback`, `Snapshot`, or `Telemetry`; these are still player-runtime signatures unless they have an actual compile/runtime guard. The next real engineering step is per-domain read-only migration: start with one `HectonMapMagicVegetationBridge` buffer family, add read-only adapters, migrate consumers, then retire the mutable view only after compile/integration proof.
+
+## 2026-05-22 Private Nested Filter And Ecosystem Save Snapshot Update
+
+Evidence class: STATIC_SOURCE / STATIC_TOOL only. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+Sub-agent inspection classified the current top mutable native API rows:
+
+- `Shinobu19EconomyLedger` resolver APIs are owner/acquire/write routes and stay mutable.
+- `FaunaSimulationMemory` buffer properties are real writer surfaces used by `FaunaDirector`; split read-only aliases later, do not narrow writer paths now.
+- `EcosystemDirector.VaultNativeArray<T>` is a private nested owner helper; it is not an external public API despite `public` helper members.
+- `EcosystemDirector.GetSaveSnapshotArray()` is a safe read-only route because `SaveManager` only serializes the snapshot.
+
+Tooling delta:
+
+- `PolishMandateStaticAudit.py` now tracks private containing types and moves those internal helper signatures to `nativeApiExposurePrivateNestedSuppressed`.
+- Regression test: `test_suppresses_public_native_api_inside_private_nested_type`.
+- Test command: `python Tools\test_polish_mandate_static_audit.py`, 12 tests OK.
+
+Runtime source delta:
+
+- `EcosystemDirector.GetSaveSnapshotArray()` returns `NativeArray<EcosystemSectorSaveRecord>.ReadOnly`.
+- `SaveManager.StageSnapshotHeader()` and `ExecuteVerifiedSavePipeline()` carry the read-only ecosystem snapshot.
+- `SaveBinaryStorage.TryWriteSaveFile()` and the indexed writer carry the read-only ecosystem snapshot.
+- `WriteEcosystemSection()` copies each read-only ecosystem record by value into the raw payload after a section-length guard.
+
+Updated static counts:
+
+- After private nested filter artifact `Docs/Reports/PROJECT_AUDIT_polish_after_private_nested_api_filter.json`: `nativeCollectionPublicMutableApiExposure=155`, `nativeApiExposureBuildPlayerRuntime=142`, `nativeApiExposurePrivateNestedSuppressed=9`.
+- After ecosystem save snapshot artifact `Docs/Reports/PROJECT_AUDIT_polish_after_ecosystem_save_readonly.json`: `nativeCollectionPublicMutableApiExposure=154`, `nativeApiExposureBuildPlayerRuntime=141`, `nativeApiExposureMutableReturn=35`, `nativeApiRiskRuntimeDiagnosticNamedMutableView=30`.
+
+Rejected in this pass:
+
+- Inventory ledger resolver narrowing, because current routes open/acquire mutable Vault buffers for owner writes and editor hydration.
+- Fauna simulation buffer narrowing, because `FaunaDirector` writes those buffers.
+- Persistent-world save snapshot narrowing, because it is a separate save-owner route and was not part of the proven ecosystem-only call path.
+- Any managed array copy or save DTO/format change.
+
+## 2026-05-22 Contextual IK Target Frame Update
+
+Evidence class: STATIC_SOURCE / STATIC_TOOL only. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+Selected route:
+
+- `ContextualPhysicalIkRuntime.CurrentTargetFrames` returned a mutable active front buffer.
+- Observed consumer `ContextualPhysicalIkRig` only cached it and assigned it into `ContextualPhysicalIkApplyJob.TargetFrames`, which is a read-only animation job input.
+
+Patch:
+
+- `CurrentTargetFrames` now returns `NativeArray<ContextualPhysicalIkTargetFrame>.ReadOnly`.
+- `ContextualPhysicalIkRig._currentTargetFrames`, `AssignEntitySlot`, and `OnTargetBufferSwapped` use the read-only view.
+- `ContextualPhysicalIkApplyJob.TargetFrames` uses the read-only view.
+- Runtime `_frontTargetFrames` / `_backTargetFrames` stay mutable inside the owner for scheduled writes and swaps.
+
+Updated static counts from `Docs/Reports/PROJECT_AUDIT_polish_after_contextual_ik_targetframes_readonly.json`:
+
+- `nativeCollectionPublicMutableApiExposure`: 153, down from 154.
+- `nativeApiExposureBuildPlayerRuntime`: 140, down from 141.
+- `nativeApiExposureMutableReturn`: 34, down from 35.
+- `nativeApiRiskRuntimeReturnMutableView`: 19, down from 20.
+
+Rejected:
+
+- Copying target frames for each rig.
+- Changing target-frame DTO layout.
+- Changing ground-response or front/back owner-write jobs.
+
+## 2026-05-22 Biomimetic POI Existing-Buffer Resolver Update
+
+Evidence class: STATIC_SOURCE / STATIC_TOOL only. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+Selected route:
+
+- `ShinobuPoiVault.TryResolveExistingPlacementBuffers` had no observed first-party call sites and reads already existing POI placement buffers.
+- Mutable POI allocation/write routes are separate: `AcquirePoiTransformBuffer`, `AcquireRouteBuffer`, and `AcquireTelemetryRing`.
+
+Patch:
+
+- Resolver outputs for `PoiTransformDTO`, `NarrativeBeaconRuleDTO`, and `PoiPlacementTelemetryEntry` are now `NativeArray<T>.ReadOnly`.
+- The helper opens mutable locals internally only to return read-only aliases.
+- The `Acquire*` functions and private Vault open/acquire helpers remain mutable.
+
+Updated static counts from `Docs/Reports/PROJECT_AUDIT_polish_after_biomimetic_poi_existing_readonly.json`:
+
+- `nativeCollectionPublicMutableApiExposure`: 152, down from 153.
+- `nativeApiExposureBuildPlayerRuntime`: 139, down from 140.
+- `nativeApiExposureOutRefMutable`: 118, down from 119.
+- `nativeApiRiskRuntimeDiagnosticNamedMutableView`: 29, down from 30.
+
+Rejected:
+
+- Changing placement jobs or HZB/indirect draw paths.
+- Changing POI DTO layout or telemetry dump format.
+- Narrowing writer/acquire routes without call-site proof.

@@ -5144,3 +5144,11 @@ Fault route: `ExosuitTelemetryEntry[300]` dumps fixed 64-byte rows to `Docs/Agen
 - Binary payload impact: `LightShaftTelemetryEntry` remains explicit 64 bytes. Telemetry flag bit 0 now denotes continuous quality-pressure activity instead of a hardware tier label. Existing DataVault handles and BufferIDs are unchanged.
 - Shader route impact: `_HectonLightShaftQuality` vector ABI is unchanged; `.w` now carries continuous `_qualityPressure01`.
 - Verification: targeted scan found no active binary quality route in the light shaft runtime except migration strings; focused `git diff --check` passed with CRLF warning only. Build was not launched because `VBCSCompiler` was active and the known scatter compile wall remains unresolved.
+
+## 2026-05-22 - SHINOBU_SYSTEMIC_SURGEON Volumetric Light Compute Variant Collapse And VFX Budget Continuum
+
+- `Assets/_Project/Art/Shaders/Hecton_VolumetricLight.compute` no longer declares `_MATH_LOD_LOW/_MATH_LOD_HIGH` variants or a tier step cap macro. Step counts are governed by the continuous C# quality resolver and clamped to `HECTON_VOLUMETRIC_LIGHT_MAX_STEPS`.
+- `Assets/_Project/Scripts/VFX/VfxComputeParticleBudgetCatalog.cs` removed `HectonQualityTier` budget resolver overloads and renamed budget endpoints to minimum/middle/maximum/overkill quality. Continuous float budget helpers now own shared VFX budget interpolation.
+- Binary payload impact: `VfxComputeParticleBudget` remains explicit 32 bytes at offsets 0/4/8/12/16/20/24/28. No DTO, SignalBus payload, Vault BufferID, save identity, shader property name, or telemetry row size changed.
+- Authority impact: VFX remains presentation owner. Quality scales capacity, fake occlusion taps, flow cadence, and step distance only; it does not change gameplay truth, save identity, or rollback authority.
+- Verification: targeted scans found no old VFX endpoint constants, no `HectonQualityTier` budget resolver, and no volumetric light math-LOD shader variant in the touched files; focused `git diff --check` passed with CRLF warnings only. Guarded build failed only in the known external scatter backend contract mismatch.

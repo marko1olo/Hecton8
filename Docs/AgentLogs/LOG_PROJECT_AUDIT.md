@@ -792,3 +792,27 @@ Cinematic Cheats used: No simulation was added. This preserves the existing snap
 Exact Microseconds saved: 0 us measured. Static outcome: after the private-nested filter and ecosystem save snapshot narrowing, broad audit reports `nativeCollectionPublicMutableApiExposure=154`, down from `164`; `nativeApiExposureBuildPlayerRuntime=141`, down from `151`; `nativeApiExposureMutableReturn=35`; `nativeApiExposurePrivateNestedSuppressed=9`; and `nativeApiRiskRuntimeDiagnosticNamedMutableView=30`.
 
 Evidence: `python Tools\test_polish_mandate_static_audit.py` ran 12 tests OK. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_after_private_nested_api_filter.json` returned `PASS_WITH_WARNINGS` with the suppressed bucket. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_after_ecosystem_save_readonly.json` returned `PASS_WITH_WARNINGS` with `nativeCollectionPublicMutableApiExposure=154`. `git diff --check` on touched files reported only LF/CRLF normalization warnings. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Contextual IK Target Frame Read-Only Handoff
+
+What was wrong: `ContextualPhysicalIkRuntime.CurrentTargetFrames` returned a mutable target-frame buffer to rigs, even though the rig only forwards that buffer into the read-only animation apply job.
+
+What was done: Converted the runtime property, rig cache, assign/swap methods, and `ContextualPhysicalIkApplyJob.TargetFrames` to `NativeArray<ContextualPhysicalIkTargetFrame>.ReadOnly`. Owner front/back buffers remain mutable in the runtime only.
+
+Cinematic Cheats used: No animation physics was added. The route remains precomputed contextual IK target frames feeding an animation job, not per-rig scene queries or physics constraints.
+
+Exact Microseconds saved: 0 us measured. Static outcome: broad audit dropped `nativeCollectionPublicMutableApiExposure` from `154` to `153`, `nativeApiExposureBuildPlayerRuntime` from `141` to `140`, `nativeApiExposureMutableReturn` from `35` to `34`, and `nativeApiRiskRuntimeReturnMutableView` from `20` to `19`.
+
+Evidence: Focused scan found read-only contextual IK target-frame property/method/job signatures. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_after_contextual_ik_targetframes_readonly.json` returned `PASS_WITH_WARNINGS` with `nativeCollectionPublicMutableApiExposure=153`, `nativeApiExposureBuildPlayerRuntime=140`, `nativeApiExposureMutableReturn=34`, and `nativeApiRiskRuntimeReturnMutableView=19`. `git diff --check` on touched files reported only LF/CRLF normalization warnings. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Biomimetic POI Existing Placement Read-Only Resolver
+
+What was wrong: `ShinobuPoiVault.TryResolveExistingPlacementBuffers()` returned mutable POI transform, narrative rule, and telemetry buffers from an existing-buffer read resolver.
+
+What was done: Converted those resolver outputs to `NativeArray<T>.ReadOnly` while keeping the mutable `Acquire*` POI writer routes unchanged.
+
+Cinematic Cheats used: No POI placement simulation was added. Existing placement snapshots remain compact Vault rows; there is no scene scan or GameObject placement pass.
+
+Exact Microseconds saved: 0 us measured. Static outcome: broad audit dropped `nativeCollectionPublicMutableApiExposure` from `153` to `152`, `nativeApiExposureBuildPlayerRuntime` from `140` to `139`, `nativeApiExposureOutRefMutable` from `119` to `118`, and `nativeApiRiskRuntimeDiagnosticNamedMutableView` from `30` to `29`.
+
+Evidence: Focused search found no first-party call sites for `TryResolveExistingPlacementBuffers` and confirmed `AcquirePoiTransformBuffer`, `AcquireRouteBuffer`, and `AcquireTelemetryRing` remain mutable. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_after_biomimetic_poi_existing_readonly.json` returned `PASS_WITH_WARNINGS` with `nativeCollectionPublicMutableApiExposure=152`, `nativeApiExposureBuildPlayerRuntime=139`, `nativeApiExposureOutRefMutable=118`, and `nativeApiRiskRuntimeDiagnosticNamedMutableView=29`. `git diff --check` on touched files reported only LF/CRLF normalization warnings. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.

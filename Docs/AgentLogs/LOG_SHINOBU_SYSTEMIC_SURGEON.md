@@ -3860,3 +3860,37 @@ Verification:
   <MICROSECONDS_SAVED estimate="0">No measured speed claim. Static proof: listener/callback route and boolean branch key removed.</MICROSECONDS_SAVED>
   <VERIFICATION>Targeted scans found no active scalability listener/event route or low/high tier tap names; `git diff --check` passed with CRLF warning only.</VERIFICATION>
 </SELF_AUDIT>
+
+<SELF_AUDIT id="SHINOBU_SYSTEMIC_SURGEON" pass="VolumetricLightComputeVariantCollapseAndVfxBudgetContinuum">
+  <WHAT_WAS_WRONG>
+    `Hecton_VolumetricLight.compute` still had `_MATH_LOD_LOW/_MATH_LOD_HIGH` shader variants and a tier cap macro. `VfxComputeParticleBudgetCatalog` still exported `HectonQualityTier` budget resolvers and low/high/ultra endpoint names.
+  </WHAT_WAS_WRONG>
+  <WHAT_WAS_DONE>
+    Removed the volumetric light math-LOD multi-compile and tier cap. Updated the smoke tester to assert continuous step caps and absence of the binary keyword. Replaced VFX budget endpoints with minimum/middle/maximum/overkill quality names, removed tier resolver overloads, and added continuous float budget helpers. Updated marine snow and propwash endpoint references.
+  </WHAT_WAS_DONE>
+  <TASK_RECONCILIATION>
+    01 [PASS] Status/rationale read before response and edit. 02 [PASS] VFX/volumetric call sites scanned. 03 [PASS] Binary shader variants removed. 04 [PASS] No asmdef/reference changed. 05 [PASS] No `Pack=1`. 06 [PASS] `VfxComputeParticleBudget` remains explicit 32 bytes. 07 [PASS] No native container added. 08 [PASS] No Vault route changed. 09 [PASS] No registry poll added. 10 [PASS] Continuous `GlobalQualityWeight` is the budget source. 11 [PASS] No RNG. 12 [PASS] No AUP math. 13 [PASS] Dear Lie remains GPU compute/half-res fog and marine snow compute particles. 14 [PASS] Minimum quality endpoint retained. 15 [PASS] Maximum/overkill endpoints retained without a tier enum. 16 [PASS] No Burst job aliasing changed. 17 [PASS] No job scheduling/completion changed. 18 [PASS] Telemetry layouts unchanged. 19 [PASS] Smoke proof updated. 20 [FAIL] Compile remains blocked by external scatter backend mismatch.
+  </TASK_RECONCILIATION>
+  <STRUCT_LAYOUT>
+    `VfxComputeParticleBudget`: `[StructLayout(LayoutKind.Explicit, Size = 32)]`. Offsets: 0 `int ParticleCount` 4B, 4 `int MarineSnowCount` 4B, 8 `int BubbleCount` 4B, 12 `int DebrisCount` 4B, 16 `float StepDistanceMeters` 4B, 20 `int ShadowTaps` 4B, 24 `int FlowResampleFrames` 4B, 28 `int _pad0` 4B. Total = 32 bytes, aligned to 8/16/32. It is a value row, not a contested counter, so 64-byte false-sharing padding is not required.
+  </STRUCT_LAYOUT>
+  <SCALABILITY_CURVE>
+    VFX budgets now resolve from `q = saturate(GlobalQualityWeight)` through `smoothstep(0, 0.45, q)`, `smoothstep(0.35, 0.85, q)`, and `smoothstep(0.72, 1, q)`, then pressure-compress through smooth middle/emergency curves. Below 0.3 quality the catalog stays near 8k snow/384 bubbles/128 debris, 0 fake shadow taps, 0 flow resampling, and 0.40m step distance. Middle quality blends capacities and fake taps. Maximum/overkill reaches 100k snow, 4k bubbles, tighter 0.10m step distance, richer fake occlusion, and faster flow resampling.
+  </SCALABILITY_CURVE>
+  <H_PHI_VAULT_STATUS>
+    No private `NativeArray`, `NativeList`, or `NativeHashMap` allocation was introduced. No `VaultBufferHandle` lifecycle changed. Existing marine snow vault ownership remains untouched.
+  </H_PHI_VAULT_STATUS>
+  <POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+    No Burst job fields, `NativeArray` aliases, or `JobHandle` dependencies changed. Volumetric light stays RenderGraph compute dispatch; marine snow budget math remains scalar owner-phase code.
+  </POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+  <COMPILE_GUARD>
+    Guard sampled CPU 17.6 percent and no compiler processes, then `dotnet build Hecton8.Core.csproj --no-restore` failed only in `World/ScatterClassicBackendAdapters.cs` with the known `IScatterSimulationBackend.TrySchedule` mismatch. No touched-file diagnostics were emitted.
+  </COMPILE_GUARD>
+  <CINEMATIC_CHEATS>
+    Volumetric light remains half-resolution compute god rays with bilateral composite. Marine snow remains GPU compute particles and propwash scalar fakes, not CPU particle GameObjects or fluid simulation. Heavy physical alternatives remain rejected.
+  </CINEMATIC_CHEATS>
+  <MICROSECONDS_SAVED estimate="0">No measured speed claim. Static savings are reduced shader variant/warmup surface and removal of public hardware-tier budget entry points.</MICROSECONDS_SAVED>
+  <VERIFICATION>
+    Targeted scans found no old VFX endpoint constants, `VfxComputeParticleBudget.Low/Mid/High/Ultra`, `ResolveBudget(HectonQualityTier)`, volumetric `_MATH_LOD_LOW/_MATH_LOD_HIGH`, tier cap macro, or math-LOD multi-compile in the touched VFX/volumetric files. `git diff --check` passed with CRLF warnings only.
+  </VERIFICATION>
+</SELF_AUDIT>

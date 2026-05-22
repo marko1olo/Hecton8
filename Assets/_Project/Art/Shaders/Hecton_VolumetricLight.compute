@@ -2,7 +2,6 @@
 #pragma kernel CompositeVolumetricLight
 #pragma target 5.0
 #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE
-#pragma multi_compile _ _MATH_LOD_LOW _MATH_LOD_HIGH
 
 #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Common.hlsl"
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
@@ -10,12 +9,6 @@
 
 #ifndef HECTON_VOLUMETRIC_LIGHT_MAX_STEPS
 #define HECTON_VOLUMETRIC_LIGHT_MAX_STEPS 12
-#endif
-
-#if defined(_MATH_LOD_LOW)
-#define HECTON_VOLUMETRIC_LIGHT_TIER_STEP_CAP 4
-#else
-#define HECTON_VOLUMETRIC_LIGHT_TIER_STEP_CAP HECTON_VOLUMETRIC_LIGHT_MAX_STEPS
 #endif
 
 // Compute kernels sample the bound depth texture directly; DeclareDepthTexture maps incorrectly on cs_5_0.
@@ -249,7 +242,7 @@ float ResolveVolumetricShadowRaymarch(float3 samplePositionWS, float3 lightDirec
     if (strength <= 0.0001 || density <= 0.0001)
         return 1.0;
 
-    int stepCount = min(clamp((int)round(_HectonVolumetricShadowParams.x), 1, HECTON_VOLUMETRIC_LIGHT_MAX_STEPS), HECTON_VOLUMETRIC_LIGHT_TIER_STEP_CAP);
+    int stepCount = clamp((int)round(_HectonVolumetricShadowParams.x), 1, HECTON_VOLUMETRIC_LIGHT_MAX_STEPS);
     float marchDistance = max(_HectonVolumetricShadowParams.y, 0.1);
     float depthBias = max(_HectonVolumetricShadowParams.z, 0.001);
     float stepLength = marchDistance * SafeRcp((float)stepCount);
@@ -338,7 +331,7 @@ void RaymarchVolumetricLight(uint3 dispatchThreadId : SV_DispatchThreadID)
 
     float invRayLength = rsqrt(rayLengthSq);
     float rayLength = min(rayLengthSq * invRayLength, max(_HectonVolumetricMarchParams.x, 0.1));
-    int stepCount = min(clamp((int)round(_HectonVolumetricMarchParams.y), 1, HECTON_VOLUMETRIC_LIGHT_MAX_STEPS), HECTON_VOLUMETRIC_LIGHT_TIER_STEP_CAP);
+    int stepCount = clamp((int)round(_HectonVolumetricMarchParams.y), 1, HECTON_VOLUMETRIC_LIGHT_MAX_STEPS);
     float stepSize = rayLength * SafeRcp((float)stepCount);
     float jitter = ResolveInterleavedGradientNoise(screenUv) * stepSize * saturate(_HectonVolumetricMarchParams.z);
     float3 rayDirectionWS = rayVectorWS * invRayLength;

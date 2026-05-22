@@ -1569,7 +1569,8 @@ namespace Hecton8.Gameplay
         private int _telemetryCursor;
         private bool _telemetryDumped;
 
-        internal NativeArray<ContextualPhysicalIkTargetFrame> CurrentTargetFrames => _frontTargetFrames;
+        internal NativeArray<ContextualPhysicalIkTargetFrame>.ReadOnly CurrentTargetFrames =>
+            _frontTargetFrames.IsCreated ? _frontTargetFrames.AsReadOnly() : default;
 
         internal static ContextualPhysicalIkRuntime EnsureRuntimeInstance()
         {
@@ -1718,7 +1719,7 @@ namespace Hecton8.Gameplay
             _registeredRigs[slotIndex] = rig;
             _slotActive[slotIndex] = true;
             ResetTargetSlot(slotIndex);
-            rig.AssignEntitySlot(slotIndex, _frontTargetFrames);
+            rig.AssignEntitySlot(slotIndex, _frontTargetFrames.IsCreated ? _frontTargetFrames.AsReadOnly() : default);
             return true;
         }
 
@@ -2387,7 +2388,7 @@ namespace Hecton8.Gameplay
                 if (rig == null)
                     continue;
 
-                rig.OnTargetBufferSwapped(_frontTargetFrames);
+                rig.OnTargetBufferSwapped(_frontTargetFrames.IsCreated ? _frontTargetFrames.AsReadOnly() : default);
             }
         }
 
