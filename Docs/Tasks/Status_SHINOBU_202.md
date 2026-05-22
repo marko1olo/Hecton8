@@ -4332,3 +4332,27 @@ Mandates read before coding:
 - Brace/preprocessor counts are balanced: `FloraInteractionManager.cs` braces `619/619`, preprocessor `#if/#endif` `8/8`.
 - `git diff --check` passed for `FloraInteractionManager.cs`; CRLF warning only.
 - Build not relaunched: `VBCSCompiler.exe` is active, and full `Hecton8.slnx` is already blocked by the external Visor RenderGraph binding errors recorded in Compile State Update 232.
+
+## Loop 243 - Sargassum Micro-Fauna Vault Descriptor Route
+- [x] Replaced Sargassum pointer-bearing Vault routes.
+  DOD practice: `SargassumMicroFaunaBoids.cs` now stores `VaultGenerationHandle<T>` for native ring buffers, grazing anchors, massive threats, formation beacons/obstacles, static obstacle cache, boid state, kill signals, food-chain telemetry, leviathan scratch/front/back/count lanes, foveated simulation lanes, simulation frame constants, sensory threats, sensory blackbox, and threat-grid upload scratch. Mutable phase-local views resolve through `ResolveSargassumVaultArray` / `TryResolveSargassumVaultArray` after exact BufferID, `SystemID.WorldSargassum`, nonzero generation, required length, compaction-fence rejection, and `TryResolveHandle`.
+  Rejected: converting mutable call sites to `TryReadHandle` because many routes write telemetry, counters, scratch rows, static obstacle cache rows, kill signals, and foveated buffers. Rewriting compute kernels, GPU strides, boid DTOs, front/back swaps, predator consumption jobs, quality curves, or shader buffers was rejected because this loop targets stale Vault provenance only.
+  Estimate: O(1) descriptor proof at setup/resolve boundaries; no added per-boid validation.
+- [x] Preserved simulation and render topology.
+  DOD practice: the boid compute buffers, indirect draw path, foveated front/back swap, leviathan front/back path swap, telemetry ring capacity, and BufferIDs remain unchanged.
+  Rejected: releasing descriptors in teardown because the previous route did not hold per-call refcount leases and changing descriptor lifecycle needs a separate WorldSargassum owner route card.
+  Estimate: 0 DTO/ABI/shader-format change.
+
+## Compile State Update 238
+- Focused direct/legacy route scan on `SargassumMicroFaunaBoids.cs` found zero `ResolveVaultBuffer`, `EnsureVaultBufferHandle`, `TryResolveSargassumVaultBuffer`, `TryEnsureSargassumVaultBuffer`, `VaultBufferHandle<`, `GetBufferHandle`, `TryGetBufferHandle`, `.Resolve(`, `ResolvePointer`, `GenerationID`, `TryGetBuffer(`, `GetBuffer<`, or `.ptr` hits.
+- Descriptor route scan confirmed `VaultGenerationHandle<T>`, `EnsureSargassumVaultGenerationHandle`, `TryEnsureSargassumVaultArray`, `ResolveSargassumVaultArray`, `TryResolveSargassumVaultArray`, `IsSargassumVaultHandle`, `GetGenerationHandle`, `TryResolveHandle`, and `SystemID.WorldSargassum`.
+- Brace/preprocessor counts are balanced: `SargassumMicroFaunaBoids.cs` braces `593/593`, preprocessor `#if/#endif` `4/4`; `git diff --check` passed with CRLF warning only.
+- Guarded `dotnet build Hecton8.Core.csproj -nologo -clp:ErrorsOnly -maxcpucount:1` initially exposed two SHINOBU-owned Flora descriptor accessor errors plus one external Fauna error. The Flora accessor was fixed by replacing descriptor `.IsCreated` with exact `IsFloraVaultHandle` checks.
+- Second guarded Core build reported one remaining external error only: `Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.cs(4840,67)` passes `out NativeArray<HabitatSiegeTargetSnapshot>` where the API expects `out NativeArray<HabitatSiegeTargetSnapshot>.ReadOnly`. No Sargassum or Flora errors were reported.
+
+## Compile State Update 239
+- [x] Unblocked the remaining Core compile wall with a single signature-compatible Fauna patch.
+  DOD practice: `PredatorCognitionDomain.RefreshHabitatSiegeSnapshot` now receives `HabitatGraphManager.TryGetLatestSiegeTargets` through `out NativeArray<HabitatSiegeTargetSnapshot>.ReadOnly source`, matching the Construction owner read-only snapshot route.
+  Rejected: widening `HabitatGraphManager` back to mutable output or copying through a temporary mutable NativeArray. The consumer only reads and copies into its own AIEcology buffer.
+  Estimate: 0 runtime cost; type declaration only.
+- Guarded `dotnet build Hecton8.Core.csproj -nologo -clp:ErrorsOnly -maxcpucount:1` succeeded after the Fauna patch: 0 errors, 29 warnings, elapsed `00:00:56.73`.

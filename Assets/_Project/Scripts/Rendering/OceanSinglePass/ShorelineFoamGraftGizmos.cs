@@ -12,7 +12,7 @@ namespace Hecton8.Rendering.OceanSinglePass
 
         private void OnDrawGizmos()
         {
-            if (!ShorelineFoamGraftRuntime.TryReadDebugFoam(out NativeArray<ShorelineFoamParamsDTO> foamParams, out int count))
+            if (!ShorelineFoamGraftRuntime.TryReadDebugFoam(out NativeArray<ShorelineFoamParamsDTO>.ReadOnly foamParams, out int count))
                 return;
 
             int safeCount = math.min(count, foamParams.Length);

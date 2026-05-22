@@ -711,6 +711,95 @@ Updated static counts from that artifact:
 
 This is static-source proof only. No Unity import, Console, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
 
+## 2026-05-22 Plasma Beam Editor Snapshot Follow-Up
+
+Additional native API narrowing after the ocean debug pass:
+
+- `ShinobuPlasmaBeamRuntime.TryGetEditorMeshSnapshot` now returns a read-only beam vertex view.
+- `PlasmaBeamTunerWindow` now consumes the read-only beam vertex snapshot.
+
+Rejected:
+
+- Beam vertex DTO layout changes.
+- Managed vertex copies for editor drawing.
+- Burst vertex generation and GPU upload changes.
+
+Focused proof:
+
+- Focused scans found only read-only editor mesh snapshot call sites.
+- Broad artifact: `Docs/Reports/PROJECT_AUDIT_polish_after_plasma_editor_snapshot_readonly.json`.
+
+Updated static counts from that artifact:
+
+- `nativeCollectionPublicMutableApiExposure`: 185, down from 186.
+- `nativeApiExposureBuildPlayerRuntime`: 172, down from 173.
+- `nativeApiExposureOutRefMutable`: 134, down from 135.
+- `nativeApiRiskRuntimeDiagnosticNamedMutableView`: 31, down from 32.
+
+This is static-source proof only. No Unity import, Console, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 Ocean Debug Native API Follow-Up
+
+Additional native API narrowing after the diagnostic readback pass:
+
+- `OceanSinglePassRuntime.TryReadTelemetry` now returns a read-only ocean telemetry ring view.
+- `ShorelineFoamGraftRuntime.TryReadDebugFoam` now returns a read-only foam parameter view.
+- `ShorelineFoamGraftRuntime.TryReadTelemetry` now returns a read-only foam telemetry ring view.
+- `ShorelineFoamGraftGizmos` now consumes the read-only foam debug view.
+
+Rejected:
+
+- `Shinobu19EconomyLedger.TryResolveTelemetry`, because it opens-or-acquires the telemetry ring and is not a pure read accessor.
+- Shoreline foam GPU upload changes, because upload remains an owner-side mutable buffer write.
+- Managed copies and DTO layout changes.
+
+Focused proof:
+
+- Focused scans found no stale ocean/foam mutable call sites.
+- Broad artifact: `Docs/Reports/PROJECT_AUDIT_polish_after_ocean_debug_readonly.json`.
+
+Updated static counts from that artifact:
+
+- `nativeCollectionPublicMutableApiExposure`: 186, down from 189.
+- `nativeApiExposureBuildPlayerRuntime`: 173, down from 176.
+- `nativeApiExposureOutRefMutable`: 135, down from 138.
+- `nativeApiRiskRuntimeDiagnosticNamedMutableView`: 32, down from 35.
+
+This is static-source proof only. No Unity import, Console, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 Diagnostic Readback Native API Follow-Up
+
+Additional native API narrowing after the physics/debug pass:
+
+- `SubmarineOsThermalGridRuntime.TryGetGridReadback` now returns read-only node, anchor, and visual-state views.
+- `SubmarineOsThermalGridGizmo` now consumes read-only grid readbacks.
+- `ThermodynamicsHazardGridRuntime.TryGetGridReadback` and `TryGetVaultGridReadback` now return read-only temperature/radiation views.
+- `ThermodynamicsTunerWindow` now consumes read-only Vault grid views.
+- `TradeMarauderDirector.TryResolveEditorViews` now returns read-only marauder state, route, and route-count views.
+- `TradeMarauderTunerWindow` now consumes read-only marauder editor views.
+- `HabitatGraphManager.TryGetLatestSiegeTargets` now returns a read-only siege target snapshot.
+
+Rejected:
+
+- `SeaglideHydrodynamicsRuntime.TryResolveEditorViews`, because its editor path mutates tuning through the returned native view.
+- Forcing read-only into submarine thermal grid GPU upload, because owner-side `GraphicsBuffer.SetData` still needs a mutable native source view; the public API is read-only and the mutable route is private.
+- Managed copies, DTO layout changes, and Vault ownership changes.
+
+Focused proof:
+
+- Focused scans found only read-only selected signatures/call sites.
+- Broad artifact: `Docs/Reports/PROJECT_AUDIT_polish_after_diagnostic_readback_batch.json`.
+
+Updated static counts from that artifact:
+
+- `nativeCollectionPublicMutableApiExposure`: 189, down from 194.
+- `nativeApiExposureBuildPlayerRuntime`: 176, down from 181.
+- `nativeApiExposureOutRefMutable`: 138, down from 143.
+- `nativeApiRiskRuntimeDiagnosticNamedMutableView`: 35, down from 39.
+- `nativeApiRiskRuntimeOutRefMutableView`: 85, down from 86.
+
+This is static-source proof only. No Unity import, Console, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
 ## 2026-05-22 Physics Debug Native API Follow-Up
 
 Additional native API narrowing after the rollback snapshot pass:

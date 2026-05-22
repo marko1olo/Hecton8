@@ -624,3 +624,39 @@ Cinematic Cheats used: No simulation was added. Ballistics, compartment, and KCC
 Exact Microseconds saved: 0 us measured. Static outcome: broad audit dropped `nativeCollectionPublicMutableApiExposure` from `199` to `194`, `nativeApiExposureOutRefMutable` from `148` to `143`, and `nativeApiExposureBuildPlayerRuntime` from `186` to `181`.
 
 Evidence: Focused scans found only read-only signatures/call sites for the narrowed routes. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_after_physics_debug_readonly.json` returned `PASS_WITH_WARNINGS` with `nativeCollectionPublicMutableApiExposure=194`, `nativeApiExposureBuildPlayerRuntime=181`, `nativeApiExposureOutRefMutable=143`, `nativeApiRiskRuntimeDiagnosticNamedMutableView=39`, and `nativeApiRiskRuntimeOutRefMutableView=86`. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Diagnostic Readback Batch Narrowing
+
+What was wrong: Several diagnostic/readback routes exposed mutable native arrays to read-only consumers: submarine thermal grid public readback, thermodynamics front/Vault grid readbacks, trade marauder editor state/route view, and habitat siege target snapshot.
+
+What was done: Converted those selected APIs and editor/gizmo consumers to `NativeArray<T>.ReadOnly`. Preserved submarine thermal grid's private mutable helper for owner-side `GraphicsBuffer.SetData`, and left seaglide editor views mutable because tuning is edited through that path.
+
+Cinematic Cheats used: No simulation was added. These systems stay as grid/gizmo/readback projections over existing native state rather than copied managed debug objects or scene proxies.
+
+Exact Microseconds saved: 0 us measured. Static outcome: broad audit dropped `nativeCollectionPublicMutableApiExposure` from `194` to `189`, `nativeApiExposureOutRefMutable` from `143` to `138`, and `nativeApiExposureBuildPlayerRuntime` from `181` to `176`.
+
+Evidence: Focused scans found only read-only selected signatures/call sites. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_after_diagnostic_readback_batch.json` returned `PASS_WITH_WARNINGS` with `nativeCollectionPublicMutableApiExposure=189`, `nativeApiExposureBuildPlayerRuntime=176`, `nativeApiExposureOutRefMutable=138`, `nativeApiRiskRuntimeDiagnosticNamedMutableView=35`, and `nativeApiRiskRuntimeOutRefMutableView=85`. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Ocean Debug Telemetry Read-Only Narrowing
+
+What was wrong: Ocean single-pass telemetry and shoreline foam debug/telemetry readers returned mutable native arrays to diagnostic consumers.
+
+What was done: Converted selected ocean/foam read accessors to `NativeArray<T>.ReadOnly` and updated the shoreline foam gizmo consumer. Runtime foam upload and telemetry writer paths remain mutable inside their owners.
+
+Cinematic Cheats used: No simulation was added. Foam diagnostics remain a compact gizmo projection over GPU-oriented foam parameters, not copied managed debug state.
+
+Exact Microseconds saved: 0 us measured. Static outcome: broad audit dropped `nativeCollectionPublicMutableApiExposure` from `189` to `186`, `nativeApiExposureOutRefMutable` from `138` to `135`, and `nativeApiExposureBuildPlayerRuntime` from `176` to `173`.
+
+Evidence: Focused scans found no stale ocean/foam mutable call sites. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_after_ocean_debug_readonly.json` returned `PASS_WITH_WARNINGS` with `nativeCollectionPublicMutableApiExposure=186`, `nativeApiExposureBuildPlayerRuntime=173`, `nativeApiExposureOutRefMutable=135`, and `nativeApiRiskRuntimeDiagnosticNamedMutableView=32`. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Plasma Editor Mesh Snapshot Read-Only Narrowing
+
+What was wrong: Plasma beam editor mesh snapshot exposed the runtime beam vertex buffer as a mutable native array to an editor gizmo reader.
+
+What was done: Converted `ShinobuPlasmaBeamRuntime.TryGetEditorMeshSnapshot` and `PlasmaBeamTunerWindow` to `NativeArray<BeamVertexDTO>.ReadOnly`. Runtime vertex generation and upload ownership remain unchanged.
+
+Cinematic Cheats used: No simulation was added. The editor mesh overlay remains a bounded triangle-wire visualization over existing VFX vertices, not copied managed mesh state.
+
+Exact Microseconds saved: 0 us measured. Static outcome: broad audit dropped `nativeCollectionPublicMutableApiExposure` from `186` to `185`, `nativeApiExposureOutRefMutable` from `135` to `134`, and `nativeApiExposureBuildPlayerRuntime` from `173` to `172`.
+
+Evidence: Focused scans found only read-only editor mesh snapshot call sites. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_after_plasma_editor_snapshot_readonly.json` returned `PASS_WITH_WARNINGS` with `nativeCollectionPublicMutableApiExposure=185`, `nativeApiExposureBuildPlayerRuntime=172`, `nativeApiExposureOutRefMutable=134`, and `nativeApiRiskRuntimeDiagnosticNamedMutableView=31`. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.

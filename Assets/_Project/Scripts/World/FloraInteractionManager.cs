@@ -1555,7 +1555,10 @@ namespace Hecton8.World
         public Vector3 LastPublishedScooterWakePosition => _lastPublishedScooterWakePosition;
 
         /// <inheritdoc />
-        public bool IsInitialized => _proceduralWakePointsHandle.IsCreated && _floraSwayFieldHandle.IsCreated && _proceduralWakeShaderBuffer != null;
+        public bool IsInitialized =>
+            IsFloraVaultHandle(in _proceduralWakePointsHandle, BufferID.WakeSources) &&
+            IsFloraVaultHandle(in _floraSwayFieldHandle, FloraSwayDisplacementFieldBufferId) &&
+            _proceduralWakeShaderBuffer != null;
 
         /// <inheritdoc />
         public int ActiveWakeCount => _publishedProceduralWakeCount;

@@ -141,14 +141,18 @@ namespace Hecton8.Rendering.OceanSinglePass
             return runtime != null && runtime.TrySetEditorTuningInternal(jacobianFoamThreshold, wakeLifespanSeconds, shorelineDepthFadeMeters);
         }
 
-        public static bool TryReadTelemetry(out NativeArray<OceanRenderTelemetryEntry> telemetry, out int cursor)
+        public static bool TryReadTelemetry(out NativeArray<OceanRenderTelemetryEntry>.ReadOnly telemetry, out int cursor)
         {
             telemetry = default;
             cursor = 0;
             OceanSinglePassRuntime runtime = s_runtime;
-            if (runtime == null || !runtime.TryResolveVaultBuffer(in runtime._telemetryHandle, OceanSinglePassConstants.TelemetryCapacity, out telemetry))
+            if (runtime == null ||
+                !runtime.TryResolveVaultBuffer(in runtime._telemetryHandle, OceanSinglePassConstants.TelemetryCapacity, out NativeArray<OceanRenderTelemetryEntry> mutableTelemetry))
+            {
                 return false;
+            }
 
+            telemetry = mutableTelemetry.AsReadOnly();
             if (runtime.TryResolveVaultBuffer(in runtime._telemetryCursorHandle, 1, out NativeArray<int> cursorArray))
                 cursor = cursorArray[0];
             return true;

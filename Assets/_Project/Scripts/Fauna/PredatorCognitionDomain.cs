@@ -4837,7 +4837,7 @@ namespace Hecton8.AI
             if (!_habitatSiegeTargets.IsCreated)
                 return;
 
-            if (!HabitatGraphManager.TryGetLatestSiegeTargets(out NativeArray<HabitatSiegeTargetSnapshot> source, out int sourceCount))
+            if (!HabitatGraphManager.TryGetLatestSiegeTargets(out NativeArray<HabitatSiegeTargetSnapshot>.ReadOnly source, out int sourceCount))
                 return;
 
             int copyCount = math.min(sourceCount, math.min(source.Length, _habitatSiegeTargets.Length));

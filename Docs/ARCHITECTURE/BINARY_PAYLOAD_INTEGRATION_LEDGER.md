@@ -5002,6 +5002,19 @@ Fault route: `ExosuitTelemetryEntry[300]` dumps fixed 64-byte rows to `Docs/Agen
 - Authority impact: VFX remains the owner. Wake/sway/stiffness lanes now resolve through exact-owner generation descriptors; blackbox `DataVaultGeneration` records descriptor generation instead of legacy handle generation alias.
 - Verification: focused scan clean for `TryGetBuffer(`, `GetBuffer<`, `GetBufferHandle`, `TryGetBufferHandle`, `VaultBufferHandle<`, `.Resolve(dataVault)`, `ResolvePointer`, `GetElementAsRef`, `GetElementAsReadOnlyRef`, `.ptr`, and `GenerationID` in `FloraInteractionManager.cs`; brace/preprocessor counts `619/619` and `8/8`; `git diff --check` passed with CRLF warning only. Build was not launched because `VBCSCompiler.exe` is active and full `Hecton8.slnx` remains blocked by external Visor RenderGraph texture-binding errors.
 
+## 2026-05-22 - SHINOBU_202 Sargassum Micro-Fauna Vault Descriptor Route
+
+- `Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs` replaced native ring and retained Sargassum pointer-bearing Vault lanes with `VaultGenerationHandle<T>` descriptor routes.
+- Binary payload impact: none. `BoidData`, `BoidKillSignal`, `FoodChainTelemetryEntry`, `BoidSensoryBlackBoxEntry`, `FoveatedSimulationInput`, `FoveatedSimulationDecision`, `SimulationFrameConstants`, BufferIDs, GPU stride constants, compute kernels, shader property IDs, front/back swap identity, indirect draw args, and blackbox dump bytes are unchanged.
+- Authority impact: WorldSargassum remains the owner. Native ring buffers, grazing anchors, massive threats, formation data, static obstacle cache, boid state, kill signals, telemetry, leviathan lanes, foveated lanes, sensory lanes, and threat-grid upload scratch now resolve through exact-owner generation descriptors.
+- Verification: focused scan clean for `ResolveVaultBuffer`, `EnsureVaultBufferHandle`, `TryResolveSargassumVaultBuffer`, `TryEnsureSargassumVaultBuffer`, `VaultBufferHandle<`, `GetBufferHandle`, `TryGetBufferHandle`, `.Resolve(`, `ResolvePointer`, `GenerationID`, `TryGetBuffer(`, `GetBuffer<`, and `.ptr` in `SargassumMicroFaunaBoids.cs`; brace/preprocessor counts `593/593` and `4/4`; `git diff --check` passed with CRLF warning only. Guarded `Hecton8.Core.csproj` build after the SHINOBU-owned Flora accessor fix reports one remaining external Fauna error in `PredatorCognitionDomain.cs(4840,67)` and no Sargassum or Flora errors.
+
+## 2026-05-22 - SHINOBU_202 Flora Descriptor Readiness Accessor Fix
+
+- `Assets/_Project/Scripts/World/FloraInteractionManager.cs` readiness checks now use exact `IsFloraVaultHandle` descriptor identity for `BufferID.WakeSources` and `FloraSwayDisplacementFieldBufferId` instead of pointer-era `.IsCreated` syntax.
+- Binary payload impact: none. Wake/sway DTOs, BufferIDs, shader IDs, graphics buffer ABI, render texture route, blackbox bytes, and VFX authority are unchanged.
+- Verification: focused scan found no `_proceduralWakePointsHandle.IsCreated` or `_floraSwayFieldHandle.IsCreated` reads; brace/preprocessor counts remain `619/619` and `8/8`; `git diff --check` passed with CRLF warning only. Guarded `Hecton8.Core.csproj` build moved from two Flora errors plus one external Fauna error to the single external Fauna error.
+
 ## 2026-05-22 - SHINOBU_260 Crest Generated Project And Payload Quarantine
 
 - Root generated `WaveHarmonic.Crest*.csproj` and `WaveHarmonic.Crest*.csproj.lscache` files are archived outside active MSBuild/IDE visibility. Broad generated first-party projects and `Directory.Build.targets` no longer route `Hecton8.Core` or sibling assemblies directly into Crest or WaveHarmonic Crest.
@@ -5017,3 +5030,26 @@ Fault route: `ExosuitTelemetryEntry[300]` dumps fixed 64-byte rows to `Docs/Agen
 - Vault route impact: unchanged. Runtime still requests `BufferID.CarveDebris`, `CarveDebrisVelocity`, `CarveDebrisRequests`, `CarveDebrisJobState`, and `CarveDebrisBlackBox` through Vault generation handles.
 - Shader route impact: `Assets/_Project/Art/Shaders/Hecton_FluidAdvection.compute` now treats flow/SDF/wake inputs as weights and quality pressure; `Assets/_Project/Art/Shaders/Hecton_CarveDebrisIndirect.shader` now scales spin, shadows, crystal relief, salt, rim, and fake subsurface through `visualOverkill01`. No shader variants were added.
 - Verification: focused scans found no carve-debris scalability listener route, no debris low/high tier shader gates, no `Pack=1`, no new native container allocation, and no `.Schedule()`/`.Complete()` in the touched runtime file. `git diff --check` passed with CRLF warnings only. Build was not launched because CPU was 22% but `VBCSCompiler` process `47044` was active.
+
+## 2026-05-22 - SHINOBU_SYSTEMIC_SURGEON Marine Snow Compute Quality Continuum
+
+- `Assets/_Project/Scripts/VFX/HectonMarineSnowRenderer.cs` removed scalability-event listener routing, cached `HectonQualityTier` state, and direct `GlobalRegistry.QualityTier` budget selection. Marine snow capacity and debug budget values now derive from continuous `HomeostasisBrain.GlobalQualityWeight`, homeostasis pressure, and kill-switch masks.
+- Binary payload impact: none. `ParticleDataDTO` remains 32 bytes, `ParticleRenderMetaDTO` remains 32 bytes, `DynamicWakeDTO` remains 32 bytes, `VehicleWakeJobResult` remains 48 bytes, and `MarineSnowTelemetryEntry` remains explicit 64 bytes with offsets 0/4/8/12/16/20/24/28/32/44/48/52/56/60.
+- Vault route impact: unchanged. Existing VFX owner routes stay on `BufferID.MarineSnowWakeJobResult`, `MarineSnowTelemetryRing`, `MarineSnowTuningConstants`, `MarineSnowDynamicWakes`, `MarineSnowMockFlowField`, `PropwashGpuEventRing`, `PropwashGpuRingCursor`, `PropwashGpuTelemetryRing`, `PropwashGpuTuning`, and `PropwashGpuWakeProfiles`.
+- Shader route impact: `Assets/_Project/Art/Shaders/Hecton_MarineSnow.compute` now treats dynamic wake `.y` as `qualityPressure01`; slot count lerps from 16 to 4, wake flow blends from wake-axis detail to radial fake, DTO wakes use the same scalar, and maelstrom tangent swirl fades continuously. No shader variants were added.
+- Verification: focused scans found no marine-snow scalability listener route, no direct quality-tier/scalability-tier registry read, no `HectonQualityTier`, no `lowTier`/`LowTier` shader path, no `Pack=1`, no private native allocation, and no `.Schedule()`/`.Complete()` in the touched runtime file. `git diff --check` passed with CRLF warnings only. Build was not launched because the first guard returned CPU 54%, and the later guard returned CPU 90% with active `csc` and `dotnet`.
+
+## 2026-05-22 - SHINOBU_SYSTEMIC_SURGEON Plasma Beam Acoustic Echo Lane Capacity Unification
+
+- `Assets/_Project/Scripts/VFX/PlasmaBeam/ShinobuPlasmaBeamRuntime.cs` now configures `SignalBus<PlasmaBeamAcousticEchoTap>` with `lowTierFrameSignals: MaxBeamCount`, matching the producer and maximum frame capacity.
+- Binary payload impact: none. `PlasmaBeamAcousticEchoTap` remains explicit 32 bytes with offsets 0/12/16/20/24/28. `BeamStateDTO`, `PlasmaBeamRuntimeScalarsDTO`, `PlasmaBeamTelemetryEntry`, indirect args, lane hash, and BufferIDs are unchanged.
+- Vault route impact: unchanged. Acoustic taps still use `BufferID.ShinobuPlasmaBeamAcousticTaps` through `_acousticTapsHandle`; no new native memory owner was introduced.
+- Authority impact: echo tap facts no longer shed by binary quality profile. Visual/audio consumers may still scale downstream cost continuously from quality scalars.
+- Verification: targeted scan found the unified lane capacity and no remaining plasma `lowTierFrameSignals: 4`; `git diff --check` passed with CRLF warning only. Build was not launched because CPU probe returned 54% with active `csc` and `dotnet`.
+
+## 2026-05-22 - SHINOBU_SYSTEMIC_SURGEON Damage Hologram Shader Quality Contract Cleanup
+
+- `Assets/_Project/Art/Shaders/Hecton_DamageHologram.compute` and `Assets/_Project/Art/Shaders/Hecton_DamageHologramInstanced.shader` now name `_HectonDamageHologramParams.w` as `qualityPressure01` instead of `lowTier`.
+- Binary payload impact: none. `_HectonDamageHologramParams` property identity and vector layout are unchanged; the cockpit runtime still uploads the same `.w` value from continuous `_cheapVisualWeight01`. Point append buffer, room water buffer, indirect args, and material property IDs are unchanged.
+- Authority impact: damage hologram remains a presentation-owned GPU point-cloud fake over hull dent/flood facts. No gameplay damage truth, SignalBus payload, DataVault BufferID, or save identity changed.
+- Verification: targeted shader scan found no `lowTier`, `LowTier`, low-tier, or high-tier route in the two damage hologram shaders; `git diff --check` passed with CRLF warnings only. Guarded build was attempted and failed in externally modified `Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.cs` line 4840 due to a `TryGetLatestSiegeTargets` out-parameter type mismatch outside this pass.

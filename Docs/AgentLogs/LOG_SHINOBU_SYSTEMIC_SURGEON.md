@@ -3480,3 +3480,111 @@ Verification:
     Targeted C# scan found no `ScalabilityEvents`, `IScalabilityChangedEventListener`, `ScalabilityChangedEvent`, `GlobalRegistry.Scalability`, `H8_LOW_MEMORY_PROFILE`, `.Schedule`, `.Complete`, private native allocation, `UnityEngine.Random`, or `Pack=1` in `CarveDebrisComputeRenderer.cs`. Targeted shader scan found no debris low/high tier gates in `Hecton_FluidAdvection.compute` or `Hecton_CarveDebrisIndirect.shader`; remaining `0.5` checks are texture/grid/visibility validity gates, not quality policy.
   </VERIFICATION>
 </SELF_AUDIT>
+
+<SELF_AUDIT id="SHINOBU_SYSTEMIC_SURGEON" pass="MarineSnowComputeQualityContinuum">
+  <WHAT_WAS_WRONG>
+    `HectonMarineSnowRenderer` still implemented `IScalabilityChangedEventListener`, registered with `ScalabilityEvents`, cached `HectonQualityTier`, and read `GlobalRegistry.QualityTier` to select a discrete pressure budget row. `Hecton_MarineSnow.compute` treated dynamic wake pressure as `lowTier`, creating a binary presentation path in a GPU fake.
+  </WHAT_WAS_WRONG>
+  <WHAT_WAS_DONE>
+    Removed the listener interface, alias import, register/unregister lifecycle calls, callback, registration flag, tier cache, and direct quality-tier read. Added `BuildContinuousPressureBudget`, which interpolates pool capacity, step distance, shadow taps, and flow-resample cadence from `HomeostasisBrain.GlobalQualityWeight` with homeostasis pressure. Renamed dynamic wake `.y` to `qualityPressure01` in runtime and compute shader; wake slot count, wake flow blend, DTO flow blend, and maelstrom tangent swirl now lerp continuously.
+  </WHAT_WAS_DONE>
+  <TASK_RECONCILIATION>
+    01 [PASS] Prompt/status/rationale were read from disk before response and edits. 02 [PASS] Scalability listener route removed. 03 [PASS] No sibling asmdef/reference added. 04 [PASS] No DTO ABI changed. 05 [PASS] No `Pack=1`. 06 [PASS] Marine snow telemetry remains explicit 64 bytes. 07 [PASS] No private native container added. 08 [PASS] Vault handles unchanged. 09 [PASS] No hot `GlobalRegistry` quality/tier poll added. 10 [PASS] `HomeostasisBrain.GlobalQualityWeight` remains continuous quality source. 11 [PASS] No `UnityEngine.Random`. 12 [PASS] AUP-local paths unchanged. 13 [PASS] Dear Lie preserved as GPU compute marine snow and procedural wake flow. 14 [PASS] Wake/maelstrom detail collapses continuously. 15 [PASS] Visual-overkill capacity scales to 100k particles at high quality. 16 [PASS] `[NoAlias]` job fields remain. 17 [PASS] No `.Schedule()`/`.Complete()` added. 18 [PASS] 300-frame telemetry ring remains. 19 [PASS] Shader variant count unchanged. 20 [PASS] Build not launched because CPU guard failed.
+  </TASK_RECONCILIATION>
+  <STRUCT_LAYOUT>
+    `MarineSnowTelemetryEntry` is `[StructLayout(LayoutKind.Explicit, Size = 64)]`: offset 0 `int Frame` 4; 4 `int DispatchedParticleCount` 4; 8 `int Capacity` 4; 12 `int DynamicWakeCount` 4; 16 `float Throttle` 4; 20 `float SystemStress01` 4; 24 `float MaxSiltSpeed` 4; 28 `float AupShiftSq` 4; 32 `Vector3 CameraPositionWS` 12; 44 `float HeadlightBoost` 4; 48 `uint Flags` 4; 52 `uint StateHash` 4; 56 `int MockGpuMicroseconds` 4; 60 `uint CommandSequence` 4. Total = 64 bytes, exactly one L1 cache line, no implicit tail padding.
+  </STRUCT_LAYOUT>
+  <SCALABILITY_CURVE>
+    Below quality 0.3, smooth pressure curves pull pool counts toward the low endpoint, step distance toward 0.40 m, shadow taps toward 0/1 depending on policy, dynamic wake slots toward four, wake flow toward radial-only fakes, and maelstrom tangent swirl toward zero. Middle quality smoothly blends pool capacity, flow/collision/depth weights, wake slot count, step distance, and fake shadow taps. At high/ultra quality the path reaches the 100k marine-snow endpoint, sixteen wake slots, wake-axis flow, smaller step distance, richer fog/depth collision weights, and full swirl.
+  </SCALABILITY_CURVE>
+  <H_PHI_VAULT_STATUS>
+    No new private `NativeArray`, `NativeList`, or `NativeHashMap` allocation was introduced. Existing Vault routes remain: `BufferID.MarineSnowWakeJobResult`, `MarineSnowTelemetryRing`, `MarineSnowTuningConstants`, `MarineSnowDynamicWakes`, `MarineSnowMockFlowField`, `PropwashGpuEventRing`, `PropwashGpuRingCursor`, `PropwashGpuTelemetryRing`, `PropwashGpuTuning`, and `PropwashGpuWakeProfiles`. Lifecycle stays under existing `EnsureNativeState`, `TryResolveVaultBuffer`, and `ReleaseOwnedVaultHandles`.
+  </H_PHI_VAULT_STATUS>
+  <POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+    Existing Burst jobs remain `[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]`. `BuildVehicleWakeSignalJob`, `BuildMockWakeSignalJob`, and `BuildMockFlowFieldJob` keep `[NoAlias]` on non-overlapping `NativeArray` fields. This pass added no scheduled job, no new `JobHandle`, and no `.Complete()`; existing one-row jobs still use `.Run()`/GPU dispatch in owner phase.
+  </POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+  <COMPILE_GUARD>
+    No asmdef, sibling runtime reference, SignalBus payload, BufferID, save identity, or GlobalRegistry contract changed. Build was skipped because the first guard returned CPU 54 percent, and the later guard returned CPU 90 percent with active `csc` and `dotnet`.
+  </COMPILE_GUARD>
+  <CINEMATIC_CHEATS>
+    Marine snow remains a GPU compute/indirect visual fake. Wakes are procedural vector/radial blends and maelstrom swirl is a shader/compute force approximation; rejected routes are CPU GameObjects, per-particle rigidbodies, Navier-Stokes fluid, or mesh-collider particle collisions. Complexity remains O(active GPU particles + wake slots) with wake slots continuously 4..16; rejected CPU route would be O(particles * physics contacts) plus managed object churn.
+  </CINEMATIC_CHEATS>
+  <MICROSECONDS_SAVED estimate="0">
+    No measured speed claim. Static proof only: listener removed, quality-tier budget row removed, wake slots can collapse to four, and shader math blends to cheaper radial/tangent-suppressed approximations. Runtime profiler capture is required for exact CPU/GPU timing.
+  </MICROSECONDS_SAVED>
+  <VERIFICATION>
+    Targeted scans found no `ScalabilityEvents`, `IScalabilityChangedEventListener`, `ScalabilityChangedEvent`, `GlobalRegistry.QualityTier`, `GlobalRegistry.Scalability`, `HectonQualityTier`, `lowTier`, `LowTier`, high-tier route, `Pack=1`, private native allocation, `.Schedule()`, `.Complete()`, or `UnityEngine.Random` in the touched marine-snow runtime/shader route. `git diff --check` passed with CRLF warnings only. Build was skipped by CPU/compiler guard.
+  </VERIFICATION>
+</SELF_AUDIT>
+
+<SELF_AUDIT id="SHINOBU_SYSTEMIC_SURGEON" pass="PlasmaBeamAcousticEchoLaneCapacityUnification">
+  <WHAT_WAS_WRONG>
+    `ShinobuPlasmaBeamRuntime` configured `SignalBus<PlasmaBeamAcousticEchoTap>` with `lowTierFrameSignals: 4` while the producer and vault lane are bounded by `MaxBeamCount`. That let a binary quality profile drop acoustic echo facts before consumers saw the frame snapshot.
+  </WHAT_WAS_WRONG>
+  <WHAT_WAS_DONE>
+    Changed the typed lane configuration to `lowTierFrameSignals: MaxBeamCount`. The max lane, lane hash, payload type, producer loop, vault-backed tap buffer, and GPU beam jobs are unchanged.
+  </WHAT_WAS_DONE>
+  <TASK_RECONCILIATION>
+    01 [PASS] Status/rationale were read before response and edit. 02 [PASS] Binary minimum-quality signal shedding removed. 03 [PASS] No asmdef/reference changed. 04 [PASS] DTO ABI unchanged. 05 [PASS] No `Pack=1`. 06 [PASS] `PlasmaBeamAcousticEchoTap` remains 32 bytes. 07 [PASS] No native container added. 08 [PASS] Vault handle unchanged. 09 [PASS] No hot registry poll added. 10 [PASS] SignalBus remains first-party route. 11 [PASS] No RNG change. 12 [PASS] AUP paths unchanged. 13 [PASS] Dear Lie remains GPU beam mesh plus acoustic tap signal. 14 [PASS] Quality scales presentation, not fact admission. 15 [PASS] Visual overkill path unchanged. 16 [PASS] Existing `[NoAlias]` job fields unchanged. 17 [PASS] No `.Schedule()`/`.Complete()` added. 18 [PASS] Telemetry ring unchanged. 19 [PASS] Shader variants unchanged. 20 [PASS] Build not launched because CPU/compiler guard failed.
+  </TASK_RECONCILIATION>
+  <STRUCT_LAYOUT>
+    `PlasmaBeamAcousticEchoTap` is `[StructLayout(LayoutKind.Explicit, Size = 32)]`: offset 0 `float3 Position` 12 bytes; 12 `float Intensity01` 4; 16 `uint BeamId` 4; 20 `uint Frame` 4; 24 `uint NoiseSeed` 4; 28 `uint Flags` 4. Total = 32 bytes, aligned to a 32-byte boundary and unchanged by this pass.
+  </STRUCT_LAYOUT>
+  <SCALABILITY_CURVE>
+    Signal admission no longer scales down by binary profile. Runtime visual quality still uses `BeamStateDTO.GlobalQualityWeight` and `PlasmaBeamRuntimeScalarsDTO.GlobalQualityWeight` for beam presentation; downstream audio/render consumers can continuously reduce cost without losing up to `MaxBeamCount` echo facts.
+  </SCALABILITY_CURVE>
+  <H_PHI_VAULT_STATUS>
+    No private native allocation was added. Existing Vault route remains `BufferID.ShinobuPlasmaBeamAcousticTaps` through `_acousticTapsHandle` with `NativeArrayOptions.UninitializedMemory`; telemetry and beam state handles are unchanged.
+  </H_PHI_VAULT_STATUS>
+  <POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+    Existing Burst jobs and dependency chain are unchanged. `BuildPlasmaBeamMeshJob` already owns `[NoAlias]` arrays including `AcousticTaps`; this pass added no scheduled job and no completion point.
+  </POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+  <COMPILE_GUARD>
+    No asmdef, sibling runtime reference, SignalBus payload layout, BufferID, or save identity changed. Build was skipped because CPU probe returned 54 percent with active `csc` and `dotnet`.
+  </COMPILE_GUARD>
+  <CINEMATIC_CHEATS>
+    Plasma beam remains an indirect GPU ribbon and acoustic echo tap fake. Rejected route: per-beam GameObjects or per-tap managed events. Complexity of admission stays O(MaxBeamCount) over an existing bounded lane; quality should reduce downstream presentation cost, not delete the facts.
+  </CINEMATIC_CHEATS>
+  <MICROSECONDS_SAVED estimate="0">
+    No measured speed claim. This is a route-fidelity fix, not a performance claim.
+  </MICROSECONDS_SAVED>
+  <VERIFICATION>
+    Targeted scan found `SignalBus<PlasmaBeamAcousticEchoTap>.Configure(... lowTierFrameSignals: MaxBeamCount ...)` and no remaining `lowTierFrameSignals: 4` in `ShinobuPlasmaBeamRuntime.cs`. `git diff --check` passed with CRLF warning only. Build was skipped by CPU/compiler guard.
+  </VERIFICATION>
+</SELF_AUDIT>
+
+<SELF_AUDIT id="SHINOBU_SYSTEMIC_SURGEON" pass="DamageHologramShaderQualityContractCleanup">
+  <WHAT_WAS_WRONG>
+    `Hecton_DamageHologram.compute` and `Hecton_DamageHologramInstanced.shader` still named `_HectonDamageHologramParams.w` as `lowTier` while the cockpit runtime already uploads a continuous `_cheapVisualWeight01` pressure scalar.
+  </WHAT_WAS_WRONG>
+  <WHAT_WAS_DONE>
+    Renamed the shader contract comments and local variable to `qualityPressure01`. The property name, vector layout, compute dispatch, material binding, indirect args, and point-buffer ABI are unchanged.
+  </WHAT_WAS_DONE>
+  <TASK_RECONCILIATION>
+    01 [PASS] Status/rationale read before response and edit. 02 [PASS] Binary shader naming removed. 03 [PASS] No asmdef/reference changed. 04 [PASS] Shader ABI unchanged. 05 [PASS] No `Pack=1`. 06 [PASS] No DTO layout changed. 07 [PASS] No native container added. 08 [PASS] Vault/graphics buffers unchanged. 09 [PASS] No registry poll added. 10 [PASS] Continuous `_cheapVisualWeight01` remains source. 11 [PASS] No RNG. 12 [PASS] AUP paths unchanged. 13 [PASS] Dear Lie remains GPU point hologram. 14 [PASS] Quality pressure scales presentation continuously. 15 [PASS] Visual-overkill point budget remains runtime-owned. 16 [PASS] No job aliasing changes. 17 [PASS] No jobs added. 18 [PASS] Blackbox/telemetry unchanged. 19 [PASS] Shader variants unchanged. 20 [PASS] Build attempted only after guard allowed it; blocked by external Fauna dependency.
+  </TASK_RECONCILIATION>
+  <STRUCT_LAYOUT>
+    No C# DTO changed. `_HectonDamageHologramParams` remains a four-float shader vector: x time, y scanline width or global alpha depending pass, z max points or room count, w continuous quality pressure. The indirect draw args and append buffer contracts are unchanged.
+  </STRUCT_LAYOUT>
+  <SCALABILITY_CURVE>
+    The scalar remains continuous: cockpit runtime uploads `_cheapVisualWeight01`; shader size and alpha math lerp by `qualityPressure01`. Minimum quality favors larger, readable warning points; middle quality interpolates; high/ultra reduce pressure while runtime point budget rises through the existing quality curve.
+  </SCALABILITY_CURVE>
+  <H_PHI_VAULT_STATUS>
+    No Vault route changed. Damage hologram remains a cockpit-owned GPU point/append-buffer presentation path; hull damage and room flood facts remain owned by their existing sources.
+  </H_PHI_VAULT_STATUS>
+  <POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+    No Burst job or JobHandle changed. This pass touched shader-only naming/locals.
+  </POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+  <COMPILE_GUARD>
+    Guard allowed one compile attempt at CPU 39 percent with no compiler process. Build failed in externally modified `Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.cs` line 4840 because `TryGetLatestSiegeTargets` was called with `out NativeArray<HabitatSiegeTargetSnapshot>.ReadOnly` while the available API expects `out NativeArray<HabitatSiegeTargetSnapshot>`.
+  </COMPILE_GUARD>
+  <CINEMATIC_CHEATS>
+    Damage hologram remains a GPU point-cloud illusion over hull dent/flood data. Rejected route: CPU hull-mesh deformation or physical damage particles. Complexity remains GPU point mapping plus indirect instancing.
+  </CINEMATIC_CHEATS>
+  <MICROSECONDS_SAVED estimate="0">
+    No measured speed claim. Semantic cleanup only.
+  </MICROSECONDS_SAVED>
+  <VERIFICATION>
+    Targeted shader scan found no `lowTier`, `LowTier`, low-tier, or high-tier route in the two damage hologram shaders; `qualityPressure01` is present. `git diff --check` passed with CRLF warnings only. Compile is dependency-blocked by the dirty Fauna file noted above.
+  </VERIFICATION>
+</SELF_AUDIT>

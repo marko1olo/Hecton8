@@ -48,7 +48,7 @@ Shader "HECTON/HUD/DamageHologramInstanced"
             StructuredBuffer<float4> _HectonDamageHologramPoints;
             StructuredBuffer<float> _HectonDamageRoomWaterLevels;
             float4x4 _HectonDamageHologramLocalToWorld;
-            float4 _HectonDamageHologramParams; // x=time, y=globalAlpha, z=roomCount, w=lowTier
+            float4 _HectonDamageHologramParams; // x=time, y=globalAlpha, z=roomCount, w=qualityPressure01
             float4 _HectonDamageHologramBounds; // x=minX, y=maxX, z=minY, w=maxY
 
             struct Attributes
@@ -97,8 +97,8 @@ Shader "HECTON/HUD/DamageHologramInstanced"
                 float damage01 = scanline > 0.5 ? 0.0 : saturate(severity);
                 float flood01 = max(HectonResolveFlood01(holoPoint.xyz), scanline > 0.5 ? saturate(-severity - 1.0) : 0.0);
                 float pulse = HectonTriangle01(_HectonDamageHologramParams.x * (scanline > 0.5 ? 0.7 : 1.9) + input.instanceId * 0.011);
-                float lowTier = saturate(_HectonDamageHologramParams.w);
-                float size = _PointSize * lerp(0.72, 1.85, max(damage01, scanline * 0.45)) * lerp(1.0, 2.0, lowTier);
+                float qualityPressure01 = saturate(_HectonDamageHologramParams.w);
+                float size = _PointSize * lerp(0.72, 1.85, max(damage01, scanline * 0.45)) * lerp(1.0, 2.0, qualityPressure01);
                 float3 localVertex = holoPoint.xyz + input.positionOS.xyz * size;
                 float3 worldPosition = mul(_HectonDamageHologramLocalToWorld, float4(localVertex, 1.0)).xyz;
                 output.positionCS = TransformWorldToHClip(worldPosition);
@@ -110,7 +110,7 @@ Shader "HECTON/HUD/DamageHologramInstanced"
                 float3 baseColor = lerp(damageColor, scanColor, scanline);
                 baseColor = lerp(baseColor, floodColor, saturate(flood01 * _FloodBlueGain));
                 float alpha = _BaseColor.a * _HectonDamageHologramParams.y;
-                alpha *= lerp(0.38 + pulse * 0.32, 0.76 + pulse * 0.24, max(damage01, lowTier));
+                alpha *= lerp(0.38 + pulse * 0.32, 0.76 + pulse * 0.24, max(damage01, qualityPressure01));
                 alpha *= 1.0 - saturate(_Flicker) * (0.25 + pulse * 0.55);
                 output.colorAlpha = float4(baseColor, saturate(alpha));
                 return output;

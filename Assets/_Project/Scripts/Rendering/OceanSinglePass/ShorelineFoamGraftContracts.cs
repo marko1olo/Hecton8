@@ -654,14 +654,20 @@ namespace Hecton8.Rendering.OceanSinglePass
             return buffer != null && buffer.IsValid() && count > 0;
         }
 
-        public static bool TryReadDebugFoam(out NativeArray<ShorelineFoamParamsDTO> foamParams, out int count)
+        public static bool TryReadDebugFoam(out NativeArray<ShorelineFoamParamsDTO>.ReadOnly foamParams, out int count)
         {
             foamParams = default;
             count = s_publishedCount;
             IDataVault vault = GlobalRegistry.DataVault;
-            return vault != null &&
-                   count > 0 &&
-                   TryResolve(vault, in s_paramsHandle, math.min(count, ShorelineFoamConstants.MaxCapacity), out foamParams);
+            if (vault == null ||
+                count <= 0 ||
+                !TryResolve(vault, in s_paramsHandle, math.min(count, ShorelineFoamConstants.MaxCapacity), out NativeArray<ShorelineFoamParamsDTO> mutableFoamParams))
+            {
+                return false;
+            }
+
+            foamParams = mutableFoamParams.AsReadOnly();
+            return true;
         }
 
         public static bool TrySetEditorProfile(float intensity, float falloffMeters, float decayRate, float normalPerturbation)
@@ -673,17 +679,18 @@ namespace Hecton8.Rendering.OceanSinglePass
             return true;
         }
 
-        public static bool TryReadTelemetry(out NativeArray<ShorelineFoamTelemetryEntry> telemetry, out int cursor)
+        public static bool TryReadTelemetry(out NativeArray<ShorelineFoamTelemetryEntry>.ReadOnly telemetry, out int cursor)
         {
             telemetry = default;
             cursor = 0;
             IDataVault vault = GlobalRegistry.DataVault;
             if (vault == null ||
-                !TryResolve(vault, in s_telemetryHandle, ShorelineFoamConstants.TelemetryCapacity, out telemetry))
+                !TryResolve(vault, in s_telemetryHandle, ShorelineFoamConstants.TelemetryCapacity, out NativeArray<ShorelineFoamTelemetryEntry> mutableTelemetry))
             {
                 return false;
             }
 
+            telemetry = mutableTelemetry.AsReadOnly();
             if (TryResolve(vault, in s_telemetryCursorHandle, 1, out NativeArray<int> cursorArray))
                 cursor = cursorArray[0];
             return true;

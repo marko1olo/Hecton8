@@ -5732,3 +5732,26 @@ Static verification:
 - Descriptor scan confirms `VaultGenerationHandle<T>`, `TryEnsureFloraVaultBuffer`, `TryResolveFloraVaultBuffer`, `IsFloraVaultHandle`, `GetGenerationHandle`, `TryResolveHandle`, and `SystemID.Vfx`.
 - Brace/preprocessor counts are balanced: braces `619/619`, `#if/#endif` `8/8`. `git diff --check` passed with CRLF warning only.
 - Build was not relaunched because `VBCSCompiler.exe` is active and full `Hecton8.slnx` remains blocked by the external Visor RenderGraph texture-binding errors recorded after Loop 238.
+
+## 2026-05-22 - Loop 243 - Sargassum Micro-Fauna Vault Descriptor Route
+
+What was wrong:
+- `Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs` retained pointer-bearing `VaultBufferHandle<T>` fields and `.Resolve(vault)` routes across boid, formation, threat, telemetry, leviathan, foveated simulation, and sensory buffers.
+- The nested native ring buffer used the same pointer-handle route for inactive statistical swarm rings.
+
+What was done:
+- Converted all retained Sargassum Vault lanes and `NativeRingBuffer<T>._itemsHandle` to `VaultGenerationHandle<T>`.
+- Added exact descriptor helpers: `EnsureSargassumVaultGenerationHandle`, `TryEnsureSargassumVaultArray`, `ResolveSargassumVaultArray`, `TryResolveSargassumVaultArray`, and `IsSargassumVaultHandle`.
+- Kept mutable `TryResolveHandle` rather than pure `TryReadHandle` because the call sites write scratch, counters, telemetry rings, kill signals, static obstacle cache rows, and foveated back buffers.
+
+Cinematic cheats used:
+- No new fake. Existing Sargassum behavior still uses GPU boid compute, foveated simulation, indirect draw, statistical migration, and shader-fed presentation instead of instantiating per-fish GameObjects or CPU plant/water physics.
+
+Exact microseconds saved:
+- No measured speedup claimed. Runtime hot loops are unchanged; added cost is one O(1) descriptor proof at setup/resolve boundaries. The real gain is relocation safety and removal of stale pointer risk.
+
+Static verification:
+- Focused scan found zero `ResolveVaultBuffer`, `EnsureVaultBufferHandle`, `TryResolveSargassumVaultBuffer`, `TryEnsureSargassumVaultBuffer`, `VaultBufferHandle<`, `GetBufferHandle`, `TryGetBufferHandle`, `.Resolve(`, `ResolvePointer`, `GenerationID`, `TryGetBuffer(`, `GetBuffer<`, or `.ptr` hits in `SargassumMicroFaunaBoids.cs`.
+- Descriptor scan confirms `VaultGenerationHandle<T>`, `EnsureSargassumVaultGenerationHandle`, `TryEnsureSargassumVaultArray`, `ResolveSargassumVaultArray`, `TryResolveSargassumVaultArray`, `IsSargassumVaultHandle`, `GetGenerationHandle`, `TryResolveHandle`, and `SystemID.WorldSargassum`.
+- Brace/preprocessor counts are balanced: braces `593/593`, `#if/#endif` `4/4`. `git diff --check` passed with CRLF warning only.
+- Guarded Core build after the Sargassum pass exposed two SHINOBU-owned Flora descriptor accessor errors and one external Fauna error. The Flora accessor was fixed; the second guarded Core build now reports one external error only: `PredatorCognitionDomain.cs(4840,67)` needs `out NativeArray<HabitatSiegeTargetSnapshot>.ReadOnly`.

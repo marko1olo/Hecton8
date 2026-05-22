@@ -20,34 +20,34 @@ Evidence class: STATIC_SOURCE. No Unity import, compile, Play Mode, profiler, GC
 | `linqSurface` | 0 | 0 |
 | `nativeApiExposureAmbiguousMutable` | 0 | 0 |
 | `nativeApiExposureBuildEditorOnly` | 5 | 4 |
-| `nativeApiExposureBuildPlayerRuntime` | 181 | 82 |
+| `nativeApiExposureBuildPlayerRuntime` | 172 | 75 |
 | `nativeApiExposureBuildQaDevProof` | 8 | 2 |
 | `nativeApiExposureMutableReturn` | 51 | 33 |
-| `nativeApiExposureOutRefMutable` | 143 | 69 |
+| `nativeApiExposureOutRefMutable` | 134 | 62 |
 | `nativeApiRiskCoreVaultOrAllocatorSurface` | 21 | 3 |
 | `nativeApiRiskEditorOrProofSurface` | 13 | 6 |
 | `nativeApiRiskRuntimeAmbiguousMutableView` | 0 | 0 |
-| `nativeApiRiskRuntimeDiagnosticNamedMutableView` | 39 | 27 |
-| `nativeApiRiskRuntimeOutRefMutableView` | 86 | 46 |
+| `nativeApiRiskRuntimeDiagnosticNamedMutableView` | 31 | 21 |
+| `nativeApiRiskRuntimeOutRefMutableView` | 85 | 45 |
 | `nativeApiRiskRuntimeReturnMutableView` | 35 | 23 |
-| `nativeCollectionPublicMutableApiExposure` | 194 | 88 |
+| `nativeCollectionPublicMutableApiExposure` | 185 | 81 |
 | `noAlias` | 2192 | 218 |
 | `packOne` | 0 | 0 |
 | `privateNativeBuildEditorOnly` | 48 | 18 |
-| `privateNativeBuildPlayerRuntime` | 1254 | 204 |
+| `privateNativeBuildPlayerRuntime` | 1255 | 204 |
 | `privateNativeBuildQaDevProof` | 14 | 7 |
 | `privateNativeCollectionBlackBoxTelemetry` | 83 | 59 |
-| `privateNativeCollectionField` | 1316 | 229 |
+| `privateNativeCollectionField` | 1317 | 229 |
 | `privateNativeCollectionOwnerLocalScratch` | 79 | 50 |
 | `privateNativeCollectionStaticQueueLane` | 209 | 58 |
-| `privateNativeCollectionUnclassified` | 917 | 148 |
+| `privateNativeCollectionUnclassified` | 918 | 148 |
 | `privateNativeCollectionVaultAlias` | 28 | 1 |
 | `privateNativeDeclarationAmbiguous` | 0 | 0 |
 | `privateNativeDeclarationField` | 1185 | 181 |
-| `privateNativeDeclarationMethodReturn` | 131 | 58 |
+| `privateNativeDeclarationMethodReturn` | 132 | 58 |
 | `privateNativeRiskEditorOrProofNativeState` | 45 | 16 |
 | `privateNativeRiskJobStructNativeView` | 0 | 0 |
-| `privateNativeRiskMethodReturningNativeCollection` | 131 | 58 |
+| `privateNativeRiskMethodReturningNativeCollection` | 132 | 58 |
 | `privateNativeRiskOwnerLocalRuntimeNativeState` | 776 | 97 |
 | `privateNativeRiskStaticGlobalNativeState` | 117 | 20 |
 | `privateNativeRiskStaticSignalOrEventBridge` | 218 | 62 |
@@ -173,7 +173,7 @@ Evidence class: STATIC_SOURCE. No Unity import, compile, Play Mode, profiler, GC
 | `Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs` | 3 |
 | `Assets/_Project/Scripts/Core/Data/H8StaticDataContracts.cs` | 2 |
 | `Assets/_Project/Scripts/Quest/QuestManager.cs` | 2 |
-| `Assets/_Project/Scripts/Rendering/OceanSinglePass/ShorelineFoamGraftContracts.cs` | 2 |
+| `Assets/_Project/Scripts/World/AbyssalThermalManager.cs` | 2 |
 
 ### nativeApiRiskRuntimeOutRefMutableView
 

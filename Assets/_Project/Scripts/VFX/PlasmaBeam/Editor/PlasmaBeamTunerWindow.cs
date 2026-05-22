@@ -82,10 +82,10 @@ namespace Hecton8.VFX.PlasmaBeam.Editor
             if (!_drawMesh || Event.current == null || Event.current.type != EventType.Repaint)
                 return;
 
-            if (!ShinobuPlasmaBeamRuntime.TryGetEditorMeshSnapshot(out NativeArray<BeamVertexDTO> vertices, out int vertexCount, out int activeBeams))
+            if (!ShinobuPlasmaBeamRuntime.TryGetEditorMeshSnapshot(out NativeArray<BeamVertexDTO>.ReadOnly vertices, out int vertexCount, out int activeBeams))
                 return;
 
-            int safeCount = math.min(vertexCount, vertices.IsCreated ? vertices.Length : 0);
+            int safeCount = math.min(vertexCount, vertices.Length);
             int triangleVertexCount = safeCount - safeCount % 3;
             int maxTriangleVertexCount = math.min(triangleVertexCount, 1536);
             if (maxTriangleVertexCount <= 0 || activeBeams <= 0)

@@ -304,7 +304,7 @@ namespace Hecton8.VFX.PlasmaBeam
         }
 
         public static bool TryGetEditorMeshSnapshot(
-            out NativeArray<BeamVertexDTO> vertices,
+            out NativeArray<BeamVertexDTO>.ReadOnly vertices,
             out int vertexCount,
             out int activeBeams)
         {
@@ -328,14 +328,15 @@ namespace Hecton8.VFX.PlasmaBeam
                     in active._verticesHandle,
                     BufferID.ShinobuPlasmaBeamVertices,
                     MaxVertexCount,
-                    out vertices))
+                    out NativeArray<BeamVertexDTO> mutableVertices))
             {
                 return false;
             }
 
+            vertices = mutableVertices.AsReadOnly();
             vertexCount = active._lastVertexCount;
             activeBeams = active._lastActiveBeamCount;
-            return vertices.IsCreated && vertexCount > 0;
+            return vertices.Length > 0 && vertexCount > 0;
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -388,7 +389,7 @@ namespace Hecton8.VFX.PlasmaBeam
             _shutdown = false;
             _vault = GlobalRegistry.DataVault;
             TryRegisterHotSwapListener();
-            SignalBus<PlasmaBeamAcousticEchoTap>.Configure(MaxBeamCount, maxFrameSignals: MaxBeamCount, lowTierFrameSignals: 4, laneHash: 0x504C4153u);
+            SignalBus<PlasmaBeamAcousticEchoTap>.Configure(MaxBeamCount, maxFrameSignals: MaxBeamCount, lowTierFrameSignals: MaxBeamCount, laneHash: 0x504C4153u);
             SignalBus<PlasmaBeamAcousticEchoTap>.EnsureInitialized();
             EnsureGraphicsResources(allowAllocation: true);
             RegisterDispatcherPhases();

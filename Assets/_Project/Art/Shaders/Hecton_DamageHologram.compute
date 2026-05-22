@@ -5,7 +5,7 @@ AppendStructuredBuffer<float4> _HectonDamageHologramPoints;
 StructuredBuffer<float> _HectonDamageRoomWaterLevels;
 
 float4 _HectonHullDents[16];
-float4 _HectonDamageHologramParams; // x=time, y=scanlineWidth, z=maxPoints, w=lowTier
+float4 _HectonDamageHologramParams; // x=time, y=scanlineWidth, z=maxPoints, w=qualityPressure01
 float4 _HectonDamageHologramBounds; // x=minX, y=maxX, z=minY, w=maxY
 int _HectonDamageProxyVertexCount;
 int _HectonDamageRoomCount;
