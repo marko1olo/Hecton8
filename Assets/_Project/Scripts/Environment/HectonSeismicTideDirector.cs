@@ -750,7 +750,7 @@ namespace Hecton8.Environment
             return OpenOrAcquireVaultBuffer(vault, ref handle, bufferId, requiredLength, options, out buffer);
         }
 
-        internal static bool OpenOrAcquireVaultBuffer<T>(
+        private static bool OpenOrAcquireVaultBuffer<T>(
             IDataVault vault,
             ref VaultGenerationHandle<T> handle,
             BufferID bufferId,
@@ -802,7 +802,7 @@ namespace Hecton8.Environment
             return TryOpenVaultBuffer(vault, in handle, bufferId, requiredLength, out buffer);
         }
 
-        internal static bool TryOpenVaultBuffer<T>(
+        private static bool TryOpenVaultBuffer<T>(
             IDataVault vault,
             in VaultGenerationHandle<T> handle,
             BufferID bufferId,
@@ -823,7 +823,7 @@ namespace Hecton8.Environment
             return true;
         }
 
-        internal static unsafe T* OpenVaultPointer<T>(
+        private static unsafe T* OpenVaultPointer<T>(
             IDataVault vault,
             in VaultGenerationHandle<T> handle,
             BufferID bufferId,
@@ -836,7 +836,7 @@ namespace Hecton8.Environment
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static bool IsMatchingVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID bufferId)
+        private static bool IsMatchingVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID bufferId)
             where T : struct
         {
             return handle.BufferID == unchecked((uint)(int)bufferId) && handle.Generation != 0u;

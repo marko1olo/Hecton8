@@ -605,3 +605,85 @@ Rejected:
 - Mutable editor tuning buffers.
 - Managed editor mirrors.
 - Solver, force packet, material CSV, physics apply, or DTO layout rewrites.
+
+## 2026-05-22 Construction Telemetry Read Accessor Update
+
+Evidence class: STATIC_SOURCE / STATIC_TOOL only. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+Selected route:
+
+- `ModularBaseConstructionValidator.TryReadTelemetryRing` is a read-accessor-shaped diagnostic method and now publishes only a read-only ring alias.
+- `PlayerBuilder` writes telemetry through `EnsureTelemetryRing` and `WriteTelemetry`, which remain explicit writer/acquire methods.
+
+Patch:
+
+- `TryReadTelemetryRing` returns `NativeArray<ConstructionTelemetryEntry>.ReadOnly`.
+- The owner helper resolves a mutable local only to publish `.AsReadOnly()`.
+- The player builder write path no longer writes through a `TryRead*` method.
+
+Updated static counts from `Docs/Reports/PROJECT_AUDIT_polish_after_construction_telemetry_readonly.json`:
+
+- `nativeCollectionPublicMutableApiExposure`: 127, down from 128.
+- `nativeApiExposureOutRefMutable`: 96, down from 97.
+- `nativeApiExposureBuildQaDevProof`: 7, down from 8.
+- `nativeApiRiskEditorOrProofSurface`: 12, down from 13.
+
+Rejected:
+
+- Narrowing `EnsureTelemetryRing`, bounds, or occupancy writer/acquire APIs.
+- Changing telemetry DTO layout or dump format.
+- Moving construction validation write ownership in this pass.
+
+## 2026-05-22 Seismic Vault Helper Scope Update
+
+Evidence class: STATIC_SOURCE / STATIC_TOOL only. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+Selected route:
+
+- `HectonSeismicTideDirector.TryOpenVaultBuffer`, `OpenVaultPointer`, handle matching, and the ref-handle acquire overload are implementation helpers with no external file callers.
+- `OpenOrAcquireVaultBuffer(vault, bufferId, ...)` and `TryOpenExistingVaultBuffer` remain `internal` because same-file top-level editor/proof classes call them.
+
+Patch:
+
+- Owner-internal helpers are now `private static`.
+- Same-file editor/proof entry methods remain accessible without exposing the lower-level helpers.
+
+Updated static counts from `Docs/Reports/PROJECT_AUDIT_polish_after_seismic_helper_scope.json`:
+
+- `nativeCollectionPublicMutableApiExposure`: 125, down from 127.
+- `nativeApiExposureBuildPlayerRuntime`: 113, down from 115.
+- `nativeApiExposureOutRefMutable`: 94, down from 96.
+- `nativeApiRiskRuntimeOutRefMutableView`: 61, down from 63.
+
+Rejected:
+
+- Changing writer/acquire semantics to read-only aliases.
+- Making same-file top-level editor classes unable to call their documented entry methods.
+- Seismic DTO layout or Vault ownership changes.
+
+## 2026-05-22 Base Module Catalog Byte Hydration Update
+
+Evidence class: STATIC_SOURCE / STATIC_TOOL only. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+Selected route:
+
+- `BaseModuleCatalogRuntime.TryLoadCatalogBytes` and `TryStartCatalogByteLoad` had no first-party call sites in focused search.
+- Both APIs publish file-hydration bytes; the mutable target is only required inside the loader while filling the Vault byte lane.
+
+Patch:
+
+- Byte-load outputs now return `NativeArray<byte>.ReadOnly`.
+- Synchronous and task-backed read paths keep a mutable owner-local `targetBytes` for the file read, then expose `.AsReadOnly()`.
+
+Updated static counts from `Docs/Reports/PROJECT_AUDIT_polish_after_base_module_catalog_bytes_readonly.json`:
+
+- `nativeCollectionPublicMutableApiExposure`: 123, down from 125.
+- `nativeApiExposureBuildPlayerRuntime`: 111, down from 113.
+- `nativeApiExposureOutRefMutable`: 92, down from 94.
+- `nativeApiRiskRuntimeOutRefMutableView`: 59, down from 61.
+
+Rejected:
+
+- Hydration job signature changes.
+- Catalog binary format or DTO layout changes.
+- Managed byte mirrors.

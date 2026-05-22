@@ -360,7 +360,7 @@ namespace Hecton8.Construction
             return job.Schedule(dependency);
         }
 
-        public static bool TryLoadCatalogBytes(IDataVault vault, string path, out NativeArray<byte> bytes, out int byteLength)
+        public static bool TryLoadCatalogBytes(IDataVault vault, string path, out NativeArray<byte>.ReadOnly bytes, out int byteLength)
         {
             bytes = default;
             byteLength = 0;
@@ -377,19 +377,20 @@ namespace Hecton8.Construction
                     BufferID.BaseModuleCatalogHydrationBytes,
                     (int)length,
                     NativeArrayOptions.UninitializedMemory,
-                    out bytes) ||
-                bytes.Length < length)
+                    out NativeArray<byte> targetBytes) ||
+                targetBytes.Length < length)
                 return false;
 
-            int readLength = ReadCatalogBytesIntoNativeArray(path, bytes, (int)length);
+            int readLength = ReadCatalogBytesIntoNativeArray(path, targetBytes, (int)length);
             byteLength = math.max(0, readLength);
+            bytes = targetBytes.AsReadOnly();
             return readLength == (int)length;
         }
 
         public static bool TryStartCatalogByteLoad(
             IDataVault vault,
             string path,
-            out NativeArray<byte> bytes,
+            out NativeArray<byte>.ReadOnly bytes,
             out Task<int> loadTask)
         {
             bytes = default;
@@ -407,14 +408,14 @@ namespace Hecton8.Construction
                     BufferID.BaseModuleCatalogHydrationBytes,
                     (int)length,
                     NativeArrayOptions.UninitializedMemory,
-                    out bytes) ||
-                bytes.Length < length)
+                    out NativeArray<byte> targetBytes) ||
+                targetBytes.Length < length)
                 return false;
 
             int expectedLength = (int)length;
             string loadPath = path;
-            NativeArray<byte> targetBytes = bytes;
             loadTask = Task.Run(() => ReadCatalogBytesIntoNativeArray(loadPath, targetBytes, expectedLength));
+            bytes = targetBytes.AsReadOnly();
             return true;
         }
 

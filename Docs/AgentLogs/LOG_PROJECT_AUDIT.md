@@ -996,3 +996,39 @@ Cinematic Cheats used: No extra buoyancy simulation, managed editor cache, or ph
 Exact Microseconds saved: 0 us measured. Static outcome: broad audit dropped `nativeCollectionPublicMutableApiExposure` from `132` to `128`, `nativeApiExposureBuildPlayerRuntime` from `119` to `115`, `nativeApiExposureOutRefMutable` from `101` to `97`, `nativeApiRiskRuntimeDiagnosticNamedMutableView` from `17` to `14`, and `nativeApiRiskRuntimeOutRefMutableView` from `64` to `63`.
 
 Evidence: Focused scan found read-only buoyancy editor route signatures, owner apply methods, and no direct editor native writes. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_after_buoyancy_editor_readonly.json` returned `PASS_WITH_WARNINGS` with `nativeCollectionPublicMutableApiExposure=128`, `nativeApiExposureBuildPlayerRuntime=115`, `nativeApiExposureOutRefMutable=97`, `nativeApiRiskRuntimeDiagnosticNamedMutableView=14`, and `nativeApiRiskRuntimeOutRefMutableView=63`. `git diff --check` on touched files reported only LF/CRLF normalization warnings. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Construction Telemetry Read Accessor Split
+
+What was wrong: `ModularBaseConstructionValidator.TryReadTelemetryRing` returned a mutable native telemetry ring from a read-accessor-shaped API. `PlayerBuilder` wrote telemetry through that route, so the name and authority contract disagreed.
+
+What was done: Converted `TryReadTelemetryRing` to `NativeArray<ConstructionTelemetryEntry>.ReadOnly`. Updated `PlayerBuilder` to open the explicit `EnsureTelemetryRing` writer/acquire route before `WriteTelemetry`.
+
+Cinematic Cheats used: No construction validation simulation or managed telemetry copy was added. The system still writes one fixed-size black-box ring row as a diagnostic proxy.
+
+Exact Microseconds saved: 0 us measured. Static outcome: broad audit dropped `nativeCollectionPublicMutableApiExposure` from `128` to `127`, `nativeApiExposureOutRefMutable` from `97` to `96`, `nativeApiExposureBuildQaDevProof` from `8` to `7`, and `nativeApiRiskEditorOrProofSurface` from `13` to `12`.
+
+Evidence: Focused scan found read-only `TryReadTelemetryRing` and `PlayerBuilder` routed through `EnsureTelemetryRing` before `WriteTelemetry`. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_after_construction_telemetry_readonly.json` returned `PASS_WITH_WARNINGS` with `nativeCollectionPublicMutableApiExposure=127`, `nativeApiExposureOutRefMutable=96`, and `nativeApiExposureBuildQaDevProof=7`. `git diff --check` on touched files reported only LF/CRLF normalization warnings. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Seismic Vault Helper Scope Narrowing
+
+What was wrong: `HectonSeismicTideDirector` exposed generic Vault implementation helpers as `internal static`, creating unnecessary mutable native API surface for same-file implementation details.
+
+What was done: Made the implementation helpers private while preserving the two same-file editor/proof entry methods that are called by top-level editor classes in the file.
+
+Cinematic Cheats used: No simulation changed. This is a compile-wall/authority surface reduction; seismic visual fakes and shader/scalar outputs remain on the existing paths.
+
+Exact Microseconds saved: 0 us measured. Static outcome: broad audit dropped `nativeCollectionPublicMutableApiExposure` from `127` to `125`, `nativeApiExposureBuildPlayerRuntime` from `115` to `113`, `nativeApiExposureOutRefMutable` from `96` to `94`, and `nativeApiRiskRuntimeOutRefMutableView` from `63` to `61`.
+
+Evidence: Focused scan found no external references to the private seismic helpers. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_after_seismic_helper_scope.json` returned `PASS_WITH_WARNINGS` with `nativeCollectionPublicMutableApiExposure=125`, `nativeApiExposureBuildPlayerRuntime=113`, `nativeApiExposureOutRefMutable=94`, and `nativeApiRiskRuntimeOutRefMutableView=61`. `git diff --check` on the touched file reported only LF/CRLF normalization warnings. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Base Module Catalog Byte Hydration Read-Only Outputs
+
+What was wrong: `BaseModuleCatalogRuntime.TryLoadCatalogBytes` and `TryStartCatalogByteLoad` exposed the raw catalog byte lane as mutable native memory, even though these APIs are cold hydration/read handoffs and no first-party callers require mutation authority.
+
+What was done: Returned `NativeArray<byte>.ReadOnly` from both byte-load APIs. The loader still writes into an owner-local mutable `targetBytes` buffer for file reads, then publishes only a read-only alias.
+
+Cinematic Cheats used: No catalog object graph or managed byte mirror was added. Hydration remains raw binary bytes feeding a Burst/table pipeline.
+
+Exact Microseconds saved: 0 us measured. Static outcome: broad audit dropped `nativeCollectionPublicMutableApiExposure` from `125` to `123`, `nativeApiExposureBuildPlayerRuntime` from `113` to `111`, `nativeApiExposureOutRefMutable` from `94` to `92`, and `nativeApiRiskRuntimeOutRefMutableView` from `61` to `59`.
+
+Evidence: Focused scan found no first-party call sites for the changed byte-load APIs. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_after_base_module_catalog_bytes_readonly.json` returned `PASS_WITH_WARNINGS` with `nativeCollectionPublicMutableApiExposure=123`, `nativeApiExposureBuildPlayerRuntime=111`, `nativeApiExposureOutRefMutable=92`, and `nativeApiRiskRuntimeOutRefMutableView=59`. `git diff --check` on the touched file reported only LF/CRLF normalization warnings. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
