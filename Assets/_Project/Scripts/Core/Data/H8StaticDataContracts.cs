@@ -691,7 +691,7 @@ namespace Hecton8.Core.Data
             };
         }
 
-        public static bool EnsureTelemetryVaultBuffersCold(
+        private static bool EnsureTelemetryVaultBuffersCold(
             IDataVault vault,
             out NativeArray<BTreeTelemetryEntry> ring,
             out NativeArray<int> cursor,
@@ -733,7 +733,7 @@ namespace Hecton8.Core.Data
                    accumulator.Length > 0;
         }
 
-        public static bool TryResolveTelemetryVaultBuffers(
+        private static bool TryResolveTelemetryVaultBuffers(
             IDataVault vault,
             out NativeArray<BTreeTelemetryEntry> ring,
             out NativeArray<int> cursor,
@@ -794,7 +794,7 @@ namespace Hecton8.Core.Data
             return job.Schedule(dependency);
         }
 
-        public static bool EnsureTuningProfileVaultBufferCold(IDataVault vault, out NativeArray<BTreeTuningProfileDTO> profiles)
+        private static bool EnsureTuningProfileVaultBufferCold(IDataVault vault, out NativeArray<BTreeTuningProfileDTO> profiles)
         {
             profiles = default;
             if (vault == null)

@@ -3529,12 +3529,13 @@ namespace Hecton8.SaveSystem
             NativeArray<byte> rawBuffer,
             in SaveFileHeader header,
             ref AsyncWriteManager.ReadOnlyMapping mapping,
+            NativeArray<byte> voxelDeltaSnapshotDestination,
             out SaveData data,
             out QuestSaveHeader packedQuestHeader,
             out uint[] packedQuestStateWords,
             out PersistentWorldDeltaRecord[] persistentWorldDeltas,
             out EcosystemSectorSaveRecord[] ecosystemSectorStates,
-            out NativeArray<byte> voxelDeltaSnapshot,
+            out int voxelDeltaSnapshotBytes,
             out SaveMetadata metadata,
             out ulong payloadHash64,
             out int rawPayloadLength,
@@ -3547,7 +3548,7 @@ namespace Hecton8.SaveSystem
             packedQuestStateWords = null;
             persistentWorldDeltas = null;
             ecosystemSectorStates = null;
-            voxelDeltaSnapshot = default;
+            voxelDeltaSnapshotBytes = 0;
             metadata = null;
             payloadHash64 = 0UL;
             rawPayloadLength = 0;
@@ -3705,13 +3706,20 @@ namespace Hecton8.SaveSystem
             int voxelByteLength = math.max(0, metadataRawLength - payloadCursor);
             if (voxelByteLength > 0)
             {
-                voxelDeltaSnapshot = new NativeArray<byte>(voxelByteLength, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
-                void* voxelDestinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(voxelDeltaSnapshot);
-                if (!UnsafeMemoryCopyGuard.SafeCopy(voxelDestinationPtr, voxelDeltaSnapshot.Length, AddByteOffset(rawPtr, payloadCursor), voxelByteLength))
+                if (!voxelDeltaSnapshotDestination.IsCreated || voxelDeltaSnapshotDestination.Length < voxelByteLength)
+                {
+                    error = "Indexed voxel delta snapshot destination is too small.";
+                    return false;
+                }
+
+                void* voxelDestinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(voxelDeltaSnapshotDestination);
+                if (!UnsafeMemoryCopyGuard.SafeCopy(voxelDestinationPtr, voxelDeltaSnapshotDestination.Length, AddByteOffset(rawPtr, payloadCursor), voxelByteLength))
                 {
                     error = "Indexed voxel delta snapshot copy exceeded destination bounds.";
                     return false;
                 }
+
+                voxelDeltaSnapshotBytes = voxelByteLength;
             }
 
             NativeList<PersistentWorldDeltaRecord> aggregatedWorldDeltas = new NativeList<PersistentWorldDeltaRecord>(256, Allocator.Temp);
@@ -5754,17 +5762,187 @@ namespace Hecton8.SaveSystem
             return true;
         }
 
+        internal static bool TryMeasureLoadVoxelDeltaSnapshotByteLength(
+            string absolutePath,
+            NativeArray<byte> rawBuffer,
+            NativeArray<byte> compressedBuffer,
+            out int voxelDeltaSnapshotByteLength,
+            out string error)
+        {
+            voxelDeltaSnapshotByteLength = 0;
+            error = string.Empty;
+
+            if (TryReadValidatedHeader(absolutePath, out AsyncWriteManager.ReadOnlyMapping v8Mapping, out SaveFileHeader v8Header, out _, out string headerError))
+            {
+                try
+                {
+                    if ((v8Header.Flags & FlagIndexedSectorBlocks) != 0 && v8Header.Version >= IndexedBlockStorageVersion)
+                    {
+                        return TryMeasureIndexedV8VoxelDeltaSnapshotByteLength(
+                            in v8Header,
+                            ref v8Mapping,
+                            rawBuffer,
+                            out voxelDeltaSnapshotByteLength,
+                            out error);
+                    }
+                }
+                finally
+                {
+                    AsyncWriteManager.CloseReadOnlyMapping(ref v8Mapping);
+                }
+            }
+            else if (!string.IsNullOrEmpty(headerError))
+            {
+                error = headerError;
+                return false;
+            }
+
+            if (!TryReadPayload(absolutePath, rawBuffer, compressedBuffer, out SaveFileHeader header, out _, out byte* rawPtr, out int rawPayloadLength, out string readError))
+            {
+                error = readError;
+                return false;
+            }
+
+            return TryResolveVoxelDeltaSnapshotByteRange(
+                rawPtr,
+                rawPayloadLength,
+                header,
+                out _,
+                out voxelDeltaSnapshotByteLength,
+                out error);
+        }
+
+        private static bool TryMeasureIndexedV8VoxelDeltaSnapshotByteLength(
+            in SaveFileHeader header,
+            ref AsyncWriteManager.ReadOnlyMapping mapping,
+            NativeArray<byte> rawBuffer,
+            out int voxelDeltaSnapshotByteLength,
+            out string error)
+        {
+            voxelDeltaSnapshotByteLength = 0;
+            error = string.Empty;
+
+            if (!TryReadIndexedDirectory(in header, ref mapping, out IndexedSectorDirectoryHeader directoryHeader, out SectorEntry[] sectorEntries, out error))
+                return false;
+
+            if (!TryReadIndexedCompressedBlock(ref mapping, header.PlayerOffset, directoryHeader.MetadataCompressedSize, directoryHeader.MetadataDecompressedSize, rawBuffer, out int metadataRawLength, out error))
+                return false;
+
+            byte* rawPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(rawBuffer);
+            ulong metadataHash64 = Hash64(rawPtr, metadataRawLength);
+            int headerSizeBytes = ResolveExpectedHeaderSize(header.Version);
+            ulong directoryHash64 = header.PlayerOffset > headerSizeBytes
+                ? Hash64((byte*)mapping.View + headerSizeBytes, (int)(header.PlayerOffset - headerSizeBytes))
+                : 0UL;
+            ulong payloadHash64 = metadataHash64 ^ directoryHash64;
+            if (payloadHash64 != header.HashPayload64)
+            {
+                error = "Indexed aggregate payload checksum mismatch.";
+                return false;
+            }
+
+            if (header.Version >= HeaderChecksumVersion && !IsIndexedChecksumRootValid(unchecked((uint)metadataHash64), sectorEntries, header.Checksum))
+            {
+                error = "Indexed checksum-chain root mismatch.";
+                return false;
+            }
+
+            if (!SaveDataMigration_AupV8.TryReadPayloadPrefix(rawPtr, metadataRawLength, header.Version, out PayloadPrefixInfo prefix, out error))
+                return false;
+
+            int payloadCursor = prefix.PrefixSizeBytes;
+            if (!IsByteRangeWithin(payloadCursor, prefix.SceneNameByteLength, metadataRawLength))
+            {
+                error = "Indexed metadata scene-name range is invalid.";
+                return false;
+            }
+
+            payloadCursor += prefix.SceneNameByteLength;
+            if (!IsByteRangeWithin(payloadCursor, prefix.GameVersionByteLength, metadataRawLength))
+            {
+                error = "Indexed metadata game-version range is invalid.";
+                return false;
+            }
+
+            payloadCursor += prefix.GameVersionByteLength;
+            int saveDataLength = checked((int)prefix.SaveDataByteLength);
+            if (!IsByteRangeWithin(payloadCursor, saveDataLength, metadataRawLength))
+            {
+                error = "Indexed metadata save-data range is invalid.";
+                return false;
+            }
+
+            payloadCursor += saveDataLength;
+            if (header.DeltaCount > 0)
+            {
+                if (!IsByteRangeWithin(payloadCursor, PackedQuestStateSectionHeaderSize, metadataRawLength))
+                {
+                    error = "Indexed packed quest section header is truncated.";
+                    return false;
+                }
+
+                QuestSaveHeader packedQuestHeader = UnsafeUtility.ReadArrayElement<QuestSaveHeader>(AddByteOffset(rawPtr, payloadCursor), 0);
+                if (packedQuestHeader.Magic != QuestSaveHeader.HeaderMagic)
+                {
+                    error = "Indexed packed quest section magic mismatch.";
+                    return false;
+                }
+
+                if (packedQuestHeader.FlagCount != header.DeltaCount)
+                {
+                    error = "Indexed packed quest section count mismatch.";
+                    return false;
+                }
+
+                int packedQuestBytes = checked((int)packedQuestHeader.FlagCount) * UnsafeUtility.SizeOf<uint>();
+                payloadCursor += PackedQuestStateSectionHeaderSize;
+                if (!IsByteRangeWithin(payloadCursor, packedQuestBytes, metadataRawLength))
+                {
+                    error = "Indexed packed quest section exceeds the metadata payload bounds.";
+                    return false;
+                }
+
+                payloadCursor += packedQuestBytes;
+            }
+
+            int ecosystemHeaderSize = ResolveEcosystemSectionHeaderSize(header.Version);
+            if (!IsByteRangeWithin(payloadCursor, ecosystemHeaderSize, metadataRawLength))
+            {
+                error = "Indexed ecosystem section header is truncated.";
+                return false;
+            }
+
+            EcosystemSectionHeader ecosystemHeader = ReadEcosystemSectionHeader(AddByteOffset(rawPtr, payloadCursor), ecosystemHeaderSize);
+            if (!TryConvertSectionCount(ecosystemHeader.RecordCount, out int ecosystemRecordCount) ||
+                !TryComputeEcosystemSectionLength(ecosystemRecordCount, header.Version, out int ecosystemSectionLength))
+            {
+                error = "Indexed ecosystem section header exceeds supported bounds.";
+                return false;
+            }
+
+            if (!IsByteRangeWithin(payloadCursor, ecosystemSectionLength, metadataRawLength))
+            {
+                error = "Indexed ecosystem section exceeds the metadata payload bounds.";
+                return false;
+            }
+
+            payloadCursor += ecosystemSectionLength;
+            voxelDeltaSnapshotByteLength = math.max(0, metadataRawLength - payloadCursor);
+            return true;
+        }
+
         internal static bool TryLoadSaveData(
             string absolutePath,
             string slotName,
             NativeArray<byte> rawBuffer,
             NativeArray<byte> compressedBuffer,
+            NativeArray<byte> voxelDeltaSnapshotDestination,
             out SaveData data,
             out QuestSaveHeader packedQuestHeader,
             out uint[] packedQuestStateWords,
             out PersistentWorldDeltaRecord[] persistentWorldDeltas,
             out EcosystemSectorSaveRecord[] ecosystemSectorStates,
-            out NativeArray<byte> voxelDeltaSnapshot,
+            out int voxelDeltaSnapshotBytes,
             out SaveMetadata metadata,
             out ulong payloadHash64,
             out int rawPayloadLength,
@@ -5777,7 +5955,7 @@ namespace Hecton8.SaveSystem
             packedQuestStateWords = null;
             persistentWorldDeltas = null;
             ecosystemSectorStates = null;
-            voxelDeltaSnapshot = default;
+            voxelDeltaSnapshotBytes = 0;
             metadata = null;
             payloadHash64 = 0UL;
             rawPayloadLength = 0;
@@ -5796,12 +5974,13 @@ namespace Hecton8.SaveSystem
                             rawBuffer,
                             in v8Header,
                             ref v8Mapping,
+                            voxelDeltaSnapshotDestination,
                             out data,
                             out packedQuestHeader,
                             out packedQuestStateWords,
                             out persistentWorldDeltas,
                             out ecosystemSectorStates,
-                            out voxelDeltaSnapshot,
+                            out voxelDeltaSnapshotBytes,
                             out metadata,
                             out payloadHash64,
                             out rawPayloadLength,
@@ -5888,7 +6067,8 @@ namespace Hecton8.SaveSystem
                     rawPtr,
                     rawPayloadLength,
                     header,
-                    out voxelDeltaSnapshot,
+                    voxelDeltaSnapshotDestination,
+                    out voxelDeltaSnapshotBytes,
                     out error))
             {
                 return false;
@@ -7097,18 +7277,22 @@ namespace Hecton8.SaveSystem
             return true;
         }
 
-        private static bool TryReadVoxelDeltaSnapshot(
+        private static bool TryResolveVoxelDeltaSnapshotByteRange(
             byte* rawPtr,
             int rawPayloadLength,
             SaveFileHeader header,
-            out NativeArray<byte> voxelDeltaSnapshot,
+            out int voxelSectionOffset,
+            out int voxelByteLength,
             out string error)
         {
-            voxelDeltaSnapshot = default;
+            voxelSectionOffset = 0;
+            voxelByteLength = 0;
+            error = string.Empty;
+
             if (!TryResolvePersistentWorldSectionLength(rawPtr, rawPayloadLength, header, out int entitySectionOffset, out int entitySectionLength, out error))
                 return false;
 
-            int voxelSectionOffset = entitySectionOffset + entitySectionLength;
+            voxelSectionOffset = entitySectionOffset + entitySectionLength;
             if (header.Version >= EcosystemSectionVersion)
             {
                 if (!TryResolveEcosystemSectionLength(
@@ -7133,18 +7317,39 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
-            int voxelByteLength = rawPayloadLength - voxelSectionOffset;
+            voxelByteLength = rawPayloadLength - voxelSectionOffset;
+            return true;
+        }
+
+        private static bool TryReadVoxelDeltaSnapshot(
+            byte* rawPtr,
+            int rawPayloadLength,
+            SaveFileHeader header,
+            NativeArray<byte> voxelDeltaSnapshotDestination,
+            out int voxelDeltaSnapshotBytes,
+            out string error)
+        {
+            voxelDeltaSnapshotBytes = 0;
+            if (!TryResolveVoxelDeltaSnapshotByteRange(rawPtr, rawPayloadLength, header, out int voxelSectionOffset, out int voxelByteLength, out error))
+                return false;
+
             if (voxelByteLength <= 0)
                 return true;
 
-            voxelDeltaSnapshot = new NativeArray<byte>(voxelByteLength, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
-            void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(voxelDeltaSnapshot);
-            if (!UnsafeMemoryCopyGuard.SafeCopy(destinationPtr, voxelDeltaSnapshot.Length, AddByteOffset(rawPtr, voxelSectionOffset), voxelByteLength))
+            if (!voxelDeltaSnapshotDestination.IsCreated || voxelDeltaSnapshotDestination.Length < voxelByteLength)
+            {
+                error = "Voxel delta snapshot destination is too small.";
+                return false;
+            }
+
+            void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(voxelDeltaSnapshotDestination);
+            if (!UnsafeMemoryCopyGuard.SafeCopy(destinationPtr, voxelDeltaSnapshotDestination.Length, AddByteOffset(rawPtr, voxelSectionOffset), voxelByteLength))
             {
                 error = "Voxel delta payload copy exceeded destination bounds.";
                 return false;
             }
 
+            voxelDeltaSnapshotBytes = voxelByteLength;
             return true;
         }
 

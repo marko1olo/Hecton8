@@ -1702,3 +1702,27 @@ Cinematic Cheats used: Preserved voxel passability plus AABB obstacle stamping a
 Exact Microseconds saved: 0 us measured. Static API risk moved `nativeCollectionPublicMutableApiExposure=39->38`, `nativeApiExposureBuildPlayerRuntime=38->37`, `nativeApiExposureOutRefMutable=23->22`, and `nativeApiRiskRuntimeOutRefMutableView=5->4`.
 
 Evidence: `Docs/Reports/PROJECT_AUDIT_polish_after_navgrid_schedule_owner_route.json`; `python Tools\test_polish_mandate_static_audit.py` passed 12 tests; focused scan found no external `TryPrepareBuild` caller and no nav-grid mutable local buffers in `HectonVoxelEngine`; targeted `git diff --check` reported LF/CRLF warnings only. Batch re-check found no `<AGENT_PROMPT id="PROJECT_AUDIT">` block. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Mod Mock Writer Facade Removal
+
+What was wrong: `MockModQueue.AsParallelWriter` was a public no-call writer-return facade and the only remaining QA/dev proof mutable native API row.
+
+What was done: Removed the stale writer facade; the mock queue still supports cold attach/readiness/dispose.
+
+Cinematic Cheats used: Not visual. This keeps mod command proof ingestion on bounded native quarantine queues without exposing a mock producer writer.
+
+Exact Microseconds saved: 0 us measured. Static API risk moved `nativeCollectionPublicMutableApiExposure=38->37`, `nativeApiExposureBuildQaDevProof=1->0`, `nativeApiExposureMutableReturn=16->15`, and `nativeApiRiskEditorOrProofSurface=1->0`.
+
+Evidence: `Docs/Reports/PROJECT_AUDIT_polish_after_mod_mock_writer_removal.json`; `python Tools\test_polish_mandate_static_audit.py` passed 12 tests; focused scan found no `NativeQueue<FutureCommandEnvelope>.ParallelWriter AsParallelWriter` route; targeted `git diff --check` reported LF/CRLF warnings only. Batch re-check found no `<AGENT_PROMPT id="PROJECT_AUDIT">` block. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Static Data Helper Scope
+
+What was wrong: Three public static-data helper routes exposed mutable `out NativeArray` Vault buffers and had no first-party callers.
+
+What was done: Narrowed `EnsureTelemetryVaultBuffersCold`, `TryResolveTelemetryVaultBuffers`, and `EnsureTuningProfileVaultBufferCold` to private; active DTO math and telemetry flush scheduling remain public.
+
+Cinematic Cheats used: Not visual. This keeps static-data telemetry as compact native B-tree proof data without exporting raw mutable buffers.
+
+Exact Microseconds saved: 0 us measured. Static API risk moved `nativeCollectionPublicMutableApiExposure=37->34`, `nativeApiExposureBuildPlayerRuntime=37->34`, `nativeApiExposureOutRefMutable=22->19`, and `nativeApiRiskRuntimeDiagnosticNamedMutableView=3->1`.
+
+Evidence: `Docs/Reports/PROJECT_AUDIT_polish_after_static_data_helper_scope.json`; `python Tools\test_polish_mandate_static_audit.py` passed 12 tests; focused scan shows only private declarations for the three helper routes; targeted `git diff --check` reported LF/CRLF warnings only. Batch re-check found no `<AGENT_PROMPT id="PROJECT_AUDIT">` block. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
