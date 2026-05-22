@@ -2760,7 +2760,7 @@ namespace Hecton8.Audio
             float safeDelta = math.max(0.0001f, SanitizeFinite(deltaTime, 1f / 60f));
             bool hasVoxelSdf = TrySnapshotAcousticSdfPayload(
                 new Vector3(_virtualListenerSdfProbePosition.x, _virtualListenerSdfProbePosition.y, _virtualListenerSdfProbePosition.z),
-                out NativeArray<byte> sdfVoxels,
+                out NativeArray<byte>.ReadOnly sdfVoxels,
                 out int3 sdfDimensions,
                 out float3 sdfOrigin,
                 out float3 sdfCellSize,
@@ -2804,7 +2804,7 @@ namespace Hecton8.Audio
 
         private bool TrySnapshotAcousticSdfPayload(
             Vector3 targetRuntimePosition,
-            out NativeArray<byte> sdfVoxels,
+            out NativeArray<byte>.ReadOnly sdfVoxels,
             out int3 sdfDimensions,
             out float3 sdfOrigin,
             out float3 sdfCellSize,
@@ -2818,7 +2818,7 @@ namespace Hecton8.Audio
 
             if (!HectonVoxelVolume.TryGetClosestPublishedSonarSdfPayload(
                     targetRuntimePosition,
-                    out NativeArray<byte> publishedSdf,
+                    out NativeArray<byte>.ReadOnly publishedSdf,
                     out _,
                     out Vector3Int publishedDimensions,
                     out Vector3 publishedOrigin,
@@ -2837,7 +2837,7 @@ namespace Hecton8.Audio
                 return false;
             }
 
-            NativeArray<byte> resolvedSdf = publishedSdf;
+            NativeArray<byte>.ReadOnly resolvedSdf = publishedSdf;
             IDataVault vault = _dataVault;
             if (TryOpenBorrowedAudioVaultBuffer(
                     vault,
@@ -2847,7 +2847,7 @@ namespace Hecton8.Audio
                     expectedLength,
                     out NativeArray<byte> vaultSdfTexture3D))
             {
-                resolvedSdf = vaultSdfTexture3D;
+                resolvedSdf = vaultSdfTexture3D.AsReadOnly();
             }
 
             float3 resolvedOrigin = new float3(publishedOrigin.x, publishedOrigin.y, publishedOrigin.z);

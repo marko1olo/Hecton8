@@ -184,8 +184,8 @@ namespace Hecton8.UI
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public struct SonarRaymarchJob : IJobParallelFor
     {
-        [ReadOnly, NoAlias] public NativeArray<byte> EncodedSdf;
-        [ReadOnly, NoAlias] public NativeArray<byte> MaterialIds;
+        [ReadOnly, NoAlias] public NativeArray<byte>.ReadOnly EncodedSdf;
+        [ReadOnly, NoAlias] public NativeArray<byte>.ReadOnly MaterialIds;
         [ReadOnly, NoAlias] public NativeArray<uint> MaterialColorLut;
         [NoAlias] public NativeArray<SonarPointDTO> Points;
         [NoAlias] public NativeArray<byte> HitMask;
@@ -967,8 +967,8 @@ namespace Hecton8.UI
             }
             quality = math.saturate(math.isfinite(quality) ? quality : 0f);
 
-            NativeArray<byte> encodedSdf;
-            NativeArray<byte> materialIds;
+            NativeArray<byte>.ReadOnly encodedSdf;
+            NativeArray<byte>.ReadOnly materialIds;
             int3 gridDimensions;
             float3 volumeOrigin;
             float3 cellSize;
@@ -997,8 +997,8 @@ namespace Hecton8.UI
                     Seed = _mockSdfVersion * 2654435761u
                 };
                 dependency = mockJob.Schedule(TopographicalSonarConstants.MockVoxelCount, 128);
-                encodedSdf = mockSdf;
-                materialIds = mockMaterialIds;
+                encodedSdf = mockSdf.AsReadOnly();
+                materialIds = mockMaterialIds.AsReadOnly();
                 sdfVersion = _mockSdfVersion;
                 flags |= TopographicalSonarConstants.UsedMockSdfFlag;
             }
@@ -1231,8 +1231,8 @@ namespace Hecton8.UI
 
         private static bool TryResolvePublishedSdf(
             float3 pingRuntime,
-            out NativeArray<byte> encodedSdf,
-            out NativeArray<byte> materialIds,
+            out NativeArray<byte>.ReadOnly encodedSdf,
+            out NativeArray<byte>.ReadOnly materialIds,
             out int3 gridDimensions,
             out float3 volumeOrigin,
             out float3 cellSize,
@@ -1250,8 +1250,8 @@ namespace Hecton8.UI
             Vector3 origin = new Vector3(pingRuntime.x, pingRuntime.y, pingRuntime.z);
             if (!HectonVoxelVolume.TryGetClosestPublishedSonarSdfPayload(
                     origin,
-                    out NativeArray<byte> payload,
-                    out NativeArray<byte> materialPayload,
+                    out NativeArray<byte>.ReadOnly payload,
+                    out NativeArray<byte>.ReadOnly materialPayload,
                     out Vector3Int dimensions,
                     out Vector3 payloadOrigin,
                     out Vector3 payloadCellSize,

@@ -4231,8 +4231,8 @@ namespace Hecton8.Audio
                 !TryResolveSonarSpatialViews(out SonarSpatialVaultViews spatialViews) ||
                 !HectonVoxelVolume.TryGetClosestPublishedSonarSdfPayload(
                     origin,
-                    out NativeArray<byte> encodedSdf,
-                    out NativeArray<byte> audioMaterialIds,
+                    out NativeArray<byte>.ReadOnly encodedSdf,
+                    out NativeArray<byte>.ReadOnly audioMaterialIds,
                     out Vector3Int gridDimensions,
                     out Vector3 volumeOrigin,
                     out Vector3 voxelCellSize,

@@ -4049,16 +4049,27 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
 
             NativeParallelHashMap<int3, VoxelModifiedCell> modifiedCells = default;
             int modifiedCellsNativeMemoryId = 0;
-            if (_deltaProcessor != null)
-                _deltaProcessor.TryBuildDeltaMapForVolume(volume, out modifiedCells);
-
-            if (modifiedCells.IsCreated)
+            if (_deltaProcessor != null &&
+                _deltaProcessor.TryMeasureDeltaMapForVolume(volume, out int modifiedCellCapacity) &&
+                modifiedCellCapacity > 0)
             {
-                modifiedCellsNativeMemoryId = NativeMemorySentinel.RegisterNativeParallelHashMapInstance(
-                    modifiedCells,
-                    NativeMemoryOwner,
-                    ModifiedCellsNativeMemoryLabel,
-                    NativeMemoryLifetime);
+                modifiedCells = new NativeParallelHashMap<int3, VoxelModifiedCell>(
+                    modifiedCellCapacity,
+                    DataVaultExemptVoxelPipelineScratchAllocator);
+                if (_deltaProcessor.TryFillDeltaMapForVolume(volume, modifiedCells) &&
+                    modifiedCells.Count() > 0)
+                {
+                    modifiedCellsNativeMemoryId = NativeMemorySentinel.RegisterNativeParallelHashMapInstance(
+                        modifiedCells,
+                        NativeMemoryOwner,
+                        ModifiedCellsNativeMemoryLabel,
+                        NativeMemoryLifetime);
+                }
+                else
+                {
+                    modifiedCells.Dispose();
+                    modifiedCells = default;
+                }
             }
 
             pipelineData = new VoxelPipelineData

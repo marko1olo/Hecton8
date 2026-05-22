@@ -124,7 +124,6 @@ namespace Hecton8.Caves
         private const string NativeMemoryOwner = nameof(VoxelDeltaProcessor);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
         private const Allocator DataVaultExemptVoxelCarveSignalLaneAllocator = Allocator.Persistent;
-        private const Allocator DataVaultExemptVoxelModifiedCellScratchAllocator = Allocator.Persistent;
         private const uint TitaniumOreHash = 0x61C51592u;
         private const uint TitaniumScrapItemHash = 0xD150482Eu;
         private static readonly uint _VoxelDebrisSignalHash = unchecked((uint)Hecton.Localization.LocHash.Compute("voxel.debris.carve"));
@@ -1271,21 +1270,13 @@ namespace Hecton8.Caves
             return true;
         }
 
-        /// <summary>
-        /// Builds a persistent native delta map for the provided volume bounds.
-        /// Caller owns disposal of the returned map.
-        /// </summary>
-        /// <param name="volume">Target volume.</param>
-        /// <param name="modifiedCells">Merged delta map covering the volume bounds.</param>
-        /// <returns>True when persistent deltas overlap the target volume.</returns>
-        public bool TryBuildDeltaMapForVolume(HectonVoxelVolume volume, out NativeParallelHashMap<int3, VoxelModifiedCell> modifiedCells)
+        public bool TryMeasureDeltaMapForVolume(HectonVoxelVolume volume, out int estimatedCellCount)
         {
-            modifiedCells = default;
+            estimatedCellCount = 0;
             if (volume == null || !volume.HasRuntimeData || (_chunkStates.Count == 0 && _compactedChunkStates.Count == 0))
                 return false;
 
-            ResolveVolumeCellBounds(volume, out int3 minCell, out int3 maxCell, out int3 minChunk, out int3 maxChunk);
-            int estimatedCount = 0;
+            ResolveVolumeCellBounds(volume, out _, out _, out int3 minChunk, out int3 maxChunk);
 
             for (int z = minChunk.z; z <= maxChunk.z; z++)
             {
@@ -1295,18 +1286,30 @@ namespace Hecton8.Caves
                     {
                         ChunkAddress address = new ChunkAddress(new int3(x, y, z), volume.VoxelSize);
                         if (_compactedChunkStates.ContainsKey(address))
-                            estimatedCount += ChunkCellCount;
+                            estimatedCellCount += ChunkCellCount;
 
                         if (_chunkStates.TryGetValue(address, out ChunkDeltaState state))
-                            estimatedCount += CountDirtyCells(in state);
+                            estimatedCellCount += CountDirtyCells(in state);
                     }
                 }
             }
 
-            if (estimatedCount <= 0)
-                return false;
+            return estimatedCellCount > 0;
+        }
 
-            modifiedCells = new NativeParallelHashMap<int3, VoxelModifiedCell>(estimatedCount, DataVaultExemptVoxelModifiedCellScratchAllocator);
+        public bool TryFillDeltaMapForVolume(
+            HectonVoxelVolume volume,
+            NativeParallelHashMap<int3, VoxelModifiedCell> modifiedCells)
+        {
+            if (!modifiedCells.IsCreated ||
+                volume == null ||
+                !volume.HasRuntimeData ||
+                (_chunkStates.Count == 0 && _compactedChunkStates.Count == 0))
+            {
+                return false;
+            }
+
+            ResolveVolumeCellBounds(volume, out int3 minCell, out int3 maxCell, out int3 minChunk, out int3 maxChunk);
 
             for (int z = minChunk.z; z <= maxChunk.z; z++)
             {
@@ -1367,11 +1370,7 @@ namespace Hecton8.Caves
             }
 
             if (modifiedCells.Count() <= 0)
-            {
-                modifiedCells.Dispose();
-                modifiedCells = default;
                 return false;
-            }
 
             return true;
         }
@@ -3092,7 +3091,7 @@ namespace Hecton8.Caves
                 return;
 
             if (!volume.TryGetPublishedSonarSdfPayload(
-                    out NativeArray<byte> encodedSdf,
+                    out NativeArray<byte>.ReadOnly encodedSdf,
                     out Vector3Int gridDimensions,
                     out Vector3 volumeOrigin,
                     out Vector3 voxelCellSize,
@@ -3128,7 +3127,8 @@ namespace Hecton8.Caves
                 // COLD ALLOC: NativeArray<byte>[encodedSdf.Length] - isolated SDF source for async compaction - owner: VoxelDeltaProcessor
                 sourceSdf = new NativeArray<byte>(encodedSdf.Length, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
                 RegisterTrackedNativeArray(sourceSdf, nameof(sourceSdf));
-                NativeArray<byte>.Copy(encodedSdf, sourceSdf, encodedSdf.Length);
+                for (int i = 0; i < encodedSdf.Length; i++)
+                    sourceSdf[i] = encodedSdf[i];
 
                 // COLD ALLOC: NativeArray<uint>[1024] - dirty mask snapshot for async compaction - owner: VoxelDeltaProcessor
                 dirtyMaskCopy = new NativeArray<uint>(ChunkDirtyMaskWordCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);

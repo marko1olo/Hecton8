@@ -3159,7 +3159,7 @@ namespace Hecton8.Gameplay
         {
             if (volume == null ||
                 !volume.TryGetPublishedSonarSdfPayload(
-                    out Unity.Collections.NativeArray<byte> _,
+                    out Unity.Collections.NativeArray<byte>.ReadOnly _,
                     out Vector3Int gridDimensions,
                     out Vector3 volumeOrigin,
                     out Vector3 voxelCellSize,

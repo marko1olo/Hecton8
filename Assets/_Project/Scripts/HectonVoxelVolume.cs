@@ -57,7 +57,7 @@ namespace Hecton8.Caves
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public struct VoxelSdfRaymarchJob : IJob
     {
-        [ReadOnly] public NativeArray<byte> EncodedSdf;
+        [ReadOnly] public NativeArray<byte>.ReadOnly EncodedSdf;
         public int3 GridDimensions;
         public float3 VolumeOrigin;
         public float3 CellSize;

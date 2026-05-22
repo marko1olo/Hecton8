@@ -82,7 +82,7 @@ namespace Hecton8.Audio.Editor
             AssertNotContains(jobs, "SortVoicesDescending(NativeArray<VirtualVoice>", "Burst job does not swap 160-byte voice structs", builder, ref failures);
             AssertContains(jobs, "public struct MockAcousticEmitterJob : IJobParallelFor", "Mock acoustic emitter is a parallel Burst job", builder, ref failures);
             AssertContains(jobs, "public struct AcousticOcclusionJob : IJobParallelFor", "SDF acoustic occlusion is a parallel Burst job", builder, ref failures);
-            AssertContains(jobs, "[ReadOnly, NoAlias] public NativeArray<byte> SdfVoxels;", "SDF acoustic kernel consumes encoded Vault byte SDF voxels", builder, ref failures);
+            AssertContains(jobs, "[ReadOnly, NoAlias] public NativeArray<byte>.ReadOnly SdfVoxels;", "SDF acoustic kernel consumes encoded Vault byte SDF voxels", builder, ref failures);
             AssertContains(jobs, "((SdfVoxels[index] * 0.0039215686f) * 2f - 1f)", "SDF acoustic kernel decodes byte SDF into signed meters", builder, ref failures);
             AssertContains(jobs, "FloatMode = FloatMode.Deterministic", "Rollback-compatible acoustic kernel uses deterministic Burst floats", builder, ref failures);
             AssertNotContains(jobs, BurstFastModeNeedle, "Rollback-visible audio jobs avoid fast float drift", builder, ref failures);

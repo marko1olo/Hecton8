@@ -160,7 +160,7 @@ namespace Hecton8.Dev
 
                 JobHandle handle = new VoxelSdfRaymarchJob
                 {
-                    EncodedSdf = sdf,
+                    EncodedSdf = sdf.AsReadOnly(),
                     GridDimensions = new int3(4, 2, 2),
                     VolumeOrigin = float3.zero,
                     CellSize = new float3(1f, 1f, 1f),

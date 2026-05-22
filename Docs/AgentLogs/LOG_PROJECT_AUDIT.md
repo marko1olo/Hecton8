@@ -1618,3 +1618,27 @@ Cinematic Cheats used: Not visual. This preserves the compact RLE native snapsho
 Exact Microseconds saved: 0 us measured. Static API risk moved `nativeCollectionPublicMutableApiExposure=54->53`, `nativeApiExposureBuildPlayerRuntime=50->49`, `nativeApiExposureMutableReturn=18->17`, and `nativeApiRiskRuntimeDiagnosticNamedMutableView=5->4`.
 
 Evidence: `Docs/Reports/PROJECT_AUDIT_polish_after_voxel_delta_snapshot_owner_copy.json`; `python Tools\test_polish_mandate_static_audit.py` passed 12 tests; focused scan found no `CaptureNativeSnapshot` route; targeted `git diff --check` reported LF/CRLF warnings only. Batch re-check found no `<AGENT_PROMPT id="PROJECT_AUDIT">` block. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Voxel Sonar SDF Read-Only Payloads
+
+What was wrong: Published voxel sonar SDF and audio-material byte grids escaped through mutable `NativeArray<byte>` accessors into audio, player, scanner, GPR, topographical sonar, fauna, and voxel delta consumers.
+
+What was done: Migrated the read-model and published payload APIs to `NativeArray<byte>.ReadOnly`, and updated all affected job fields/helper signatures to consume read-only views. Vault fallback buffers now cross the boundary through `.AsReadOnly()`.
+
+Cinematic Cheats used: Preserved byte-grid SDF raymarch/sampling as the Dear Lie path for sonar, acoustic occlusion, squeeze, and IK; no PhysX raycast or scene-object query path was added.
+
+Exact Microseconds saved: 0 us measured. Static API risk moved `nativeCollectionPublicMutableApiExposure=53->47`, `nativeApiExposureBuildPlayerRuntime=49->43`, `nativeApiExposureOutRefMutable=36->30`, and `nativeApiRiskRuntimeOutRefMutableView=15->9`.
+
+Evidence: `Docs/Reports/PROJECT_AUDIT_polish_after_voxel_sdf_readonly_payloads.json`; `python Tools\test_polish_mandate_static_audit.py` passed 12 tests; focused scan found no old mutable sonar/SDF payload signatures; targeted `git diff --check` reported LF/CRLF warnings only. Batch re-check found no `<AGENT_PROMPT id="PROJECT_AUDIT">` block. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Voxel Delta Map Owner Allocation
+
+What was wrong: `VoxelDeltaProcessor.TryBuildDeltaMapForVolume` returned a mutable `NativeParallelHashMap<int3,VoxelModifiedCell>` through an out parameter to its only caller.
+
+What was done: Split it into measure/fill. `HectonVoxelEngine` now owns allocation, registration, validation, and disposal of the transient modified-cell map.
+
+Cinematic Cheats used: Preserved sparse dirty-cell overlay sampling for voxel rebuilds instead of full-volume CPU recompute.
+
+Exact Microseconds saved: 0 us measured. Static API risk moved `nativeCollectionPublicMutableApiExposure=47->46`, `nativeApiExposureBuildPlayerRuntime=43->42`, `nativeApiExposureOutRefMutable=30->29`, and `nativeApiRiskRuntimeOutRefMutableView=9->8`.
+
+Evidence: `Docs/Reports/PROJECT_AUDIT_polish_after_voxel_delta_map_owner_alloc.json`; `python Tools\test_polish_mandate_static_audit.py` passed 12 tests; focused scan found no `TryBuildDeltaMapForVolume` or `out NativeParallelHashMap<int3,VoxelModifiedCell>` route; targeted `git diff --check` reported LF/CRLF warnings only. Batch re-check found no `<AGENT_PROMPT id="PROJECT_AUDIT">` block. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.

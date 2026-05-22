@@ -678,7 +678,7 @@ namespace Hecton8.Interaction
         public static VRHandStateDTO ResolveHand(
             VRHandStateDTO input,
             VRHandStateDTO previous,
-            NativeArray<byte> encodedSdf,
+            NativeArray<byte>.ReadOnly encodedSdf,
             NativeArray<VRInteractionSocketDTO> sockets,
             int socketCount,
             in VRInteractionTuningDTO tuning,
@@ -873,7 +873,7 @@ namespace Hecton8.Interaction
             return IsFinite(velocity) ? velocity : float3.zero;
         }
 
-        private static bool SdfIsValid(NativeArray<byte> encodedSdf, in VRInteractionTuningDTO tuning)
+        private static bool SdfIsValid(NativeArray<byte>.ReadOnly encodedSdf, in VRInteractionTuningDTO tuning)
         {
             if (!encodedSdf.IsCreated ||
                 tuning.SdfDimensions.x <= 1 ||
@@ -895,7 +895,7 @@ namespace Hecton8.Interaction
                    encodedSdf.Length >= expected;
         }
 
-        private static bool TrySampleSdf(NativeArray<byte> encodedSdf, in VRInteractionTuningDTO tuning, double3 aup, out float distance)
+        private static bool TrySampleSdf(NativeArray<byte>.ReadOnly encodedSdf, in VRInteractionTuningDTO tuning, double3 aup, out float distance)
         {
             distance = tuning.SdfRangeMeters;
             if (!SdfIsValid(encodedSdf, tuning) || !IsFinite(aup))
@@ -942,7 +942,7 @@ namespace Hecton8.Interaction
             return math.isfinite(distance);
         }
 
-        private static float3 ResolveSdfGradient(NativeArray<byte> encodedSdf, in VRInteractionTuningDTO tuning, double3 aup)
+        private static float3 ResolveSdfGradient(NativeArray<byte>.ReadOnly encodedSdf, in VRInteractionTuningDTO tuning, double3 aup)
         {
             float3 cell = math.max(tuning.SdfCellSize, new float3(0.0001f));
             double3 dx = new double3(cell.x, 0d, 0d);
@@ -964,7 +964,7 @@ namespace Hecton8.Interaction
             return gradient * math.rsqrt(lengthSq);
         }
 
-        private static float DecodeSdf(NativeArray<byte> encodedSdf, in VRInteractionTuningDTO tuning, int x, int y, int z)
+        private static float DecodeSdf(NativeArray<byte>.ReadOnly encodedSdf, in VRInteractionTuningDTO tuning, int x, int y, int z)
         {
             long indexLong = ((long)z * tuning.SdfDimensions.y + y) * tuning.SdfDimensions.x + x;
             if (indexLong < 0L || indexLong >= encodedSdf.Length)
