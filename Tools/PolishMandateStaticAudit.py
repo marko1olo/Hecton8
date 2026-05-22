@@ -57,6 +57,11 @@ LINE_PATTERNS: dict[str, re.Pattern[str]] = {
 BURST_ATTR_RE = re.compile(r"\[BurstCompile(?P<body>[^\]]*)\]", re.MULTILINE | re.DOTALL)
 STRUCT_DECL_RE = re.compile(r"\b(?:public|private|internal|protected)?\s*(?:readonly\s+)?(?:partial\s+)?struct\s+\w+")
 AUTO_PROPERTY_RE = re.compile(r"\{\s*get\s*;\s*(?:private\s+)?set\s*;")
+TYPE_DECL_RE = re.compile(
+    r"^\s*(?P<access>public|private|internal|protected)?\s*"
+    r"(?:(?:static|sealed|abstract|partial|readonly|unsafe)\s+)*"
+    r"(?:(?:class|struct|interface)\s+\w+|record\s+(?:class\s+|struct\s+)?\w+)"
+)
 BINARY_HARDWARE_CONTROL_RE = re.compile(r"^\s*(?:if|else\s+if|switch|case|return|while|for)\b|[?:]")
 BINARY_HARDWARE_EXPLICIT_TOKEN_RE = re.compile(
     r"\b(?:isLowEnd|IsLowEnd|LowEnd|HighEnd|UltraTier|DeviceTier|StandaloneQuest|QuestOnly|PcOnly)\b"
@@ -504,6 +509,7 @@ def empty_results() -> dict[str, list[Finding]]:
             "burstMissingFloatMode": [],
             "burstMissingFloatPrecision": [],
             "nativeCollectionPublicMutableApiExposure": [],
+            "nativeApiExposurePrivateNestedSuppressed": [],
         }
     )
     for key in (
@@ -586,6 +592,9 @@ def scan_all(files: Iterable[Path]) -> dict[str, list[Finding]]:
         lines = path.read_text(encoding="utf-8", errors="ignore").splitlines()
         in_struct = False
         depth = 0
+        brace_depth = 0
+        pending_type_access: list[str] = []
+        type_stack: list[tuple[int, str]] = []
         line_count = len(lines)
         line_number = 1
         while line_number <= line_count:
@@ -593,14 +602,19 @@ def scan_all(files: Iterable[Path]) -> dict[str, list[Finding]]:
             code = strip_line_comment(raw_line)
             scan_code = strip_string_literals(code)
 
+            while type_stack and brace_depth < type_stack[-1][0]:
+                type_stack.pop()
+            inside_private_type = any(access == "private" for _, access in type_stack)
+
             record_line_patterns(results, rel, line_number, raw_line, code, lines)
             if is_public_mutable_native_api_exposure(lines, line_number, scan_code):
                 signature = collect_signature(lines, line_number)
                 finding = Finding(rel, line_number, signature)
-                results["nativeCollectionPublicMutableApiExposure"].append(
-                    finding
-                )
-                record_native_api_exposure_classification(results, finding, rel, signature)
+                if inside_private_type:
+                    results["nativeApiExposurePrivateNestedSuppressed"].append(finding)
+                else:
+                    results["nativeCollectionPublicMutableApiExposure"].append(finding)
+                    record_native_api_exposure_classification(results, finding, rel, signature)
 
             if "[BurstCompile" in scan_code:
                 attr_parts = [scan_code.strip()]
@@ -622,6 +636,17 @@ def scan_all(files: Iterable[Path]) -> dict[str, list[Finding]]:
                 if depth <= 0 and "}" in scan_code:
                     in_struct = False
                     depth = 0
+
+            type_decl = TYPE_DECL_RE.search(scan_code)
+            if type_decl is not None:
+                pending_type_access.append(type_decl.group("access") or "")
+
+            open_count = scan_code.count("{")
+            if open_count > 0 and pending_type_access:
+                for _ in range(min(open_count, len(pending_type_access))):
+                    type_stack.append((brace_depth + 1, pending_type_access.pop(0)))
+
+            brace_depth += open_count - scan_code.count("}")
 
             line_number += 1
 

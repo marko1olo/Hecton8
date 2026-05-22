@@ -329,6 +329,39 @@ public sealed class NativeApi
             self.assertEqual(cats["nativeApiRiskRuntimeOutRefMutableView"]["matches"], 1)
             self.assertEqual(cats["nativeApiRiskRuntimeDiagnosticNamedMutableView"]["matches"], 1)
 
+    def test_suppresses_public_native_api_inside_private_nested_type(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            src = root / "PrivateNestedNativeApi.cs"
+            src.write_text(
+                """
+using Unity.Collections;
+
+public sealed class Owner
+{
+    private struct VaultNativeArray<T> where T : struct
+    {
+        public NativeArray<T> Resolve()
+        {
+            return default;
+        }
+    }
+
+    public NativeArray<int> ExposedRows()
+    {
+        return default;
+    }
+}
+""",
+                encoding="utf-8",
+            )
+
+            payload = audit.build_payload(root)
+            cats = payload["categories"]
+            self.assertEqual(cats["nativeCollectionPublicMutableApiExposure"]["matches"], 1)
+            self.assertEqual(cats["nativeApiExposurePrivateNestedSuppressed"]["matches"], 1)
+            self.assertEqual(cats["nativeApiRiskRuntimeReturnMutableView"]["matches"], 1)
+
     def test_classifies_unity_time_risk_buckets(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

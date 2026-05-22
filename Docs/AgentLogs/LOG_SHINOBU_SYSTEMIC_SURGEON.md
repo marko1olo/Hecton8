@@ -3786,3 +3786,77 @@ Verification:
     Targeted scans found no `HectonQualityTier`, `lowTier`, `LowTier`, `highTier`, `HighTier`, `ScalabilityTier`, `ScalabilityEvents`, `IScalabilityChangedEventListener`, `AuthorityFluidWaveTier`, or `ResolveGerstnerWaveBudget` in `HectonFluidEngine.cs`, `AbyssalFlowField.compute`, and `Hecton_VolumetricFog.compute`. `git diff --check` passed with CRLF warnings only. Guarded build failed in the external scatter contract path described above.
   </VERIFICATION>
 </SELF_AUDIT>
+
+<SELF_AUDIT id="SHINOBU_SYSTEMIC_SURGEON" pass="VolumetricLightQualityFallbackContinuum">
+  <WHAT_WAS_WRONG>
+    `VolumetricLightFeature` kept low/high raymarch endpoint names, a serialized hardware-tier fallback field, and `_MATH_LOD_LOW/_MATH_LOD_HIGH` keyword clamps. The math already used a continuous scalar, but debug/runtime keywords could still force binary step limits.
+  </WHAT_WAS_WRONG>
+  <WHAT_WAS_DONE>
+    Renamed endpoints to minimum/maximum quality. Replaced `hardwareTier` with continuous `qualityFallbackWeight` for non-finite quality recovery. Removed keyword clamps so raymarch and volumetric shadow steps resolve only from `HomeostasisBrain.GlobalQualityWeight` or the continuous fallback.
+  </WHAT_WAS_DONE>
+  <TASK_RECONCILIATION>
+    01 [PASS] Status/rationale read before response and edit. 02 [PASS] Visor residual cluster scanned. 03 [PASS] Binary endpoint names removed. 04 [PASS] No asmdef/reference changed. 05 [PASS] No `Pack=1`. 06 [PASS] No DTO layout changed. 07 [PASS] No native container added. 08 [PASS] No Vault route changed. 09 [PASS] No hot `GlobalRegistry` poll added. 10 [PASS] Continuous `GlobalQualityWeight` remains source. 11 [PASS] No RNG. 12 [PASS] No AUP math touched. 13 [PASS] Dear Lie remains compute god rays. 14 [PASS] Minimum step limit is continuous scalar endpoint, not a tier switch. 15 [PASS] Maximum step limit remains available for high quality. 16 [PASS] No Burst job aliasing changed. 17 [PASS] No job scheduling/completion changed. 18 [PASS] No telemetry layout changed. 19 [PASS] Shader keyword clamps removed. 20 [FAIL] Guarded compile remains blocked by external scatter backend mismatch.
+  </TASK_RECONCILIATION>
+  <STRUCT_LAYOUT>
+    No C# DTO or binary payload changed. This pass edits serialized renderer settings and scalar step-resolution math only.
+  </STRUCT_LAYOUT>
+  <SCALABILITY_CURVE>
+    Raymarch step limit is `round(lerp(4, 12, smoothstep(GlobalQualityWeight)))`. Fallback steps blend from 4 to the authored maximum through `SmoothStep01(quality * 1.7)` and then toward 12 through `SmoothStep01((quality - 0.58) * 2.15)`. Below 0.3 quality the path stays near the minimum compute sample budget; middle quality interpolates; high/ultra reaches the authored maximum or continuous profile budget.
+  </SCALABILITY_CURVE>
+  <H_PHI_VAULT_STATUS>
+    No persistent native memory or `VaultBufferHandle` was introduced. Volumetric light remains a render feature with transient render-graph textures.
+  </H_PHI_VAULT_STATUS>
+  <POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+    No Burst job, `NativeArray`, or `JobHandle` changed. The render pass still dispatches its compute shader through RenderGraph.
+  </POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+  <COMPILE_GUARD>
+    Guard sampled CPU 21.8 percent with no compiler processes before build. `dotnet build .\Assembly-CSharp.csproj --no-restore --nologo -m:1 -clp:ErrorsOnly` failed only in `World/ScatterClassicBackendAdapters.cs` with the known `IScatterSimulationBackend.TrySchedule` mismatch.
+  </COMPILE_GUARD>
+  <CINEMATIC_CHEATS>
+    Volumetric light remains a half-resolution compute god-ray fake plus bilateral composite, not physical participating-media simulation. Heavy route would scale with full-res pixels and long raymarch counts; retained route is bounded by a continuous step cap and lower internal render scale.
+  </CINEMATIC_CHEATS>
+  <MICROSECONDS_SAVED estimate="0">No measured speed claim. Static proof only: binary keyword clamps removed and scalar step caps preserved.</MICROSECONDS_SAVED>
+  <VERIFICATION>
+    Targeted scans found no active `lowTier`, `LowTier`, `highTier`, `HighTier`, `ScalabilityTier`, `ScalabilityEvents`, `IScalabilityChangedEventListener`, `HardwareTier`, `hardwareTier`, `_MATH_LOD_LOW`, or `_MATH_LOD_HIGH` in the visor cluster except intentional `FormerlySerializedAs` migration strings. Focused `git diff --check` passed with CRLF warning only.
+  </VERIFICATION>
+</SELF_AUDIT>
+
+<SELF_AUDIT id="SHINOBU_SYSTEMIC_SURGEON" pass="VfxEmissionProfileContinuousBudgetContract">
+  <WHAT_WAS_WRONG>
+    `VFXEmissionProfile` still exported a `HardwareTier` enum and serialized volumetric budget fields named as low/medium/high tier steps, even though active consumers use the continuous float budget resolver.
+  </WHAT_WAS_WRONG>
+  <WHAT_WAS_DONE>
+    Removed the unused enum overload and renamed serialized budget endpoints to `minimumQualitySteps`, `middleQualitySteps`, and `maximumQualitySteps` with migration attributes. `GetVolumetricGodRaySteps(float)` remains the only public budget route.
+  </WHAT_WAS_DONE>
+  <TASK_RECONCILIATION>
+    01 [PASS] Status/rationale read before response and edit. 02 [PASS] Adjacent VFX profile call sites scanned. 03 [PASS] Unused enum route removed. 04 [PASS] No asmdef/reference changed. 05 [PASS] No `Pack=1`. 06 [PASS] No binary DTO layout changed. 07 [PASS] No native container added. 08 [PASS] No Vault route changed. 09 [PASS] No registry poll added. 10 [PASS] Continuous float quality API retained. 11 [PASS] No RNG. 12 [PASS] No AUP math. 13 [PASS] Dear Lie remains compute god rays. 14 [PASS] Minimum endpoint retained. 15 [PASS] Maximum endpoint retained. 16 [PASS] No Burst job aliasing changed. 17 [PASS] No job scheduling/completion changed. 18 [PASS] No telemetry layout changed. 19 [PASS] Serialized migration attributes preserve authoring data. 20 [FAIL] Compile remains blocked by external scatter wall; no new build launched after `VBCSCompiler` became active.
+  </TASK_RECONCILIATION>
+  <STRUCT_LAYOUT>No runtime DTO layout changed. `VolumetricLightBudget` remains three `int` fields in a serialized authoring asset; names changed only with migration attributes.</STRUCT_LAYOUT>
+  <SCALABILITY_CURVE>God-ray steps still interpolate minimum -> middle -> maximum with smooth polynomial curves from continuous quality weight. No binary tier argument remains.</SCALABILITY_CURVE>
+  <H_PHI_VAULT_STATUS>No Vault handles or persistent native allocations touched.</H_PHI_VAULT_STATUS>
+  <POINTER_ALIASING_AND_DEPENDENCY_GRAPH>No Burst job, NativeArray, or JobHandle changed.</POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+  <COMPILE_GUARD>Targeted scans found no call sites for the removed enum overload. Build was not relaunched because `VBCSCompiler` was active and the known scatter compile wall remains unresolved.</COMPILE_GUARD>
+  <CINEMATIC_CHEATS>The profile feeds sample counts for compute god-ray fakes; it does not introduce physical volumetric simulation.</CINEMATIC_CHEATS>
+  <MICROSECONDS_SAVED estimate="0">No measured speed claim. Contract cleanup prevents future binary snap routes.</MICROSECONDS_SAVED>
+  <VERIFICATION>Targeted scans found only intentional `FormerlySerializedAs` strings for the old field names; `git diff --check` passed with CRLF warnings only.</VERIFICATION>
+</SELF_AUDIT>
+
+<SELF_AUDIT id="SHINOBU_SYSTEMIC_SURGEON" pass="ScreenSpaceLightShaftQualityPressurePull">
+  <WHAT_WAS_WRONG>
+    `ScreenSpaceLightShaftRuntime` subscribed to scalability events, cached a binary `_lowTier`, named tap endpoints as low/high tier, and wrote a low-tier telemetry flag while its sample budget already used a continuous quality scalar.
+  </WHAT_WAS_WRONG>
+  <WHAT_WAS_DONE>
+    Removed scalability listener routing. Renamed tap endpoints to minimum/maximum quality with serialization migration. Replaced the boolean with continuous `_qualityPressure01`, pushed that scalar to `_HectonLightShaftQuality.w`, and changed telemetry bit 0 to quality-pressure activity.
+  </WHAT_WAS_DONE>
+  <TASK_RECONCILIATION>
+    01 [PASS] Status/rationale read before response and edit. 02 [PASS] Light shaft route scanned. 03 [PASS] Scalability event route removed. 04 [PASS] No asmdef/reference changed. 05 [PASS] No `Pack=1`. 06 [PASS] `LightShaftTelemetryEntry` remains explicit 64 bytes. 07 [PASS] No native container added. 08 [PASS] Existing Vault handles unchanged. 09 [PASS] No hot registry quality poll added. 10 [PASS] Continuous `GlobalQualityWeight` remains source. 11 [PASS] No RNG. 12 [PASS] No AUP math changed. 13 [PASS] Dear Lie remains screen-space shaft fake. 14 [PASS] Minimum tap endpoint retained. 15 [PASS] Maximum tap endpoint retained. 16 [PASS] No Burst aliasing changed. 17 [PASS] No jobs or completes added. 18 [PASS] 300-frame telemetry ring unchanged. 19 [PASS] Shader vector ABI unchanged. 20 [FAIL] Compile remains blocked externally; build skipped due active `VBCSCompiler`.
+  </TASK_RECONCILIATION>
+  <STRUCT_LAYOUT>`LightShaftTelemetryEntry` remains `[StructLayout(LayoutKind.Explicit, Size = 64)]`: offsets 0 frame, 4 source id, 8 float2 UV, 16 active count, 20 intensity, 24 soot, 28 brownout, 32 flags, 33/34/36/40/48/56 padding. Total = 64 bytes.</STRUCT_LAYOUT>
+  <SCALABILITY_CURVE>`_qualityPressure01 = 1 - smoothstep(0.12, 0.44, GlobalQualityWeight)`. Sample budget lerps minimum -> maximum by `smoothstep(0,1, quality)`. Quality below 0.3 stays near minimum taps; middle interpolates; high/ultra reaches maximum taps.</SCALABILITY_CURVE>
+  <H_PHI_VAULT_STATUS>Existing handles unchanged: `LightShaftTopContributions`, `LightShaftHistoryContributions`, and `LightShaftTelemetry`. No new persistent native memory was added.</H_PHI_VAULT_STATUS>
+  <POINTER_ALIASING_AND_DEPENDENCY_GRAPH>No Burst job, NativeArray ownership, or JobHandle changed. Late-frame owner writes shader globals after locked Vault buffers are released in the existing path.</POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+  <COMPILE_GUARD>Build not launched after this patch because `VBCSCompiler` was active and Compile Check 131 already exposed the external scatter backend compile wall.</COMPILE_GUARD>
+  <CINEMATIC_CHEATS>Light shafts remain post-process screen-space sample accumulation, not physical volumetric lighting.</CINEMATIC_CHEATS>
+  <MICROSECONDS_SAVED estimate="0">No measured speed claim. Static proof: listener/callback route and boolean branch key removed.</MICROSECONDS_SAVED>
+  <VERIFICATION>Targeted scans found no active scalability listener/event route or low/high tier tap names; `git diff --check` passed with CRLF warning only.</VERIFICATION>
+</SELF_AUDIT>

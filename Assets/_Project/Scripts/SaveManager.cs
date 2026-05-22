@@ -2263,7 +2263,7 @@ namespace Hecton8.SaveSystem
             uint operationId,
             string slotName,
             NativeArray<PersistentWorldDeltaRecord> persistentWorldDeltas,
-            NativeArray<EcosystemSectorSaveRecord> ecosystemSectorStates,
+            NativeArray<EcosystemSectorSaveRecord>.ReadOnly ecosystemSectorStates,
             NativeArray<uint> packedQuestStateWords,
             NativeArray<byte> voxelDeltaSnapshot)
         {
@@ -2859,7 +2859,7 @@ namespace Hecton8.SaveSystem
             SaveData data = SaveData.CreateNew(playTime);
             PersistentWorldRegistry persistentWorldRegistry = GlobalRegistry.PersistentWorldRegistry;
             NativeArray<PersistentWorldDeltaRecord> persistentWorldDeltaSnapshot = default;
-            NativeArray<EcosystemSectorSaveRecord> ecosystemSectorSnapshot = default;
+            NativeArray<EcosystemSectorSaveRecord>.ReadOnly ecosystemSectorSnapshot = default;
             NativeArray<uint> packedQuestStateSnapshot = default;
             QuestSaveHeader packedQuestSaveHeader = default;
             NativeArray<byte> voxelDeltaSnapshot = default;
@@ -4071,7 +4071,7 @@ namespace Hecton8.SaveSystem
             SaveMetadata metadata,
             SaveData data,
             NativeArray<PersistentWorldDeltaRecord> persistentWorldItems,
-            NativeArray<EcosystemSectorSaveRecord> ecosystemSectorStates,
+            NativeArray<EcosystemSectorSaveRecord>.ReadOnly ecosystemSectorStates,
             QuestSaveHeader packedQuestHeader,
             NativeArray<uint> packedQuestStateWords,
             NativeArray<byte> voxelDeltaSnapshot,
@@ -4918,7 +4918,7 @@ namespace Hecton8.SaveSystem
                         writeMetadata,
                         data,
                         persistentWorldItemBuffer,
-                        ecosystemSectorBuffer,
+                        ecosystemSectorBuffer.IsCreated ? ecosystemSectorBuffer.AsReadOnly() : default,
                         packedQuestHeader,
                         packedQuestStateBuffer,
                         voxelDeltaSnapshot,

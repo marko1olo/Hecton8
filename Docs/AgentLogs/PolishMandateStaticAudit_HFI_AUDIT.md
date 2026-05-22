@@ -20,17 +20,18 @@ Evidence class: STATIC_SOURCE. No Unity import, compile, Play Mode, profiler, GC
 | `linqSurface` | 0 | 0 |
 | `nativeApiExposureAmbiguousMutable` | 0 | 0 |
 | `nativeApiExposureBuildEditorOnly` | 5 | 4 |
-| `nativeApiExposureBuildPlayerRuntime` | 151 | 71 |
+| `nativeApiExposureBuildPlayerRuntime` | 141 | 65 |
 | `nativeApiExposureBuildQaDevProof` | 8 | 2 |
-| `nativeApiExposureMutableReturn` | 43 | 29 |
-| `nativeApiExposureOutRefMutable` | 121 | 60 |
+| `nativeApiExposureMutableReturn` | 35 | 23 |
+| `nativeApiExposureOutRefMutable` | 119 | 59 |
+| `nativeApiExposurePrivateNestedSuppressed` | 9 | 6 |
 | `nativeApiRiskCoreVaultOrAllocatorSurface` | 21 | 3 |
 | `nativeApiRiskEditorOrProofSurface` | 13 | 6 |
 | `nativeApiRiskRuntimeAmbiguousMutableView` | 0 | 0 |
-| `nativeApiRiskRuntimeDiagnosticNamedMutableView` | 31 | 21 |
-| `nativeApiRiskRuntimeOutRefMutableView` | 72 | 43 |
-| `nativeApiRiskRuntimeReturnMutableView` | 27 | 19 |
-| `nativeCollectionPublicMutableApiExposure` | 164 | 77 |
+| `nativeApiRiskRuntimeDiagnosticNamedMutableView` | 30 | 20 |
+| `nativeApiRiskRuntimeOutRefMutableView` | 70 | 42 |
+| `nativeApiRiskRuntimeReturnMutableView` | 20 | 13 |
+| `nativeCollectionPublicMutableApiExposure` | 154 | 71 |
 | `noAlias` | 2192 | 218 |
 | `packOne` | 0 | 0 |
 | `privateNativeBuildEditorOnly` | 48 | 18 |
@@ -133,9 +134,9 @@ Evidence class: STATIC_SOURCE. No Unity import, compile, Play Mode, profiler, GC
 |---|---:|
 | `Assets/_Project/Scripts/Core/GlobalSignals.cs` | 4 |
 | `Assets/_Project/Scripts/Fauna/FaunaSimulationEngine.cs` | 3 |
-| `Assets/_Project/Scripts/World/EcosystemDirector.cs` | 3 |
 | `Assets/_Project/Scripts/World/ShinobuBiomimetic/ShinobuBiomimeticArchitectureRuntime.cs` | 3 |
 | `Assets/_Project/Scripts/Core/HectonArenaAllocator.cs` | 2 |
+| `Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs` | 2 |
 
 ### nativeApiExposureOutRefMutable
 
@@ -146,6 +147,16 @@ Evidence class: STATIC_SOURCE. No Unity import, compile, Play Mode, profiler, GC
 | `Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementRuntime.cs` | 5 |
 | `Assets/_Project/Scripts/Construction/ModularBaseConstructionValidator.cs` | 4 |
 | `Assets/_Project/Scripts/Core/HectonArenaAllocator.cs` | 4 |
+
+### nativeApiExposurePrivateNestedSuppressed
+
+| Path | Count |
+|---|---:|
+| `Assets/_Project/Scripts/Gameplay/VRSomaticProvider.cs` | 3 |
+| `Assets/_Project/Scripts/World/EcosystemDirector.cs` | 2 |
+| `Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.cs` | 1 |
+| `Assets/_Project/Scripts/Gameplay/PlayerKinematicsRuntime.cs` | 1 |
+| `Assets/_Project/Scripts/GlobalPhysicsStateManager.cs` | 1 |
 
 ### nativeApiRiskCoreVaultOrAllocatorSurface
 
@@ -192,8 +203,8 @@ Evidence class: STATIC_SOURCE. No Unity import, compile, Play Mode, profiler, GC
 | `Assets/_Project/Scripts/Core/GlobalSignals.cs` | 4 |
 | `Assets/_Project/Scripts/Fauna/FaunaSimulationEngine.cs` | 3 |
 | `Assets/_Project/Scripts/Core/ThreadSafeCommandQueue.cs` | 2 |
-| `Assets/_Project/Scripts/World/EcosystemDirector.cs` | 2 |
 | `Assets/_Project/Scripts/World/ShinobuBiomimetic/ShinobuBiomimeticArchitectureRuntime.cs` | 2 |
+| `Assets/_Project/Scripts/Construction/DroneFleetManager.cs` | 1 |
 
 ### nativeCollectionPublicMutableApiExposure
 

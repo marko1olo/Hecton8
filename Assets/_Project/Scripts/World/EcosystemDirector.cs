@@ -1891,12 +1891,14 @@ namespace Hecton8.World
             CaptureFaunaGenomeSaveRecords();
         }
 
-        internal NativeArray<EcosystemSectorSaveRecord> GetSaveSnapshotArray()
+        internal NativeArray<EcosystemSectorSaveRecord>.ReadOnly GetSaveSnapshotArray()
         {
             if (!_saveSnapshotSectors.IsCreated || _saveSnapshotSectorCount <= 0)
                 return default;
 
-            return _saveSnapshotSectors.GetSubArray(0, math.min(_saveSnapshotSectorCount, _saveSnapshotSectors.Length));
+            return _saveSnapshotSectors
+                .GetSubArray(0, math.min(_saveSnapshotSectorCount, _saveSnapshotSectors.Length))
+                .AsReadOnly();
         }
 
         internal NativeArray<EcosystemBiomassSaveRun>.ReadOnly GetBiomassSaveSnapshotArray()

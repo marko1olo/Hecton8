@@ -2360,7 +2360,7 @@ namespace Hecton8.SaveSystem
             SaveMetadata metadata,
             SaveData data,
             NativeArray<PersistentWorldDeltaRecord> persistentWorldDeltas,
-            NativeArray<EcosystemSectorSaveRecord> ecosystemSectorStates,
+            NativeArray<EcosystemSectorSaveRecord>.ReadOnly ecosystemSectorStates,
             QuestSaveHeader packedQuestHeader,
             NativeArray<uint> packedQuestStateWords,
             NativeArray<byte> voxelDeltaSnapshot,
@@ -2453,7 +2453,7 @@ namespace Hecton8.SaveSystem
             SaveMetadata metadata,
             SaveData data,
             NativeArray<PersistentWorldDeltaRecord> persistentWorldDeltas,
-            NativeArray<EcosystemSectorSaveRecord> ecosystemSectorStates,
+            NativeArray<EcosystemSectorSaveRecord>.ReadOnly ecosystemSectorStates,
             QuestSaveHeader packedQuestHeader,
             NativeArray<uint> packedQuestStateWords,
             NativeArray<byte> voxelDeltaSnapshot,
@@ -7688,7 +7688,7 @@ namespace Hecton8.SaveSystem
 
         private static void WriteEcosystemSection(
             byte* destination,
-            NativeArray<EcosystemSectorSaveRecord> ecosystemSectorStates)
+            NativeArray<EcosystemSectorSaveRecord>.ReadOnly ecosystemSectorStates)
         {
             int recordCount = ecosystemSectorStates.IsCreated ? ecosystemSectorStates.Length : 0;
             EcosystemSectionHeader sectionHeader = new EcosystemSectionHeader
@@ -7701,16 +7701,20 @@ namespace Hecton8.SaveSystem
             if (recordCount <= 0)
                 return;
 
-            void* sourcePtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(ecosystemSectorStates);
-            int recordBytes = recordCount * UnsafeUtility.SizeOf<EcosystemSectorSaveRecord>();
+            int recordSize = UnsafeUtility.SizeOf<EcosystemSectorSaveRecord>();
+            int recordBytes = recordCount * recordSize;
             int sectionLength = ComputeEcosystemSectionLength(recordCount);
-            if (!UnsafeMemoryCopyGuard.SafeCopy(
-                    AddByteOffset(destination, ecosystemHeaderSize),
-                    sectionLength - ecosystemHeaderSize,
-                    sourcePtr,
-                    recordBytes))
+            if (recordBytes > sectionLength - ecosystemHeaderSize)
             {
                 UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(SaveBinaryStorage));
+                return;
+            }
+
+            byte* writePtr = AddByteOffset(destination, ecosystemHeaderSize);
+            for (int i = 0; i < recordCount; i++)
+            {
+                EcosystemSectorSaveRecord record = ecosystemSectorStates[i];
+                UnsafeUtility.CopyStructureToPtr(ref record, writePtr + (i * recordSize));
             }
         }
 

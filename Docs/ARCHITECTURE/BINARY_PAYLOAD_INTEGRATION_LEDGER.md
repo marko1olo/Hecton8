@@ -5122,3 +5122,25 @@ Fault route: `ExosuitTelemetryEntry[300]` dumps fixed 64-byte rows to `Docs/Agen
 - Binary payload impact: none. `_AbyssalFlowTextureParams` remains a 16-byte `float4` ABI lane. No DTO, SignalBus payload, Vault BufferID, save identity, shader property name, or telemetry entry size changed.
 - Authority impact: deterministic buoyancy and Gerstner wave truth no longer accepts hardware tier input. Quality only scales visual flow/fog/splashdown presentation.
 - Verification: targeted scans found no `HectonQualityTier`, `lowTier`, `LowTier`, `highTier`, `HighTier`, `ScalabilityTier`, `ScalabilityEvents`, `IScalabilityChangedEventListener`, `AuthorityFluidWaveTier`, or `ResolveGerstnerWaveBudget` in the touched fluid/shader set; focused `git diff --check` passed with CRLF warnings only. Guarded compile was attempted and failed in external `World/ScatterClassicBackendAdapters.cs` with a scatter backend contract mismatch; current scatter source inspection shows interface and implementations agree on `.ReadOnly`, so the compile wall is logged for integrator follow-up.
+
+## 2026-05-22 - SHINOBU_SYSTEMIC_SURGEON Volumetric Light Quality Fallback Continuum
+
+- `Assets/_Project/Scripts/Visor/VolumetricLightFeature.cs` no longer names raymarch endpoints as low/high tier and no longer exposes a serialized hardware-tier fallback.
+- Binary payload impact: none. No DTO, SignalBus payload, Vault BufferID, save identity, shader property, or telemetry layout changed. `FormerlySerializedAs("hardwareTier")` exists only for serialized renderer-feature migration.
+- Runtime impact: `ResolveEffectiveQualityWeight01` now uses `HomeostasisBrain.GlobalQualityWeight` or continuous `qualityFallbackWeight` when the global scalar is non-finite. `_MATH_LOD_LOW/_MATH_LOD_HIGH` keyword clamps were removed.
+- Authority impact: visual god-ray sample count scales continuously; it does not change gameplay truth or lighting authority.
+- Verification: targeted scans found no active binary quality route in the visor cluster except intentional migration strings; focused `git diff --check` passed with CRLF warning only. Guarded compile was attempted and failed only in the known external scatter backend contract mismatch.
+
+## 2026-05-22 - SHINOBU_SYSTEMIC_SURGEON VFX Emission Profile Continuous Budget Contract
+
+- `Assets/_Project/Scripts/VFX/VFXEmissionProfile.cs` removed the unused public `HardwareTier` budget overload and renamed volumetric budget endpoints to `minimumQualitySteps`, `middleQualitySteps`, and `maximumQualitySteps`.
+- Binary payload impact: none. This is a ScriptableObject authoring profile, not a save/rollback DTO. `FormerlySerializedAs` preserves existing asset field migration for old endpoint names.
+- Runtime impact: god-ray sample budgets now have one public route: `GetVolumetricGodRaySteps(float globalQualityWeight)`, which interpolates continuously through the three endpoints.
+- Verification: targeted scans found no `VFXEmissionProfile.HardwareTier`, `GetVolumetricGodRaySteps(HardwareTier)`, `lowTierSteps`, `mediumTierSteps`, or `highTierSteps` call sites outside migration strings; focused `git diff --check` passed with CRLF warnings only. Build was not relaunched because `VBCSCompiler` was active and the external scatter compile wall remains unresolved.
+
+## 2026-05-22 - SHINOBU_SYSTEMIC_SURGEON Screen Space Light Shaft Quality Pressure Pull
+
+- `Assets/_Project/Scripts/Lighting/Shafts/ScreenSpaceLightShaftRuntime.cs` removed `IScalabilityChangedEventListener`, `ScalabilityEvents` register/unregister calls, and the cached `_lowTier` boolean.
+- Binary payload impact: `LightShaftTelemetryEntry` remains explicit 64 bytes. Telemetry flag bit 0 now denotes continuous quality-pressure activity instead of a hardware tier label. Existing DataVault handles and BufferIDs are unchanged.
+- Shader route impact: `_HectonLightShaftQuality` vector ABI is unchanged; `.w` now carries continuous `_qualityPressure01`.
+- Verification: targeted scan found no active binary quality route in the light shaft runtime except migration strings; focused `git diff --check` passed with CRLF warning only. Build was not launched because `VBCSCompiler` was active and the known scatter compile wall remains unresolved.

@@ -6,6 +6,7 @@ using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.RenderGraphModule;
 using UnityEngine.Rendering.Universal;
+using UnityEngine.Serialization;
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -31,29 +32,30 @@ namespace Hecton8.Visor
         [Serializable]
         private sealed class FeatureSettings
         {
-            private const int LowTierRaymarchSteps = 4;
-            private const int HighTierRaymarchSteps = 12;
+            private const int MinimumQualityRaymarchSteps = 4;
+            private const int MaximumQualityRaymarchSteps = 12;
 
             [Tooltip("Compute shader that owns both the half-res raymarch and full-res bilateral composite.")]
             public ComputeShader computeShader = null;
 
-            [Tooltip("Optional shared VFX profile that defines god ray step budgets by hardware tier.")]
+            [Tooltip("Optional shared VFX profile that defines god ray step budgets by continuous quality weight.")]
             public VFXEmissionProfile emissionProfile = null;
 
-            [Tooltip("Hardware tier used to resolve god ray step budgets from the emission profile.")]
-            public VFXEmissionProfile.HardwareTier hardwareTier = VFXEmissionProfile.HardwareTier.Medium;
+            [Tooltip("Fallback continuous quality weight used only when global quality is not finite.")]
+            [FormerlySerializedAs("hardwareTier")]
+            [Range(0f, 1f)] public float qualityFallbackWeight = 0.5f;
 
             [Tooltip("Where the volumetric pass is injected into URP.")]
             public RenderPassEvent injectionPoint = RenderPassEvent.BeforeRenderingPostProcessing;
 
-            [Tooltip("Internal render scale for the raymarch target. MX350 path must stay half-res or lower.")]
+            [Tooltip("Internal render scale for the raymarch target. Low memory pressure should stay half-res or lower.")]
             [Range(0.25f, 1f)] public float renderScale = 0.5f;
 
-            [Tooltip("Fallback medium-tier step count used when no emission profile is assigned.")]
-            [Range(1, HighTierRaymarchSteps)] public int fallbackSteps = HighTierRaymarchSteps;
+            [Tooltip("Fallback maximum-quality step count used when no emission profile is assigned.")]
+            [Range(1, MaximumQualityRaymarchSteps)] public int fallbackSteps = MaximumQualityRaymarchSteps;
 
-            [Tooltip("Screen-space shadow raymarch steps. MX350 path is strictly below eight.")]
-            [Range(1, HighTierRaymarchSteps)] public int volumetricShadowSteps = LowTierRaymarchSteps;
+            [Tooltip("Screen-space shadow raymarch steps. Continuous quality clamps the active limit.")]
+            [Range(1, MaximumQualityRaymarchSteps)] public int volumetricShadowSteps = MinimumQualityRaymarchSteps;
 
             [Tooltip("Maximum world-space distance for the secondary shadow raymarch toward the light.")]
             [Range(1f, 24f)] public float volumetricShadowDistance = 8f;
@@ -94,11 +96,11 @@ namespace Hecton8.Visor
                 int maxStepCount = ResolveContinuousStepLimit(qualityWeight);
 
                 if (emissionProfile != null)
-                    return Mathf.Clamp(emissionProfile.GetVolumetricGodRaySteps(qualityWeight), LowTierRaymarchSteps, maxStepCount);
+                    return Mathf.Clamp(emissionProfile.GetVolumetricGodRaySteps(qualityWeight), MinimumQualityRaymarchSteps, maxStepCount);
 
-                float fallback = Mathf.Lerp(LowTierRaymarchSteps, fallbackSteps, SmoothStep01(qualityWeight * 1.7f));
-                fallback = Mathf.Lerp(fallback, HighTierRaymarchSteps, SmoothStep01((qualityWeight - 0.58f) * 2.15f));
-                return Mathf.Clamp(Mathf.RoundToInt(fallback), LowTierRaymarchSteps, maxStepCount);
+                float fallback = Mathf.Lerp(MinimumQualityRaymarchSteps, fallbackSteps, SmoothStep01(qualityWeight * 1.7f));
+                fallback = Mathf.Lerp(fallback, MaximumQualityRaymarchSteps, SmoothStep01((qualityWeight - 0.58f) * 2.15f));
+                return Mathf.Clamp(Mathf.RoundToInt(fallback), MinimumQualityRaymarchSteps, maxStepCount);
             }
 
             internal int ResolveVolumetricShadowSteps()
@@ -109,18 +111,14 @@ namespace Hecton8.Visor
             private int ResolveContinuousStepLimit(float qualityWeight)
             {
                 float t = SmoothStep01(Mathf.Clamp01(qualityWeight));
-                return Mathf.Clamp(Mathf.RoundToInt(Mathf.Lerp(LowTierRaymarchSteps, HighTierRaymarchSteps, t)), LowTierRaymarchSteps, HighTierRaymarchSteps);
+                return Mathf.Clamp(Mathf.RoundToInt(Mathf.Lerp(MinimumQualityRaymarchSteps, MaximumQualityRaymarchSteps, t)), MinimumQualityRaymarchSteps, MaximumQualityRaymarchSteps);
             }
 
             private float ResolveEffectiveQualityWeight01()
             {
                 float qualityWeight = HomeostasisBrain.GlobalQualityWeight;
                 if (float.IsNaN(qualityWeight) || float.IsInfinity(qualityWeight))
-                    qualityWeight = Mathf.Clamp01((int)hardwareTier * 0.5f);
-                if (Shader.IsKeywordEnabled("_MATH_LOD_LOW"))
-                    qualityWeight = Mathf.Min(qualityWeight, 0f);
-                if (Shader.IsKeywordEnabled("_MATH_LOD_HIGH"))
-                    qualityWeight = Mathf.Max(qualityWeight, 1f);
+                    qualityWeight = Mathf.Clamp01(qualityFallbackWeight);
                 return Mathf.Clamp01(qualityWeight);
             }
 

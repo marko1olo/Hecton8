@@ -5,10 +5,10 @@ using Hecton8.Core;
 using Hecton8.Core.Memory;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.World;
-using ScalabilityChangedEvent = Hecton8.Core.Contracts.Signals.ScalabilityChangedEvent;
 using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Hecton8.Lighting.Shafts
 {
@@ -51,7 +51,7 @@ namespace Hecton8.Lighting.Shafts
     [DefaultExecutionOrder(-2550)]
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Lighting/Screen Space Light Shaft Runtime")]
-    public sealed class ScreenSpaceLightShaftRuntime : MonoBehaviour, ILateFrameTickable, IScalabilityChangedEventListener, IGlobalRegistryHotSwapListener, IDisposable
+    public sealed class ScreenSpaceLightShaftRuntime : MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener, IDisposable
     {
         private const int MaxTrackedSources = 3;
         private const int TelemetryCapacity = 300;
@@ -60,7 +60,7 @@ namespace Hecton8.Lighting.Shafts
         private const float CameraRetrySeconds = 0.75f;
         private const uint NaNFallbackWarningHash = 0x4C534E41u;
         private const uint RuntimeContextHash = 0x4C534654u;
-        private const byte TelemetryFlagLowTier = 1 << 0;
+        private const byte TelemetryFlagQualityPressure = 1 << 0;
         private const byte TelemetryFlagLoadShed = 1 << 1;
         private const byte TelemetryFlagNoCamera = 1 << 2;
         private const byte TelemetryFlagNaN = 1 << 3;
@@ -80,10 +80,12 @@ namespace Hecton8.Lighting.Shafts
         [SerializeField, Range(0.4f, 8f)] private float emissionThreshold = 1.18f;
         [Tooltip("Depth separation in eye-space meters before geometry suppresses scattered light.")]
         [SerializeField, Range(0.001f, 2f)] private float depthBiasMeters = 0.12f;
-        [Tooltip("Low-tier tap count. Shader clamps to 8.")]
-        [SerializeField, Range(4f, 8f)] private float lowTierSampleCount = 8f;
-        [Tooltip("High-tier tap count. Shader clamps to 16.")]
-        [SerializeField, Range(8f, 16f)] private float highTierSampleCount = 16f;
+        [Tooltip("Minimum-quality tap count. Shader clamps to 8.")]
+        [FormerlySerializedAs("lowTierSampleCount")]
+        [SerializeField, Range(4f, 8f)] private float minimumQualitySampleCount = 8f;
+        [Tooltip("Maximum-quality tap count. Shader clamps to 16.")]
+        [FormerlySerializedAs("highTierSampleCount")]
+        [SerializeField, Range(8f, 16f)] private float maximumQualitySampleCount = 16f;
         [Tooltip("History blend factor. Lower values smooth harder but lag more.")]
         [SerializeField, Range(0.35f, 1f)] private float historyBlendFactor = 0.68f;
 
@@ -110,7 +112,7 @@ namespace Hecton8.Lighting.Shafts
         private int _telemetryWriteIndex;
         private int _lastLightLevelSequence;
         private float _qualityWeight01 = 1f;
-        private bool _lowTier;
+        private float _qualityPressure01;
         private bool _registeredLateFrame;
         private bool _registeredHotSwap;
         private bool _ownsTopContributions;
@@ -142,7 +144,7 @@ namespace Hecton8.Lighting.Shafts
                 if (_renderCamera == null)
                     ResolveRenderCamera();
 
-                byte flags = _lowTier ? TelemetryFlagLowTier : (byte)0;
+                byte flags = _qualityPressure01 > 0.001f ? TelemetryFlagQualityPressure : (byte)0;
                 if (_loadShedTimer > 0f)
                     flags |= TelemetryFlagLoadShed;
                 if (_renderCamera == null)
@@ -177,13 +179,6 @@ namespace Hecton8.Lighting.Shafts
         }
 
         /// <inheritdoc />
-        public void OnScalabilityChanged(in ScalabilityChangedEvent payload)
-        {
-            _ = payload.CurrentTier;
-            RefreshQualityPolicy();
-        }
-
-        /// <inheritdoc />
         public void Dispose()
         {
             ReleaseBuffers();
@@ -200,7 +195,6 @@ namespace Hecton8.Lighting.Shafts
             GlobalSignals.InitializeAllQueues();
             EnsureBuffers();
             ResolveRenderCamera();
-            ScalabilityEvents.Register(this);
             _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
             ClearShaderGlobals();
         }
@@ -213,7 +207,6 @@ namespace Hecton8.Lighting.Shafts
                 _registeredLateFrame = false;
             }
 
-            ScalabilityEvents.Unregister(this);
             TryUnregisterHotSwapListener();
             CachePlayerCold(null);
             ClearShaderGlobals();
@@ -646,12 +639,12 @@ namespace Hecton8.Lighting.Shafts
         {
             activeCount = math.clamp(activeCount, 0, MaxTrackedSources);
             float qualityCurve = math.smoothstep(0f, 1f, _qualityWeight01);
-            float sampleBudget = math.lerp(math.min(8f, lowTierSampleCount), math.min(16f, highTierSampleCount), qualityCurve);
+            float sampleBudget = math.lerp(math.min(8f, minimumQualitySampleCount), math.min(16f, maximumQualitySampleCount), qualityCurve);
             float brownoutStutter = ResolveBrownoutStutter();
             float intensity = shaftIntensityScale * brownoutStutter;
 
             Shader.SetGlobalVector(_LightShaftParamsId, new Vector4(activeCount, intensity, _soot01, _brownout01));
-            Shader.SetGlobalVector(_LightShaftQualityId, new Vector4(math.max(0.01f, emissionThreshold), sampleBudget, math.max(0.001f, depthBiasMeters), _lowTier ? 1f : 0f));
+            Shader.SetGlobalVector(_LightShaftQualityId, new Vector4(math.max(0.01f, emissionThreshold), sampleBudget, math.max(0.001f, depthBiasMeters), _qualityPressure01));
             Shader.SetGlobalFloat(_AtmosphereSootId, _soot01);
 
             PushContributionGlobals(0, activeCount > 0 ? topContributions[0] : default);
@@ -812,13 +805,13 @@ namespace Hecton8.Lighting.Shafts
         private void RefreshQualityPolicy()
         {
             _qualityWeight01 = ResolveQualityWeight01();
-            _lowTier = ResolveLowTierFromQuality(_qualityWeight01);
+            _qualityPressure01 = ResolveQualityPressureFromWeight(_qualityWeight01);
         }
 
-        private static bool ResolveLowTierFromQuality(float globalQualityWeight)
+        private static float ResolveQualityPressureFromWeight(float globalQualityWeight)
         {
             float quality = math.saturate(math.isfinite(globalQualityWeight) ? globalQualityWeight : 1f);
-            return quality <= 0.3f;
+            return 1f - math.smoothstep(0.12f, 0.44f, quality);
         }
 
         private static float ResolveQualityWeight01()
@@ -837,8 +830,8 @@ namespace Hecton8.Lighting.Shafts
         {
             emissionThreshold = math.max(0.01f, emissionThreshold);
             depthBiasMeters = math.max(0.001f, depthBiasMeters);
-            lowTierSampleCount = math.clamp(lowTierSampleCount, 4f, 8f);
-            highTierSampleCount = math.clamp(highTierSampleCount, 8f, 16f);
+            minimumQualitySampleCount = math.clamp(minimumQualitySampleCount, 4f, 8f);
+            maximumQualitySampleCount = math.clamp(maximumQualitySampleCount, 8f, 16f);
             historyBlendFactor = math.clamp(historyBlendFactor, 0.35f, 1f);
             baseSoot01 = math.saturate(baseSoot01);
             darknessToSoot = math.max(0f, darknessToSoot);

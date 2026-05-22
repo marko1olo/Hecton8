@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Hecton8.VFX
 {
@@ -11,14 +12,6 @@ namespace Hecton8.VFX
         order = 141)]
     public sealed class VFXEmissionProfile : ScriptableObject
     {
-        /// <summary>Hardware-facing budget tiers used by lightweight VFX systems.</summary>
-        public enum HardwareTier
-        {
-            Low = 0,
-            Medium = 1,
-            High = 2
-        }
-
         /// <summary>Supported GPU particle-fluid classes.</summary>
         public enum FluidType
         {
@@ -48,19 +41,22 @@ namespace Hecton8.VFX
         }
 
         /// <summary>
-        /// Hardware-tier raymarch step budgets for compute-driven god rays.
+        /// Continuous-quality raymarch step budgets for compute-driven god rays.
         /// </summary>
         [System.Serializable]
         public struct VolumetricLightBudget
         {
-            [Tooltip("Low-tier god ray step count. Mandate baseline = 8.")]
-            [Min(1)] public int lowTierSteps;
+            [Tooltip("Minimum-quality god ray step count. Mandate baseline = 8.")]
+            [FormerlySerializedAs("lowTierSteps")]
+            [Min(1)] public int minimumQualitySteps;
 
-            [Tooltip("Medium-tier god ray step count. Mandate baseline = 16.")]
-            [Min(1)] public int mediumTierSteps;
+            [Tooltip("Middle-quality god ray step count. Mandate baseline = 16.")]
+            [FormerlySerializedAs("mediumTierSteps")]
+            [Min(1)] public int middleQualitySteps;
 
-            [Tooltip("High-tier god ray step count. Mandate baseline = 32.")]
-            [Min(1)] public int highTierSteps;
+            [Tooltip("Maximum-quality god ray step count. Mandate baseline = 32.")]
+            [FormerlySerializedAs("highTierSteps")]
+            [Min(1)] public int maximumQualitySteps;
         }
 
         [Header("Fluid Presets")]
@@ -106,12 +102,12 @@ namespace Hecton8.VFX
 
         [Header("Volumetric Budgets")]
         [SerializeField]
-        [Tooltip("Hardware-tier raymarch budgets for compute-driven volumetric god rays.")]
+        [Tooltip("Continuous-quality raymarch budgets for compute-driven volumetric god rays.")]
         private VolumetricLightBudget volumetricLightBudget = new VolumetricLightBudget
         {
-            lowTierSteps = 8,
-            mediumTierSteps = 16,
-            highTierSteps = 32
+            minimumQualitySteps = 8,
+            middleQualitySteps = 16,
+            maximumQualitySteps = 32
         };
 
         /// <summary>Returns the resolved settings for the requested fluid class.</summary>
@@ -130,22 +126,15 @@ namespace Hecton8.VFX
             }
         }
 
-        /// <summary>Returns the god-ray raymarch step budget for the requested hardware tier.</summary>
-        public int GetVolumetricGodRaySteps(HardwareTier hardwareTier)
-        {
-            float fallbackWeight = Mathf.Clamp01((int)hardwareTier * 0.5f);
-            return GetVolumetricGodRaySteps(fallbackWeight);
-        }
-
         /// <summary>Returns the god-ray raymarch step budget for a continuous quality weight.</summary>
         public int GetVolumetricGodRaySteps(float globalQualityWeight)
         {
             float q = float.IsNaN(globalQualityWeight) || float.IsInfinity(globalQualityWeight)
                 ? 0.5f
                 : Mathf.Clamp01(globalQualityWeight);
-            float low = Mathf.Max(1, volumetricLightBudget.lowTierSteps);
-            float middle = Mathf.Max(1, volumetricLightBudget.mediumTierSteps);
-            float high = Mathf.Max(1, volumetricLightBudget.highTierSteps);
+            float low = Mathf.Max(1, volumetricLightBudget.minimumQualitySteps);
+            float middle = Mathf.Max(1, volumetricLightBudget.middleQualitySteps);
+            float high = Mathf.Max(1, volumetricLightBudget.maximumQualitySteps);
             float lowToMiddle = SmoothStep01(q * 1.82f);
             float middleToHigh = SmoothStep01((q - 0.45f) * 1.82f);
             float steps = low +
@@ -167,9 +156,9 @@ namespace Hecton8.VFX
             ClampSettings(ref bubble);
             ClampSettings(ref debris);
             ClampSettings(ref plankton);
-            volumetricLightBudget.lowTierSteps = Mathf.Max(1, volumetricLightBudget.lowTierSteps);
-            volumetricLightBudget.mediumTierSteps = Mathf.Max(1, volumetricLightBudget.mediumTierSteps);
-            volumetricLightBudget.highTierSteps = Mathf.Max(1, volumetricLightBudget.highTierSteps);
+            volumetricLightBudget.minimumQualitySteps = Mathf.Max(1, volumetricLightBudget.minimumQualitySteps);
+            volumetricLightBudget.middleQualitySteps = Mathf.Max(1, volumetricLightBudget.middleQualitySteps);
+            volumetricLightBudget.maximumQualitySteps = Mathf.Max(1, volumetricLightBudget.maximumQualitySteps);
         }
 
         private static void ClampSettings(ref FluidSettings settings)

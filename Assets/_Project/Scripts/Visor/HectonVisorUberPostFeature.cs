@@ -75,7 +75,7 @@ namespace Hecton8.Visor
             [Tooltip("Blue-noise texture used to dither lens dirt.")]
             public Texture2D blueNoiseTexture = null;
 
-            [Tooltip("Low-tier circular comfort vignette mask. Red channel is peripheral darkness.")]
+            [Tooltip("Quality-pressure circular comfort vignette mask. Red channel is peripheral darkness.")]
             public Texture2D vrComfortMaskTexture = null;
 
             [Tooltip("Injection point for the unified visor post effect.")]
