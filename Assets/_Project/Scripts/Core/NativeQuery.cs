@@ -69,7 +69,7 @@ namespace Hecton8.Core
         public static bool Where<T>(
             this NativeArray<T> source,
             FunctionPointer<NativePredicate<T>> predicate,
-            ref NativeList<T> output) where T : unmanaged
+            NativeList<T> output) where T : unmanaged
         {
             if (!output.IsCreated)
                 return false;
@@ -94,7 +94,7 @@ namespace Hecton8.Core
         public static bool Select<TSource, TResult>(
             this NativeArray<TSource> source,
             FunctionPointer<NativeSelector<TSource, TResult>> selector,
-            ref NativeList<TResult> output)
+            NativeList<TResult> output)
             where TSource : unmanaged
             where TResult : unmanaged
         {

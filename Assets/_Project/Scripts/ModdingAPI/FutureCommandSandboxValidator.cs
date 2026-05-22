@@ -414,10 +414,10 @@ namespace Hecton8.Modding
     {
         public NativeQueue<FutureCommandEnvelope> Queue;
 
-        public static MockModQueue Wrap(ref NativeQueue<FutureCommandEnvelope> externalQueue)
+        public static MockModQueue Wrap(NativeQueue<FutureCommandEnvelope> externalQueue)
         {
             MockModQueue queue = default;
-            queue.Attach(ref externalQueue);
+            queue.Attach(externalQueue);
             return queue;
         }
 
@@ -426,7 +426,7 @@ namespace Hecton8.Modding
             return Queue.IsCreated;
         }
 
-        public bool Attach(ref NativeQueue<FutureCommandEnvelope> externalQueue)
+        public bool Attach(NativeQueue<FutureCommandEnvelope> externalQueue)
         {
             if (!externalQueue.IsCreated)
                 return false;
@@ -627,7 +627,7 @@ namespace Hecton8.Modding
             return accepted;
         }
 
-        public static int RequestFromExternalQueue(ref NativeQueue<FutureCommandEnvelope> sourceQueue, int maxEnvelopeCount)
+        public static int RequestFromExternalQueue(NativeQueue<FutureCommandEnvelope> sourceQueue, int maxEnvelopeCount)
         {
             Initialize();
             if (!sourceQueue.IsCreated || maxEnvelopeCount <= 0)

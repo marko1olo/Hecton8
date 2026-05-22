@@ -1654,3 +1654,15 @@ Cinematic Cheats used: Preserved AABB obstacle stamping over the voxel passabili
 Exact Microseconds saved: 0 us measured. Static API risk moved `nativeCollectionPublicMutableApiExposure=46->45`, `nativeApiExposureBuildPlayerRuntime=42->41`, `nativeApiExposureMutableReturn=17->16`, and `nativeApiRiskRuntimeDiagnosticNamedMutableView=4->3`.
 
 Evidence: `Docs/Reports/PROJECT_AUDIT_polish_after_nav_obstacle_snapshot_owner_alloc.json`; `python Tools\test_polish_mandate_static_audit.py` passed 12 tests; focused scan found no `CreateObstacleSnapshot` or `internal static NativeArray<NavObstaclePrimitive>` route; targeted `git diff --check` reported LF/CRLF warnings only. Batch re-check found no `<AGENT_PROMPT id="PROJECT_AUDIT">` block. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - NativeQuery Ref Route Removal
+
+What was wrong: `NativeQueryExtensions.Where/Select` advertised mutable `ref NativeList` output routes although the helpers only clear/fill caller-owned backing memory and have no active first-party runtime call sites.
+
+What was done: Changed the extension signatures to take `NativeList` handles by value. No managed query wrapper, LINQ, allocation, or job ABI change was added.
+
+Cinematic Cheats used: Not visual. This preserves bounded native query filtering as preallocated list work rather than managed LINQ traversal.
+
+Exact Microseconds saved: 0 us measured. Static API risk moved `nativeCollectionPublicMutableApiExposure=45->43`, `nativeApiExposureBuildPlayerRuntime=41->39`, `nativeApiExposureOutRefMutable=29->27`, and `nativeApiRiskRuntimeOutRefMutableView=8->6`.
+
+Evidence: `Docs/Reports/PROJECT_AUDIT_polish_after_native_query_ref_removal.json`; `python Tools\test_polish_mandate_static_audit.py` passed 12 tests; focused scan found no `ref NativeList<T>` or `ref NativeList<TResult>` route; targeted `git diff --check` reported LF/CRLF warnings only. Batch re-check found no `<AGENT_PROMPT id="PROJECT_AUDIT">` block. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.

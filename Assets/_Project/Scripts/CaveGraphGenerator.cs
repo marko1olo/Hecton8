@@ -43,6 +43,7 @@
 using Unity.Collections;
 using Unity.Mathematics;
 using Hecton8.Caves;
+using System.Runtime.InteropServices;
 
 /// <summary>
 /// Static procedural cave graph generator.
@@ -83,6 +84,15 @@ public static class CaveGraphGenerator
     ///   effectiveMargin = BASE_EDGE_MARGIN + warpAmplitude + maxBlendRadius
     /// This prevents domain-warped rooms from bleeding through sealed edges.</summary>
     const float BASE_EDGE_MARGIN = 4f;
+
+    [StructLayout(LayoutKind.Sequential, Size = 16)]
+    public struct CaveGraphCounts
+    {
+        public int Nodes;
+        public int Tunnels;
+        public int Entrances;
+        public int Structures;
+    }
 
     // ════════════════════════════════════════════════════════════════════════
     //  PUBLIC API
