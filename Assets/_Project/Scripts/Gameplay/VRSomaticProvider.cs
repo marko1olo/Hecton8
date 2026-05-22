@@ -182,7 +182,7 @@ namespace Hecton8.Gameplay
                 }
             }
 
-            public NativeArray<T> AsNativeArray()
+            private NativeArray<T> AsNativeArray()
             {
                 if (TryResolve(out NativeArray<T> array))
                     return array;

@@ -1521,7 +1521,7 @@ namespace Hecton8.Graphics.Culling
                 UnsafeUtility.SizeOf<float4x4>());
         }
 
-        public static JobHandle SchedulePopulateLockedMatrices(
+        private static JobHandle SchedulePopulateLockedMatrices(
             GraphicsBuffer buffer,
             NativeArray<PoiTransformDTO> source,
             int count,

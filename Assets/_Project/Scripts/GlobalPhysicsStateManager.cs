@@ -494,7 +494,7 @@ namespace Hecton8.Physics
                     CachedDataVault = dataVault;
             }
 
-            public NativeArray<T> AsNativeArray()
+            private NativeArray<T> AsNativeArray()
             {
                 return ResolveExisting();
             }

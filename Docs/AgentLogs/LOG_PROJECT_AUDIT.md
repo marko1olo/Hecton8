@@ -1222,3 +1222,27 @@ Cinematic Cheats used: Existing IK route remains procedural math/Vault lane reso
 Exact Microseconds saved: 0 us measured. Static hygiene gain: `nativeCollectionPublicMutableApiExposure` 106 -> 104, `nativeApiExposureBuildPlayerRuntime` 96 -> 94, `nativeApiExposureOutRefMutable` 78 -> 76, and `nativeApiRiskRuntimeDiagnosticNamedMutableView` 13 -> 11 in `Docs/Reports/PROJECT_AUDIT_polish_after_animation_ik_scope.json`.
 
 Verification: Focused search found no public animation IK resolver declarations in touched files and no qualified active caller. `python Tools\test_polish_mandate_static_audit.py` passed 12 tests. Static audit status remained `PASS_WITH_WARNINGS`. `git diff --check` reported only LF/CRLF normalization warnings. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Private Wrapper AsNative Scope Pass
+
+What was wrong: `VRSomaticProvider.VaultNativeArray<T>.AsNativeArray` and `GlobalPhysicsStateManager.VaultBufferBinding<T>.AsNativeArray` were public native-return methods inside private wrapper structs. Focused search showed both are only used inside their own wrapper bodies.
+
+What was done: Narrowed both `AsNativeArray` methods to private. The required public implicit conversion operators, indexers, Vault handles, DTO layout, and owner-local mutable paths are unchanged.
+
+Cinematic Cheats used: Scope cleanup only. Existing VR/physics paths stay on owner-local Vault lanes and shader/DTO presentation; no new CPU physics or scene-search simulation was introduced.
+
+Exact Microseconds saved: 0 us measured. Static hygiene gain: `nativeApiExposurePrivateNestedSuppressed` 7 -> 5 in `Docs/Reports/PROJECT_AUDIT_polish_after_private_wrapper_asnative_scope.json`; main mutable public counters remained `nativeCollectionPublicMutableApiExposure=104`, `nativeApiExposureBuildPlayerRuntime=94`, and `nativeApiExposureOutRefMutable=76`.
+
+Verification: Focused scan reports only five remaining private-wrapper public native methods with owner call sites. `python Tools\test_polish_mandate_static_audit.py` passed 12 tests. Static audit status remained `PASS_WITH_WARNINGS`. `git diff --check` reported only LF/CRLF normalization warnings. Batch re-check after Tasks 335-337 still found no `<AGENT_PROMPT id="PROJECT_AUDIT">` block. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - TBDR Locked Matrix Scope Pass
+
+What was wrong: `TBDRUmaRawBufferWriter.SchedulePopulateLockedMatrices` publicly returned a locked mutable `NativeArray<float4x4>` view from a GPU buffer, but source search found no active caller.
+
+What was done: Narrowed the no-call scheduler to private. The populate job, raw buffer factory, unlock helper, DTO source, and lock/unlock behavior are unchanged.
+
+Cinematic Cheats used: Existing TBDR path remains GPU raw-buffer matrix upload and tile-aware culling infrastructure instead of GameObject/Renderer instantiation. No new CPU-side render simulation was added.
+
+Exact Microseconds saved: 0 us measured. Static hygiene gain: `nativeCollectionPublicMutableApiExposure` 104 -> 103, `nativeApiExposureBuildPlayerRuntime` 94 -> 93, `nativeApiExposureOutRefMutable` 76 -> 75, and `nativeApiRiskRuntimeOutRefMutableView` 47 -> 46 in `Docs/Reports/PROJECT_AUDIT_polish_after_tbdr_locked_matrix_scope.json`.
+
+Verification: Focused search found only the private declaration. `python Tools\test_polish_mandate_static_audit.py` passed 12 tests. Static audit status remained `PASS_WITH_WARNINGS`. `git diff --check` reported only LF/CRLF normalization warnings. Batch re-check after Tasks 338-340 still found no `<AGENT_PROMPT id="PROJECT_AUDIT">` block. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
