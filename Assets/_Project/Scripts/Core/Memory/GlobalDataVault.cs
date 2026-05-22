@@ -103,20 +103,8 @@ namespace Hecton8.Core.Memory
         /// <summary>Relocation records emitted by bounded live relocation.</summary>
         int LastRelocationRecordCount { get; }
 
-        /// <summary>Returns a persistent buffer view, growing the vault buffer when required.</summary>
-        NativeArray<T> GetBuffer<T>(BufferID bufferId, int requiredLength, SystemID requester, NativeArrayOptions options = NativeArrayOptions.ClearMemory) where T : struct;
-
-        /// <summary>Returns a generation-checked handle for a persistent buffer, growing the vault buffer when required.</summary>
-        VaultBufferHandle<T> GetBufferHandle<T>(BufferID bufferId, int requiredLength, SystemID requester, NativeArrayOptions options = NativeArrayOptions.ClearMemory) where T : struct;
-
         /// <summary>Returns the 16-byte generation descriptor for a persistent buffer, growing the vault buffer when required.</summary>
         VaultGenerationHandle<T> GetGenerationHandle<T>(BufferID bufferId, int requiredLength, SystemID requester, NativeArrayOptions options = NativeArrayOptions.ClearMemory) where T : struct;
-
-        /// <summary>Attempts to read an existing buffer without creating or growing it.</summary>
-        bool TryGetBuffer<T>(BufferID bufferId, out NativeArray<T> buffer) where T : struct;
-
-        /// <summary>Attempts to read an existing generation-checked handle without creating or growing it.</summary>
-        bool TryGetBufferHandle<T>(BufferID bufferId, out VaultBufferHandle<T> handle) where T : struct;
 
         /// <summary>Attempts to read an existing 16-byte generation descriptor without creating or growing it.</summary>
         bool TryGetGenerationHandle<T>(BufferID bufferId, out VaultGenerationHandle<T> handle) where T : struct;
@@ -126,9 +114,6 @@ namespace Hecton8.Core.Memory
 
         /// <summary>Pure read accessor path: resolves an existing generation descriptor without fault telemetry mutation.</summary>
         bool TryReadHandle<T>(in VaultGenerationHandle<T> handle, out NativeArray<T> buffer) where T : struct;
-
-        /// <summary>Legacy bridge: resolves a cached VaultBufferHandle without trusting its cached pointer.</summary>
-        bool TryResolveHandle<T>(in VaultBufferHandle<T> handle, out NativeArray<T> buffer) where T : struct;
 
         /// <summary>Resolves a generation slice descriptor into a transient native sub-view for the current phase.</summary>
         bool TryResolveSlice<T>(in VaultSliceHandle<T> handle, out NativeArray<T> slice) where T : struct;
@@ -146,20 +131,11 @@ namespace Hecton8.Core.Memory
         /// <summary>Attempts to acquire an explicit writer fence for one generation handle.</summary>
         bool TryAcquireWriteLock<T>(in VaultGenerationHandle<T> handle, SystemID systemID, out NativeArray<T> buffer) where T : struct;
 
-        /// <summary>Legacy bridge: attempts to acquire a writer fence without trusting the cached pointer.</summary>
-        bool TryAcquireWriteLock<T>(in VaultBufferHandle<T> handle, SystemID systemID, out NativeArray<T> buffer) where T : struct;
-
         /// <summary>Releases a writer fence acquired by <see cref="TryAcquireWriteLock{T}"/>.</summary>
         bool ReleaseWriteLock<T>(in VaultGenerationHandle<T> handle, SystemID systemID) where T : struct;
 
-        /// <summary>Legacy bridge: releases a writer fence without trusting the cached pointer.</summary>
-        bool ReleaseWriteLock<T>(in VaultBufferHandle<T> handle, SystemID systemID) where T : struct;
-
         /// <summary>Releases one reference to a vault buffer and invalidates stale generation descriptors.</summary>
         bool ReleaseBuffer<T>(in VaultGenerationHandle<T> handle) where T : struct;
-
-        /// <summary>Legacy bridge: releases one reference to a vault buffer without trusting the cached pointer.</summary>
-        bool ReleaseBuffer<T>(in VaultBufferHandle<T> handle) where T : struct;
 
         /// <summary>Attempts to acquire a pointer slice from a cache-line-aligned vault block; non-zero startIndex alignment depends on stride and offset.</summary>
         bool TryAcquireSlice<T>(
@@ -170,10 +146,6 @@ namespace Hecton8.Core.Memory
             SystemID requester,
             out VaultBufferSlice<T> slice,
             NativeArrayOptions options = NativeArrayOptions.UninitializedMemory) where T : struct;
-
-        /// <summary>Validates or refreshes a generation-checked handle; unsafe stale metadata fails fast.</summary>
-        [Obsolete("Legacy pointer-refresh path. Use TryResolveHandle(in handle, out NativeArray<T>) so cached ptr is ignored.", false)]
-        bool ResolveBuffer<T>(ref VaultBufferHandle<T> handle) where T : struct;
 
         /// <summary>Attempts to read the current generation for a buffer.</summary>
         bool TryGetBufferGeneration(BufferID bufferId, out uint generation);
@@ -897,51 +869,6 @@ namespace Hecton8.Core.Memory
         }
 
         /// <inheritdoc />
-        public NativeArray<T> GetBuffer<T>(
-            BufferID bufferId,
-            int requiredLength,
-            SystemID requester,
-            NativeArrayOptions options = NativeArrayOptions.ClearMemory) where T : struct
-        {
-            if (!TryEnsureVaultBuffer<T>(
-                    bufferId,
-                    requiredLength,
-                    requester,
-                    options,
-                    exposeExternalView: true,
-                    out IntPtr pointer,
-                    out int resolvedLength))
-            {
-                return default;
-            }
-
-            return H8Memory.CreateNativeArrayView<T>(pointer.ToPointer(), resolvedLength);
-        }
-
-        /// <inheritdoc />
-        public VaultBufferHandle<T> GetBufferHandle<T>(
-            BufferID bufferId,
-            int requiredLength,
-            SystemID requester,
-            NativeArrayOptions options = NativeArrayOptions.ClearMemory) where T : struct
-        {
-            if (!TryEnsureVaultBuffer<T>(
-                    bufferId,
-                    requiredLength,
-                    requester,
-                    options,
-                    exposeExternalView: false,
-                    out _,
-                    out _) ||
-                !TryBuildHandle(bufferId, out VaultBufferHandle<T> handle))
-            {
-                return default;
-            }
-
-            return handle;
-        }
-
-        /// <inheritdoc />
         public VaultGenerationHandle<T> GetGenerationHandle<T>(
             BufferID bufferId,
             int requiredLength,
@@ -1184,8 +1111,7 @@ namespace Hecton8.Core.Memory
             return true;
         }
 
-        /// <inheritdoc />
-        public bool TryGetBuffer<T>(BufferID bufferId, out NativeArray<T> buffer) where T : struct
+        private bool TryGetBuffer<T>(BufferID bufferId, out NativeArray<T> buffer) where T : struct
         {
             buffer = default;
             if (!_initialized)
@@ -1245,16 +1171,6 @@ namespace Hecton8.Core.Memory
 
             DumpPhiVodBlackBox();
             return false;
-        }
-
-        /// <inheritdoc />
-        public bool TryGetBufferHandle<T>(BufferID bufferId, out VaultBufferHandle<T> handle) where T : struct
-        {
-            handle = default;
-            if (!_initialized || _compactionFence != 0)
-                return false;
-
-            return TryBuildHandle(bufferId, out handle);
         }
 
         /// <inheritdoc />
@@ -1359,23 +1275,6 @@ namespace Hecton8.Core.Memory
 
             buffer = H8Memory.CreateNativeArrayView<T>((byte*)_arenaBase + meta.OffsetBytes, meta.Length);
             return buffer.IsCreated;
-        }
-
-        /// <inheritdoc />
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool TryResolveHandle<T>(in VaultBufferHandle<T> handle, out NativeArray<T> buffer) where T : struct
-        {
-            buffer = default;
-            if (handle.BufferId == BufferID.Unknown ||
-                handle.generation == 0u ||
-                handle.Length <= 0 ||
-                handle.Stride != UnsafeUtility.SizeOf<T>())
-            {
-                return false;
-            }
-
-            VaultGenerationHandle<T> descriptor = handle.ToGenerationHandle();
-            return TryResolveHandle(in descriptor, out buffer);
         }
 
         /// <inheritdoc />
@@ -1502,22 +1401,6 @@ namespace Hecton8.Core.Memory
         }
 
         /// <inheritdoc />
-        public bool TryAcquireWriteLock<T>(in VaultBufferHandle<T> handle, SystemID systemID, out NativeArray<T> buffer) where T : struct
-        {
-            buffer = default;
-            if (handle.BufferId == BufferID.Unknown ||
-                handle.generation == 0u ||
-                handle.Length <= 0 ||
-                handle.Stride != UnsafeUtility.SizeOf<T>())
-            {
-                return false;
-            }
-
-            VaultGenerationHandle<T> descriptor = handle.ToGenerationHandle(systemID);
-            return TryAcquireWriteLock(in descriptor, systemID, out buffer);
-        }
-
-        /// <inheritdoc />
         public bool ReleaseWriteLock<T>(in VaultGenerationHandle<T> handle, SystemID systemID) where T : struct
         {
             if (systemID == SystemID.Unknown || !_metadataByBufferId.IsCreated)
@@ -1540,21 +1423,6 @@ namespace Hecton8.Core.Memory
 
             WriteMetadata(key, in metadata[key]);
             return true;
-        }
-
-        /// <inheritdoc />
-        public bool ReleaseWriteLock<T>(in VaultBufferHandle<T> handle, SystemID systemID) where T : struct
-        {
-            if (handle.BufferId == BufferID.Unknown ||
-                handle.generation == 0u ||
-                handle.Length <= 0 ||
-                handle.Stride != UnsafeUtility.SizeOf<T>())
-            {
-                return false;
-            }
-
-            VaultGenerationHandle<T> descriptor = handle.ToGenerationHandle(systemID);
-            return ReleaseWriteLock(in descriptor, systemID);
         }
 
         /// <inheritdoc />
@@ -1591,21 +1459,6 @@ namespace Hecton8.Core.Memory
             RemoveBufferKey(key);
             FreeBlock(blockIndex, clearPayload: true);
             return true;
-        }
-
-        /// <inheritdoc />
-        public bool ReleaseBuffer<T>(in VaultBufferHandle<T> handle) where T : struct
-        {
-            if (handle.BufferId == BufferID.Unknown ||
-                handle.generation == 0u ||
-                handle.Length <= 0 ||
-                handle.Stride != UnsafeUtility.SizeOf<T>())
-            {
-                return false;
-            }
-
-            VaultGenerationHandle<T> descriptor = handle.ToGenerationHandle();
-            return ReleaseBuffer(in descriptor);
         }
 
         /// <inheritdoc />
@@ -1669,98 +1522,6 @@ namespace Hecton8.Core.Memory
             SetMemoryStarvationWarning(2);
             slice = BuildReadOnlyDummySlice<T>(bufferId, count, stride);
             return false;
-        }
-
-        /// <inheritdoc />
-        [Obsolete("Legacy pointer-refresh path. Use TryResolveHandle(in handle, out NativeArray<T>) so cached ptr is ignored.", false)]
-        public bool ResolveBuffer<T>(ref VaultBufferHandle<T> handle) where T : struct
-        {
-            bool hasCachedIdentity =
-                handle.ptr != null ||
-                handle.generation != 0u ||
-                handle.Length != 0 ||
-                handle.Stride != 0;
-
-            if (!_initialized || _compactionFence != 0 || _arenaBase == null)
-            {
-                if (hasCachedIdentity)
-                {
-                    DumpPhiVodBlackBox();
-                    FatalMemoryException.ThrowStaleVaultHandle();
-                }
-
-                return false;
-            }
-
-            int key = (int)handle.BufferId;
-            if (key == 0)
-            {
-                if (hasCachedIdentity)
-                {
-                    DumpPhiVodBlackBox();
-                    FatalMemoryException.ThrowStaleVaultHandle();
-                }
-
-                return false;
-            }
-
-            bool hasPointer = _buffers.TryGetValue(key, out IntPtr pointer);
-            bool hasMeta = _metadata.TryGetValue(key, out VaultBufferMeta meta);
-            if (!hasPointer && !hasMeta)
-            {
-                if (hasCachedIdentity)
-                {
-                    DumpPhiVodBlackBox();
-                    FatalMemoryException.ThrowStaleVaultHandle();
-                }
-
-                return false;
-            }
-
-            if (hasPointer != hasMeta || pointer == IntPtr.Zero || meta.Length <= 0)
-            {
-                DumpPhiVodBlackBox();
-                if (hasCachedIdentity)
-                    FatalMemoryException.ThrowStaleVaultHandle();
-
-                return false;
-            }
-
-            int stride = UnsafeUtility.SizeOf<T>();
-            int alignment = UnsafeUtility.AlignOf<T>();
-            ValidateType<T>(handle.BufferId, meta, stride, alignment);
-            if (!IsPointerAligned(pointer, VaultBlockAlignment))
-            {
-                LastDefragFlags = (byte)(LastDefragFlags | DefragFlagUnaligned);
-                DumpPhiVodBlackBox();
-                FatalMemoryException.ThrowStaleVaultHandle();
-            }
-
-            bool matchesMetadata =
-                handle.generation == meta.Version &&
-                handle.ptr != null &&
-                (IntPtr)handle.ptr == pointer &&
-                handle.Length == meta.Length &&
-                handle.Stride == meta.Stride;
-            if (!matchesMetadata)
-            {
-                if (hasCachedIdentity && !CanRefreshHandleAfterGenerationBump(in handle, in meta, pointer))
-                {
-                    DumpPhiVodBlackBox();
-                    FatalMemoryException.ThrowStaleVaultHandle();
-                }
-
-                handle.ptr = pointer.ToPointer();
-                handle.generation = meta.Version;
-                handle.BufferId = (BufferID)key;
-                handle.Length = meta.Length;
-                handle.Stride = meta.Stride;
-                if (hasCachedIdentity)
-                    Interlocked.Increment(ref _generationHandleMissCount);
-            }
-
-            SanitizeFinitePayload<T>(pointer, meta.Length);
-            return true;
         }
 
         /// <inheritdoc />
@@ -3725,28 +3486,6 @@ namespace Hecton8.Core.Memory
         {
             uint next = generation + 1u;
             return next == 0u ? 1u : next;
-        }
-
-        private static bool CanRefreshHandleAfterGenerationBump<T>(
-            in VaultBufferHandle<T> handle,
-            in VaultBufferMeta meta,
-            IntPtr pointer) where T : struct
-        {
-            if (pointer == IntPtr.Zero ||
-                handle.BufferId == BufferID.Unknown ||
-                handle.ptr == null ||
-                handle.generation == 0u)
-            {
-                return false;
-            }
-
-            if (meta.Version <= handle.generation)
-                return false;
-
-            if (handle.Stride != 0 && handle.Stride != meta.Stride)
-                return false;
-
-            return handle.Length <= 0 || meta.Length >= handle.Length;
         }
 
         private static int ResolveBufferCapacity(int capacity)

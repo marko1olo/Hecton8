@@ -1786,3 +1786,39 @@ Cinematic Cheats used: Not visual. This preserves owner-checked native memory te
 Exact Microseconds saved: 0 us measured. Static API risk moved `nativeCollectionPublicMutableApiExposure=23->21`, `nativeApiExposureBuildPlayerRuntime=23->21`, `nativeApiExposureOutRefMutable=14->12`, and `nativeApiRiskCoreVaultOrAllocatorSurface=16->14`.
 
 Evidence: `Docs/Reports/PROJECT_AUDIT_polish_after_h8memory_obsolete_release_removal.json`; `python Tools\test_polish_mandate_static_audit.py` passed 12 tests; focused scan shows only owner-aware `H8Memory.Release` overloads remain; targeted `git diff --check` reported LF/CRLF warnings only. Batch re-check found no `<AGENT_PROMPT id="PROJECT_AUDIT">` block. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Vault Legacy Handle Resolver Removal
+
+What was wrong: `VaultBufferHandle<T>` still exposed obsolete pointer-era helper methods with no first-party callers: `Resolve`, `ResolvePointer`, ref accessors, and tombstone mutation.
+
+What was done: Removed the obsolete legacy helper block and kept `ToGenerationHandle` as the pointer-free bridge into the current `IDataVault.TryReadHandle`/`TryAcquireWriteLock` model.
+
+Cinematic Cheats used: Not visual. This keeps vault memory access phase-local and generation-checked instead of preserving stale pointer/element-ref shortcuts.
+
+Exact Microseconds saved: 0 us measured. Static API risk moved `nativeCollectionPublicMutableApiExposure=21->20`, `nativeApiExposureBuildPlayerRuntime=21->20`, `nativeApiExposureMutableReturn=9->8`, and `nativeApiRiskCoreVaultOrAllocatorSurface=14->13`.
+
+Evidence: `Docs/Reports/PROJECT_AUDIT_polish_after_vault_legacy_handle_resolve_removal.json`; `python Tools\test_polish_mandate_static_audit.py` passed 12 tests; focused scan found no remaining legacy handle resolver/ref/tombstone methods; targeted `git diff --check` reported no output. Batch re-check found no `<AGENT_PROMPT id="PROJECT_AUDIT">` block. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Vault Raw Buffer Route Removal
+
+What was wrong: `IDataVault.GetBuffer` and raw `TryGetBuffer(BufferID,out NativeArray<T>)` exposed direct mutable vault buffer views. Exact search found no first-party caller for those public routes.
+
+What was done: Removed `GetBuffer` and raw `TryGetBuffer` from `IDataVault`, removed public `GlobalDataVault.GetBuffer`, and narrowed `GlobalDataVault.TryGetBuffer` to private for `CreateAlias`.
+
+Cinematic Cheats used: Not visual. This keeps DataVault access on generation descriptors and phase-local read/write routes instead of raw BufferID mutable views.
+
+Exact Microseconds saved: 0 us measured. Static API risk moved `nativeCollectionPublicMutableApiExposure=20->18`, `nativeApiExposureBuildPlayerRuntime=20->18`, `nativeApiExposureMutableReturn=8->7`, `nativeApiExposureOutRefMutable=12->11`, and `nativeApiRiskCoreVaultOrAllocatorSurface=13->11`.
+
+Evidence: `Docs/Reports/PROJECT_AUDIT_polish_after_vault_raw_buffer_route_removal.json`; `python Tools\test_polish_mandate_static_audit.py` passed 12 tests; focused scan shows no public raw buffer route and only private `GlobalDataVault.TryGetBuffer`; targeted `git diff --check` reported LF/CRLF warning only. Batch re-check found no `<AGENT_PROMPT id="PROJECT_AUDIT">` block. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - VaultBufferHandle Bridge Removal
+
+What was wrong: `GlobalDataVault` still exposed unused `VaultBufferHandle<T>` bridge methods after active systems had migrated to `VaultGenerationHandle<T>`.
+
+What was done: Removed `GetBufferHandle`, `TryGetBufferHandle`, legacy handle resolve/write-lock/release overloads, obsolete `ResolveBuffer`, and its now-unused refresh helper. Kept slice generation stamping intact.
+
+Cinematic Cheats used: Not visual. This removes stale pointer-handle bridge APIs while preserving generation-checked phase-local vault access.
+
+Exact Microseconds saved: 0 us measured. Static API risk moved `nativeCollectionPublicMutableApiExposure=18->16`, `nativeApiExposureBuildPlayerRuntime=18->16`, `nativeApiExposureOutRefMutable=11->9`, and `nativeApiRiskCoreVaultOrAllocatorSurface=11->9`.
+
+Evidence: `Docs/Reports/PROJECT_AUDIT_polish_after_vault_bufferhandle_bridge_removal.json`; `python Tools\test_polish_mandate_static_audit.py` passed 12 tests; focused scan found no first-party bridge methods beyond analyzer string text; targeted `git diff --check` reported LF/CRLF warning only. Batch re-check found no `<AGENT_PROMPT id="PROJECT_AUDIT">` block. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
