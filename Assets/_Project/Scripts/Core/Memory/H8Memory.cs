@@ -2039,15 +2039,6 @@ namespace Hecton8.Core.Memory
         }
 
         /// <summary>
-        /// Releases a native array allocated by <see cref="Allocate{T}"/> and removes it from the leak tracker.
-        /// </summary>
-        [Obsolete("Use Release(ref NativeArray<T>, SystemID) so tracked memory is freed by its recorded owner.", true)]
-        public static void Release<T>(ref NativeArray<T> array) where T : struct
-        {
-            Release(ref array, SystemID.Unknown);
-        }
-
-        /// <summary>
         /// Releases a native array only when the caller matches the recorded allocation owner.
         /// </summary>
         public static void Release<T>(ref NativeArray<T> array, SystemID owner) where T : struct
@@ -2063,15 +2054,6 @@ namespace Hecton8.Core.Memory
             UnregisterPointer(pointer, owner);
             array.Dispose();
             array = default;
-        }
-
-        /// <summary>
-        /// Defers native-array disposal behind an active job dependency and retires leak ownership immediately.
-        /// </summary>
-        [Obsolete("Use Release(ref NativeArray<T>, JobHandle, SystemID) so tracked memory is freed by its recorded owner.", true)]
-        public static JobHandle Release<T>(ref NativeArray<T> array, JobHandle dependency) where T : struct
-        {
-            return Release(ref array, dependency, SystemID.Unknown);
         }
 
         /// <summary>

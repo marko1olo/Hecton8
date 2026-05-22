@@ -203,38 +203,12 @@ namespace Hecton8.Core
             }
         }
 
-        public static NativeArray<T> Allocate<T>(int count, bool clearMemory = true) where T : unmanaged
-        {
-            if (!TryAllocateNativeArray(count, clearMemory, DefaultOwnerHash, out NativeArray<T> array))
-                return default;
-
-            return array;
-        }
-
-        public static NativeArray<T> Allocate<T>(int count, NativeArrayOptions options) where T : unmanaged
-        {
-            if (!TryAllocateNativeArray(count, options, DefaultOwnerHash, out NativeArray<T> array))
-                return default;
-
-            return array;
-        }
-
-        public static bool TryAllocateNativeArray<T>(int count, bool clearMemory, out NativeArray<T> array) where T : unmanaged
-        {
-            return TryAllocateNativeArray(count, clearMemory, DefaultOwnerHash, out array);
-        }
-
-        public static bool TryAllocateNativeArray<T>(int count, NativeArrayOptions options, out NativeArray<T> array) where T : unmanaged
-        {
-            return TryAllocateNativeArray(count, options, DefaultOwnerHash, out array);
-        }
-
         public static bool TryAllocateNativeArray<T>(int count, NativeArrayOptions options, uint ownerHash, out NativeArray<T> array) where T : unmanaged
         {
             return TryAllocateNativeArray(count, ShouldClear(options), ownerHash, out array);
         }
 
-        public static bool TryAllocateNativeArray<T>(int count, bool clearMemory, uint ownerHash, out NativeArray<T> array) where T : unmanaged
+        private static bool TryAllocateNativeArray<T>(int count, bool clearMemory, uint ownerHash, out NativeArray<T> array) where T : unmanaged
         {
             array = default;
             if (!TryAllocateBlock<T>(count, ownerHash, out ArenaAllocation allocation))

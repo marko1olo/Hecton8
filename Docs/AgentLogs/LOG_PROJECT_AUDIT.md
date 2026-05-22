@@ -1750,3 +1750,39 @@ Cinematic Cheats used: Not visual. This preserves structural commands as low-fre
 Exact Microseconds saved: 0 us measured. Static API risk moved `nativeCollectionPublicMutableApiExposure=33->30`, `nativeApiExposureBuildPlayerRuntime=33->30`, `nativeApiExposureMutableReturn=15->13`, `nativeApiExposureOutRefMutable=18->17`, `nativeApiRiskRuntimeOutRefMutableView=3->2`, and `nativeApiRiskRuntimeReturnMutableView=9->7`.
 
 Evidence: `Docs/Reports/PROJECT_AUDIT_polish_after_threadsafe_command_writer_removal.json`; `python Tools\test_polish_mandate_static_audit.py` passed 12 tests; focused scan found no `ThreadSafeCommandQueue.OpenLegacyMpscWriter/AsParallelWriter/TryOpenParallelWriter` callers; targeted `git diff --check` reported LF/CRLF warnings only. Batch re-check found no `<AGENT_PROMPT id="PROJECT_AUDIT">` block. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Native Ring/Arena Surface Narrowing
+
+What was wrong: `NativeArenaAllocator.Allocate<T>` was an unused mutable array return shim, and `NativeRingBuffer.RawArray` exposed ring backing storage for sentinel calls.
+
+What was done: Removed the unused arena allocation shim and moved ring sentinel register/unregister behind `NativeRingBuffer.RegisterBackingArray` and `UnregisterBackingArray`.
+
+Cinematic Cheats used: Not visual. This keeps black-box telemetry/frame-time rings as fixed native buffers without exporting raw mutable backing arrays.
+
+Exact Microseconds saved: 0 us measured. Static API risk moved `nativeCollectionPublicMutableApiExposure=30->28`, `nativeApiExposureBuildPlayerRuntime=30->28`, `nativeApiExposureMutableReturn=13->11`, and `nativeApiRiskRuntimeReturnMutableView=7->5`.
+
+Evidence: `Docs/Reports/PROJECT_AUDIT_polish_after_native_ring_arena_surface.json`; `python Tools\test_polish_mandate_static_audit.py` passed 12 tests; focused scan found no `NativeArenaAllocator.Allocate` caller and no `NativeRingBuffer.RawArray` use; targeted `git diff --check` reported LF/CRLF warnings only. Batch re-check found no `<AGENT_PROMPT id="PROJECT_AUDIT">` block. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - HectonArena Overload Scope
+
+What was wrong: `HectonArenaAllocator` kept five no-call default-owner NativeArray overloads in addition to the one active owner-hash proof route.
+
+What was done: Removed the stale `Allocate<T>`/default-owner `TryAllocateNativeArray` overloads and made the bool/owner-hash implementation private behind the active options/owner-hash route.
+
+Cinematic Cheats used: Not visual. This keeps hull emergency proof scratch in frame-transient arena memory without advertising broad default-owner NativeArray allocation.
+
+Exact Microseconds saved: 0 us measured. Static API risk moved `nativeCollectionPublicMutableApiExposure=28->23`, `nativeApiExposureBuildPlayerRuntime=28->23`, `nativeApiExposureMutableReturn=11->9`, `nativeApiExposureOutRefMutable=17->14`, and `nativeApiRiskCoreVaultOrAllocatorSurface=21->16`.
+
+Evidence: `Docs/Reports/PROJECT_AUDIT_polish_after_hecton_arena_overload_scope.json`; `python Tools\test_polish_mandate_static_audit.py` passed 12 tests; focused scan shows only `HullIntegrityRuntime` calling `HectonArenaAllocator.TryAllocateNativeArray`; targeted `git diff --check` reported LF/CRLF warnings only. Batch re-check found no `<AGENT_PROMPT id="PROJECT_AUDIT">` block. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - H8Memory Obsolete Release Removal
+
+What was wrong: `H8Memory` still advertised two no-owner `Release` wrappers for `NativeArray<T>` disposal. They were `Obsolete(..., true)`, but still counted as public mutable native API surface and encoded an unknown-owner fallback route.
+
+What was done: Removed `Release(ref NativeArray<T>)` and `Release(ref NativeArray<T>, JobHandle)`. The remaining release APIs require explicit `SystemID` owner proof for immediate and deferred disposal.
+
+Cinematic Cheats used: Not visual. This preserves owner-checked native memory teardown instead of allowing broad unknown-owner free paths.
+
+Exact Microseconds saved: 0 us measured. Static API risk moved `nativeCollectionPublicMutableApiExposure=23->21`, `nativeApiExposureBuildPlayerRuntime=23->21`, `nativeApiExposureOutRefMutable=14->12`, and `nativeApiRiskCoreVaultOrAllocatorSurface=16->14`.
+
+Evidence: `Docs/Reports/PROJECT_AUDIT_polish_after_h8memory_obsolete_release_removal.json`; `python Tools\test_polish_mandate_static_audit.py` passed 12 tests; focused scan shows only owner-aware `H8Memory.Release` overloads remain; targeted `git diff --check` reported LF/CRLF warnings only. Batch re-check found no `<AGENT_PROMPT id="PROJECT_AUDIT">` block. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
