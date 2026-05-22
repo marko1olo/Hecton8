@@ -37,3 +37,24 @@ Deferred:
 Latest commits:
 - `2451c0670 chore: quiet vscode csharp background work`
 - `30ab5e3e6 chore: safe watchdog checkpoint 2026-05-22 03:53`
+
+## 2026-05-22 11:45 Samara Update
+
+Done:
+- VS Code was observed after a reload/new process set: old `codex.exe` PID 34124 was gone, new `codex.exe` PID 45216 started with much lower memory.
+- Safe watchdog updated to throttle VS Code utility NodeService processes, not renderer/window/GPU.
+- Current `codex.exe` and VS Code utility processes were lowered to `BelowNormal`.
+- Added `C:\Users\danat\AppData\Roaming\Code\argv.json` with `"disable-hardware-acceleration": true`; requires full VS Code restart.
+- User settings updated to hard-disable bundled GitHub Copilot/Copilot Chat background/cloud/Claude agents, workspace code search, local index, GitHub MCP, Copilot code actions, and Git UI.
+- VS Code CLI used to mark bundled `GitHub.copilot-chat`, `vscode.git`, and `vscode.github` disabled for next startup.
+
+Evidence:
+- `code --status` after reload: VS Code/Codex working set down to roughly 2.6 GB from previous 4.1-4.4 GB samples.
+- `openai.chatgpt` log was noisy: repeated `thread-stream-state-changed` warnings.
+- Bundled `GitHub.copilot-chat` activated on startup and logged `TypeError: e is not iterable`; it also activated Git services.
+- Git log showed repeated `git status`, `for-each-ref`, `merge-base`, and `diff` activity even after workspace git settings.
+- Display path: Intel Iris Xe driver `30.0.101.1191` from 2021 is active for VS Code/DWM; NVIDIA MX350 driver is newer.
+- Lightweight 8s CPU delta after WMI diagnostics stopped: `site_tgach` approx 1.7%, VS Code renderer approx 0.5%, Task Manager approx 0.7%. No sustained CPU fire remained.
+
+Deferred:
+- Full benefit requires closing/reopening VS Code so bundled Copilot/Git disable and hardware acceleration settings take effect.

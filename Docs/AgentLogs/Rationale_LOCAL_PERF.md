@@ -35,3 +35,23 @@ Verification required:
 - Re-run `code --status` after reload.
 - Compare 10-minute watchdog samples before/after reload.
 - Confirm no loss of C# navigation required by current workflow.
+
+## 2026-05-22 11:45 Samara Decision Addendum
+
+Problem: User reported the machine still felt bad after reload. Raw snapshots showed transient `dwm.exe`, `System`, VS Code renderer, and WMI load, not memory exhaustion. VS Code logs showed bundled GitHub Copilot Chat self-activation and an internal error.
+
+Solution:
+- Disable VS Code hardware acceleration via `argv.json` for next full restart, because DWM/renderer spikes occurred while VS Code used Intel Iris Xe GPU acceleration on a 2021 Intel driver.
+- Disable bundled GitHub Copilot Chat/Git/GitHub paths globally for next startup, because they are not the active Codex channel and they independently activated Git, model metadata, sessions, workspace search, and threw `TypeError: e is not iterable`.
+- Keep OpenAI `openai.chatgpt` alive because it is the active agent transport.
+- Use lightweight `Get-Process` CPU deltas after WMI proved noisy, because repeated WMI polling itself raised `Winmgmt/WmiPrvSE`.
+
+Rejected Alternatives:
+- Killing VS Code renderer/window: rejected because it would terminate the active work surface.
+- Killing `site_tgach`, `dvachbot`, or `stomchat`: rejected by user constraint and because final lightweight CPU delta did not show them as the active cause.
+- Disabling `openai.chatgpt`: rejected because it would stop this agent.
+- Continuing heavy WMI sampling: rejected because it created measurement load.
+
+Hardware Impact:
+- Expected gain after restart: less DWM/GPU-driver churn from VS Code, less extension-host startup load from bundled Copilot Chat/Git.
+- No exact microsecond claim; proof artifact is process/log evidence only.
