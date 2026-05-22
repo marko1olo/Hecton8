@@ -69,11 +69,6 @@ namespace Hecton8.Core
         }
 
         /// <summary>
-        /// Exposes the raw native block for sentinel registration and unsafe export.
-        /// </summary>
-        public NativeArray<T> RawArray => _buffer;
-
-        /// <summary>
         /// Reads or writes the normalized native slot.
         /// </summary>
         /// <param name="index">Raw slot index, not chronological index.</param>
@@ -111,6 +106,22 @@ namespace Hecton8.Core
 
             for (int i = 0; i < safeCount; i++)
                 destination[i] = _buffer[NormalizeIndex(startWriteIndex + i)];
+        }
+
+        public void RegisterBackingArray(string owner, string label, NativeAllocationLifetime lifetime)
+        {
+            if (!_buffer.IsCreated)
+                return;
+
+            NativeMemorySentinel.RegisterNativeArray(_buffer, owner, label, lifetime);
+        }
+
+        public void UnregisterBackingArray()
+        {
+            if (!_buffer.IsCreated)
+                return;
+
+            NativeMemorySentinel.UnregisterNativeArray(_buffer);
         }
 
         /// <summary>

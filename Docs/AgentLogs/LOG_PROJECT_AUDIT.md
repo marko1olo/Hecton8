@@ -1726,3 +1726,27 @@ Cinematic Cheats used: Not visual. This keeps static-data telemetry as compact n
 Exact Microseconds saved: 0 us measured. Static API risk moved `nativeCollectionPublicMutableApiExposure=37->34`, `nativeApiExposureBuildPlayerRuntime=37->34`, `nativeApiExposureOutRefMutable=22->19`, and `nativeApiRiskRuntimeDiagnosticNamedMutableView=3->1`.
 
 Evidence: `Docs/Reports/PROJECT_AUDIT_polish_after_static_data_helper_scope.json`; `python Tools\test_polish_mandate_static_audit.py` passed 12 tests; focused scan shows only private declarations for the three helper routes; targeted `git diff --check` reported LF/CRLF warnings only. Batch re-check found no `<AGENT_PROMPT id="PROJECT_AUDIT">` block. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Save-Load Voxel Snapshot Owner Copy
+
+What was wrong: `SaveBinaryStorage.TryLoadSaveData` returned a mutable loaded voxel delta `NativeArray<byte>` through an out parameter.
+
+What was done: `SaveManager` now measures, allocates, registers, and disposes the loaded voxel snapshot; `SaveBinaryStorage` copies indexed/legacy voxel payload bytes into caller-owned native memory and returns only byte counts.
+
+Cinematic Cheats used: Not visual. This preserves voxel delta replay as compact binary payload copies instead of managed object reconstruction or scene-level voxel diff traversal during load.
+
+Exact Microseconds saved: 0 us measured. Static API risk moved `nativeCollectionPublicMutableApiExposure=34->33`, `nativeApiExposureBuildPlayerRuntime=34->33`, `nativeApiExposureOutRefMutable=19->18`, and `nativeApiRiskRuntimeDiagnosticNamedMutableView=1->0`.
+
+Evidence: `Docs/Reports/PROJECT_AUDIT_polish_after_save_load_voxel_owner_copy.json`; `python Tools\test_polish_mandate_static_audit.py` passed 12 tests; focused scan shows `SaveBinaryStorage.TryLoadSaveData` no longer returns `out NativeArray<byte>`; targeted `git diff --check` reported LF/CRLF warnings only. Batch re-check found no `<AGENT_PROMPT id="PROJECT_AUDIT">` block. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - ThreadSafeCommandQueue Writer Route Removal
+
+What was wrong: `ThreadSafeCommandQueue` exposed three public native queue writer routes with no external first-party callers.
+
+What was done: Removed `OpenLegacyMpscWriter`, `AsParallelWriter`, `TryOpenParallelWriter`, and their unused no-init helper. `Enqueue` and dispatcher drain behavior remain unchanged.
+
+Cinematic Cheats used: Not visual. This preserves structural commands as low-frequency dispatcher-owned intents instead of reopening a global job-writer command storm path.
+
+Exact Microseconds saved: 0 us measured. Static API risk moved `nativeCollectionPublicMutableApiExposure=33->30`, `nativeApiExposureBuildPlayerRuntime=33->30`, `nativeApiExposureMutableReturn=15->13`, `nativeApiExposureOutRefMutable=18->17`, `nativeApiRiskRuntimeOutRefMutableView=3->2`, and `nativeApiRiskRuntimeReturnMutableView=9->7`.
+
+Evidence: `Docs/Reports/PROJECT_AUDIT_polish_after_threadsafe_command_writer_removal.json`; `python Tools\test_polish_mandate_static_audit.py` passed 12 tests; focused scan found no `ThreadSafeCommandQueue.OpenLegacyMpscWriter/AsParallelWriter/TryOpenParallelWriter` callers; targeted `git diff --check` reported LF/CRLF warnings only. Batch re-check found no `<AGENT_PROMPT id="PROJECT_AUDIT">` block. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.

@@ -20,11 +20,6 @@ namespace Hecton8.Core
             HectonArenaAllocator.Initialize(resolvedCapacity);
         }
 
-        public static NativeArray<T> Allocate<T>(int count) where T : unmanaged
-        {
-            return HectonArenaAllocator.Allocate<T>(count);
-        }
-
         internal static bool TryAllocateBytes(int byteCount, int alignment, out byte* ptr)
         {
             return HectonArenaAllocator.TryAllocateBytes(byteCount, alignment, out ptr);

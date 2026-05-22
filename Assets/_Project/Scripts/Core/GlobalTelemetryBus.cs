@@ -188,7 +188,7 @@ namespace Hecton8.Core
             if (!buffer.IsCreated)
                 return;
 
-            NativeMemorySentinel.UnregisterNativeArray(buffer.RawArray);
+            buffer.UnregisterBackingArray();
             buffer.Dispose();
             buffer = default;
         }
@@ -726,8 +726,7 @@ namespace Hecton8.Core
                 if (!_ringBuffer.IsCreated)
                 {
                     _ringBuffer = new NativeRingBuffer<TelemetryEvent>(Capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeRingBuffer<TelemetryEvent>[1024] — power-of-two black-box ring retaining the last 1000 telemetry frames — owner: GlobalTelemetryBus
-                    NativeMemorySentinel.RegisterNativeArray(
-                        _ringBuffer.RawArray,
+                    _ringBuffer.RegisterBackingArray(
                         nameof(GlobalTelemetryBus),
                         nameof(_ringBuffer),
                         NativeAllocationLifetime.Session);

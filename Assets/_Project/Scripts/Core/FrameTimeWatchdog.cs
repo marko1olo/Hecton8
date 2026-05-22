@@ -225,8 +225,7 @@ namespace Hecton8.Core
                 return;
 
             _frameTimeSamples = new NativeRingBuffer<float>(FrameTimeSampleCount, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeRingBuffer<float>[64] - fixed frame pacing average, no managed List/array growth - owner: FrameTimeWatchdog
-            NativeMemorySentinel.RegisterNativeArray(
-                _frameTimeSamples.RawArray,
+            _frameTimeSamples.RegisterBackingArray(
                 nameof(FrameTimeWatchdog),
                 nameof(_frameTimeSamples),
                 NativeAllocationLifetime.Session);
@@ -237,7 +236,7 @@ namespace Hecton8.Core
             if (!_frameTimeSamples.IsCreated)
                 return;
 
-            NativeMemorySentinel.UnregisterNativeArray(_frameTimeSamples.RawArray);
+            _frameTimeSamples.UnregisterBackingArray();
             _frameTimeSamples.Dispose();
             _frameTimeSamples = default;
         }

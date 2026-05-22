@@ -289,46 +289,6 @@ namespace Hecton8.Core
             _storageReservationCommitListeners[_storageReservationCommitListenerCount] = null;
         }
 
-        /// <summary>
-        /// Opens the retained MPSC structural-command writer for low-frequency job-authored commands.
-        /// High-frequency command storms require owner-local batching before this queue.
-        /// </summary>
-        public static NativeQueue<EntityCommand>.ParallelWriter OpenLegacyMpscWriter()
-        {
-            Initialize();
-            return TryOpenParallelWriterNoInit(out NativeQueue<EntityCommand>.ParallelWriter writer) ? writer : default;
-        }
-
-        /// <summary>Compatibility alias for the low-frequency legacy structural-command writer.</summary>
-        public static NativeQueue<EntityCommand>.ParallelWriter AsParallelWriter()
-        {
-            return OpenLegacyMpscWriter();
-        }
-
-        /// <summary>
-        /// Opens a producer writer for low-frequency Burst/job authored structural commands.
-        /// The caller must capture this on the main thread while scheduling work.
-        /// </summary>
-        /// <param name="writer">Queue writer safe for concurrent job producers.</param>
-        /// <returns>True when the queue is ready.</returns>
-        public static bool TryOpenParallelWriter(out NativeQueue<EntityCommand>.ParallelWriter writer)
-        {
-            Initialize();
-            return TryOpenParallelWriterNoInit(out writer);
-        }
-
-        private static bool TryOpenParallelWriterNoInit(out NativeQueue<EntityCommand>.ParallelWriter writer)
-        {
-            if (!_pendingCommands.IsCreated)
-            {
-                writer = default;
-                return false;
-            }
-
-            writer = _pendingCommands.AsParallelWriter();
-            return true;
-        }
-
         public static void Enqueue(in EntityCommand command)
         {
             if (command.CommandType == EntityCommandType.None)

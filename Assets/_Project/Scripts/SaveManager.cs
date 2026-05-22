@@ -4819,19 +4819,41 @@ namespace Hecton8.SaveSystem
                 out bool ownsReadBuffer,
                 out NativeArray<byte> compressedReadBuffer,
                 out bool ownsCompressedReadBuffer);
+            NativeArray<byte> loadedVoxelDeltaSnapshot = default;
             try
             {
+                string absolutePath = GetPersistentAbsolutePath(GetCandidateSavePath(slotName, candidate));
+                if (!SaveBinaryStorage.TryMeasureLoadVoxelDeltaSnapshotByteLength(
+                        absolutePath,
+                        readBuffer,
+                        compressedReadBuffer,
+                        out int voxelDeltaSnapshotByteLength,
+                        out errorMessage))
+                {
+                    return false;
+                }
+
+                if (voxelDeltaSnapshotByteLength > 0)
+                {
+                    loadedVoxelDeltaSnapshot = new NativeArray<byte>(
+                        voxelDeltaSnapshotByteLength,
+                        Allocator.Persistent,
+                        NativeArrayOptions.UninitializedMemory);
+                    RegisterVoxelDeltaSnapshot(loadedVoxelDeltaSnapshot, "loadedVoxelDeltaSnapshot");
+                }
+
                 if (!SaveBinaryStorage.TryLoadSaveData(
-                    GetPersistentAbsolutePath(GetCandidateSavePath(slotName, candidate)),
+                    absolutePath,
                     slotName,
                     readBuffer,
                     compressedReadBuffer,
+                    loadedVoxelDeltaSnapshot,
                     out data,
                     out packedQuestHeader,
                     out packedQuestStateWords,
                     out persistentWorldItems,
                     out ecosystemSectorStates,
-                    out voxelDeltaSnapshot,
+                    out int voxelDeltaSnapshotBytes,
                     out metadata,
                     out payloadHash64,
                     out rawPayloadLength,
@@ -4839,17 +4861,29 @@ namespace Hecton8.SaveSystem
                     out indexedBackupRecoveryUsed,
                     out errorMessage))
                 {
-                    if (voxelDeltaSnapshot.IsCreated)
-                        DisposeNativeArray(ref voxelDeltaSnapshot);
+                    if (loadedVoxelDeltaSnapshot.IsCreated)
+                        DisposeNativeArray(ref loadedVoxelDeltaSnapshot);
 
                     return false;
                 }
 
-                RegisterVoxelDeltaSnapshot(voxelDeltaSnapshot, "loadedVoxelDeltaSnapshot");
+                if (voxelDeltaSnapshotBytes != voxelDeltaSnapshotByteLength)
+                {
+                    errorMessage = "Loaded voxel delta snapshot byte count mismatch.";
+                    if (loadedVoxelDeltaSnapshot.IsCreated)
+                        DisposeNativeArray(ref loadedVoxelDeltaSnapshot);
+
+                    return false;
+                }
+
+                voxelDeltaSnapshot = loadedVoxelDeltaSnapshot;
+                loadedVoxelDeltaSnapshot = default;
                 return true;
             }
             finally
             {
+                if (loadedVoxelDeltaSnapshot.IsCreated)
+                    DisposeNativeArray(ref loadedVoxelDeltaSnapshot);
                 ReleaseBuffer(readBuffer, ownsReadBuffer);
                 ReleaseBuffer(compressedReadBuffer, ownsCompressedReadBuffer);
             }
