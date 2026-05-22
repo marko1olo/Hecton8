@@ -235,7 +235,7 @@ namespace Hecton8.Graphics.Culling
             _frustumDefaultsWritten = true;
         }
 
-        public bool TryResolveProducerBuffers(
+        private bool TryResolveProducerBuffers(
             out NativeArray<ShadowCullInstanceDTO> instances,
             out NativeArray<float> illuminationScalars,
             out NativeArray<ShadowCullHzbTileDTO> hzbTiles,
@@ -415,7 +415,7 @@ namespace Hecton8.Graphics.Culling
             return s_active != null && s_active.TryGetTunerSnapshot(out snapshot);
         }
 
-        public static bool TryResolveActiveProducerBuffers(
+        private static bool TryResolveActiveProducerBuffers(
             out NativeArray<ShadowCullInstanceDTO> instances,
             out NativeArray<float> illuminationScalars,
             out NativeArray<ShadowCullHzbTileDTO> hzbTiles,

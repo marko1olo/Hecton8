@@ -214,8 +214,8 @@ namespace Hecton8.EditorTools
                 ? Mathf.Max(1024, ReadInt32LittleEndian(managedBytes, 24))
                 : 1024;
 
-            if (!Shinobu19EconomyLedger.TryResolveRecipeBuffers(vault, recipeCapacity, out NativeArray<CraftingRecipeDTO> recipes, out NativeArray<CraftingRecipeMaskDTO> masks) ||
-                !Shinobu19EconomyLedger.TryResolveRecipeIngredientBuffer(vault, ingredientCapacity, out NativeArray<CraftingIngredientDTO> ingredients))
+            if (!TryResolveRecipeBuffersForEditor(vault, recipeCapacity, out NativeArray<CraftingRecipeDTO> recipes, out NativeArray<CraftingRecipeMaskDTO> masks) ||
+                !TryResolveRecipeIngredientBufferForEditor(vault, ingredientCapacity, out NativeArray<CraftingIngredientDTO> ingredients))
             {
                 Debug.LogWarning("[SHINOBU_19] Failed to resolve Vault recipe buffers.");
                 return;
@@ -253,7 +253,7 @@ namespace Hecton8.EditorTools
             string[] lines = File.ReadAllLines(path);
             int capacity = Mathf.Max(64, lines.Length);
             IDataVault vault = GlobalRegistry.DataVault;
-            if (Shinobu19EconomyLedger.TryResolvePhysicalConstants(vault, capacity, out NativeArray<ItemPhysicalConstantsDTO> vaultConstants))
+            if (TryResolvePhysicalConstantsForEditor(vault, capacity, out NativeArray<ItemPhysicalConstantsDTO> vaultConstants))
             {
                 ApplyCsvLines(lines, vaultConstants, out int accepted, out int rejected);
                 Debug.Log("[SHINOBU_19] CSV applied to Vault accepted=" + accepted + " rejected=" + rejected);
@@ -322,7 +322,7 @@ namespace Hecton8.EditorTools
                 masks.Length == 0)
             {
                 if (GUILayout.Button("Create 256 DTO Vault Buffers", GUILayout.Width(220f)))
-                    Shinobu19EconomyLedger.TryResolveRecipeBuffers(vault, 256, out _, out _);
+                    TryResolveRecipeBuffersForEditor(vault, 256, out _, out _);
                 return;
             }
 
@@ -412,6 +412,118 @@ namespace Hecton8.EditorTools
                    vault.TryGetGenerationHandle(bufferId, out VaultGenerationHandle<T> handle) &&
                    vault.TryReadHandle(in handle, out buffer) &&
                    buffer.IsCreated;
+        }
+
+        private static bool TryResolveRecipeBuffersForEditor(
+            IDataVault vault,
+            int recipeCapacity,
+            out NativeArray<CraftingRecipeDTO> recipes,
+            out NativeArray<CraftingRecipeMaskDTO> masks)
+        {
+            recipes = default;
+            masks = default;
+            if (vault == null || recipeCapacity <= 0)
+                return false;
+
+            if (!OpenOrAcquireEconomyVaultBufferForEditor(
+                    vault,
+                    BufferID.ShinobuRecipeDtos,
+                    recipeCapacity,
+                    NativeArrayOptions.UninitializedMemory,
+                    out recipes) ||
+                !OpenOrAcquireEconomyVaultBufferForEditor(
+                    vault,
+                    BufferID.ShinobuRecipeMasks,
+                    recipeCapacity,
+                    NativeArrayOptions.UninitializedMemory,
+                    out masks))
+            {
+                recipes = default;
+                masks = default;
+                return false;
+            }
+
+            return recipes.IsCreated && masks.IsCreated && recipes.Length >= recipeCapacity && masks.Length >= recipeCapacity;
+        }
+
+        private static bool TryResolveRecipeIngredientBufferForEditor(
+            IDataVault vault,
+            int ingredientCapacity,
+            out NativeArray<CraftingIngredientDTO> ingredients)
+        {
+            return OpenOrAcquireEconomyVaultBufferForEditor(
+                vault,
+                BufferID.ShinobuRecipeIngredients,
+                ingredientCapacity,
+                NativeArrayOptions.UninitializedMemory,
+                out ingredients);
+        }
+
+        private static bool TryResolvePhysicalConstantsForEditor(
+            IDataVault vault,
+            int itemCapacity,
+            out NativeArray<ItemPhysicalConstantsDTO> constants)
+        {
+            return OpenOrAcquireEconomyVaultBufferForEditor(
+                vault,
+                BufferID.ShinobuPhysicalConstants,
+                itemCapacity,
+                NativeArrayOptions.UninitializedMemory,
+                out constants);
+        }
+
+        private static bool OpenOrAcquireEconomyVaultBufferForEditor<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            int requiredLength,
+            NativeArrayOptions options,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            buffer = default;
+            if (vault == null || requiredLength <= 0)
+                return false;
+
+            VaultGenerationHandle<T> handle;
+            if (vault.IsAllocationLocked)
+            {
+                if (!vault.TryGetGenerationHandle(bufferId, out handle))
+                    return false;
+
+                return TryOpenEconomyVaultBufferForEditor(vault, in handle, bufferId, requiredLength, out buffer);
+            }
+
+            handle = vault.GetGenerationHandle<T>(
+                bufferId,
+                requiredLength,
+                SystemID.GameplayPlayer,
+                options);
+            return TryOpenEconomyVaultBufferForEditor(vault, in handle, bufferId, requiredLength, out buffer);
+        }
+
+        private static bool TryOpenEconomyVaultBufferForEditor<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            buffer = default;
+            if (vault == null ||
+                requiredLength <= 0 ||
+                handle.BufferID != (uint)bufferId ||
+                handle.SystemID != (uint)SystemID.GameplayPlayer ||
+                handle.Generation == 0u ||
+                !vault.TryResolveHandle(in handle, out buffer) ||
+                !buffer.IsCreated ||
+                buffer.Length < requiredLength)
+            {
+                buffer = default;
+                return false;
+            }
+
+            return true;
         }
 
         private static bool TryAcquireEditorWriteView<T>(

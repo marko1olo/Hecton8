@@ -1570,3 +1570,39 @@ Cinematic Cheats used: No new simulation. The radar ring remains a perceptual/DS
 Exact Microseconds saved: 0 us measured. Static API risk moved `nativeCollectionPublicMutableApiExposure=64->62`, `nativeApiExposureBuildPlayerRuntime=60->58`, `nativeApiExposureOutRefMutable=43->41`, and `nativeApiRiskRuntimeOutRefMutableView=22->20`.
 
 Evidence: `Docs/Reports/PROJECT_AUDIT_polish_after_audio_radar_readonly_upload.json`; `python Tools\test_polish_mandate_static_audit.py` passed 12 tests; focused scan found no mutable `TryGetAcousticRadarPayload(out NativeArray<float>)` route and one owner upload call site; targeted `git diff --check` reported only LF/CRLF normalization warnings. Batch re-check found no `<AGENT_PROMPT id="PROJECT_AUDIT">` block. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Quest Packed Snapshot Owner Copy
+
+What was wrong: Quest save export returned `NativeArray<uint>` snapshots from QuestManager/QuestStateManager even though SaveManager was the only caller and already owned transient snapshot registration/disposal.
+
+What was done: Removed the NativeArray-return capture APIs; SaveManager now allocates/registers the packed quest buffer and passes a raw pointer/capacity into quest owner copy methods.
+
+Cinematic Cheats used: Not visual. This preserves the fixed packed quest save truth as one bounded memcpy, not managed per-quest serialization.
+
+Exact Microseconds saved: 0 us measured. Static API risk moved `nativeCollectionPublicMutableApiExposure=62->59`, `nativeApiExposureBuildPlayerRuntime=58->55`, `nativeApiExposureMutableReturn=21->18`, and `nativeApiRiskRuntimeDiagnosticNamedMutableView=8->5`.
+
+Evidence: `Docs/Reports/PROJECT_AUDIT_polish_after_quest_snapshot_owner_copy.json`; `python Tools\test_polish_mandate_static_audit.py` passed 12 tests; focused scan found no `CapturePackedStateSnapshot` NativeArray-return routes; targeted `git diff --check` produced no output. Batch re-check found no `<AGENT_PROMPT id="PROJECT_AUDIT">` block. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Inventory Editor Facade Buffer Route
+
+What was wrong: Runtime `Shinobu19EconomyLedger` exposed public mutable recipe/ingredient/physical-constants Vault buffer acquisition helpers, but the only active callers were in the editor tuner window.
+
+What was done: Added private cold Vault acquisition helpers to `EconomyRecipeTunerWindow` and narrowed the runtime ledger helpers to private.
+
+Cinematic Cheats used: Not visual. This preserves DataVault SoA recipe tuning without widening runtime mutable access.
+
+Exact Microseconds saved: 0 us measured. Static API risk moved `nativeCollectionPublicMutableApiExposure=59->56`, `nativeApiExposureBuildPlayerRuntime=55->52`, `nativeApiExposureOutRefMutable=41->38`, and `nativeApiRiskRuntimeOutRefMutableView=20->17`.
+
+Evidence: `Docs/Reports/PROJECT_AUDIT_polish_after_inventory_editor_facade.json`; `python Tools\test_polish_mandate_static_audit.py` passed 12 tests; focused scan found no external `Shinobu19EconomyLedger.TryResolveRecipeBuffers/TryResolveRecipeIngredientBuffer/TryResolvePhysicalConstants` callers; targeted `git diff --check` reported LF/CRLF warnings only. Batch re-check found no `<AGENT_PROMPT id="PROJECT_AUDIT">` block. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Abyssal Shadow Producer Route Scope
+
+What was wrong: `AbyssalShadowCullingRuntime` exposed raw mutable producer buffers with no first-party external caller.
+
+What was done: Narrowed `TryResolveProducerBuffers` and `TryResolveActiveProducerBuffers` to private while keeping published GPU buffer and dependency registration routes intact.
+
+Cinematic Cheats used: Preserved HZB/BRG shadow culling as the visual fake path; no CPU scene/object culling loop added.
+
+Exact Microseconds saved: 0 us measured. Static API risk moved `nativeCollectionPublicMutableApiExposure=56->54`, `nativeApiExposureBuildPlayerRuntime=52->50`, `nativeApiExposureOutRefMutable=38->36`, and `nativeApiRiskRuntimeOutRefMutableView=17->15`.
+
+Evidence: `Docs/Reports/PROJECT_AUDIT_polish_after_abyssal_shadow_producer_scope.json`; `python Tools\test_polish_mandate_static_audit.py` passed 12 tests; focused scan found no external raw producer buffer callers; targeted `git diff --check` reported LF/CRLF warnings only. Batch re-check found no `<AGENT_PROMPT id="PROJECT_AUDIT">` block. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.

@@ -430,7 +430,7 @@ namespace Hecton8.Inventory
             return resolvedCapacity >= capacity;
         }
 
-        public static bool TryResolveRecipeBuffers(
+        private static bool TryResolveRecipeBuffers(
             IDataVault vault,
             int recipeCapacity,
             out NativeArray<CraftingRecipeDTO> recipes,
@@ -462,7 +462,7 @@ namespace Hecton8.Inventory
             return recipes.IsCreated && masks.IsCreated && recipes.Length >= recipeCapacity && masks.Length >= recipeCapacity;
         }
 
-        public static bool TryResolveRecipeIngredientBuffer(
+        private static bool TryResolveRecipeIngredientBuffer(
             IDataVault vault,
             int ingredientCapacity,
             out NativeArray<CraftingIngredientDTO> ingredients)
@@ -479,7 +479,7 @@ namespace Hecton8.Inventory
                 out ingredients);
         }
 
-        public static bool TryResolvePhysicalConstants(
+        private static bool TryResolvePhysicalConstants(
             IDataVault vault,
             int itemCapacity,
             out NativeArray<ItemPhysicalConstantsDTO> constants)
