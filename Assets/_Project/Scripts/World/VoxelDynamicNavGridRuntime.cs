@@ -836,7 +836,107 @@ namespace Hecton8.World
             });
         }
 
-        internal static bool TryPrepareBuild(
+        internal static bool TryScheduleBuild(
+            HectonVoxelVolume volume,
+            int runtimeStamp,
+            int3 dimensions,
+            float3 origin,
+            float cellSize,
+            int pointCount,
+            NativeArray<float> densityField,
+            int jobBatch,
+            JobHandle dependency,
+            out JobHandle scheduledHandle)
+        {
+            scheduledHandle = dependency;
+            if (!densityField.IsCreated ||
+                densityField.Length < pointCount ||
+                pointCount <= 0)
+            {
+                return false;
+            }
+
+            int resolvedJobBatch = math.max(1, jobBatch);
+            if (!TryPrepareBuild(
+                    volume,
+                    runtimeStamp,
+                    dimensions,
+                    origin,
+                    cellSize,
+                    pointCount,
+                    out NativeArray<byte> outputBuffer,
+                    out NativeArray<byte> baseOutputBuffer,
+                    out NativeArray<ushort> distanceBuffer,
+                    out NativeArray<int> pureVoidBlockFlags))
+            {
+                return false;
+            }
+
+            JobHandle passabilityHandle = new PassabilityBuildJob
+            {
+                DensityField = densityField,
+                Output = outputBuffer,
+                SolidThreshold = 0f
+            }.Schedule(pointCount, resolvedJobBatch, dependency);
+
+            JobHandle baseCopyHandle = new CopyByteBufferJob
+            {
+                Source = outputBuffer,
+                Destination = baseOutputBuffer
+            }.Schedule(pointCount, resolvedJobBatch, passabilityHandle);
+
+            NativeArray<NavObstaclePrimitive> obstacleSnapshot = default;
+            int obstacleSnapshotCount = CountObstacleSnapshotPrimitives();
+            if (obstacleSnapshotCount > 0)
+            {
+                obstacleSnapshot = new NativeArray<NavObstaclePrimitive>(
+                    obstacleSnapshotCount,
+                    Allocator.TempJob,
+                    NativeArrayOptions.UninitializedMemory);
+                RegisterObstacleSnapshot(obstacleSnapshot, Allocator.TempJob);
+                if (!TryFillObstacleSnapshot(obstacleSnapshot, out _))
+                {
+                    DisposeObstacleSnapshot(obstacleSnapshot);
+                    obstacleSnapshot = default;
+                }
+            }
+
+            JobHandle obstacleHandle = passabilityHandle;
+            if (obstacleSnapshot.IsCreated)
+            {
+                obstacleHandle = new ObstacleStampJob
+                {
+                    Passability = outputBuffer,
+                    Obstacles = obstacleSnapshot,
+                    Dimensions = dimensions,
+                    Origin = origin,
+                    CellSize = cellSize
+                }.Schedule(pointCount, resolvedJobBatch, passabilityHandle);
+            }
+
+            JobHandle navGridHandle = new ClearanceDilationJob
+            {
+                Passability = outputBuffer,
+                DistanceMap = distanceBuffer,
+                Dimensions = dimensions,
+                AgentRadiusCells = ResolveClearanceRadiusCells(cellSize)
+            }.Schedule(obstacleHandle);
+
+            navGridHandle = JobHandle.CombineDependencies(navGridHandle, baseCopyHandle);
+            navGridHandle = SchedulePureVoidScan(
+                outputBuffer,
+                distanceBuffer,
+                pureVoidBlockFlags,
+                pointCount,
+                navGridHandle);
+
+            scheduledHandle = obstacleSnapshot.IsCreated
+                ? DisposeObstacleSnapshot(obstacleSnapshot, navGridHandle)
+                : navGridHandle;
+            return true;
+        }
+
+        private static bool TryPrepareBuild(
             HectonVoxelVolume volume,
             int runtimeStamp,
             int3 dimensions,

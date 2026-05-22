@@ -440,10 +440,6 @@ namespace Hecton8.Modding
             Queue = default;
         }
 
-        public NativeQueue<FutureCommandEnvelope>.ParallelWriter AsParallelWriter()
-        {
-            return Queue.IsCreated ? Queue.AsParallelWriter() : default;
-        }
     }
 
     /// <summary>

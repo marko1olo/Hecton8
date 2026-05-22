@@ -50,10 +50,8 @@ using System.Runtime.InteropServices;
 /// Converts (seed + preset + world context) into NativeArrays of SDF primitives.
 ///
 /// Usage:
-///   CaveGraphGenerator.Generate(
-///       seed, preset, worldCenter, terrainHeight, volumeHalfExtent,
-///       out nodes, out tunnels, out entrances, out structures,
-///       Allocator.Persistent);
+///   CaveGraphGenerator.TryMeasure(seed, preset, worldCenter, terrainHeight, volumeHalfExtent, out counts);
+///   // Caller allocates exact NativeArrays from counts, then calls TryFill(...).
 ///   // ... pass arrays to VoxelDensityJob ...
 ///   // ... after mesh is built, Dispose all arrays ...
 /// </summary>
@@ -99,12 +97,7 @@ public static class CaveGraphGenerator
     // ════════════════════════════════════════════════════════════════════════
 
     /// <summary>
-    /// Generate complete cave graph from seed and preset.
-    ///
-    /// All output NativeArrays are allocated with the specified allocator.
-    /// Caller MUST dispose them after use.
-    ///
-    /// Must be called on MAIN THREAD (NativeArray allocation).
+    /// Measure complete cave graph counts from seed and preset.
     /// </summary>
     /// <param name="seed">Deterministic seed. Same seed = same cave.</param>
     /// <param name="preset">Cave configuration (room counts, sizes, noise, etc.).</param>
@@ -113,13 +106,125 @@ public static class CaveGraphGenerator
     /// Used to ensure rooms stay below surface and entrances connect to surface.</param>
     /// <param name="volumeHalfExtent">Half-size of the volume cube in meters.
     /// = (gridDimension * voxelSize) / 2. Rooms are constrained within this box.</param>
-    /// <param name="nodes">OUTPUT: Array of cave rooms.</param>
-    /// <param name="tunnels">OUTPUT: Array of tunnels connecting rooms.</param>
-    /// <param name="entrances">OUTPUT: Array of surface entrances.</param>
-    /// <param name="structures">OUTPUT: Array of internal structures.
-    /// Currently empty (Length = 0). Reserved for future column/bridge/stalactite generation.</param>
-    /// <param name="allocator">NativeArray allocator. Use Persistent for async jobs.</param>
-    public static void Generate(
+    /// <param name="counts">OUTPUT: Exact array lengths required for TryFill.</param>
+    public static bool TryMeasure(
+        uint seed,
+        CavePreset preset,
+        float3 worldCenter,
+        float terrainHeightAtCenter,
+        float volumeHalfExtent,
+        out CaveGraphCounts counts)
+    {
+        counts = default;
+        if (preset == null)
+            return false;
+
+        GenerateAllocated(
+            seed,
+            preset,
+            worldCenter,
+            terrainHeightAtCenter,
+            volumeHalfExtent,
+            out NativeArray<CaveNode> nodes,
+            out NativeArray<CaveTunnel> tunnels,
+            out NativeArray<CaveEntrance> entrances,
+            out NativeArray<CaveStructure> structures,
+            Allocator.Temp);
+
+        counts = new CaveGraphCounts
+        {
+            Nodes = nodes.Length,
+            Tunnels = tunnels.Length,
+            Entrances = entrances.Length,
+            Structures = structures.Length
+        };
+
+        DisposeGeneratedArrays(ref nodes, ref tunnels, ref entrances, ref structures);
+        return true;
+    }
+
+    public static bool TryFill(
+        uint seed,
+        CavePreset preset,
+        float3 worldCenter,
+        float terrainHeightAtCenter,
+        float volumeHalfExtent,
+        NativeArray<CaveNode> nodes,
+        NativeArray<CaveTunnel> tunnels,
+        NativeArray<CaveEntrance> entrances,
+        NativeArray<CaveStructure> structures,
+        out CaveGraphCounts counts)
+    {
+        counts = default;
+        if (preset == null)
+            return false;
+
+        GenerateAllocated(
+            seed,
+            preset,
+            worldCenter,
+            terrainHeightAtCenter,
+            volumeHalfExtent,
+            out NativeArray<CaveNode> generatedNodes,
+            out NativeArray<CaveTunnel> generatedTunnels,
+            out NativeArray<CaveEntrance> generatedEntrances,
+            out NativeArray<CaveStructure> generatedStructures,
+            Allocator.Temp);
+
+        counts = new CaveGraphCounts
+        {
+            Nodes = generatedNodes.Length,
+            Tunnels = generatedTunnels.Length,
+            Entrances = generatedEntrances.Length,
+            Structures = generatedStructures.Length
+        };
+
+        bool hasCapacity =
+            HasCapacity(nodes, counts.Nodes) &&
+            HasCapacity(tunnels, counts.Tunnels) &&
+            HasCapacity(entrances, counts.Entrances) &&
+            HasCapacity(structures, counts.Structures);
+
+        if (hasCapacity)
+        {
+            CopyArray(generatedNodes, nodes);
+            CopyArray(generatedTunnels, tunnels);
+            CopyArray(generatedEntrances, entrances);
+            CopyArray(generatedStructures, structures);
+        }
+
+        DisposeGeneratedArrays(ref generatedNodes, ref generatedTunnels, ref generatedEntrances, ref generatedStructures);
+        return hasCapacity;
+    }
+
+    private static bool HasCapacity<T>(NativeArray<T> destination, int requiredLength) where T : unmanaged
+    {
+        return requiredLength <= 0 || (destination.IsCreated && destination.Length >= requiredLength);
+    }
+
+    private static void CopyArray<T>(NativeArray<T> source, NativeArray<T> destination) where T : unmanaged
+    {
+        for (int i = 0; i < source.Length; i++)
+            destination[i] = source[i];
+    }
+
+    private static void DisposeGeneratedArrays(
+        ref NativeArray<CaveNode> nodes,
+        ref NativeArray<CaveTunnel> tunnels,
+        ref NativeArray<CaveEntrance> entrances,
+        ref NativeArray<CaveStructure> structures)
+    {
+        if (nodes.IsCreated)
+            nodes.Dispose();
+        if (tunnels.IsCreated)
+            tunnels.Dispose();
+        if (entrances.IsCreated)
+            entrances.Dispose();
+        if (structures.IsCreated)
+            structures.Dispose();
+    }
+
+    private static void GenerateAllocated(
         uint seed,
         CavePreset preset,
         float3 worldCenter,

@@ -3618,21 +3618,44 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
                 terrainHeightCenter = sampledHeight;
 
             CaveGenerationParams caveParams = preset.ToGenerationParams(seed);
-            CaveGraphGenerator.Generate(
+            if (!CaveGraphGenerator.TryMeasure(
                 seed,
                 preset,
                 worldCenter,
                 terrainHeightCenter,
                 volumeHalfExtent,
-                out caveNodes,
-                out caveTunnels,
-                out caveEntrances,
-                out caveStructures,
-                Allocator.Persistent);
+                out CaveGraphGenerator.CaveGraphCounts caveGraphCounts))
+            {
+                return null;
+            }
+
+            caveNodes = new NativeArray<CaveNode>(caveGraphCounts.Nodes, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+            caveTunnels = new NativeArray<CaveTunnel>(caveGraphCounts.Tunnels, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+            caveEntrances = new NativeArray<CaveEntrance>(caveGraphCounts.Entrances, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+            caveStructures = new NativeArray<CaveStructure>(caveGraphCounts.Structures, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
             RegisterTrackedNativeArray(caveNodes, nameof(caveNodes));
             RegisterTrackedNativeArray(caveTunnels, nameof(caveTunnels));
             RegisterTrackedNativeArray(caveEntrances, nameof(caveEntrances));
             RegisterTrackedNativeArray(caveStructures, nameof(caveStructures));
+
+            if (!CaveGraphGenerator.TryFill(
+                    seed,
+                    preset,
+                    worldCenter,
+                    terrainHeightCenter,
+                    volumeHalfExtent,
+                    caveNodes,
+                    caveTunnels,
+                    caveEntrances,
+                    caveStructures,
+                    out CaveGraphGenerator.CaveGraphCounts filledCaveGraphCounts) ||
+                filledCaveGraphCounts.Nodes != caveGraphCounts.Nodes ||
+                filledCaveGraphCounts.Tunnels != caveGraphCounts.Tunnels ||
+                filledCaveGraphCounts.Entrances != caveGraphCounts.Entrances ||
+                filledCaveGraphCounts.Structures != caveGraphCounts.Structures)
+            {
+                return null;
+            }
 
 #if UNITY_EDITOR
             CaveGraphGenerator.Validate(caveNodes, caveTunnels, caveEntrances, worldCenter, volumeHalfExtent);
@@ -6507,11 +6530,6 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
             ct);
 
         ct.ThrowIfCancellationRequested();
-        NativeArray<byte> navGridBackBuffer = default;
-        NativeArray<byte> navGridBasePassabilityBuffer = default;
-        NativeArray<ushort> navGridDistanceMap = default;
-        NativeArray<int> navGridPureVoidBlockFlags = default;
-        NativeArray<VoxelDynamicNavGridRuntime.NavObstaclePrimitive> navObstacleSnapshot = default;
         bool navGridScheduled = false;
         JobHandle navGridHandle = default;
 
@@ -6670,71 +6688,18 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         }.Schedule(data.TotalPts, JOB_BATCH, densityHandle);
 
         if (data.SourceVolume != null &&
-            VoxelDynamicNavGridRuntime.TryPrepareBuild(
+            VoxelDynamicNavGridRuntime.TryScheduleBuild(
                 data.SourceVolume,
                 data.SourceRuntimeStamp,
                 new int3(data.PtsX, data.PtsY, data.PtsZ),
                 data.VolumeOrigin,
                 data.VoxelStep,
                 data.TotalPts,
-                out navGridBackBuffer,
-                out navGridBasePassabilityBuffer,
-                out navGridDistanceMap,
-                out navGridPureVoidBlockFlags))
+                densityField,
+                JOB_BATCH,
+                densityHandle,
+                out navGridHandle))
         {
-            JobHandle navPassabilityHandle = new VoxelDynamicNavGridRuntime.PassabilityBuildJob
-            {
-                DensityField = densityField,
-                Output = navGridBackBuffer,
-                SolidThreshold = 0f
-            }.Schedule(data.TotalPts, JOB_BATCH, densityHandle);
-            JobHandle navBaseCopyHandle = new VoxelDynamicNavGridRuntime.CopyByteBufferJob
-            {
-                Source = navGridBackBuffer,
-                Destination = navGridBasePassabilityBuffer
-            }.Schedule(data.TotalPts, JOB_BATCH, navPassabilityHandle);
-            int navObstacleSnapshotCount = VoxelDynamicNavGridRuntime.CountObstacleSnapshotPrimitives();
-            if (navObstacleSnapshotCount > 0)
-            {
-                navObstacleSnapshot = new NativeArray<VoxelDynamicNavGridRuntime.NavObstaclePrimitive>(
-                    navObstacleSnapshotCount,
-                    Allocator.TempJob,
-                    NativeArrayOptions.UninitializedMemory);
-                RegisterTrackedNativeArray(navObstacleSnapshot, nameof(navObstacleSnapshot));
-                if (!VoxelDynamicNavGridRuntime.TryFillObstacleSnapshot(navObstacleSnapshot, out _))
-                {
-                    VoxelDynamicNavGridRuntime.DisposeObstacleSnapshot(navObstacleSnapshot);
-                    navObstacleSnapshot = default;
-                }
-            }
-
-            JobHandle obstacleHandle = navPassabilityHandle;
-            if (navObstacleSnapshot.IsCreated)
-            {
-                obstacleHandle = new VoxelDynamicNavGridRuntime.ObstacleStampJob
-                {
-                    Passability = navGridBackBuffer,
-                    Obstacles = navObstacleSnapshot,
-                    Dimensions = new int3(data.PtsX, data.PtsY, data.PtsZ),
-                    Origin = data.VolumeOrigin,
-                    CellSize = data.VoxelStep
-                }.Schedule(data.TotalPts, JOB_BATCH, navPassabilityHandle);
-            }
-
-            navGridHandle = new VoxelDynamicNavGridRuntime.ClearanceDilationJob
-            {
-                Passability = navGridBackBuffer,
-                DistanceMap = navGridDistanceMap,
-                Dimensions = new int3(data.PtsX, data.PtsY, data.PtsZ),
-                AgentRadiusCells = VoxelDynamicNavGridRuntime.ResolveClearanceRadiusCells(data.VoxelStep)
-            }.Schedule(obstacleHandle);
-            navGridHandle = JobHandle.CombineDependencies(navGridHandle, navBaseCopyHandle);
-            navGridHandle = VoxelDynamicNavGridRuntime.SchedulePureVoidScan(
-                navGridBackBuffer,
-                navGridDistanceMap,
-                navGridPureVoidBlockFlags,
-                data.TotalPts,
-                navGridHandle);
             navGridScheduled = true;
         }
 
@@ -6756,26 +6721,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         JobHandle firstPhaseHandle = navGridScheduled
             ? JobHandle.CombineDependencies(mcCountHandle, navGridHandle)
             : mcCountHandle;
-        try
-        {
-            await AwaitForJobCompletionAsync(firstPhaseHandle, ct, "density/count phase");
-        }
-        catch
-        {
-            if (navObstacleSnapshot.IsCreated)
-            {
-                VoxelDynamicNavGridRuntime.DisposeObstacleSnapshot(navObstacleSnapshot, firstPhaseHandle);
-                navObstacleSnapshot = default;
-            }
-
-            throw;
-        }
-
-        if (navObstacleSnapshot.IsCreated)
-        {
-            VoxelDynamicNavGridRuntime.DisposeObstacleSnapshot(navObstacleSnapshot);
-            navObstacleSnapshot = default;
-        }
+        await AwaitForJobCompletionAsync(firstPhaseHandle, ct, "density/count phase");
         if (navGridScheduled)
             VoxelDynamicNavGridRuntime.CommitBuild(data.SourceVolume, data.SourceRuntimeStamp);
 

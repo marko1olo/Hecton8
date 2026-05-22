@@ -1666,3 +1666,39 @@ Cinematic Cheats used: Not visual. This preserves bounded native query filtering
 Exact Microseconds saved: 0 us measured. Static API risk moved `nativeCollectionPublicMutableApiExposure=45->43`, `nativeApiExposureBuildPlayerRuntime=41->39`, `nativeApiExposureOutRefMutable=29->27`, and `nativeApiRiskRuntimeOutRefMutableView=8->6`.
 
 Evidence: `Docs/Reports/PROJECT_AUDIT_polish_after_native_query_ref_removal.json`; `python Tools\test_polish_mandate_static_audit.py` passed 12 tests; focused scan found no `ref NativeList<T>` or `ref NativeList<TResult>` route; targeted `git diff --check` reported LF/CRLF warnings only. Batch re-check found no `<AGENT_PROMPT id="PROJECT_AUDIT">` block. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Mod Sandbox Queue Ref Removal
+
+What was wrong: `MockModQueue.Wrap/Attach` and `FutureCommandSandboxValidator.RequestFromExternalQueue` exposed `ref NativeQueue<FutureCommandEnvelope>` APIs even though the queue handle is never reassigned.
+
+What was done: Converted the three public queue routes to by-value `NativeQueue<FutureCommandEnvelope>` handles while preserving attach/drain semantics over the same native backing memory.
+
+Cinematic Cheats used: Not visual. This preserves binary mod quarantine as bounded native queue validation instead of managed command marshaling.
+
+Exact Microseconds saved: 0 us measured. Static API risk moved `nativeCollectionPublicMutableApiExposure=43->40`, `nativeApiExposureBuildQaDevProof=4->1`, `nativeApiExposureOutRefMutable=27->24`, and `nativeApiRiskEditorOrProofSurface=4->1`.
+
+Evidence: `Docs/Reports/PROJECT_AUDIT_polish_after_mod_sandbox_queue_ref_removal.json`; `python Tools\test_polish_mandate_static_audit.py` passed 12 tests; focused scan found no `ref NativeQueue<FutureCommandEnvelope>` route; targeted `git diff --check` reported LF/CRLF warnings only. Batch re-check found no `<AGENT_PROMPT id="PROJECT_AUDIT">` block. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Cave Graph Owner Allocation
+
+What was wrong: `CaveGraphGenerator.Generate` exposed four public `out NativeArray` outputs for cave rooms, tunnels, entrances, and structures.
+
+What was done: Added `CaveGraphCounts`, `TryMeasure`, and `TryFill`. `HectonVoxelEngine` and `WorldCaveDirector` now allocate exact caller-owned arrays before fill; the old allocating generator is private.
+
+Cinematic Cheats used: Preserved cave topology as compact SDF primitive arrays feeding marching cubes; no MeshCollider carving, scene raycast tunnel tracing, or per-voxel physics simulation was added.
+
+Exact Microseconds saved: 0 us measured. Static API risk moved `nativeCollectionPublicMutableApiExposure=40->39`, `nativeApiExposureBuildPlayerRuntime=39->38`, `nativeApiExposureOutRefMutable=24->23`, and `nativeApiRiskRuntimeOutRefMutableView=6->5`.
+
+Evidence: `Docs/Reports/PROJECT_AUDIT_polish_after_cave_graph_owner_alloc.json`; `python Tools\test_polish_mandate_static_audit.py` passed 12 tests; focused scan found no `CaveGraphGenerator.Generate` call sites; targeted `git diff --check` reported LF/CRLF warnings only. Batch re-check found no `<AGENT_PROMPT id="PROJECT_AUDIT">` block. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Nav-Grid Owner Scheduling Route
+
+What was wrong: `VoxelDynamicNavGridRuntime.TryPrepareBuild` exported mutable passability/distance buffers to `HectonVoxelEngine` for job scheduling.
+
+What was done: Moved nav-grid passability, base-copy, obstacle stamp, clearance dilation, pure-void scan, and obstacle snapshot disposal scheduling into `VoxelDynamicNavGridRuntime.TryScheduleBuild`; `HectonVoxelEngine` now receives only a `JobHandle`.
+
+Cinematic Cheats used: Preserved voxel passability plus AABB obstacle stamping as the Dear Lie path; no Unity NavMesh rebuild or scene collider sweep was added.
+
+Exact Microseconds saved: 0 us measured. Static API risk moved `nativeCollectionPublicMutableApiExposure=39->38`, `nativeApiExposureBuildPlayerRuntime=38->37`, `nativeApiExposureOutRefMutable=23->22`, and `nativeApiRiskRuntimeOutRefMutableView=5->4`.
+
+Evidence: `Docs/Reports/PROJECT_AUDIT_polish_after_navgrid_schedule_owner_route.json`; `python Tools\test_polish_mandate_static_audit.py` passed 12 tests; focused scan found no external `TryPrepareBuild` caller and no nav-grid mutable local buffers in `HectonVoxelEngine`; targeted `git diff --check` reported LF/CRLF warnings only. Batch re-check found no `<AGENT_PROMPT id="PROJECT_AUDIT">` block. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.

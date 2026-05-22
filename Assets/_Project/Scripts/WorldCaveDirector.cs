@@ -799,13 +799,43 @@ namespace Hecton8.World
             float volumeHalfExtent = preset.VolumeCoverage * 0.5f;
             float terrainHeight = position.y; // Approximate
 
-            CaveGraphGenerator.Generate(
-                seed, preset, position, terrainHeight, volumeHalfExtent,
-                out var nodes, out var tunnels, out var entrances, out var structures,
-                Allocator.Temp);
+            if (!CaveGraphGenerator.TryMeasure(
+                    seed,
+                    preset,
+                    position,
+                    terrainHeight,
+                    volumeHalfExtent,
+                    out CaveGraphGenerator.CaveGraphCounts counts))
+            {
+                return;
+            }
+
+            var nodes = new NativeArray<CaveNode>(counts.Nodes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+            var tunnels = new NativeArray<CaveTunnel>(counts.Tunnels, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+            var entrances = new NativeArray<CaveEntrance>(counts.Entrances, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+            var structures = new NativeArray<CaveStructure>(counts.Structures, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
 
             try
             {
+                if (!CaveGraphGenerator.TryFill(
+                        seed,
+                        preset,
+                        position,
+                        terrainHeight,
+                        volumeHalfExtent,
+                        nodes,
+                        tunnels,
+                        entrances,
+                        structures,
+                        out CaveGraphGenerator.CaveGraphCounts filledCounts) ||
+                    filledCounts.Nodes != counts.Nodes ||
+                    filledCounts.Tunnels != counts.Tunnels ||
+                    filledCounts.Entrances != counts.Entrances ||
+                    filledCounts.Structures != counts.Structures)
+                {
+                    return;
+                }
+
                 Transform markerRoot = instance.volume.GetOrCreateRuntimeRoot("_EntranceMarkers");
                 int usedMarkerCount = 0;
 
