@@ -315,8 +315,20 @@ namespace Hecton8.World
                 for (int obstacleIndex = 0; obstacleIndex < Obstacles.Length; obstacleIndex++)
                 {
                     NavObstaclePrimitive obstacle = Obstacles[obstacleIndex];
+                    if (!math.all(math.isfinite(obstacle.Center)) ||
+                        !math.all(math.isfinite(obstacle.Extents)) ||
+                        obstacle.Extents.x <= 0.0001f ||
+                        obstacle.Extents.y <= 0.0001f ||
+                        obstacle.Extents.z <= 0.0001f)
+                    {
+                        continue;
+                    }
+
                     float3 min = obstacle.Center - obstacle.Extents;
                     float3 max = obstacle.Center + obstacle.Extents;
+                    if (!math.all(math.isfinite(min)) || !math.all(math.isfinite(max)))
+                        continue;
+
                     if (samplePoint.x < min.x || samplePoint.x > max.x ||
                         samplePoint.y < min.y || samplePoint.y > max.y ||
                         samplePoint.z < min.z || samplePoint.z > max.z)
@@ -990,7 +1002,7 @@ namespace Hecton8.World
                 MarkAllVolumesDirty();
         }
 
-        internal static NativeArray<NavObstaclePrimitive> CreateObstacleSnapshot(Allocator allocator)
+        internal static int CountObstacleSnapshotPrimitives()
         {
             int obstacleCount = 0;
             Dictionary<int, ObstacleRegistration>.Enumerator countEnumerator = _registeredObstacles.GetEnumerator();
@@ -1008,15 +1020,17 @@ namespace Hecton8.World
             obstacleCount += CountMacroFloraObstacles(activeBridge);
             obstacleCount += CountPersistentDynamicObstacles();
 
-            if (obstacleCount <= 0)
-                return default;
+            return obstacleCount;
+        }
 
-            NativeArray<NavObstaclePrimitive> snapshot = new NativeArray<NavObstaclePrimitive>(obstacleCount, allocator, NativeArrayOptions.UninitializedMemory);
-            NativeMemorySentinel.RegisterNativeArray(
-                snapshot,
-                NativeMemoryOwner,
-                ObstacleSnapshotNativeMemoryLabel,
-                ResolveObstacleSnapshotLifetime(allocator));
+        internal static bool TryFillObstacleSnapshot(
+            NativeArray<NavObstaclePrimitive> snapshot,
+            out int writtenCount)
+        {
+            writtenCount = 0;
+            if (!snapshot.IsCreated || snapshot.Length <= 0)
+                return false;
+
             int writeIndex = 0;
             Dictionary<int, ObstacleRegistration>.Enumerator writeEnumerator = _registeredObstacles.GetEnumerator();
             while (writeEnumerator.MoveNext())
@@ -1029,10 +1043,26 @@ namespace Hecton8.World
                 WriteColliderBounds(registration.Capsules, ref snapshot, ref writeIndex);
             }
 
+            HectonMapMagicVegetationBridge activeBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
             WriteMacroFloraObstacles(activeBridge, ref snapshot, ref writeIndex);
             WritePersistentDynamicObstacles(ref snapshot, ref writeIndex);
+            writtenCount = math.min(writeIndex, snapshot.Length);
+            ClearInvalidObstacleTail(snapshot, writtenCount);
+            return writtenCount > 0;
+        }
 
-            return snapshot;
+        internal static void RegisterObstacleSnapshot(
+            NativeArray<NavObstaclePrimitive> snapshot,
+            Allocator allocator)
+        {
+            if (!snapshot.IsCreated)
+                return;
+
+            NativeMemorySentinel.RegisterNativeArray(
+                snapshot,
+                NativeMemoryOwner,
+                ObstacleSnapshotNativeMemoryLabel,
+                ResolveObstacleSnapshotLifetime(allocator));
         }
 
         internal static void DisposeObstacleSnapshot(NativeArray<NavObstaclePrimitive> snapshot)
@@ -1222,7 +1252,21 @@ namespace Hecton8.World
                 DisposeObstacleSnapshot(record.PendingObstacleSnapshot);
                 record.PendingObstacleSnapshot = default;
 
-                record.PendingObstacleSnapshot = CreateObstacleSnapshot(Allocator.TempJob);
+                int obstacleSnapshotCount = CountObstacleSnapshotPrimitives();
+                if (obstacleSnapshotCount > 0)
+                {
+                    record.PendingObstacleSnapshot = new NativeArray<NavObstaclePrimitive>(
+                        obstacleSnapshotCount,
+                        Allocator.TempJob,
+                        NativeArrayOptions.UninitializedMemory);
+                    RegisterObstacleSnapshot(record.PendingObstacleSnapshot, Allocator.TempJob);
+                    if (!TryFillObstacleSnapshot(record.PendingObstacleSnapshot, out _))
+                    {
+                        DisposeObstacleSnapshot(record.PendingObstacleSnapshot);
+                        record.PendingObstacleSnapshot = default;
+                    }
+                }
+
                 record.PendingRegionMin = regionMin;
                 record.PendingRegionMax = regionMax;
 
@@ -2381,6 +2425,22 @@ namespace Hecton8.World
             }
 
             return count;
+        }
+
+        private static void ClearInvalidObstacleTail(NativeArray<NavObstaclePrimitive> snapshot, int startIndex)
+        {
+            if (!snapshot.IsCreated)
+                return;
+
+            int first = math.clamp(startIndex, 0, snapshot.Length);
+            for (int i = first; i < snapshot.Length; i++)
+            {
+                snapshot[i] = new NavObstaclePrimitive
+                {
+                    Center = float3.zero,
+                    Extents = new float3(-1f, -1f, -1f)
+                };
+            }
         }
 
         private static void RegisterPersistentDynamicObstacle(float3 center, float3 extents)

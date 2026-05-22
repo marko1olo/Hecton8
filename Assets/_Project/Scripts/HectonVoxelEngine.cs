@@ -6693,7 +6693,21 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
                 Source = navGridBackBuffer,
                 Destination = navGridBasePassabilityBuffer
             }.Schedule(data.TotalPts, JOB_BATCH, navPassabilityHandle);
-            navObstacleSnapshot = VoxelDynamicNavGridRuntime.CreateObstacleSnapshot(Allocator.TempJob);
+            int navObstacleSnapshotCount = VoxelDynamicNavGridRuntime.CountObstacleSnapshotPrimitives();
+            if (navObstacleSnapshotCount > 0)
+            {
+                navObstacleSnapshot = new NativeArray<VoxelDynamicNavGridRuntime.NavObstaclePrimitive>(
+                    navObstacleSnapshotCount,
+                    Allocator.TempJob,
+                    NativeArrayOptions.UninitializedMemory);
+                RegisterTrackedNativeArray(navObstacleSnapshot, nameof(navObstacleSnapshot));
+                if (!VoxelDynamicNavGridRuntime.TryFillObstacleSnapshot(navObstacleSnapshot, out _))
+                {
+                    VoxelDynamicNavGridRuntime.DisposeObstacleSnapshot(navObstacleSnapshot);
+                    navObstacleSnapshot = default;
+                }
+            }
+
             JobHandle obstacleHandle = navPassabilityHandle;
             if (navObstacleSnapshot.IsCreated)
             {

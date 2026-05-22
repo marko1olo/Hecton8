@@ -1642,3 +1642,15 @@ Cinematic Cheats used: Preserved sparse dirty-cell overlay sampling for voxel re
 Exact Microseconds saved: 0 us measured. Static API risk moved `nativeCollectionPublicMutableApiExposure=47->46`, `nativeApiExposureBuildPlayerRuntime=43->42`, `nativeApiExposureOutRefMutable=30->29`, and `nativeApiRiskRuntimeOutRefMutableView=9->8`.
 
 Evidence: `Docs/Reports/PROJECT_AUDIT_polish_after_voxel_delta_map_owner_alloc.json`; `python Tools\test_polish_mandate_static_audit.py` passed 12 tests; focused scan found no `TryBuildDeltaMapForVolume` or `out NativeParallelHashMap<int3,VoxelModifiedCell>` route; targeted `git diff --check` reported LF/CRLF warnings only. Batch re-check found no `<AGENT_PROMPT id="PROJECT_AUDIT">` block. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Nav Obstacle Snapshot Owner Allocation
+
+What was wrong: `VoxelDynamicNavGridRuntime.CreateObstacleSnapshot(Allocator)` returned a mutable transient obstacle snapshot `NativeArray<NavObstaclePrimitive>` to callers.
+
+What was done: Replaced the return route with scalar counting plus caller-owned allocation and `TryFillObstacleSnapshot`. Added `RegisterObstacleSnapshot` for the nav-grid owner path and finite/positive-extents validation in the full obstacle stamp job.
+
+Cinematic Cheats used: Preserved AABB obstacle stamping over the voxel passability grid as the Dear Lie path; no Unity NavMesh rebuild, scene physics sweep, or per-agent collider query was added.
+
+Exact Microseconds saved: 0 us measured. Static API risk moved `nativeCollectionPublicMutableApiExposure=46->45`, `nativeApiExposureBuildPlayerRuntime=42->41`, `nativeApiExposureMutableReturn=17->16`, and `nativeApiRiskRuntimeDiagnosticNamedMutableView=4->3`.
+
+Evidence: `Docs/Reports/PROJECT_AUDIT_polish_after_nav_obstacle_snapshot_owner_alloc.json`; `python Tools\test_polish_mandate_static_audit.py` passed 12 tests; focused scan found no `CreateObstacleSnapshot` or `internal static NativeArray<NavObstaclePrimitive>` route; targeted `git diff --check` reported LF/CRLF warnings only. Batch re-check found no `<AGENT_PROMPT id="PROJECT_AUDIT">` block. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
