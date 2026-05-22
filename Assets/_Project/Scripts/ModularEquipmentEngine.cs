@@ -287,7 +287,7 @@ namespace Hecton8.Tools
 
             float integrationDelta = _equipmentCadenceAccumulator;
             _equipmentCadenceAccumulator = 0f;
-            RefreshThermalGridReadback(out NativeArray<float> thermalGridReadback);
+            RefreshThermalGridReadback(out NativeArray<float>.ReadOnly thermalGridReadback);
             RefreshActiveEquipmentInputs(ref views);
             ScheduleActiveEquipmentIntegration(integrationDelta, ref views, thermalGridReadback, default);
             ScheduleToolUpgradeMatrixPostIntegration(ref views);
@@ -1495,7 +1495,7 @@ namespace Hecton8.Tools
                 views.ActiveEquipmentWearDrainRates[slotIndex] = 0f;
         }
 
-        private void RefreshThermalGridReadback(out NativeArray<float> thermalGridReadback)
+        private void RefreshThermalGridReadback(out NativeArray<float>.ReadOnly thermalGridReadback)
         {
             thermalGridReadback = default;
             _thermalGridWidth = 0;
@@ -1509,7 +1509,7 @@ namespace Hecton8.Tools
             IThermodynamicsService thermodynamics = _thermodynamicsService;
             if (thermodynamics == null ||
                 !thermodynamics.TryGetThermalGridReadback(
-                    out NativeArray<float> grid,
+                    out NativeArray<float>.ReadOnly grid,
                     out int width,
                     out int height,
                     out int depth,
@@ -1855,7 +1855,7 @@ namespace Hecton8.Tools
         private unsafe void ScheduleActiveEquipmentIntegration(
             float deltaSeconds,
             ref EquipmentVaultViews views,
-            NativeArray<float> thermalGridReadback,
+            NativeArray<float>.ReadOnly thermalGridReadback,
             JobHandle inputDeps)
         {
             if (_equipmentIntegrationScheduled ||

@@ -840,3 +840,27 @@ Cinematic Cheats used: No prefab or scene instantiation path was added. The regi
 Exact Microseconds saved: 0 us measured. Static outcome: broad audit dropped `nativeCollectionPublicMutableApiExposure` from `151` to `150`, `nativeApiExposureBuildPlayerRuntime` from `138` to `137`, `nativeApiExposureMutableReturn` from `33` to `32`, and `nativeApiRiskRuntimeReturnMutableView` from `18` to `17`.
 
 Evidence: Focused scan found the read-only native map return and no first-party callers of `GetNativeMap()`. `python Tools\test_polish_mandate_static_audit.py` ran 12 tests OK. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_after_readonly_native_hashmap_filter.json` returned `PASS_WITH_WARNINGS` with `nativeCollectionPublicMutableApiExposure=150`, `nativeApiExposureBuildPlayerRuntime=137`, `nativeApiExposureMutableReturn=32`, and `nativeApiRiskRuntimeReturnMutableView=17`. `git diff --check` on touched files reported only LF/CRLF normalization warnings. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Chemical Snapshot Read-Only Handoff
+
+What was wrong: `ChemicalInfluenceGrid` returned published chemical front/overlay grids and breadcrumbs as mutable native arrays to AI/flora consumers that only sample them in read-only jobs.
+
+What was done: Converted `TryGetPublishedSnapshot`, `TryGetActivePublishedSnapshot`, and `TryGetPublishedBreadcrumbs` to `NativeArray<T>.ReadOnly` outputs. Predator cognition, mesofauna behavior, and flora parasite growth now consume those aliases as read-only job inputs.
+
+Cinematic Cheats used: No chemical fluid simulation was added. The system still uses compact grid and breadcrumb proxy data for scent/toxin behavior instead of scene queries or per-particle diffusion truth.
+
+Exact Microseconds saved: 0 us measured. Static outcome: broad audit dropped `nativeCollectionPublicMutableApiExposure` from `150` to `147`, `nativeApiExposureBuildPlayerRuntime` from `137` to `134`, `nativeApiExposureOutRefMutable` from `118` to `115`, `nativeApiRiskRuntimeDiagnosticNamedMutableView` from `29` to `27`, and `nativeApiRiskRuntimeOutRefMutableView` from `70` to `69`. Raw private native field count rose from `1318` to `1321` because cached chemical borrows are now explicit read-only native aliases.
+
+Evidence: Focused scan found read-only snapshot signatures and read-only AI/flora job fields. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_after_chemical_snapshot_readonly.json` returned `PASS_WITH_WARNINGS` with `nativeCollectionPublicMutableApiExposure=147`, `nativeApiExposureBuildPlayerRuntime=134`, `nativeApiExposureOutRefMutable=115`, `nativeApiRiskRuntimeDiagnosticNamedMutableView=27`, and `nativeApiRiskRuntimeOutRefMutableView=69`. `git diff --check` on touched files reported only LF/CRLF normalization warnings. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Thermal Readback Read-Only Contract
+
+What was wrong: The thermodynamics registry contract returned thermal map/grid readbacks as mutable native arrays even though the documented route is read-only, and first-party consumers only sample the grid through read-only pointers.
+
+What was done: Converted `IThermodynamicsService.TryGetThermalMapReadback` and `TryGetThermalGridReadback` to `NativeArray<float>.ReadOnly`. `AbyssalThermalManager` now exports read-only aliases, while `ModularEquipmentEngine` and `ShinobuMetabolismRuntime` carry read-only grid views into unsafe pointer sampling.
+
+Cinematic Cheats used: No thermal fluid simulation was added. The route remains a compact owner-generated Celsius grid proxy for equipment/metabolism response instead of per-object thermal physics or scene queries.
+
+Exact Microseconds saved: 0 us measured. Static outcome: broad audit dropped `nativeCollectionPublicMutableApiExposure` from `147` to `145`, `nativeApiExposureBuildPlayerRuntime` from `134` to `132`, `nativeApiExposureOutRefMutable` from `115` to `113`, and `nativeApiRiskRuntimeDiagnosticNamedMutableView` from `27` to `25`.
+
+Evidence: Focused scan found read-only thermal readback signatures and no stale mutable thermal readback declarations in the touched route. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_after_thermal_readback_readonly.json` returned `PASS_WITH_WARNINGS` with `nativeCollectionPublicMutableApiExposure=145`, `nativeApiExposureBuildPlayerRuntime=132`, `nativeApiExposureOutRefMutable=113`, and `nativeApiRiskRuntimeDiagnosticNamedMutableView=25`. `git diff --check` on touched files reported only LF/CRLF normalization warnings. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.

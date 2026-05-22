@@ -251,7 +251,7 @@ namespace Hecton8.Physiology
                 tuningArray[0] = tuning;
 
                 TryResolveThermalGrid(
-                    out NativeArray<float> thermalGrid,
+                    out NativeArray<float>.ReadOnly thermalGrid,
                     out int3 thermalResolution,
                     out double3 thermalRootAup,
                     out float thermalCellSizeMeters,
@@ -1022,7 +1022,7 @@ namespace Hecton8.Physiology
         }
 
         private void TryResolveThermalGrid(
-            out NativeArray<float> thermalGrid,
+            out NativeArray<float>.ReadOnly thermalGrid,
             out int3 thermalResolution,
             out double3 thermalRootAup,
             out float thermalCellSizeMeters,

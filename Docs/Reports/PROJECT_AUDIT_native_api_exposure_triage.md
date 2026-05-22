@@ -231,3 +231,60 @@ Rejected:
 - Changing registry warmup or disposal ownership.
 - Returning the mutable map just because no current caller exists.
 - Suppressing mutable queue writer, allocator, or ring-buffer owner APIs.
+
+## 2026-05-22 Chemical Snapshot Update
+
+Evidence class: STATIC_SOURCE / STATIC_TOOL only. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+Selected route:
+
+- `ChemicalInfluenceGrid.TryGetPublishedSnapshot`, `TryGetActivePublishedSnapshot`, and `TryGetPublishedBreadcrumbs` returned mutable native arrays.
+- Observed consumers only sample the grid/breadcrumb data in predator cognition, mesofauna behavior, and flora parasite jobs.
+
+Patch:
+
+- Chemical front/overlay grid snapshots now return `NativeArray<float4>.ReadOnly`.
+- Chemical breadcrumb snapshots now return `NativeArray<ChemicalBreadcrumbWaypoint>.ReadOnly`.
+- Predator, mesofauna, and flora parasite job fields were updated to read-only native aliases.
+
+Updated static counts from `Docs/Reports/PROJECT_AUDIT_polish_after_chemical_snapshot_readonly.json`:
+
+- `nativeCollectionPublicMutableApiExposure`: 147, down from 150.
+- `nativeApiExposureBuildPlayerRuntime`: 134, down from 137.
+- `nativeApiExposureOutRefMutable`: 115, down from 118.
+- `nativeApiRiskRuntimeDiagnosticNamedMutableView`: 27, down from 29.
+- `nativeApiRiskRuntimeOutRefMutableView`: 69, down from 70.
+
+Rejected:
+
+- Fixing publish-on-read behavior in this pass; that requires an authority-route migration, not only a signature narrowing.
+- Changing chemical emitter queues, grid writer buffers, DTO layout, or sensory math.
+- Copying chemical grids into AI/flora-owned buffers.
+
+## 2026-05-22 Thermal Readback Update
+
+Evidence class: STATIC_SOURCE / STATIC_TOOL only. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+Selected route:
+
+- `IThermodynamicsService.TryGetThermalMapReadback` and `TryGetThermalGridReadback` exposed owner thermal buffers as mutable native arrays.
+- The contract text already defined the map/grid as read-only readback data, and focused consumers only sample via read-only unsafe pointers.
+
+Patch:
+
+- Thermodynamics map/grid readbacks now return `NativeArray<float>.ReadOnly`.
+- `AbyssalThermalManager` exports `.AsReadOnly()` aliases.
+- `ModularEquipmentEngine` and `ShinobuMetabolismRuntime` carry read-only grid views through their thermal sampling handoff.
+
+Updated static counts from `Docs/Reports/PROJECT_AUDIT_polish_after_thermal_readback_readonly.json`:
+
+- `nativeCollectionPublicMutableApiExposure`: 145, down from 147.
+- `nativeApiExposureBuildPlayerRuntime`: 132, down from 134.
+- `nativeApiExposureOutRefMutable`: 113, down from 115.
+- `nativeApiRiskRuntimeDiagnosticNamedMutableView`: 25, down from 27.
+
+Rejected:
+
+- Changing thermal diffusion front/back buffers or thermodynamics owner memory.
+- Copying 32x32x32 thermal grids into consumer-owned allocations.
+- Changing thermal DTO layout, vegetation thermal grids, or heat injection/sampling authority.

@@ -1263,14 +1263,14 @@ namespace Hecton8.World
         }
 
         public bool TryGetThermalMapReadback(
-            out NativeArray<float> temperatureCelsius,
+            out NativeArray<float>.ReadOnly temperatureCelsius,
             out int width,
             out int height,
             out Vector3 originWS,
             out float cellSizeMeters,
             out int version)
         {
-            temperatureCelsius = _thermalMapVisualCelsius;
+            temperatureCelsius = _thermalMapVisualCelsius.IsCreated ? _thermalMapVisualCelsius.AsReadOnly() : default;
             width = ThermalMapResolution;
             height = ThermalMapResolution;
             originWS = _thermalMapOriginWS;
@@ -1280,7 +1280,7 @@ namespace Hecton8.World
         }
 
         public bool TryGetThermalGridReadback(
-            out NativeArray<float> temperatureCelsius,
+            out NativeArray<float>.ReadOnly temperatureCelsius,
             out int width,
             out int height,
             out int depth,
@@ -1288,7 +1288,7 @@ namespace Hecton8.World
             out float cellSizeMeters,
             out int version)
         {
-            temperatureCelsius = _thermalMapReadCelsius;
+            temperatureCelsius = _thermalMapReadCelsius.IsCreated ? _thermalMapReadCelsius.AsReadOnly() : default;
             width = ThermalGridResolution;
             height = ThermalGridResolution;
             depth = ThermalGridResolution;

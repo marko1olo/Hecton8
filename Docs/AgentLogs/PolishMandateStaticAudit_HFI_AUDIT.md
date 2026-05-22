@@ -20,18 +20,18 @@ Evidence class: STATIC_SOURCE. No Unity import, compile, Play Mode, profiler, GC
 | `linqSurface` | 0 | 0 |
 | `nativeApiExposureAmbiguousMutable` | 0 | 0 |
 | `nativeApiExposureBuildEditorOnly` | 5 | 4 |
-| `nativeApiExposureBuildPlayerRuntime` | 134 | 61 |
+| `nativeApiExposureBuildPlayerRuntime` | 132 | 60 |
 | `nativeApiExposureBuildQaDevProof` | 8 | 2 |
 | `nativeApiExposureMutableReturn` | 32 | 20 |
-| `nativeApiExposureOutRefMutable` | 115 | 57 |
+| `nativeApiExposureOutRefMutable` | 113 | 56 |
 | `nativeApiExposurePrivateNestedSuppressed` | 9 | 6 |
 | `nativeApiRiskCoreVaultOrAllocatorSurface` | 21 | 3 |
 | `nativeApiRiskEditorOrProofSurface` | 13 | 6 |
 | `nativeApiRiskRuntimeAmbiguousMutableView` | 0 | 0 |
-| `nativeApiRiskRuntimeDiagnosticNamedMutableView` | 27 | 19 |
+| `nativeApiRiskRuntimeDiagnosticNamedMutableView` | 25 | 18 |
 | `nativeApiRiskRuntimeOutRefMutableView` | 69 | 41 |
 | `nativeApiRiskRuntimeReturnMutableView` | 17 | 10 |
-| `nativeCollectionPublicMutableApiExposure` | 147 | 67 |
+| `nativeCollectionPublicMutableApiExposure` | 145 | 66 |
 | `noAlias` | 2192 | 218 |
 | `packOne` | 0 | 0 |
 | `privateNativeBuildEditorOnly` | 48 | 18 |
@@ -184,7 +184,7 @@ Evidence class: STATIC_SOURCE. No Unity import, compile, Play Mode, profiler, GC
 | `Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs` | 3 |
 | `Assets/_Project/Scripts/Core/Data/H8StaticDataContracts.cs` | 2 |
 | `Assets/_Project/Scripts/Quest/QuestManager.cs` | 2 |
-| `Assets/_Project/Scripts/World/AbyssalThermalManager.cs` | 2 |
+| `Assets/_Project/Scripts/Animation/FaunaProcedural/ProceduralBoneBlenderRuntime.cs` | 1 |
 
 ### nativeApiRiskRuntimeOutRefMutableView
 

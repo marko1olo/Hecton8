@@ -2427,7 +2427,7 @@ namespace Hecton8.Core
         /// Exposes the front-buffer coarse thermal map for avoidance/read-only consumers.
         /// </summary>
         bool TryGetThermalMapReadback(
-            out NativeArray<float> temperatureCelsius,
+            out NativeArray<float>.ReadOnly temperatureCelsius,
             out int width,
             out int height,
             out Vector3 originWS,
@@ -2438,7 +2438,7 @@ namespace Hecton8.Core
         /// Exposes the front-buffer 32x32x32 Celsius grid for read-only consumers.
         /// </summary>
         bool TryGetThermalGridReadback(
-            out NativeArray<float> temperatureCelsius,
+            out NativeArray<float>.ReadOnly temperatureCelsius,
             out int width,
             out int height,
             out int depth,
