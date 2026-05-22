@@ -48,7 +48,7 @@ namespace Hecton8.Core.Contracts
     {
         bool TryReadNearestSonarSdf(
             float3 runtimeOrigin,
-            out NativeArray<byte> encodedSdf,
+            out NativeArray<byte>.ReadOnly encodedSdf,
             out int3 gridDimensions,
             out float3 volumeOrigin,
             out float3 cellSize,
@@ -60,7 +60,7 @@ namespace Hecton8.Core.Contracts
             float maxDistance,
             float stepMeters,
             out VoxelSonarSdfRaycastHit hit,
-            out NativeArray<byte> encodedSdf,
+            out NativeArray<byte>.ReadOnly encodedSdf,
             out int3 gridDimensions,
             out float3 volumeOrigin,
             out float3 cellSize,

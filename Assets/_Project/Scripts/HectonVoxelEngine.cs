@@ -4331,7 +4331,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
 
     public bool TryReadNearestSonarSdf(
         float3 runtimeOrigin,
-        out NativeArray<byte> encodedSdf,
+        out NativeArray<byte>.ReadOnly encodedSdf,
         out int3 gridDimensions,
         out float3 volumeOrigin,
         out float3 cellSize,
@@ -4348,7 +4348,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         Vector3 origin = new Vector3(runtimeOrigin.x, runtimeOrigin.y, runtimeOrigin.z);
         if (!TryReadNearestActiveSonarSdfPayload(
                 origin,
-                out NativeArray<byte> payload,
+                out NativeArray<byte>.ReadOnly payload,
                 out Vector3Int dimensions,
                 out Vector3 payloadOrigin,
                 out Vector3 payloadCellSize,
@@ -4377,7 +4377,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         float maxDistance,
         float stepMeters,
         out VoxelSonarSdfRaycastHit hit,
-        out NativeArray<byte> encodedSdf,
+        out NativeArray<byte>.ReadOnly encodedSdf,
         out int3 gridDimensions,
         out float3 volumeOrigin,
         out float3 cellSize,
@@ -4427,7 +4427,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
             }
 
             if (!volume.TryGetPublishedSonarSdfPayload(
-                    out NativeArray<byte> candidateSdf,
+                    out NativeArray<byte>.ReadOnly candidateSdf,
                     out Vector3Int candidateDimensions,
                     out Vector3 candidateOrigin,
                     out Vector3 candidateCellSize,
@@ -4479,7 +4479,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
                 volume == null ||
                 !volume.HasRuntimeData ||
                 !volume.TryGetPublishedSonarSdfPayload(
-                    out NativeArray<byte> _,
+                    out NativeArray<byte>.ReadOnly _,
                     out Vector3Int dimensions,
                     out Vector3 payloadOrigin,
                     out Vector3 payloadCellSize,
@@ -4505,7 +4505,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
 
     private bool TryReadNearestActiveSonarSdfPayload(
         Vector3 runtimeOrigin,
-        out NativeArray<byte> encodedSdf,
+        out NativeArray<byte>.ReadOnly encodedSdf,
         out Vector3Int gridDimensions,
         out Vector3 volumeOrigin,
         out Vector3 voxelCellSize,
@@ -4529,7 +4529,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
                 volume == null ||
                 !volume.HasRuntimeData ||
                 !volume.TryGetPublishedSonarSdfPayload(
-                    out NativeArray<byte> candidateSdf,
+                    out NativeArray<byte>.ReadOnly candidateSdf,
                     out Vector3Int candidateDimensions,
                     out Vector3 candidateOrigin,
                     out Vector3 candidateCellSize,

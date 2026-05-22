@@ -1566,7 +1566,7 @@ namespace Hecton8.Gameplay
                 return dependsOn;
             }
 
-            NativeArray<byte> encodedSdf = default;
+            NativeArray<byte>.ReadOnly encodedSdf = default;
             int3 sdfDimensions = default;
             float3 sdfVolumeOrigin = default;
             float3 sdfCellSize = default;
@@ -2574,7 +2574,7 @@ namespace Hecton8.Gameplay
             [NativeDisableUnsafePtrRestriction, NoAlias] public RadiationStateDTO* States;
             [NativeDisableUnsafePtrRestriction, NoAlias] public RadiationSource* Sources;
             [NativeDisableUnsafePtrRestriction, NoAlias] public CombatDamageSignal* DamageSignal;
-            [ReadOnly, NoAlias] public NativeArray<byte> EncodedSdf;
+            [ReadOnly, NoAlias] public NativeArray<byte>.ReadOnly EncodedSdf;
             [NativeDisableUnsafePtrRestriction, NoAlias] public BulkheadStateDTO* BulkheadStates;
             [NativeDisableUnsafePtrRestriction, NoAlias] public BulkheadPlaneDTO* BulkheadPlanes;
             public int SourceCapacity;

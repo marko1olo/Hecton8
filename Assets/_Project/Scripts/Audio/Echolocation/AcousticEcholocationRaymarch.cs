@@ -50,8 +50,8 @@ namespace Hecton8.Audio.Echolocation
         public const byte AudioMaterialGlass = 3;
         public const byte AudioMaterialBiological = 4;
 
-        [ReadOnly] public NativeArray<byte> EncodedSdf;
-        [ReadOnly] public NativeArray<byte> AudioMaterialIds;
+        [ReadOnly] public NativeArray<byte>.ReadOnly EncodedSdf;
+        [ReadOnly] public NativeArray<byte>.ReadOnly AudioMaterialIds;
         public int3 GridDimensions;
         public float3 VolumeOrigin;
         public float3 CellSize;

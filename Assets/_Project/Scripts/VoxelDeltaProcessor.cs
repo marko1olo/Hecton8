@@ -1614,10 +1614,106 @@ namespace Hecton8.Caves
             }
         }
 
-        public unsafe NativeArray<byte> CaptureNativeSnapshot(Allocator allocator)
+        public bool TryMeasureNativeSnapshotByteCount(out int byteCount)
         {
+            if (!TryMeasureNativeSnapshot(out NativeSnapshotWriteStats stats))
+            {
+                byteCount = 0;
+                return false;
+            }
+
+            byteCount = stats.TotalBytes;
+            return byteCount > 0;
+        }
+
+        public unsafe bool TryCopyNativeSnapshot(void* destinationPtr, int destinationByteCapacity, out int bytesWritten)
+        {
+            bytesWritten = 0;
+            if (destinationPtr == null || destinationByteCapacity <= 0)
+            {
+                UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(VoxelDeltaProcessor));
+                return false;
+            }
+
+            if (!TryMeasureNativeSnapshot(out NativeSnapshotWriteStats stats) ||
+                stats.TotalBytes <= 0 ||
+                stats.ChunkCount <= 0 ||
+                destinationByteCapacity < stats.TotalBytes)
+            {
+                UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(VoxelDeltaProcessor));
+                return false;
+            }
+
+            byte* snapshotPtr = (byte*)destinationPtr;
+            int cursor = 0;
+
+            NativeSnapshotHeader header = new NativeSnapshotHeader
+            {
+                Version = NativeSnapshotDeltaRleAlignedMagic,
+                ChunkCount = stats.ChunkCount,
+                TotalDirtyCellCount = stats.TotalDirtyCellCount,
+                Reserved0 = 0
+            };
+
+            UnsafeUtility.CopyStructureToPtr(ref header, snapshotPtr);
+            cursor += UnsafeUtility.SizeOf<NativeSnapshotHeader>();
+
+            Dictionary<ChunkAddress, CompactedChunkState>.Enumerator compactedWriteEnumerator = _compactedChunkStates.GetEnumerator();
+            while (compactedWriteEnumerator.MoveNext())
+            {
+                KeyValuePair<ChunkAddress, CompactedChunkState> pair = compactedWriteEnumerator.Current;
+                CompactedChunkState compactedState = pair.Value;
+                _chunkStates.TryGetValue(pair.Key, out ChunkDeltaState overlayState);
+                bool hasOverlay = overlayState.DirtyMaskWords.IsCreated;
+                if (IsUniformSdfRleSnapshotEligible(compactedState, hasOverlay))
+                {
+                    WriteUniformSdfRleNativeSnapshotChunk(snapshotPtr, stats.TotalBytes, ref cursor, pair.Key, in compactedState);
+                }
+                else
+                {
+                    WriteCompactedSparseRleNativeSnapshotChunk(
+                        snapshotPtr,
+                        stats.TotalBytes,
+                        ref cursor,
+                        pair.Key,
+                        in compactedState,
+                        in overlayState,
+                        hasOverlay);
+                }
+            }
+
+            compactedWriteEnumerator.Dispose();
+            Dictionary<ChunkAddress, ChunkDeltaState>.Enumerator writeEnumerator = _chunkStates.GetEnumerator();
+            while (writeEnumerator.MoveNext())
+            {
+                KeyValuePair<ChunkAddress, ChunkDeltaState> pair = writeEnumerator.Current;
+                if (_compactedChunkStates.ContainsKey(pair.Key))
+                    continue;
+
+                ChunkDeltaState state = pair.Value;
+                int dirtyCellCount = CountDirtyCells(in state);
+                if (dirtyCellCount <= 0)
+                    continue;
+
+                WriteDirtySparseRleNativeSnapshotChunk(snapshotPtr, stats.TotalBytes, ref cursor, pair.Key, in state, dirtyCellCount);
+            }
+
+            writeEnumerator.Dispose();
+            if (cursor != stats.TotalBytes)
+            {
+                UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(VoxelDeltaProcessor));
+                return false;
+            }
+
+            bytesWritten = cursor;
+            return true;
+        }
+
+        private bool TryMeasureNativeSnapshot(out NativeSnapshotWriteStats stats)
+        {
+            stats = default;
             if (_chunkStates.Count <= 0 && _compactedChunkStates.Count <= 0)
-                return default;
+                return false;
 
             int chunkCount = 0;
             int totalDirtyCellCount = 0;
@@ -1662,65 +1758,13 @@ namespace Hecton8.Caves
 
             countEnumerator.Dispose();
             if (chunkCount <= 0)
-                return default;
+                return false;
 
-            NativeArray<byte> snapshot = new NativeArray<byte>(totalBytes, allocator, NativeArrayOptions.UninitializedMemory);
-            byte* snapshotPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(snapshot);
-            int cursor = 0;
-
-            NativeSnapshotHeader header = new NativeSnapshotHeader
-            {
-                Version = NativeSnapshotDeltaRleAlignedMagic,
-                ChunkCount = chunkCount,
-                TotalDirtyCellCount = totalDirtyCellCount,
-                Reserved0 = 0
-            };
-
-            UnsafeUtility.CopyStructureToPtr(ref header, snapshotPtr);
-            cursor += UnsafeUtility.SizeOf<NativeSnapshotHeader>();
-
-            Dictionary<ChunkAddress, CompactedChunkState>.Enumerator compactedWriteEnumerator = _compactedChunkStates.GetEnumerator();
-            while (compactedWriteEnumerator.MoveNext())
-            {
-                KeyValuePair<ChunkAddress, CompactedChunkState> pair = compactedWriteEnumerator.Current;
-                CompactedChunkState compactedState = pair.Value;
-                _chunkStates.TryGetValue(pair.Key, out ChunkDeltaState overlayState);
-                bool hasOverlay = overlayState.DirtyMaskWords.IsCreated;
-                if (IsUniformSdfRleSnapshotEligible(compactedState, hasOverlay))
-                {
-                    WriteUniformSdfRleNativeSnapshotChunk(snapshotPtr, snapshot.Length, ref cursor, pair.Key, in compactedState);
-                }
-                else
-                {
-                    WriteCompactedSparseRleNativeSnapshotChunk(
-                        snapshotPtr,
-                        snapshot.Length,
-                        ref cursor,
-                        pair.Key,
-                        in compactedState,
-                        in overlayState,
-                        hasOverlay);
-                }
-            }
-
-            compactedWriteEnumerator.Dispose();
-            Dictionary<ChunkAddress, ChunkDeltaState>.Enumerator writeEnumerator = _chunkStates.GetEnumerator();
-            while (writeEnumerator.MoveNext())
-            {
-                KeyValuePair<ChunkAddress, ChunkDeltaState> pair = writeEnumerator.Current;
-                if (_compactedChunkStates.ContainsKey(pair.Key))
-                    continue;
-
-                ChunkDeltaState state = pair.Value;
-                int dirtyCellCount = CountDirtyCells(in state);
-                if (dirtyCellCount <= 0)
-                    continue;
-
-                WriteDirtySparseRleNativeSnapshotChunk(snapshotPtr, snapshot.Length, ref cursor, pair.Key, in state, dirtyCellCount);
-            }
-
-            writeEnumerator.Dispose();
-            return snapshot;
+            stats.TotalBytes = totalBytes;
+            stats.ChunkCount = chunkCount;
+            stats.TotalDirtyCellCount = totalDirtyCellCount;
+            stats.Reserved0 = 0;
+            return true;
         }
 
         private static bool IsUniformSdfRleSnapshotEligible(
@@ -4780,6 +4824,15 @@ namespace Hecton8.Caves
         private static ulong CombineHash64(uint low, uint high)
         {
             return ((ulong)high << 32) | low;
+        }
+
+        [StructLayout(LayoutKind.Explicit, Size = 16)]
+        private struct NativeSnapshotWriteStats
+        {
+            [FieldOffset(0)] public int TotalBytes;
+            [FieldOffset(4)] public int ChunkCount;
+            [FieldOffset(8)] public int TotalDirtyCellCount;
+            [FieldOffset(12)] public int Reserved0;
         }
 
         [StructLayout(LayoutKind.Explicit, Size = 16)]

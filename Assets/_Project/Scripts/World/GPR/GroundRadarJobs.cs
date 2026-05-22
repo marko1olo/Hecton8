@@ -41,7 +41,7 @@ namespace Hecton8.World.GPR
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public struct GroundRadarRaymarchJob : IJob
     {
-        [ReadOnly, NoAlias] public NativeSlice<byte> EncodedSdf;
+        [ReadOnly, NoAlias] public NativeArray<byte>.ReadOnly EncodedSdf;
         [ReadOnly, NoAlias] public NativeArray<float3>.ReadOnly OrePositions;
         [ReadOnly, NoAlias] public NativeArray<int>.ReadOnly OreTypes;
 

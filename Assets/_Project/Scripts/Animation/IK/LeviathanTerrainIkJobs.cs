@@ -385,7 +385,7 @@ namespace Hecton8.Animation.IK
         [NoAlias] public NativeArray<LeviathanCapsuleColliderDTO> ColliderProxies;
         [NoAlias] public NativeArray<LeviathanTerrainIkTelemetryEntry> TelemetryRing;
         [NoAlias] public NativeArray<int> TelemetryCursor;
-        [ReadOnly, NoAlias] public NativeArray<byte> VoxelSdfTexture3D;
+        [ReadOnly, NoAlias] public NativeArray<byte>.ReadOnly VoxelSdfTexture3D;
         [ReadOnly, NoAlias] public NativeArray<ushort> TerrainHeightSamples;
         public int3 VoxelSdfDimensions;
         public float3 VoxelSdfOrigin;

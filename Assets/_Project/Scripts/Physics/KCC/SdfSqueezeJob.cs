@@ -48,7 +48,7 @@ namespace Hecton8.Physics.KCC
         [NoAlias] public NativeArray<float3> Positions;
         [NoAlias] public NativeArray<float3> Velocities;
         [ReadOnly, NoAlias] public NativeArray<float3> IntendedMovement;
-        [ReadOnly, NoAlias] public NativeArray<byte> VoxelSdfTexture3D;
+        [ReadOnly, NoAlias] public NativeArray<byte>.ReadOnly VoxelSdfTexture3D;
         [NoAlias] public NativeArray<SdfSqueezeResult> Results;
 
         public int3 VoxelSdfDimensions;
@@ -194,7 +194,7 @@ namespace Hecton8.Physics.KCC
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static bool TryResolveOpenSpaceNormal(
-            NativeArray<byte> encodedSdf,
+            NativeArray<byte>.ReadOnly encodedSdf,
             int3 gridDimensions,
             float3 volumeOrigin,
             float3 cellSize,
@@ -263,7 +263,7 @@ namespace Hecton8.Physics.KCC
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static bool TrySampleSdfTrilinear(
-            NativeArray<byte> encodedSdf,
+            NativeArray<byte>.ReadOnly encodedSdf,
             int3 gridDimensions,
             float3 volumeOrigin,
             float3 cellSize,
@@ -346,7 +346,7 @@ namespace Hecton8.Physics.KCC
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static float DecodeSdfAt(NativeArray<byte> encodedSdf, int3 gridDimensions, int x, int y, int z, float sdfRange)
+        private static float DecodeSdfAt(NativeArray<byte>.ReadOnly encodedSdf, int3 gridDimensions, int x, int y, int z, float sdfRange)
         {
             int index = x + gridDimensions.x * (y + gridDimensions.y * z);
             if ((uint)index >= (uint)encodedSdf.Length)

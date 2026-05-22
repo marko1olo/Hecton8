@@ -1584,8 +1584,8 @@ namespace Hecton8.Gameplay
             if (!TryResolveAupRuntimeSample(samplePosition, out float3 sample3) ||
                 !HectonVoxelVolume.TryGetClosestPublishedSonarSdfPayload(
                     samplePosition,
-                    out NativeArray<byte> encodedSdf,
-                    out NativeArray<byte> _,
+                    out NativeArray<byte>.ReadOnly encodedSdf,
+                    out NativeArray<byte>.ReadOnly _,
                     out Vector3Int gridDimensions,
                     out Vector3 volumeOrigin,
                     out Vector3 voxelCellSize,
@@ -1679,7 +1679,7 @@ namespace Hecton8.Gameplay
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private NativeArray<byte> ResolveSdfTraversalPayload(NativeArray<byte> publishedSdf, int expectedLength)
+        private NativeArray<byte>.ReadOnly ResolveSdfTraversalPayload(NativeArray<byte>.ReadOnly publishedSdf, int expectedLength)
         {
             var dataVault = _dataVault;
             if (dataVault != null &&
@@ -1689,14 +1689,14 @@ namespace Hecton8.Gameplay
                 vaultSdf.IsCreated &&
                 vaultSdf.Length >= expectedLength)
             {
-                return vaultSdf;
+                return vaultSdf.AsReadOnly();
             }
 
             return publishedSdf;
         }
 
         private bool TryValidateSdfSqueezeCapsuleLine(
-            NativeArray<byte> encodedSdf,
+            NativeArray<byte>.ReadOnly encodedSdf,
             int3 dimensions,
             float3 origin,
             float3 cellSize,

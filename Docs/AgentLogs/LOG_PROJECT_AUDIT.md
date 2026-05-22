@@ -1606,3 +1606,15 @@ Cinematic Cheats used: Preserved HZB/BRG shadow culling as the visual fake path;
 Exact Microseconds saved: 0 us measured. Static API risk moved `nativeCollectionPublicMutableApiExposure=56->54`, `nativeApiExposureBuildPlayerRuntime=52->50`, `nativeApiExposureOutRefMutable=38->36`, and `nativeApiRiskRuntimeOutRefMutableView=17->15`.
 
 Evidence: `Docs/Reports/PROJECT_AUDIT_polish_after_abyssal_shadow_producer_scope.json`; `python Tools\test_polish_mandate_static_audit.py` passed 12 tests; focused scan found no external raw producer buffer callers; targeted `git diff --check` reported LF/CRLF warnings only. Batch re-check found no `<AGENT_PROMPT id="PROJECT_AUDIT">` block. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Voxel Delta Snapshot Owner Copy
+
+What was wrong: `VoxelDeltaProcessor.CaptureNativeSnapshot(Allocator)` returned a mutable save snapshot `NativeArray<byte>` to the save manager, despite a single save-time caller.
+
+What was done: Replaced the NativeArray-return route with byte-count measurement plus raw pointer copy. `SaveManager` now allocates, registers, validates, and disposes the transient snapshot buffer.
+
+Cinematic Cheats used: Not visual. This preserves the compact RLE native snapshot as one bounded copy instead of managed dirty-cell serialization.
+
+Exact Microseconds saved: 0 us measured. Static API risk moved `nativeCollectionPublicMutableApiExposure=54->53`, `nativeApiExposureBuildPlayerRuntime=50->49`, `nativeApiExposureMutableReturn=18->17`, and `nativeApiRiskRuntimeDiagnosticNamedMutableView=5->4`.
+
+Evidence: `Docs/Reports/PROJECT_AUDIT_polish_after_voxel_delta_snapshot_owner_copy.json`; `python Tools\test_polish_mandate_static_audit.py` passed 12 tests; focused scan found no `CaptureNativeSnapshot` route; targeted `git diff --check` reported LF/CRLF warnings only. Batch re-check found no `<AGENT_PROMPT id="PROJECT_AUDIT">` block. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.

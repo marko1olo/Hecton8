@@ -311,7 +311,7 @@ namespace Hecton8.AI
             ApplyPresentationIntentTargets();
             ResolveTerrainPayload(
                 authorityQualityWeight,
-                out NativeArray<byte> sdfTexture3D,
+                out NativeArray<byte>.ReadOnly sdfTexture3D,
                 out int3 sdfDimensions,
                 out float3 sdfOrigin,
                 out float3 sdfCellSize,
@@ -1626,7 +1626,7 @@ namespace Hecton8.AI
 
         private void ResolveTerrainPayload(
             float qualityWeight,
-            out NativeArray<byte> sdfTexture3D,
+            out NativeArray<byte>.ReadOnly sdfTexture3D,
             out int3 sdfDimensions,
             out float3 sdfOrigin,
             out float3 sdfCellSize,
@@ -1654,7 +1654,7 @@ namespace Hecton8.AI
         private void ResolveSdfPayload(
             float qualityWeight,
             float3 targetPosition,
-            out NativeArray<byte> sdfTexture3D,
+            out NativeArray<byte>.ReadOnly sdfTexture3D,
             out int3 sdfDimensions,
             out float3 sdfOrigin,
             out float3 sdfCellSize,
@@ -1671,7 +1671,7 @@ namespace Hecton8.AI
 
             if (!HectonVoxelVolume.TryGetClosestPublishedSonarSdfPayload(
                     ToVector3(targetPosition),
-                    out NativeArray<byte> publishedSdf,
+                    out NativeArray<byte>.ReadOnly publishedSdf,
                     out _,
                     out Vector3Int dimensions,
                     out Vector3 origin,
@@ -1690,12 +1690,12 @@ namespace Hecton8.AI
                 return;
             }
 
-            NativeArray<byte> resolvedSdf = publishedSdf;
+            NativeArray<byte>.ReadOnly resolvedSdf = publishedSdf;
             IDataVault vault = _dataVault;
             if (TryOpenExistingVaultBuffer(vault, BufferID.VoxelSdfTexture3D, expectedLength, out NativeArray<byte> vaultSdf) &&
                 vaultSdf.Length == expectedLength)
             {
-                resolvedSdf = vaultSdf;
+                resolvedSdf = vaultSdf.AsReadOnly();
             }
 
             sdfTexture3D = resolvedSdf;

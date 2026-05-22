@@ -560,7 +560,7 @@ namespace Hecton8.World
                 return;
             }
 
-            NativeArray<byte> encodedSdf = default;
+            NativeArray<byte>.ReadOnly encodedSdf = default;
             int3 gridDimensions = default;
             float3 volumeOrigin = default;
             float3 cellSize = default;
@@ -580,7 +580,7 @@ namespace Hecton8.World
             maxSignalStrength[0] = 0f;
             GroundRadarRaymarchJob job = new GroundRadarRaymarchJob
             {
-                EncodedSdf = encodedSdf.IsCreated ? new NativeSlice<byte>(encodedSdf) : default,
+                EncodedSdf = encodedSdf,
                 OrePositions = oreCount > 0 ? orePositions : default,
                 OreTypes = oreCount > 0 ? oreTypes : default,
                 GprHits = new NativeSlice<float3>(hits),
@@ -773,7 +773,7 @@ namespace Hecton8.World
 
         private bool TryReadNearestSdf(
             float3 probeOrigin,
-            out NativeArray<byte> encodedSdf,
+            out NativeArray<byte>.ReadOnly encodedSdf,
             out int3 gridDimensions,
             out float3 volumeOrigin,
             out float3 cellSize,
@@ -791,7 +791,7 @@ namespace Hecton8.World
 
             if (!voxelSdfReadModel.TryReadNearestSonarSdf(
                     probeOrigin,
-                    out NativeArray<byte> payload,
+                    out NativeArray<byte>.ReadOnly payload,
                     out int3 dimensions,
                     out float3 payloadOrigin,
                     out float3 payloadCellSize,

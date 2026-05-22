@@ -77,7 +77,7 @@ namespace Hecton8.Gameplay
         [NoAlias] public NativeArray<float3> FlowVelocity;
         [NoAlias] public NativeArray<float3> LastValidPositions;
         [ReadOnly, NoAlias] public NativeArray<WhirlpoolFlow>.ReadOnly ActiveMaelstroms;
-        [ReadOnly, NoAlias] public NativeArray<byte> VoxelSdfTexture3D;
+        [ReadOnly, NoAlias] public NativeArray<byte>.ReadOnly VoxelSdfTexture3D;
         [NoAlias] public NativeArray<PlayerKinematicsRuntimeTelemetryEntry> Telemetry;
         [NoAlias] public NativeArray<int> TelemetryWriteIndex;
         [NoAlias] public NativeArray<int> FaultFlags;
@@ -253,7 +253,7 @@ namespace Hecton8.Gameplay
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static bool TryResolveSdfOpenSpaceGradient(
-            NativeArray<byte> encodedSdf,
+            NativeArray<byte>.ReadOnly encodedSdf,
             int3 gridDimensions,
             float3 volumeOrigin,
             float3 cellSize,
@@ -317,7 +317,7 @@ namespace Hecton8.Gameplay
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static bool TrySampleSdfTrilinear(
-            NativeArray<byte> encodedSdf,
+            NativeArray<byte>.ReadOnly encodedSdf,
             int3 gridDimensions,
             float3 volumeOrigin,
             float3 cellSize,
@@ -400,7 +400,7 @@ namespace Hecton8.Gameplay
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static float DecodeSdfAt(NativeArray<byte> encodedSdf, int3 gridDimensions, int x, int y, int z, float sdfRange)
+        private static float DecodeSdfAt(NativeArray<byte>.ReadOnly encodedSdf, int3 gridDimensions, int x, int y, int z, float sdfRange)
         {
             int index = x + gridDimensions.x * (y + gridDimensions.y * z);
             if ((uint)index >= (uint)encodedSdf.Length)
@@ -1095,7 +1095,7 @@ namespace Hecton8.Gameplay
             SnapshotGpuFlow();
             SnapshotVoxelSolid(out byte inSolid, out float solidDensity);
             byte sdfGradientProbeRequested = ResolveSdfGradientProbeRequest();
-            NativeArray<byte> sdfTexture3D = default;
+            NativeArray<byte>.ReadOnly sdfTexture3D = default;
             int3 sdfDimensions = default;
             float3 sdfOrigin = float3.zero;
             float3 sdfCellSize = float3.zero;
@@ -1873,7 +1873,7 @@ namespace Hecton8.Gameplay
 
         private void SnapshotSdfPayload(
             Vector3 targetRuntimePosition,
-            out NativeArray<byte> sdfTexture3D,
+            out NativeArray<byte>.ReadOnly sdfTexture3D,
             out int3 gridDimensions,
             out float3 volumeOrigin,
             out float3 voxelCellSize,
@@ -1893,7 +1893,7 @@ namespace Hecton8.Gameplay
             if (!_voxelEngine.TryGetNearestActiveVolume(targetRuntimePosition, out HectonVoxelVolume volume) ||
                 volume == null ||
                 !volume.TryGetPublishedSonarSdfPayload(
-                    out NativeArray<byte> publishedSdf,
+                    out NativeArray<byte>.ReadOnly publishedSdf,
                     out Vector3Int publishedDimensions,
                     out Vector3 publishedOrigin,
                     out Vector3 publishedCellSize,
@@ -1910,7 +1910,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            NativeArray<byte> resolvedSdf = publishedSdf;
+            NativeArray<byte>.ReadOnly resolvedSdf = publishedSdf;
             var dataVault = _dataVault;
             if (dataVault != null &&
                 TryReadExistingVaultView(
@@ -1920,7 +1920,7 @@ namespace Hecton8.Gameplay
                     expectedLength,
                     out NativeArray<byte> vaultSdf))
             {
-                resolvedSdf = vaultSdf;
+                resolvedSdf = vaultSdf.AsReadOnly();
             }
 
             sdfTexture3D = resolvedSdf;
@@ -1946,7 +1946,7 @@ namespace Hecton8.Gameplay
         private bool TryApplySdfSqueeze(
             float fixedDeltaTime,
             float qualityWeight01,
-            NativeArray<byte> sdfTexture3D,
+            NativeArray<byte>.ReadOnly sdfTexture3D,
             int3 sdfDimensions,
             float3 sdfOrigin,
             float3 sdfCellSize,
@@ -2105,7 +2105,7 @@ namespace Hecton8.Gameplay
         }
 
         private static bool IsValidSdfPayload(
-            NativeArray<byte> sdfTexture3D,
+            NativeArray<byte>.ReadOnly sdfTexture3D,
             int3 sdfDimensions,
             float3 sdfOrigin,
             float3 sdfCellSize,
@@ -2320,7 +2320,7 @@ namespace Hecton8.Gameplay
         {
             if (volume == null ||
                 !volume.TryGetPublishedSonarSdfPayload(
-                    out NativeArray<byte> _,
+                    out NativeArray<byte>.ReadOnly _,
                     out Vector3Int gridDimensions,
                     out Vector3 volumeOrigin,
                     out Vector3 voxelCellSize,

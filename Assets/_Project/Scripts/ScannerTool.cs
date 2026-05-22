@@ -2587,7 +2587,7 @@ namespace Hecton8.Gameplay
                     range,
                     math.max(0.1f, focusedScanSurfaceInset * 2f),
                     out VoxelSonarSdfRaycastHit sdfHit,
-                    out NativeArray<byte> encodedSdf,
+                    out NativeArray<byte>.ReadOnly encodedSdf,
                     out int3 sdfGridDimensions,
                     out float3 sdfVolumeOrigin,
                     out float3 sdfCellSize,
@@ -2986,7 +2986,7 @@ namespace Hecton8.Gameplay
 
         private void ConsumeScientificVoxelHit(
             in VoxelSonarSdfRaycastHit sdfHit,
-            NativeArray<byte> encodedSdf,
+            NativeArray<byte>.ReadOnly encodedSdf,
             int3 gridDimensions,
             float3 volumeOrigin,
             float3 voxelCellSize,
@@ -3849,7 +3849,7 @@ namespace Hecton8.Gameplay
         }
 
         private static bool TrySampleScientificDensity(
-            NativeArray<byte> encodedSdf,
+            NativeArray<byte>.ReadOnly encodedSdf,
             int3 gridDimensions,
             float3 volumeOrigin,
             float3 voxelCellSize,
@@ -3888,7 +3888,7 @@ namespace Hecton8.Gameplay
         }
 
         private static float DecodeScientificDensity(
-            NativeArray<byte> encodedSdf,
+            NativeArray<byte>.ReadOnly encodedSdf,
             int3 gridDimensions,
             float sdfRange,
             float sampleX,
@@ -3924,7 +3924,7 @@ namespace Hecton8.Gameplay
         }
 
         private static float DecodeScientificDensityAt(
-            NativeArray<byte> encodedSdf,
+            NativeArray<byte>.ReadOnly encodedSdf,
             int3 gridDimensions,
             float sdfRange,
             int x,

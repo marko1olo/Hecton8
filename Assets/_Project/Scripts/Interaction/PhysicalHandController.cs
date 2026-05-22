@@ -1208,7 +1208,7 @@ namespace Hecton8.Interaction
             VRInteractionTuningDTO tuning = _kinematicBridgeViews.Tuning[0];
             RefreshKinematicTuning(ref tuning, controllerPosition, runtimeOriginAup);
 
-            NativeArray<byte> encodedSdf = default;
+            NativeArray<byte>.ReadOnly encodedSdf = default;
             int socketCount = ResolveActiveKinematicSocketCount(_kinematicBridgeViews.Sockets);
             if (!TryBindNearestSdf(controllerPosition, runtimeOriginAup, ref tuning, out encodedSdf))
                 tuning.SdfDimensions = int3.zero;
@@ -1292,7 +1292,7 @@ namespace Hecton8.Interaction
                 VRInteractionKinematicBridgeConstants.TuningFlagVelocitySignalEnabled;
         }
 
-        private bool TryBindNearestSdf(Vector3 controllerPosition, double3 runtimeOriginAup, ref VRInteractionTuningDTO tuning, out NativeArray<byte> encodedSdf)
+        private bool TryBindNearestSdf(Vector3 controllerPosition, double3 runtimeOriginAup, ref VRInteractionTuningDTO tuning, out NativeArray<byte>.ReadOnly encodedSdf)
         {
             encodedSdf = default;
             Hecton8.Core.Contracts.IVoxelSonarSdfReadModel readModel = _kinematicSdfReadModel;

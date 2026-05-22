@@ -426,8 +426,8 @@ namespace Hecton8.Caves
 
         internal static bool TryGetClosestPublishedSonarSdfPayload(
             Vector3 runtimeOrigin,
-            out NativeArray<byte> encodedSdf,
-            out NativeArray<byte> audioMaterialIds,
+            out NativeArray<byte>.ReadOnly encodedSdf,
+            out NativeArray<byte>.ReadOnly audioMaterialIds,
             out Vector3Int gridDimensions,
             out Vector3 volumeOrigin,
             out Vector3 voxelCellSize,
@@ -451,8 +451,8 @@ namespace Hecton8.Caves
         /// </summary>
         internal static bool TryReadClosestPublishedSonarSdfPayload(
             Vector3 runtimeOrigin,
-            out NativeArray<byte> encodedSdf,
-            out NativeArray<byte> audioMaterialIds,
+            out NativeArray<byte>.ReadOnly encodedSdf,
+            out NativeArray<byte>.ReadOnly audioMaterialIds,
             out Vector3Int gridDimensions,
             out Vector3 volumeOrigin,
             out Vector3 voxelCellSize,
@@ -477,8 +477,8 @@ namespace Hecton8.Caves
                     continue;
 
                 if (!candidate.TryGetPublishedSonarSdfPayload(
-                        out NativeArray<byte> candidateSdf,
-                        out NativeArray<byte> candidateMaterialIds,
+                        out NativeArray<byte>.ReadOnly candidateSdf,
+                        out NativeArray<byte>.ReadOnly candidateMaterialIds,
                         out Vector3Int candidateDimensions,
                         out Vector3 candidateOrigin,
                         out Vector3 candidateCellSize,
@@ -1707,14 +1707,14 @@ namespace Hecton8.Caves
         }
 
         internal bool TryGetPublishedSonarSdfPayload(
-            out NativeArray<byte> encodedSdf,
+            out NativeArray<byte>.ReadOnly encodedSdf,
             out Vector3Int gridDimensions,
             out Vector3 volumeOrigin,
             out Vector3 voxelCellSize,
             out float sdfRange,
             out int version)
         {
-            encodedSdf = _publishedSonarSdf;
+            encodedSdf = _publishedSonarSdf.IsCreated ? _publishedSonarSdf.AsReadOnly() : default;
             gridDimensions = _publishedSonarGridDimensions;
             volumeOrigin = _publishedSonarOrigin;
             voxelCellSize = _publishedSonarCellSize;
@@ -1730,8 +1730,8 @@ namespace Hecton8.Caves
         }
 
         internal bool TryGetPublishedSonarSdfPayload(
-            out NativeArray<byte> encodedSdf,
-            out NativeArray<byte> audioMaterialIds,
+            out NativeArray<byte>.ReadOnly encodedSdf,
+            out NativeArray<byte>.ReadOnly audioMaterialIds,
             out Vector3Int gridDimensions,
             out Vector3 volumeOrigin,
             out Vector3 voxelCellSize,
@@ -1745,7 +1745,7 @@ namespace Hecton8.Caves
                 out voxelCellSize,
                 out sdfRange,
                 out version);
-            audioMaterialIds = _publishedSonarAudioMaterialIds;
+            audioMaterialIds = _publishedSonarAudioMaterialIds.IsCreated ? _publishedSonarAudioMaterialIds.AsReadOnly() : default;
             return resolved &&
                    _publishedSonarAudioMaterialIds.IsCreated &&
                    _publishedSonarAudioMaterialIds.Length == encodedSdf.Length;

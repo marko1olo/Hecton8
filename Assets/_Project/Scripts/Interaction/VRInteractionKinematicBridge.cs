@@ -1102,7 +1102,7 @@ namespace Hecton8.Interaction
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct ResolveSdfHandCollisionJob : IJobParallelFor
     {
-        [ReadOnly, NoAlias] public NativeArray<byte> EncodedSdf;
+        [ReadOnly, NoAlias] public NativeArray<byte>.ReadOnly EncodedSdf;
         [ReadOnly, NoAlias] public NativeArray<VRInteractionSocketDTO> Sockets;
         [ReadOnly, NoAlias] public NativeArray<VRHandStateDTO> PreviousHandStates;
         [NoAlias] public NativeArray<VRHandStateDTO> HandStates;

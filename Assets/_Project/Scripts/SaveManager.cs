@@ -2883,8 +2883,29 @@ namespace Hecton8.SaveSystem
                         if (voxelDeltaSnapshot.IsCreated)
                             DisposeNativeArray(ref voxelDeltaSnapshot);
 
-                        voxelDeltaSnapshot = voxelDeltaProcessor.CaptureNativeSnapshot(Allocator.Persistent);
-                        RegisterVoxelDeltaSnapshot(voxelDeltaSnapshot, "voxelDeltaSnapshot");
+                        if (voxelDeltaProcessor.TryMeasureNativeSnapshotByteCount(out int voxelDeltaSnapshotByteCount) &&
+                            voxelDeltaSnapshotByteCount > 0)
+                        {
+                            voxelDeltaSnapshot = new NativeArray<byte>(
+                                voxelDeltaSnapshotByteCount,
+                                Allocator.Persistent,
+                                NativeArrayOptions.UninitializedMemory);
+                            RegisterVoxelDeltaSnapshot(voxelDeltaSnapshot, "voxelDeltaSnapshot");
+
+                            unsafe
+                            {
+                                void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(voxelDeltaSnapshot);
+                                if (!voxelDeltaProcessor.TryCopyNativeSnapshot(
+                                        destinationPtr,
+                                        voxelDeltaSnapshot.Length,
+                                        out int bytesWritten) ||
+                                    bytesWritten != voxelDeltaSnapshot.Length)
+                                {
+                                    DisposeNativeArray(ref voxelDeltaSnapshot);
+                                }
+                            }
+                        }
+
                         continue;
                     }
 
