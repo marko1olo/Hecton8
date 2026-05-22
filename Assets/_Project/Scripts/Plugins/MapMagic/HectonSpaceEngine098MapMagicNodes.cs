@@ -150,8 +150,10 @@ namespace MapMagic.Nodes.MatrixGenerators
                 if (scheduled)
                     HectonSpaceEngine098MapMagicUtility.CompleteColdMapMagicJob(ref handle, ref scheduled, BarrierWarningHash, ContextHash);
 
-                HectonSpaceEngine098MapMagicUtility.DisposeTracked(ref input);
-                HectonSpaceEngine098MapMagicUtility.DisposeTracked(ref output);
+                HectonSpaceEngine098MapMagicUtility.DisposeTracked(input);
+                HectonSpaceEngine098MapMagicUtility.DisposeTracked(output);
+                input = default;
+                output = default;
             }
         }
     }
@@ -311,9 +313,12 @@ namespace MapMagic.Nodes.MatrixGenerators
                 if (scheduled)
                     HectonSpaceEngine098MapMagicUtility.CompleteColdMapMagicJob(ref handle, ref scheduled, BarrierWarningHash, ContextHash);
 
-                HectonSpaceEngine098MapMagicUtility.DisposeTracked(ref input);
-                HectonSpaceEngine098MapMagicUtility.DisposeTracked(ref output);
-                HectonSpaceEngine098MapMagicUtility.DisposeTracked(ref craterCenters);
+                HectonSpaceEngine098MapMagicUtility.DisposeTracked(input);
+                HectonSpaceEngine098MapMagicUtility.DisposeTracked(output);
+                HectonSpaceEngine098MapMagicUtility.DisposeTracked(craterCenters);
+                input = default;
+                output = default;
+                craterCenters = default;
             }
         }
     }
@@ -452,8 +457,10 @@ namespace MapMagic.Nodes.MatrixGenerators
                 if (scheduled)
                     HectonSpaceEngine098MapMagicUtility.CompleteColdMapMagicJob(ref handle, ref scheduled, BarrierWarningHash, ContextHash);
 
-                HectonSpaceEngine098MapMagicUtility.DisposeTracked(ref input);
-                HectonSpaceEngine098MapMagicUtility.DisposeTracked(ref output);
+                HectonSpaceEngine098MapMagicUtility.DisposeTracked(input);
+                HectonSpaceEngine098MapMagicUtility.DisposeTracked(output);
+                input = default;
+                output = default;
             }
         }
     }
@@ -477,7 +484,7 @@ namespace MapMagic.Nodes.MatrixGenerators
             NativeMemorySentinel.RegisterNativeArray(array, owner, label, NativeAllocationLifetime.TempJob);
         }
 
-        internal static void DisposeTracked<T>(ref NativeArray<T> array)
+        internal static void DisposeTracked<T>(NativeArray<T> array)
             where T : struct
         {
             if (!array.IsCreated)
@@ -485,7 +492,6 @@ namespace MapMagic.Nodes.MatrixGenerators
 
             NativeMemorySentinel.UnregisterNativeArray(array);
             array.Dispose();
-            array = default;
         }
 
         internal static void CopyMatrixToNative(float[] source, NativeArray<float> destination)

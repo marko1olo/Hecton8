@@ -25,7 +25,7 @@ namespace Hecton8.Atmosphere
     internal static class DeferredAtmosphereNativeQueueWarmup
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static void Prewarm<T>(ref NativeQueue<T> queue, int capacity)
+        internal static void Prewarm<T>(NativeQueue<T> queue, int capacity)
             where T : unmanaged
         {
             if (!queue.IsCreated || capacity <= 0)
@@ -271,7 +271,7 @@ namespace Hecton8.Atmosphere
                     nameof(HighPressureEvents),
                     nameof(_pendingEvents),
                     NativeAllocationLifetime.Session);
-                DeferredAtmosphereNativeQueueWarmup.Prewarm(ref _pendingEvents, PendingEventCapacity);
+                DeferredAtmosphereNativeQueueWarmup.Prewarm(_pendingEvents, PendingEventCapacity);
             }
 
             if (!_nextFrameEvents.IsCreated)
@@ -283,7 +283,7 @@ namespace Hecton8.Atmosphere
                     nameof(HighPressureEvents),
                     nameof(_nextFrameEvents),
                     NativeAllocationLifetime.Session);
-                DeferredAtmosphereNativeQueueWarmup.Prewarm(ref _nextFrameEvents, PendingEventCapacity);
+                DeferredAtmosphereNativeQueueWarmup.Prewarm(_nextFrameEvents, PendingEventCapacity);
             }
         }
 
@@ -588,7 +588,7 @@ namespace Hecton8.Atmosphere
                     nameof(FatalPressureImplosionEvents),
                     nameof(_pendingEvents),
                     NativeAllocationLifetime.Session);
-                DeferredAtmosphereNativeQueueWarmup.Prewarm(ref _pendingEvents, PendingEventCapacity);
+                DeferredAtmosphereNativeQueueWarmup.Prewarm(_pendingEvents, PendingEventCapacity);
             }
 
             if (!_nextFrameEvents.IsCreated)
@@ -600,7 +600,7 @@ namespace Hecton8.Atmosphere
                     nameof(FatalPressureImplosionEvents),
                     nameof(_nextFrameEvents),
                     NativeAllocationLifetime.Session);
-                DeferredAtmosphereNativeQueueWarmup.Prewarm(ref _nextFrameEvents, PendingEventCapacity);
+                DeferredAtmosphereNativeQueueWarmup.Prewarm(_nextFrameEvents, PendingEventCapacity);
             }
         }
 

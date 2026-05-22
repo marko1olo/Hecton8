@@ -1474,3 +1474,39 @@ Cinematic Cheats used: No new simulation. Ocean kinematics still use queued anal
 Exact Microseconds saved: 0 us measured. Static API risk moved `nativeCollectionPublicMutableApiExposure=74->73`, `nativeApiExposureBuildPlayerRuntime=70->69`, `nativeApiExposureOutRefMutable=53->52`, and `nativeApiRiskRuntimeOutRefMutableView=30->29`.
 
 Evidence: `Docs/Reports/PROJECT_AUDIT_polish_after_crest_writer_route_removal.json`; `python Tools\test_polish_mandate_static_audit.py` passed 12 tests; focused scan found no `TryGetRequestParallelWriter`; targeted `git diff --check` reported only LF/CRLF normalization warnings. Batch re-check found no `<AGENT_PROMPT id="PROJECT_AUDIT">` block. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - MapMagic Dispose Ref Route Removal
+
+What was wrong: `HectonSpaceEngine098MapMagicUtility.DisposeTracked(ref NativeArray<T>)` exposed an internal mutable native `ref` cleanup route from cold MapMagic generator code.
+
+What was done: Changed the helper to dispose a by-value `NativeArray<T>` and clear each local at the call site after disposal. TempJob allocation, native sentinel unregister, and MapMagic cold completion behavior are unchanged.
+
+Cinematic Cheats used: No new simulation. MapMagic continues using cold analytical SpaceEngine heightmap jobs feeding matrices, not runtime terrain physics or mesh collider sampling.
+
+Exact Microseconds saved: 0 us measured. Static API risk moved `nativeCollectionPublicMutableApiExposure=73->72`, `nativeApiExposureBuildPlayerRuntime=69->68`, `nativeApiExposureOutRefMutable=52->51`, and `nativeApiRiskRuntimeOutRefMutableView=29->28`.
+
+Evidence: `Docs/Reports/PROJECT_AUDIT_polish_after_mapmagic_dispose_ref_removal.json`; `python Tools\test_polish_mandate_static_audit.py` passed 12 tests; focused scan found no `DisposeTracked(ref` route; targeted `git diff --check` reported only LF/CRLF normalization warnings. Batch re-check found no `<AGENT_PROMPT id="PROJECT_AUDIT">` block. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Atmosphere Queue Prewarm Ref Removal
+
+What was wrong: `DeferredAtmosphereNativeQueueWarmup.Prewarm(ref NativeQueue<T>)` exposed an internal mutable native queue `ref` route even though it never reassigned the queue.
+
+What was done: Changed `Prewarm` to accept `NativeQueue<T>` by value and removed `ref` from the four same-file pressure event warmup calls.
+
+Cinematic Cheats used: No new simulation. Deferred pressure events still use prewarmed unmanaged queues as a cheap signal lane, not immediate scene object or physics-event instantiation.
+
+Exact Microseconds saved: 0 us measured. Static API risk moved `nativeCollectionPublicMutableApiExposure=72->71`, `nativeApiExposureBuildPlayerRuntime=68->67`, `nativeApiExposureOutRefMutable=51->50`, and `nativeApiRiskRuntimeOutRefMutableView=28->27`.
+
+Evidence: `Docs/Reports/PROJECT_AUDIT_polish_after_atmosphere_prewarm_ref_removal.json`; `python Tools\test_polish_mandate_static_audit.py` passed 12 tests; focused scan found no `Prewarm(ref` route; targeted `git diff --check` reported only LF/CRLF normalization warnings. Batch re-check found no `<AGENT_PROMPT id="PROJECT_AUDIT">` block. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - LaserCutter CSV Ingest Route Scope
+
+What was wrong: `LaserCutterDodRuntime.TryAcquireSpecBufferForCsvIngest` and `TryAcquireCsvScratchForCsvIngest` exposed internal mutable Vault buffer acquisition routes with no active caller.
+
+What was done: Narrowed both helpers to private, preserving the owner-local future CSV bridge while closing sibling access to raw spec/scratch buffers.
+
+Cinematic Cheats used: No new simulation. Laser cutter remains analytical ray/deformation data with spec tuning buffers, not mesh slicing or per-triangle physics.
+
+Exact Microseconds saved: 0 us measured. Static API risk moved `nativeCollectionPublicMutableApiExposure=71->69`, `nativeApiExposureBuildPlayerRuntime=67->65`, `nativeApiExposureOutRefMutable=50->48`, and `nativeApiRiskRuntimeOutRefMutableView=27->25`.
+
+Evidence: `Docs/Reports/PROJECT_AUDIT_polish_after_laser_cutter_csv_ingest_scope.json`; `python Tools\test_polish_mandate_static_audit.py` passed 12 tests; focused scan found only private declarations; targeted `git diff --check` reported only LF/CRLF normalization warnings. Batch re-check found no `<AGENT_PROMPT id="PROJECT_AUDIT">` block. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.

@@ -666,7 +666,7 @@ namespace Hecton8.Tools
             return (hit.Flags & LaserCutterDodConstants.ResultFlagHit) != 0u;
         }
 
-        internal static bool TryAcquireSpecBufferForCsvIngest(out NativeArray<LaserCutterSpecDTO> specs)
+        private static bool TryAcquireSpecBufferForCsvIngest(out NativeArray<LaserCutterSpecDTO> specs)
         {
             specs = default;
             return _dataVault != null &&
@@ -677,7 +677,7 @@ namespace Hecton8.Tools
                        out specs);
         }
 
-        internal static bool TryAcquireCsvScratchForCsvIngest(out NativeArray<byte> scratch)
+        private static bool TryAcquireCsvScratchForCsvIngest(out NativeArray<byte> scratch)
         {
             scratch = default;
             return _dataVault != null &&
