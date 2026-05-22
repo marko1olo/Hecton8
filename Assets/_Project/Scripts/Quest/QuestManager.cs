@@ -57,6 +57,8 @@ namespace Hecton8.Quest
 
         public int LoadPriority => 7;
 
+        internal int PackedStateWordCount => _stateManager != null ? _stateManager.WordCount : 0;
+
         /// <summary>
         /// True once the quest runtime owner is registered in the global registry.
         /// </summary>
@@ -332,19 +334,13 @@ namespace Hecton8.Quest
             return updated;
         }
 
-        public NativeArray<uint> CapturePackedStateSnapshot(Allocator allocator)
-        {
-            return _stateManager != null
-                ? _stateManager.CapturePackedStateSnapshot(allocator)
-                : new NativeArray<uint>(0, allocator, NativeArrayOptions.ClearMemory);
-        }
-
-        internal NativeArray<uint> CapturePackedStateSnapshot(Allocator allocator, out QuestSaveHeader header, double timestamp)
+        internal unsafe bool TryCopyPackedStateSnapshot(void* destinationPtr, int destinationWordCapacity, out QuestSaveHeader header, double timestamp)
         {
             header = _stateManager != null
                 ? _stateManager.BuildSaveHeader(timestamp)
                 : default;
-            return CapturePackedStateSnapshot(allocator);
+            return _stateManager != null &&
+                   _stateManager.TryCopyPackedStateSnapshot(destinationPtr, destinationWordCapacity);
         }
 
         public static void StageLoadedPackedState(uint[] packedWords)

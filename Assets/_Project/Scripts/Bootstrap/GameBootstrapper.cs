@@ -5336,10 +5336,18 @@ namespace Hecton8.Bootstrap
         }
 
         /// <inheritdoc />
-        public bool TryGetAcousticRadarPayload(out NativeArray<float> radialIntensityBins, out int radialResolution)
+        public bool TryGetAcousticRadarPayload(out NativeArray<float>.ReadOnly radialIntensityBins, out int radialResolution)
         {
             radialIntensityBins = default;
             radialResolution = 0;
+            return false;
+        }
+
+        /// <inheritdoc />
+        public bool TryUploadAcousticRadarPayload(Texture2D destination, out int uploadedSampleCount, out float peakIntensity)
+        {
+            uploadedSampleCount = 0;
+            peakIntensity = 0f;
             return false;
         }
 

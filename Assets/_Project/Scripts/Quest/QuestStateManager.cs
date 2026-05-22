@@ -780,22 +780,20 @@ namespace Hecton8.Quest
             return count;
         }
 
-        public NativeArray<uint> CapturePackedStateSnapshot(Allocator allocator)
+        public unsafe bool TryCopyPackedStateSnapshot(void* destinationPtr, int destinationWordCapacity)
         {
-            NativeArray<uint> snapshot = new NativeArray<uint>(WordCapacity, allocator, NativeArrayOptions.ClearMemory);
+            if (destinationPtr == null || destinationWordCapacity < WordCapacity)
+                return false;
+
             if (!_globalPrerequisites.IsCreated)
-                return snapshot;
+                return true;
 
-            unsafe
-            {
-                int copyBytes = WordCapacity * UnsafeUtility.SizeOf<uint>();
-                void* sourcePtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(_globalPrerequisites);
-                void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(snapshot);
-                if (!UnsafeMemoryCopyGuard.SafeCopy(destinationPtr, copyBytes, sourcePtr, copyBytes))
-                    UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(QuestStateManager));
-            }
+            int copyBytes = WordCapacity * UnsafeUtility.SizeOf<uint>();
+            void* sourcePtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(_globalPrerequisites);
+            if (!UnsafeMemoryCopyGuard.SafeCopy(destinationPtr, copyBytes, sourcePtr, copyBytes))
+                UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(QuestStateManager));
 
-            return snapshot;
+            return true;
         }
 
         public QuestSaveHeader BuildSaveHeader(double timestamp)

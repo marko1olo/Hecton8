@@ -2826,21 +2826,21 @@ namespace Hecton8.UI
             if (_acousticRadarMaterial == null)
                 return;
 
-            NativeArray<float> radarSamples = default;
+            NativeArray<float>.ReadOnly radarSamples = default;
             int radarResolution = 0;
+            bool hasSpatialDensityFallback = false;
             bool hasRadarPayload = _spatialAudioManager != null &&
                                    _spatialAudioManager.TryGetAcousticRadarPayload(out radarSamples, out radarResolution) &&
-                                   radarSamples.IsCreated &&
+                                   radarSamples.Length > 0 &&
                                    radarResolution > 0;
 
             if (!hasRadarPayload &&
-                WorldSpatialHashGrid.TryGetAcousticDensityMap(out NativeArray<float> densityMap, out Vector3Int densityDimensions) &&
-                densityMap.IsCreated)
+                WorldSpatialHashGrid.TryGetAcousticDensityMap(out NativeArray<float>.ReadOnly densityMap, out Vector3Int densityDimensions))
             {
                 int densityCellCount = densityDimensions.x * densityDimensions.y * densityDimensions.z;
-                radarSamples = densityMap;
                 radarResolution = math.min(densityMap.Length, densityCellCount);
                 hasRadarPayload = radarResolution > 0;
+                hasSpatialDensityFallback = hasRadarPayload;
             }
 
             if (!hasRadarPayload)
@@ -2852,20 +2852,43 @@ namespace Hecton8.UI
             if (!EnsureAcousticRadarTexture(radarResolution))
                 return;
 
-            _acousticRadarTexture.SetPixelData(radarSamples, 0);
-            _acousticRadarTexture.Apply(false, false);
-            ApplyAcousticRadarTextureBindingIfNeeded();
-
-            float peakIntensity = 0f;
-            int sampleCount = math.min(radarSamples.Length, radarResolution);
-            for (int i = 0; i < sampleCount; i++)
+            if (!hasSpatialDensityFallback)
             {
-                float sample = radarSamples[i];
-                if (sample > peakIntensity)
-                    peakIntensity = sample;
+                if (_spatialAudioManager == null ||
+                    !_spatialAudioManager.TryUploadAcousticRadarPayload(
+                        _acousticRadarTexture,
+                        out int uploadedSampleCount,
+                        out float uploadedPeakIntensity) ||
+                    uploadedSampleCount <= 0)
+                {
+                    _acousticRadarPeakIntensity = 0f;
+                    return;
+                }
+
+                _acousticRadarTexture.Apply(false, false);
+                ApplyAcousticRadarTextureBindingIfNeeded();
+                _acousticRadarPeakIntensity = uploadedPeakIntensity;
+                return;
             }
 
-            _acousticRadarPeakIntensity = math.saturate(peakIntensity);
+            if (hasSpatialDensityFallback)
+            {
+                if (!WorldSpatialHashGrid.TryUploadAcousticDensityMap(
+                        _acousticRadarTexture,
+                        radarResolution,
+                        out int uploadedSampleCount,
+                        out float uploadedPeakIntensity) ||
+                    uploadedSampleCount <= 0)
+                {
+                    _acousticRadarPeakIntensity = 0f;
+                    return;
+                }
+
+                _acousticRadarTexture.Apply(false, false);
+                ApplyAcousticRadarTextureBindingIfNeeded();
+                _acousticRadarPeakIntensity = uploadedPeakIntensity;
+                return;
+            }
         }
 
         private bool EnsureAcousticRadarTexture(int radialResolution)

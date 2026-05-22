@@ -1034,12 +1034,51 @@ namespace Hecton8.World
         }
 
         public static bool TryGetAcousticDensityMap(
-            out NativeArray<float> densityMap,
+            out NativeArray<float>.ReadOnly densityMap,
             out Vector3Int dimensions)
         {
-            densityMap = _acousticDensityMap;
+            densityMap = default;
             dimensions = new Vector3Int(AcousticDensityMapAxis, AcousticDensityMapAxis, AcousticDensityMapAxis);
-            return _acousticDensityMap.IsCreated;
+            if (!_acousticDensityMap.IsCreated)
+                return false;
+
+            densityMap = _acousticDensityMap.AsReadOnly();
+            return true;
+        }
+
+        public static bool TryUploadAcousticDensityMap(
+            Texture2D destination,
+            int requestedSampleCount,
+            out int uploadedSampleCount,
+            out float peakIntensity)
+        {
+            uploadedSampleCount = 0;
+            peakIntensity = 0f;
+
+            if (destination == null ||
+                !_acousticDensityMap.IsCreated ||
+                requestedSampleCount <= 0)
+            {
+                return false;
+            }
+
+            int sampleCount = math.min(_acousticDensityMap.Length, requestedSampleCount);
+            if (sampleCount <= 0)
+                return false;
+
+            destination.SetPixelData(_acousticDensityMap.GetSubArray(0, sampleCount), 0);
+
+            float peak = 0f;
+            for (int i = 0; i < sampleCount; i++)
+            {
+                float sample = _acousticDensityMap[i];
+                if (sample > peak)
+                    peak = sample;
+            }
+
+            uploadedSampleCount = sampleCount;
+            peakIntensity = math.saturate(peak);
+            return true;
         }
 
         public static bool IsHandleCurrent(int handle)

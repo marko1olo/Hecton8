@@ -1212,7 +1212,12 @@ namespace Hecton8.Core
         /// <summary>
         /// Returns the 360-degree acoustic radar ring payload when available.
         /// </summary>
-        bool TryGetAcousticRadarPayload(out NativeArray<float> radialIntensityBins, out int radialResolution);
+        bool TryGetAcousticRadarPayload(out NativeArray<float>.ReadOnly radialIntensityBins, out int radialResolution);
+
+        /// <summary>
+        /// Uploads the 360-degree acoustic radar ring payload into a caller-owned texture.
+        /// </summary>
+        bool TryUploadAcousticRadarPayload(Texture2D destination, out int uploadedSampleCount, out float peakIntensity);
 
         /// <summary>
         /// Returns the 8x4 acoustic radar grid payload when available.

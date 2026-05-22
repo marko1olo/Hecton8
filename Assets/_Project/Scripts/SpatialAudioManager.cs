@@ -4632,11 +4632,47 @@ namespace Hecton8.Audio
         public ComputeBuffer AcousticRadarEnergyGridBuffer => _acousticRadarGridBuffer;
 
         /// <summary>Returns the persistent 360-degree acoustic radar ring for HUD/visor consumers.</summary>
-        public bool TryGetAcousticRadarPayload(out NativeArray<float> radialIntensityBins, out int radialResolution)
+        public bool TryGetAcousticRadarPayload(out NativeArray<float>.ReadOnly radialIntensityBins, out int radialResolution)
         {
-            radialIntensityBins = _acousticRadarIntensityBins;
+            radialIntensityBins = default;
             radialResolution = AcousticRadarBinCount;
-            return radialIntensityBins.IsCreated && radialResolution > 0;
+            if (!_acousticRadarIntensityBins.IsCreated || radialResolution <= 0)
+                return false;
+
+            radialIntensityBins = _acousticRadarIntensityBins.AsReadOnly();
+            return true;
+        }
+
+        /// <summary>Uploads the persistent 360-degree acoustic radar ring into a caller-owned texture.</summary>
+        public bool TryUploadAcousticRadarPayload(Texture2D destination, out int uploadedSampleCount, out float peakIntensity)
+        {
+            uploadedSampleCount = 0;
+            peakIntensity = 0f;
+
+            if (destination == null ||
+                !_acousticRadarIntensityBins.IsCreated ||
+                AcousticRadarBinCount <= 0)
+            {
+                return false;
+            }
+
+            int sampleCount = math.min(_acousticRadarIntensityBins.Length, AcousticRadarBinCount);
+            if (sampleCount <= 0)
+                return false;
+
+            destination.SetPixelData(_acousticRadarIntensityBins.GetSubArray(0, sampleCount), 0);
+
+            float peak = 0f;
+            for (int i = 0; i < sampleCount; i++)
+            {
+                float sample = _acousticRadarIntensityBins[i];
+                if (sample > peak)
+                    peak = sample;
+            }
+
+            uploadedSampleCount = sampleCount;
+            peakIntensity = math.saturate(peak);
+            return true;
         }
 
         /// <summary>Returns the persistent 8x4 acoustic radar grid and its GPU upload buffer.</summary>

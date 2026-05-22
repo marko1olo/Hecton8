@@ -3375,9 +3375,9 @@ namespace Hecton8.Audio
         private static float ResolveCaveAcousticDensityMap01()
         {
             if (!WorldSpatialHashGrid.TryGetAcousticDensityMap(
-                    out NativeArray<float> densityMap,
+                    out NativeArray<float>.ReadOnly densityMap,
                     out Vector3Int dimensions) ||
-                !densityMap.IsCreated)
+                densityMap.Length <= 0)
             {
                 return 0f;
             }

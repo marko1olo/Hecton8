@@ -1546,3 +1546,27 @@ Cinematic Cheats used: No new simulation. The flow field remains a cheap shader/
 Exact Microseconds saved: 0 us measured. Static API risk moved `nativeCollectionPublicMutableApiExposure=66->65`, `nativeApiExposureBuildPlayerRuntime=62->61`, `nativeApiExposureOutRefMutable=45->44`, and `nativeApiRiskRuntimeOutRefMutableView=24->23`.
 
 Evidence: `Docs/Reports/PROJECT_AUDIT_polish_after_vegetation_flowfield_owner_upload.json`; `python Tools\test_polish_mandate_static_audit.py` passed 12 tests; focused scan shows read-only payload and owner upload call sites; targeted `git diff --check` reported only LF/CRLF normalization warnings. Batch re-check found no `<AGENT_PROMPT id="PROJECT_AUDIT">` block. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Acoustic Density ReadOnly Owner Upload
+
+What was wrong: `WorldSpatialHashGrid.TryGetAcousticDensityMap` exposed mutable acoustic-density native storage to audio/UI consumers. Two consumers only read density samples; the HUD fallback only needed texture upload.
+
+What was done: Returned `NativeArray<float>.ReadOnly` from the density accessor, added `TryUploadAcousticDensityMap(Texture2D,int,out int,out float)` on the spatial owner, and updated audio/PDA/Suit HUD call sites.
+
+Cinematic Cheats used: No new simulation. Acoustic density remains a coarse scalar fake for reverb/radar perception, not per-source acoustic ray propagation or PhysX query grids.
+
+Exact Microseconds saved: 0 us measured. Static API risk moved `nativeCollectionPublicMutableApiExposure=65->64`, `nativeApiExposureBuildPlayerRuntime=61->60`, `nativeApiExposureOutRefMutable=44->43`, and `nativeApiRiskRuntimeOutRefMutableView=23->22`.
+
+Evidence: `Docs/Reports/PROJECT_AUDIT_polish_after_acoustic_density_readonly_upload.json`; `python Tools\test_polish_mandate_static_audit.py` passed 12 tests; focused scan found no mutable `TryGetAcousticDensityMap(out NativeArray<float>)` route and one owner upload call site; targeted `git diff --check` reported only LF/CRLF normalization warnings. Batch re-check found no `<AGENT_PROMPT id="PROJECT_AUDIT">` block. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Audio Radar ReadOnly Owner Upload
+
+What was wrong: `IAudioService.TryGetAcousticRadarPayload` exported mutable `NativeArray<float>` radar bins through the audio contract to the HUD.
+
+What was done: Converted the interface, bootstrap stub, and `SpatialAudioManager` implementation to `NativeArray<float>.ReadOnly`; added `TryUploadAcousticRadarPayload(Texture2D,out int,out float)`; moved Suit HUD texture upload and peak scan behind the audio owner.
+
+Cinematic Cheats used: No new simulation. The radar ring remains a perceptual/DSP scalar fake for HUD sonar, not per-source acoustic propagation.
+
+Exact Microseconds saved: 0 us measured. Static API risk moved `nativeCollectionPublicMutableApiExposure=64->62`, `nativeApiExposureBuildPlayerRuntime=60->58`, `nativeApiExposureOutRefMutable=43->41`, and `nativeApiRiskRuntimeOutRefMutableView=22->20`.
+
+Evidence: `Docs/Reports/PROJECT_AUDIT_polish_after_audio_radar_readonly_upload.json`; `python Tools\test_polish_mandate_static_audit.py` passed 12 tests; focused scan found no mutable `TryGetAcousticRadarPayload(out NativeArray<float>)` route and one owner upload call site; targeted `git diff --check` reported only LF/CRLF normalization warnings. Batch re-check found no `<AGENT_PROMPT id="PROJECT_AUDIT">` block. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.

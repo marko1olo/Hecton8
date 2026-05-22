@@ -2912,11 +2912,29 @@ namespace Hecton8.SaveSystem
                 QuestManager questManager = GlobalRegistry.Quest;
                 if (questManager != null)
                 {
-                    packedQuestStateSnapshot = questManager.CapturePackedStateSnapshot(
-                        Allocator.Persistent,
-                        out packedQuestSaveHeader,
-                        saveTimestampTicks);
-                    RegisterTransientNativeArray(packedQuestStateSnapshot, "packedQuestStateSnapshot");
+                    int packedQuestWordCount = questManager.PackedStateWordCount;
+                    if (packedQuestWordCount > 0)
+                    {
+                        packedQuestStateSnapshot = new NativeArray<uint>(
+                            packedQuestWordCount,
+                            Allocator.Persistent,
+                            NativeArrayOptions.ClearMemory);
+                        RegisterTransientNativeArray(packedQuestStateSnapshot, "packedQuestStateSnapshot");
+
+                        bool copiedQuestState;
+                        unsafe
+                        {
+                            void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(packedQuestStateSnapshot);
+                            copiedQuestState = questManager.TryCopyPackedStateSnapshot(
+                                destinationPtr,
+                                packedQuestStateSnapshot.Length,
+                                out packedQuestSaveHeader,
+                                saveTimestampTicks);
+                        }
+
+                        if (!copiedQuestState)
+                            DisposeNativeArray(ref packedQuestStateSnapshot);
+                    }
                 }
 
                 SaveMetadata metadata = new SaveMetadata
