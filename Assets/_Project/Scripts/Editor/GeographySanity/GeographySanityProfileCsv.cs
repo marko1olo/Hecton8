@@ -2,21 +2,57 @@
 using System;
 using System.IO;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.Editor.GeographySanity
 {
+    internal unsafe struct GeographySanityProfileStore : IDisposable
+    {
+        private NativeList<SanityProfileDTO> _profiles;
+
+        internal bool IsCreated => _profiles.IsCreated;
+
+        internal int Length => _profiles.IsCreated ? _profiles.Length : 0;
+
+        internal static GeographySanityProfileStore Create(Allocator allocator, int capacity)
+        {
+            GeographySanityProfileStore store = default;
+            store._profiles = new NativeList<SanityProfileDTO>(capacity, allocator);
+            return store;
+        }
+
+        public void Dispose()
+        {
+            if (_profiles.IsCreated)
+                _profiles.Dispose();
+        }
+
+        internal void Add(SanityProfileDTO profile)
+        {
+            _profiles.Add(profile);
+        }
+
+        internal SanityProfileDTO* GetUnsafeReadOnlyPtr()
+        {
+            if (!_profiles.IsCreated || _profiles.Length <= 0)
+                return null;
+
+            return (SanityProfileDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(_profiles.AsArray());
+        }
+    }
+
     internal static class GeographySanityProfileCsv
     {
         private const int MaxCsvLineBytes = 1024;
         private const int MaxProfileRows = 2048;
 
-        public static NativeList<SanityProfileDTO> LoadProfiles(Allocator allocator, out int rows, out int errors)
+        public static GeographySanityProfileStore LoadProfiles(Allocator allocator, out int rows, out int errors)
         {
             rows = 0;
             errors = 0;
-            NativeList<SanityProfileDTO> profiles = new NativeList<SanityProfileDTO>(MaxProfileRows, allocator);
+            GeographySanityProfileStore profiles = GeographySanityProfileStore.Create(allocator, MaxProfileRows);
             string path = Path.Combine(ResolveProjectRoot(), GeographySanityConstants.ProfilesCsvPath);
             if (!File.Exists(path))
                 return profiles;

@@ -173,7 +173,7 @@ namespace Hecton8.Editor.GeologyForge
             int resolution = ResolvePreviewResolution(settings.GlobalQualityWeight);
             EnsureTexture(resolution);
             int cellCount = resolution * resolution;
-            NativeList<TopographyBiomeRecipeDTO> recipeList = default;
+            TopographyBiomeRecipeStore recipeList = default;
             NativeArray<TopographyBiomeKernelDTO> recipes = default;
             NativeArray<TectonicRiftSegmentDTO> rifts = default;
             NativeArray<double2> warped = default;
@@ -183,8 +183,7 @@ namespace Hecton8.Editor.GeologyForge
             NativeArray<Color32> pixels = default;
             try
             {
-                recipeList = new NativeList<TopographyBiomeRecipeDTO>(16, Allocator.Temp);
-                TopographyBiomeCsv.LoadRecipes(ref recipeList);
+                recipeList = TopographyBiomeCsv.LoadRecipes(Allocator.Temp);
                 recipes = new NativeArray<TopographyBiomeKernelDTO>(recipeList.Length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
                 for (int i = 0; i < recipeList.Length; i++)
                     recipes[i] = ToKernelRecipe(recipeList[i], settings.GlobalQualityWeight);

@@ -8,6 +8,40 @@ using UnityEngine;
 
 namespace Hecton8.Editor.GeologyForge
 {
+    internal struct TopographyBiomeRecipeStore : IDisposable
+    {
+        private NativeList<TopographyBiomeRecipeDTO> _recipes;
+
+        internal bool IsCreated => _recipes.IsCreated;
+
+        internal int Length => _recipes.IsCreated ? _recipes.Length : 0;
+
+        internal TopographyBiomeRecipeDTO this[int index] => _recipes[index];
+
+        internal static TopographyBiomeRecipeStore Create(Allocator allocator, int capacity)
+        {
+            TopographyBiomeRecipeStore store = default;
+            store._recipes = new NativeList<TopographyBiomeRecipeDTO>(capacity, allocator);
+            return store;
+        }
+
+        public void Dispose()
+        {
+            if (_recipes.IsCreated)
+                _recipes.Dispose();
+        }
+
+        internal void Clear()
+        {
+            _recipes.Clear();
+        }
+
+        internal void Add(TopographyBiomeRecipeDTO recipe)
+        {
+            _recipes.Add(recipe);
+        }
+    }
+
     internal static unsafe class TopographyBiomeCsv
     {
         private const int CsvErrorMalformedCell = 2401001;
@@ -22,10 +56,24 @@ namespace Hecton8.Editor.GeologyForge
         private const int MaximumCsvBytes = 2 * 1024 * 1024;
         private const int ExpectedColumns = 19;
 
-        public static void LoadRecipes(ref NativeList<TopographyBiomeRecipeDTO> recipes)
+        public static TopographyBiomeRecipeStore LoadRecipes(Allocator allocator)
         {
-            if (!recipes.IsCreated)
-                throw new ArgumentException("Topography biome recipe NativeList is not created.", nameof(recipes));
+            TopographyBiomeRecipeStore recipes = TopographyBiomeRecipeStore.Create(allocator, 16);
+            try
+            {
+                LoadRecipesInto(ref recipes);
+                return recipes;
+            }
+            catch
+            {
+                if (recipes.IsCreated)
+                    recipes.Dispose();
+                throw;
+            }
+        }
+
+        private static void LoadRecipesInto(ref TopographyBiomeRecipeStore recipes)
+        {
             recipes.Clear();
             string path = Path.GetFullPath(Path.Combine(Application.dataPath, "..", TopographyForgeConstants.CsvPath));
             if (!File.Exists(path))
@@ -85,7 +133,7 @@ namespace Hecton8.Editor.GeologyForge
                 throw new InvalidDataException("Topography biome CSV error " + CsvErrorNoRecipes + ": existing file contains no data rows.");
         }
 
-        public static void AppendDefaultRecipes(ref NativeList<TopographyBiomeRecipeDTO> recipes)
+        private static void AppendDefaultRecipes(ref TopographyBiomeRecipeStore recipes)
         {
             recipes.Add(DefaultRecipe("Northern_Ridge_Wastes", new double2(-26000.0, 24000.0), 46000f, 0x9A91E3B1u, 0.00042f, 1.0f, 620f, 0.75f));
             recipes.Add(DefaultRecipe("Equatorial_Canyon_Belt", new double2(8000.0, -3000.0), 52000f, 0x65D2F897u, 0.00028f, 0.82f, 1180f, 0.48f));
@@ -93,7 +141,7 @@ namespace Hecton8.Editor.GeologyForge
             recipes.Add(DefaultRecipe("Hadal_Rift_Margins", new double2(-19000.0, -17000.0), 36000f, 0xBA5EBA11u, 0.00034f, 0.93f, 1520f, 0.62f));
         }
 
-        public static TopographyBiomeRecipeDTO DefaultRecipe(
+        private static TopographyBiomeRecipeDTO DefaultRecipe(
             string name,
             double2 centerAupXZ,
             float radiusMeters,

@@ -93,7 +93,7 @@ namespace Hecton8.Editor.GeographySanity
             settings = Sanitize(settings);
             settings.ForceMockData = true;
             NativeArray<GeographySanityTelemetryEntry> blackBox = default;
-            NativeList<SanityProfileDTO> profiles = default;
+            GeographySanityProfileStore profiles = default;
             StringBuilder anomalies = new StringBuilder(16384);
             try
             {
@@ -110,7 +110,7 @@ namespace Hecton8.Editor.GeographySanity
                 ApplySettingsWarnings(settings, ref metrics);
                 bool first = true;
                 Stopwatch total = Stopwatch.StartNew();
-                RunSector(settings, 0, 0, profiles.AsArray(), profiles.Length, blackBox, ref metrics, anomalies, ref first);
+                RunSector(settings, 0, 0, profiles, blackBox, ref metrics, anomalies, ref first);
                 metrics.CompletedSectors = 1;
                 if (metrics.FatalMathCount > 0)
                     DumpBlackBox(blackBox, GeographySanityConstants.ResultFatalMath);
@@ -132,7 +132,7 @@ namespace Hecton8.Editor.GeographySanity
         private static async Awaitable RunValidationAsync(GeographySanitySettings settings, Action<float> progress)
         {
             NativeArray<GeographySanityTelemetryEntry> blackBox = default;
-            NativeList<SanityProfileDTO> profiles = default;
+            GeographySanityProfileStore profiles = default;
             StringBuilder sectorAnomalies = new StringBuilder(16384);
             Stopwatch total = Stopwatch.StartNew();
             GeographySanityMetricsDTO metrics = default;
@@ -167,7 +167,7 @@ namespace Hecton8.Editor.GeographySanity
                             if (_cancelRequested)
                                 break;
 
-                            RunSector(settings, x, z, profiles.AsArray(), profiles.Length, blackBox, ref metrics, sectorAnomalies, ref firstAnomaly);
+                            RunSector(settings, x, z, profiles, blackBox, ref metrics, sectorAnomalies, ref firstAnomaly);
                             if (sectorAnomalies.Length > 0)
                             {
                                 WriteStringBuilder(anomalyWriter, sectorAnomalies);
@@ -239,8 +239,7 @@ namespace Hecton8.Editor.GeographySanity
             GeographySanitySettings settings,
             int sectorX,
             int sectorZ,
-            NativeArray<SanityProfileDTO> profiles,
-            int profileCount,
+            GeographySanityProfileStore profiles,
             NativeArray<GeographySanityTelemetryEntry> blackBox,
             ref GeographySanityMetricsDTO metrics,
             StringBuilder anomalyRows,
@@ -288,7 +287,8 @@ namespace Hecton8.Editor.GeographySanity
                 SpatialAnomalyRuleDTO* rulePtr = (SpatialAnomalyRuleDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(rules);
                 NavigationRequestDTO* navPtr = (NavigationRequestDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(navRequests);
                 CrushDepthMaterialDTO* materialPtr = (CrushDepthMaterialDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(materials);
-                SanityProfileDTO* profilePtr = profileCount > 0 ? (SanityProfileDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(profiles) : null;
+                int profileCount = profiles.Length;
+                SanityProfileDTO* profilePtr = profiles.GetUnsafeReadOnlyPtr();
                 SpatialAnomalyResultDTO* entityResultPtr = (SpatialAnomalyResultDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(entityResults);
                 SpatialAnomalyResultDTO* navResultPtr = (SpatialAnomalyResultDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(navResults);
                 int* scratchPtr = (int*)NativeArrayUnsafeUtility.GetUnsafePtr(connectivityScratch);

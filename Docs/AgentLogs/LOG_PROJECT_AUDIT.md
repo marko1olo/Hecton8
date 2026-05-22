@@ -1246,3 +1246,15 @@ Cinematic Cheats used: Existing TBDR path remains GPU raw-buffer matrix upload a
 Exact Microseconds saved: 0 us measured. Static hygiene gain: `nativeCollectionPublicMutableApiExposure` 104 -> 103, `nativeApiExposureBuildPlayerRuntime` 94 -> 93, `nativeApiExposureOutRefMutable` 76 -> 75, and `nativeApiRiskRuntimeOutRefMutableView` 47 -> 46 in `Docs/Reports/PROJECT_AUDIT_polish_after_tbdr_locked_matrix_scope.json`.
 
 Verification: Focused search found only the private declaration. `python Tools\test_polish_mandate_static_audit.py` passed 12 tests. Static audit status remained `PASS_WITH_WARNINGS`. `git diff --check` reported only LF/CRLF normalization warnings. Batch re-check after Tasks 338-340 still found no `<AGENT_PROMPT id="PROJECT_AUDIT">` block. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Geography Profile CSV Store Split
+
+What was wrong: `GeographySanityProfileCsv.LoadProfiles` returned a mutable `NativeList<SanityProfileDTO>` from an editor CSV bridge. The window and pipeline consumers only needed deterministic ownership, row count, disposal, and a read pointer for profile application; the native-list return was an unnecessary public mutable collection API.
+
+What was done: Added `GeographySanityProfileStore` as a disposable editor-only owner wrapper, changed `LoadProfiles` to return the wrapper, updated `WorldSanityCheckerWindow` and `GeographySanityPipeline` consumers, and moved profile pointer acquisition inside the existing unsafe `RunSector` owner phase. `ApplySanityProfilesJob` now reads profile rows through `ref readonly` while retaining the existing pointer-local Burst path.
+
+Cinematic Cheats used: Existing world sanity validation still patches anomaly thresholds from compact CSV profile rows before sector jobs instead of building managed authoring objects or scene-side validators. No physical simulation was added.
+
+Exact Microseconds saved: 0 us measured. Static hygiene gain: `nativeCollectionPublicMutableApiExposure` 103 -> 102, `nativeApiExposureBuildEditorOnly` 3 -> 2, `nativeApiExposureMutableReturn` 28 -> 27, and `nativeApiRiskEditorOrProofSurface` 10 -> 9 in `Docs/Reports/PROJECT_AUDIT_polish_after_geography_profile_store.json`.
+
+Verification: Focused public/internal native signature scan found no `GeographySanityProfileCsv` public native collection API. `python Tools\test_polish_mandate_static_audit.py` passed 12 tests. Static audit status remained `PASS_WITH_WARNINGS`. `git diff --check` reported only LF/CRLF normalization warnings. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.

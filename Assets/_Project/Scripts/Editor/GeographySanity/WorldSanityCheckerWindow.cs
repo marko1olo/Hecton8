@@ -111,7 +111,7 @@ namespace Hecton8.Editor.GeographySanity
 
         private void RunProfileLoad()
         {
-            NativeList<SanityProfileDTO> profiles = default;
+            GeographySanityProfileStore profiles = default;
             try
             {
                 profiles = GeographySanityProfileCsv.LoadProfiles(Allocator.TempJob, out int rows, out int errors);

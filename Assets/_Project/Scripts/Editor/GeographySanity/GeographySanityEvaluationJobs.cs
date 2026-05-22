@@ -210,7 +210,7 @@ namespace Hecton8.Editor.GeographySanity
 
             for (int i = 0; i < ProfileCount; i++)
             {
-                ref SanityProfileDTO profile = ref UnsafeUtility.AsRef<SanityProfileDTO>(Profiles + i);
+                ref readonly SanityProfileDTO profile = ref UnsafeUtility.AsRef<SanityProfileDTO>(Profiles + i);
                 if (profile.ObjectTypeHash != entity.ObjectTypeHash)
                     continue;
 

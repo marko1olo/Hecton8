@@ -754,11 +754,10 @@ namespace Hecton8.Editor.GeologyForge
         private static NativeArray<TopographyBiomeKernelDTO> LoadKernelRecipes(out int recipeCount)
         {
             recipeCount = 0;
-            NativeList<TopographyBiomeRecipeDTO> recipeList = default;
+            TopographyBiomeRecipeStore recipeList = default;
             try
             {
-                recipeList = new NativeList<TopographyBiomeRecipeDTO>(16, Allocator.Temp);
-                TopographyBiomeCsv.LoadRecipes(ref recipeList);
+                recipeList = TopographyBiomeCsv.LoadRecipes(Allocator.Temp);
                 recipeCount = recipeList.Length;
                 return CopyRecipes(recipeList);
             }
@@ -769,7 +768,7 @@ namespace Hecton8.Editor.GeologyForge
             }
         }
 
-        private static NativeArray<TopographyBiomeKernelDTO> CopyRecipes(NativeList<TopographyBiomeRecipeDTO> recipes)
+        private static NativeArray<TopographyBiomeKernelDTO> CopyRecipes(TopographyBiomeRecipeStore recipes)
         {
             if (recipes.Length <= 0)
                 return default;
