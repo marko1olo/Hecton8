@@ -1354,3 +1354,39 @@ Cinematic Cheats used: No new fluid simulation. The renderer still uses the exis
 Exact Microseconds saved: 0 us measured. Static API risk moved `nativeCollectionPublicMutableApiExposure=91->90`, `nativeApiExposureBuildPlayerRuntime=87->86`, `nativeApiExposureOutRefMutable=67->66`, and `nativeApiRiskRuntimeOutRefMutableView=44->43`.
 
 Evidence: `Docs/Reports/PROJECT_AUDIT_polish_after_fluid_maelstrom_readonly_upload.json`; `python Tools\test_polish_mandate_static_audit.py` passed 12 tests; focused scan found no mutable `out NativeArray<float4>` maelstrom route; targeted `git diff --check` reported only LF/CRLF normalization warnings. Batch re-check found no `<AGENT_PROMPT id="PROJECT_AUDIT">` block. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Fauna Memory Owner Method Split
+
+What was wrong: `FaunaSimulationMemory` exposed public mutable `NativeArray` properties for residency pool slots, linear velocities, and simulation flags. The only active consumer was `FaunaDirector`, which needed owner-local slot operations and a scheduled data-only LOD job, not raw exported SoA memory.
+
+What was done: Removed the public native array properties, added narrow owner methods for readiness, slot DTO read/write, velocity read/write, flag write, slot clear, and data-only LOD scheduling, and routed `FaunaDirector` through those methods. Deleted unused unsafe ref helper methods.
+
+Cinematic Cheats used: No new physical simulation. Data-only fauna LOD remains a cheap offscreen residency drift job instead of hydrated GameObject or Rigidbody simulation.
+
+Exact Microseconds saved: 0 us measured. Static API risk moved `nativeCollectionPublicMutableApiExposure=90->87`, `nativeApiExposureBuildPlayerRuntime=86->83`, `nativeApiExposureMutableReturn=24->21`, and `nativeApiRiskRuntimeReturnMutableView=12->9`.
+
+Evidence: `Docs/Reports/PROJECT_AUDIT_polish_after_fauna_memory_owner_methods.json`; `python Tools\test_polish_mandate_static_audit.py` passed 12 tests; focused scan found no `_faunaSimulationMemory.PoolSlots/LinearVelocities/SimulationFlags` consumers and no public facade properties; remaining matching names are private Burst job fields; targeted `git diff --check` reported only LF/CRLF normalization warnings. Batch re-check found no `<AGENT_PROMPT id="PROJECT_AUDIT">` block. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Seismic Vault Helper Scope Pass
+
+What was wrong: `HectonSeismicTideDirector` exposed internal static Vault open/resolve helpers returning mutable native buffers. The only sibling callers were the same-file editor tuner/gizmo bridge.
+
+What was done: Added private editor-local Vault helpers inside `TectonicEventTunerWindow`, switched the editor bridge off qualified runtime helper calls, and narrowed the runtime director helpers to private.
+
+Cinematic Cheats used: No new simulation. Existing seismic/tide behavior remains a deterministic shake/tide scalar path; the editor bridge only reads/writes tuning/proof buffers.
+
+Exact Microseconds saved: 0 us measured. Static API risk moved `nativeCollectionPublicMutableApiExposure=87->85`, `nativeApiExposureBuildPlayerRuntime=83->81`, `nativeApiExposureOutRefMutable=66->64`, and `nativeApiRiskRuntimeOutRefMutableView=43->41`.
+
+Evidence: `Docs/Reports/PROJECT_AUDIT_polish_after_seismic_vault_helper_scope.json`; `python Tools\test_polish_mandate_static_audit.py` passed 12 tests; focused scan found no qualified `HectonSeismicTideDirector` helper callers and no internal static helper declarations; targeted `git diff --check` reported only LF/CRLF normalization warnings. Batch re-check found no `<AGENT_PROMPT id="PROJECT_AUDIT">` block. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - TBDR Descriptor Helper Scope Pass
+
+What was wrong: `TBDRVaultDescriptorRoutes.OpenOrAcquire` and `TryOpen` were public generic mutable Vault helpers, while active use was confined to same-file TBDR owner structs.
+
+What was done: Moved the open/acquire logic into private owner helpers inside `TBDRVertexBudgetVault` and `TBDRTextureStreamingTracker`, switched the owner calls to those helpers, and narrowed the shared descriptor methods to private.
+
+Cinematic Cheats used: No new rendering work. The TBDR route still feeds fixed vertex-budget, warning, telemetry, and texture-slice data to existing GPU-facing systems instead of CPU scene traversal.
+
+Exact Microseconds saved: 0 us measured. Static API risk moved `nativeCollectionPublicMutableApiExposure=85->83`, `nativeApiExposureBuildPlayerRuntime=81->79`, `nativeApiExposureOutRefMutable=64->62`, and `nativeApiRiskRuntimeOutRefMutableView=41->39`.
+
+Evidence: `Docs/Reports/PROJECT_AUDIT_polish_after_tbdr_descriptor_scope.json`; `python Tools\test_polish_mandate_static_audit.py` passed 12 tests; focused scan found no `TBDRVaultDescriptorRoutes.OpenOrAcquire/TryOpen` calls and no public static declarations for those helpers; targeted `git diff --check` reported only LF/CRLF normalization warnings. Batch re-check found no `<AGENT_PROMPT id="PROJECT_AUDIT">` block. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.

@@ -327,7 +327,7 @@ namespace Hecton8.Graphics.Culling
 
     internal static class TBDRVaultDescriptorRoutes
     {
-        public static bool OpenOrAcquire<T>(
+        private static bool OpenOrAcquire<T>(
             IDataVault dataVault,
             ref VaultGenerationHandle<T> handle,
             BufferID bufferId,
@@ -352,7 +352,7 @@ namespace Hecton8.Graphics.Culling
             return TryOpen(dataVault, ref handle, bufferId, requiredLength, out buffer);
         }
 
-        public static bool TryOpen<T>(
+        private static bool TryOpen<T>(
             IDataVault dataVault,
             ref VaultGenerationHandle<T> handle,
             BufferID bufferId,
@@ -440,10 +440,10 @@ namespace Hecton8.Graphics.Culling
 
             if (UsesGlobalDataVaultFlag != 0)
             {
-                bool acquired = TBDRVaultDescriptorRoutes.OpenOrAcquire(dataVault, ref VertexBudgetCountersHandle, TBDRBufferIds.VertexBudgetCounters, BudgetCount, NativeArrayOptions.UninitializedMemory, out VertexBudgetCounters) &&
-                                TBDRVaultDescriptorRoutes.OpenOrAcquire(dataVault, ref TileWarningsHandle, TBDRBufferIds.TileWarnings, WarningCount, NativeArrayOptions.UninitializedMemory, out TileWarnings) &&
-                                TBDRVaultDescriptorRoutes.OpenOrAcquire(dataVault, ref TransparentQuadCountHandle, TBDRBufferIds.TransparentQuadCounters, TransparentCounterCount, NativeArrayOptions.UninitializedMemory, out TransparentQuadCount) &&
-                                TBDRVaultDescriptorRoutes.OpenOrAcquire(dataVault, ref TelemetryRingHandle, TBDRBufferIds.TelemetryRing, TelemetryCapacity, NativeArrayOptions.UninitializedMemory, out TelemetryRing);
+                bool acquired = OpenOrAcquireVaultBuffer(dataVault, ref VertexBudgetCountersHandle, TBDRBufferIds.VertexBudgetCounters, BudgetCount, NativeArrayOptions.UninitializedMemory, out VertexBudgetCounters) &&
+                                OpenOrAcquireVaultBuffer(dataVault, ref TileWarningsHandle, TBDRBufferIds.TileWarnings, WarningCount, NativeArrayOptions.UninitializedMemory, out TileWarnings) &&
+                                OpenOrAcquireVaultBuffer(dataVault, ref TransparentQuadCountHandle, TBDRBufferIds.TransparentQuadCounters, TransparentCounterCount, NativeArrayOptions.UninitializedMemory, out TransparentQuadCount) &&
+                                OpenOrAcquireVaultBuffer(dataVault, ref TelemetryRingHandle, TBDRBufferIds.TelemetryRing, TelemetryCapacity, NativeArrayOptions.UninitializedMemory, out TelemetryRing);
                 UsesGlobalDataVaultFlag = TBDRByteFlags.FromBool(acquired);
             }
 
@@ -465,6 +465,53 @@ namespace Hecton8.Graphics.Culling
                    TileWarnings.IsCreated &&
                    TransparentQuadCount.IsCreated &&
                    TelemetryRing.IsCreated;
+        }
+
+        private static bool OpenOrAcquireVaultBuffer<T>(
+            IDataVault dataVault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            NativeArrayOptions options,
+            out NativeArray<T> buffer) where T : struct
+        {
+            if (TryOpenVaultBuffer(dataVault, ref handle, bufferId, requiredLength, out buffer))
+                return true;
+
+            if (dataVault == null || requiredLength <= 0)
+            {
+                buffer = default;
+                return false;
+            }
+
+            handle = dataVault.GetGenerationHandle<T>(
+                bufferId,
+                requiredLength,
+                SystemID.GraphicsScalability,
+                options);
+            return TryOpenVaultBuffer(dataVault, ref handle, bufferId, requiredLength, out buffer);
+        }
+
+        private static bool TryOpenVaultBuffer<T>(
+            IDataVault dataVault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            if (dataVault == null ||
+                requiredLength <= 0 ||
+                !TBDRVaultDescriptorRoutes.IsMatching(in handle, bufferId) ||
+                !dataVault.TryResolveHandle(in handle, out buffer) ||
+                !buffer.IsCreated ||
+                buffer.Length < requiredLength)
+            {
+                buffer = default;
+                return false;
+            }
+
+            return true;
         }
 
         public ref VertexBudgetDTO BudgetRef(int index)
@@ -1039,7 +1086,7 @@ namespace Hecton8.Graphics.Culling
             if (UsesGlobalDataVaultFlag != 0)
             {
                 UsesGlobalDataVaultFlag = TBDRByteFlags.FromBool(
-                    TBDRVaultDescriptorRoutes.OpenOrAcquire(dataVault, ref SliceTableHandle, (BufferID)70835, SliceCapacity, NativeArrayOptions.UninitializedMemory, out SliceTable));
+                    OpenOrAcquireVaultBuffer(dataVault, ref SliceTableHandle, (BufferID)70835, SliceCapacity, NativeArrayOptions.UninitializedMemory, out SliceTable));
             }
 
             if (UsesGlobalDataVaultFlag == 0)
@@ -1052,6 +1099,53 @@ namespace Hecton8.Graphics.Culling
                 SliceTable[i] = default;
             _nextSlice = 0;
             Generation++;
+            return true;
+        }
+
+        private static bool OpenOrAcquireVaultBuffer<T>(
+            IDataVault dataVault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            NativeArrayOptions options,
+            out NativeArray<T> buffer) where T : struct
+        {
+            if (TryOpenVaultBuffer(dataVault, ref handle, bufferId, requiredLength, out buffer))
+                return true;
+
+            if (dataVault == null || requiredLength <= 0)
+            {
+                buffer = default;
+                return false;
+            }
+
+            handle = dataVault.GetGenerationHandle<T>(
+                bufferId,
+                requiredLength,
+                SystemID.GraphicsScalability,
+                options);
+            return TryOpenVaultBuffer(dataVault, ref handle, bufferId, requiredLength, out buffer);
+        }
+
+        private static bool TryOpenVaultBuffer<T>(
+            IDataVault dataVault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            if (dataVault == null ||
+                requiredLength <= 0 ||
+                !TBDRVaultDescriptorRoutes.IsMatching(in handle, bufferId) ||
+                !dataVault.TryResolveHandle(in handle, out buffer) ||
+                !buffer.IsCreated ||
+                buffer.Length < requiredLength)
+            {
+                buffer = default;
+                return false;
+            }
+
             return true;
         }
 

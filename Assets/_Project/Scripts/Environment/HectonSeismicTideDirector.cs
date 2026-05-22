@@ -738,7 +738,7 @@ namespace Hecton8.Environment
         /// <inheritdoc />
         public int TickCount => _tickCount;
 
-        internal static bool OpenOrAcquireVaultBuffer<T>(
+        private static bool OpenOrAcquireVaultBuffer<T>(
             IDataVault vault,
             BufferID bufferId,
             int requiredLength,
@@ -785,7 +785,7 @@ namespace Hecton8.Environment
             return TryOpenVaultBuffer(vault, in handle, bufferId, requiredLength, out buffer);
         }
 
-        internal static bool TryOpenExistingVaultBuffer<T>(
+        private static bool TryOpenExistingVaultBuffer<T>(
             IDataVault vault,
             BufferID bufferId,
             int requiredLength,
@@ -3855,7 +3855,7 @@ namespace Hecton8.Environment
             _sineOnlyToggle.value = (seismic.Flags & SeismicTuningDTO.FlagSineOnly) != 0u;
             _suppressUiCallbacks = false;
 
-            if (HectonSeismicTideDirector.TryOpenExistingVaultBuffer(vault, SeismicDirectorConstants.CelestialStateReadBuffer, 1, out NativeArray<CelestialStateDTO> states))
+            if (TryOpenExistingVaultBuffer(vault, SeismicDirectorConstants.CelestialStateReadBuffer, 1, out NativeArray<CelestialStateDTO> states))
             {
                 if (states.IsCreated && states.Length > 0)
                 {
@@ -3887,14 +3887,14 @@ namespace Hecton8.Environment
             DrawRect(painter, rect, new Color(0.012f, 0.018f, 0.022f, 1f));
             IDataVault vault = GlobalRegistry.DataVault;
             if (vault == null ||
-                !HectonSeismicTideDirector.TryOpenExistingVaultBuffer(vault, SeismicDirectorConstants.CelestialTelemetryBuffer, 2, out NativeArray<CelestialTelemetryEntry> telemetry))
+                !TryOpenExistingVaultBuffer(vault, SeismicDirectorConstants.CelestialTelemetryBuffer, 2, out NativeArray<CelestialTelemetryEntry> telemetry))
                 return;
 
             if (!telemetry.IsCreated || telemetry.Length <= 1)
                 return;
 
             float amplitude = 1f;
-            if (HectonSeismicTideDirector.TryOpenExistingVaultBuffer(vault, SeismicDirectorConstants.CelestialTuningBuffer, 1, out NativeArray<CelestialTuningDTO> tuning))
+            if (TryOpenExistingVaultBuffer(vault, SeismicDirectorConstants.CelestialTuningBuffer, 1, out NativeArray<CelestialTuningDTO> tuning))
             {
                 if (tuning.IsCreated && tuning.Length > 0)
                     amplitude = math.max(0.0001f, tuning[0].TideAmplitudeMeters);
@@ -3998,13 +3998,13 @@ namespace Hecton8.Environment
             out NativeArray<SeismicTuningDTO> seismicTuning,
             out NativeArray<CelestialTuningDTO> celestialTuning)
         {
-            bool hasSeismic = HectonSeismicTideDirector.OpenOrAcquireVaultBuffer(
+            bool hasSeismic = OpenOrAcquireVaultBuffer(
                 vault,
                 SeismicDirectorConstants.TuningBuffer,
                 1,
                 NativeArrayOptions.ClearMemory,
                 out seismicTuning);
-            bool hasCelestial = HectonSeismicTideDirector.OpenOrAcquireVaultBuffer(
+            bool hasCelestial = OpenOrAcquireVaultBuffer(
                 vault,
                 SeismicDirectorConstants.CelestialTuningBuffer,
                 1,
@@ -4013,6 +4013,75 @@ namespace Hecton8.Environment
             return hasSeismic && hasCelestial &&
                    seismicTuning.IsCreated && seismicTuning.Length > 0 &&
                    celestialTuning.IsCreated && celestialTuning.Length > 0;
+        }
+
+        private static bool OpenOrAcquireVaultBuffer<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            int requiredLength,
+            NativeArrayOptions options,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            buffer = default;
+            if (vault == null || requiredLength <= 0)
+                return false;
+
+            if (TryOpenExistingVaultBuffer(vault, bufferId, requiredLength, out buffer))
+                return true;
+
+            if (vault.IsCompactionFenceActive)
+                return false;
+
+            VaultGenerationHandle<T> handle = vault.GetGenerationHandle<T>(
+                bufferId,
+                requiredLength,
+                SeismicDirectorConstants.SeismicSystemId,
+                options);
+            return TryOpenVaultBuffer(vault, in handle, bufferId, requiredLength, out buffer);
+        }
+
+        private static bool TryOpenExistingVaultBuffer<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            buffer = default;
+            if (vault == null || requiredLength < 0)
+                return false;
+
+            if (!vault.TryGetGenerationHandle<T>(bufferId, out VaultGenerationHandle<T> handle))
+                return false;
+
+            return TryOpenVaultBuffer(vault, in handle, bufferId, requiredLength, out buffer);
+        }
+
+        private static bool TryOpenVaultBuffer<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            buffer = default;
+            if (vault == null ||
+                requiredLength < 0 ||
+                handle.BufferID != unchecked((uint)(int)bufferId) ||
+                handle.Generation == 0u)
+            {
+                return false;
+            }
+
+            if (!vault.TryResolveHandle(in handle, out buffer) || !buffer.IsCreated || buffer.Length < requiredLength)
+            {
+                buffer = default;
+                return false;
+            }
+
+            return true;
         }
 
         private void OnSceneGui(SceneView sceneView)
@@ -4027,11 +4096,11 @@ namespace Hecton8.Environment
             if (!Application.isPlaying || vault == null)
                 return;
 
-            if (!HectonSeismicTideDirector.TryOpenExistingVaultBuffer(vault, SeismicDirectorConstants.EventSlotsBuffer, 1, out NativeArray<SeismicEventDTO> events))
+            if (!TryOpenExistingVaultBuffer(vault, SeismicDirectorConstants.EventSlotsBuffer, 1, out NativeArray<SeismicEventDTO> events))
                 return;
 
             float radiusPerMagnitude = 125f;
-            if (HectonSeismicTideDirector.TryOpenExistingVaultBuffer(vault, SeismicDirectorConstants.TuningBuffer, 1, out NativeArray<SeismicTuningDTO> tuning))
+            if (TryOpenExistingVaultBuffer(vault, SeismicDirectorConstants.TuningBuffer, 1, out NativeArray<SeismicTuningDTO> tuning))
             {
                 if (tuning.IsCreated && tuning.Length > 0)
                     radiusPerMagnitude = math.max(1f, tuning[0].ShockwaveRadiusPerMagnitude);
@@ -4057,7 +4126,7 @@ namespace Hecton8.Environment
 
         private static void InjectTestEvent(IDataVault vault, in SeismicTuningDTO tuning)
         {
-            if (!HectonSeismicTideDirector.OpenOrAcquireVaultBuffer(
+            if (!OpenOrAcquireVaultBuffer(
                     vault,
                     SeismicDirectorConstants.EventSlotsBuffer,
                     SeismicDirectorConstants.MaxQuakeSlots,
