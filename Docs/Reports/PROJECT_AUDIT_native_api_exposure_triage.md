@@ -344,3 +344,62 @@ Rejected:
 - Broad sonar SDF payload conversion because audio, player, scanner, UI, and voxel delta paths still carry mutable native signatures.
 - Changing cave scan buffers, GPU SDF texture publication, or predator threat voxel math.
 - Copying SDF payloads into predator-owned buffers.
+
+## 2026-05-22 Persistent-World Save Snapshot Update
+
+Evidence class: STATIC_SOURCE / STATIC_TOOL only. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+Selected route:
+
+- `PersistentWorldRegistry.GetSaveSnapshotArray()` returned a mutable `NativeArray<PersistentWorldDeltaRecord>` after `CaptureSaveSnapshot()`.
+- Observed consumers in `SaveManager`, `SaveBinaryStorage`, `PlayerExplorationTracker`, and `SaveRecoverySmokeTester` only count, serialize, or read records.
+
+Patch:
+
+- `PersistentWorldRegistry.GetSaveSnapshotArray()` now returns `NativeArray<PersistentWorldDeltaRecord>.ReadOnly`.
+- `SaveManager.StageSnapshotHeader()` and `ExecuteVerifiedSavePipeline()` carry the read-only persistent-world snapshot.
+- `SaveBinaryStorage.TryWriteSaveFile()`, the indexed writer, indexed sector grouping, table builder, and persistent-world section writer consume read-only records.
+- `PlayerExplorationTracker` holds read-only persistent deltas for POI reveal/discovery.
+- `SaveRecoverySmokeTester` passes its synthetic mutable temp array as `.AsReadOnly()` into the writer.
+
+Updated static counts from `Docs/Reports/PROJECT_AUDIT_polish_after_persistent_world_save_readonly.json`:
+
+- `nativeCollectionPublicMutableApiExposure`: 142, down from 143.
+- `nativeApiExposureBuildPlayerRuntime`: 129, down from 130.
+- `nativeApiExposureMutableReturn`: 31, down from 32.
+- `nativeApiRiskRuntimeDiagnosticNamedMutableView`: 24, down from 25.
+
+Rejected:
+
+- Sector override writer route narrowing, because those APIs consume caller-owned temp arrays for indexed save block writes.
+- Restore/load mutation paths, because loaded records are used to rebuild owner state.
+- Managed snapshots, DTO layout changes, save identity changes, or Vault handle changes.
+
+## 2026-05-22 Economy Telemetry Read-Only Dump Update
+
+Evidence class: STATIC_SOURCE / STATIC_TOOL only. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+Selected route:
+
+- `Shinobu19EconomyLedger.TryResolveTelemetry` exposed the `BufferID.ShinobuEconomyTelemetryRing` black-box ring as mutable native memory.
+- `DumpTelemetryRing`, `DumpTelemetryRingH8Dump`, `DumpTelemetryRingOrdered`, and `TryDumpTelemetryOnFault` only scan or serialize telemetry rows.
+- Focused search found no first-party external callers that require mutable access to this resolver/dump route.
+
+Patch:
+
+- `TryResolveTelemetry` now returns `NativeArray<EconomyTelemetryEntry>.ReadOnly` after opening the existing Vault buffer as a mutable local and publishing only `.AsReadOnly()`.
+- Economy dump and fault-dump helpers now accept read-only telemetry rings.
+- `RecordTelemetry` and `ShinobuEconomyTelemetryJob.Telemetry` remain mutable because they are the explicit writer path.
+
+Updated static counts from `Docs/Reports/PROJECT_AUDIT_polish_after_economy_telemetry_readonly.json`:
+
+- `nativeCollectionPublicMutableApiExposure`: 141, down from 142.
+- `nativeApiExposureBuildPlayerRuntime`: 128, down from 129.
+- `nativeApiExposureOutRefMutable`: 110, down from 111.
+- `nativeApiRiskRuntimeDiagnosticNamedMutableView`: 23, down from 24.
+
+Rejected:
+
+- Telemetry writer route narrowing, because `RecordTelemetry` writes the black-box ring.
+- `EconomyTelemetryEntry` layout changes, because the struct is already explicit 64-byte telemetry payload.
+- Managed copies, Vault handle changes, or new allocation paths.

@@ -524,18 +524,24 @@ namespace Hecton8.Inventory
                 out hotbarIndices);
         }
 
-        public static bool TryResolveTelemetry(IDataVault vault, out NativeArray<EconomyTelemetryEntry> telemetry)
+        public static bool TryResolveTelemetry(IDataVault vault, out NativeArray<EconomyTelemetryEntry>.ReadOnly telemetry)
         {
             telemetry = default;
             if (vault == null)
                 return false;
 
-            return OpenOrAcquireEconomyVaultBuffer(
+            if (!OpenOrAcquireEconomyVaultBuffer(
                 BufferID.ShinobuEconomyTelemetryRing,
                 BlackBoxCapacity,
                 NativeArrayOptions.ClearMemory,
                 vault,
-                out telemetry);
+                out NativeArray<EconomyTelemetryEntry> mutableTelemetry))
+            {
+                return false;
+            }
+
+            telemetry = mutableTelemetry.AsReadOnly();
+            return true;
         }
 
         private static bool OpenOrAcquireEconomyVaultBuffer<T>(
@@ -1362,7 +1368,7 @@ namespace Hecton8.Inventory
             telemetry[index] = entry;
         }
 
-        public static void DumpTelemetryRing(NativeArray<EconomyTelemetryEntry> telemetry, string relativePath = DefaultDumpPath)
+        public static void DumpTelemetryRing(NativeArray<EconomyTelemetryEntry>.ReadOnly telemetry, string relativePath = DefaultDumpPath)
         {
             if (!telemetry.IsCreated || telemetry.Length <= 0)
                 return;
@@ -1391,13 +1397,13 @@ namespace Hecton8.Inventory
             }
         }
 
-        public static void DumpTelemetryRingH8Dump(NativeArray<EconomyTelemetryEntry> telemetry)
+        public static void DumpTelemetryRingH8Dump(NativeArray<EconomyTelemetryEntry>.ReadOnly telemetry)
         {
             DumpTelemetryRing(telemetry, DefaultH8DumpPath);
         }
 
         public static void DumpTelemetryRingOrdered(
-            NativeArray<EconomyTelemetryEntry> telemetry,
+            NativeArray<EconomyTelemetryEntry>.ReadOnly telemetry,
             int latestCursor,
             string relativePath = DefaultDumpPath)
         {
@@ -1435,7 +1441,7 @@ namespace Hecton8.Inventory
         }
 
         public static bool TryDumpTelemetryOnFault(
-            NativeArray<EconomyTelemetryEntry> telemetry,
+            NativeArray<EconomyTelemetryEntry>.ReadOnly telemetry,
             int latestCursor,
             float spikeThresholdMs = 0.5f,
             string relativePath = DefaultH8DumpPath)

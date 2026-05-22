@@ -372,7 +372,7 @@ namespace Hecton8.PDA
             PersistentWorldRegistry persistentWorldRegistry = GlobalRegistry.PersistentWorldRegistry;
             if (persistentWorldRegistry != null && appended < CartographyGridConstants.MaxPoiRevealPerSlowTick)
             {
-                NativeArray<PersistentWorldDeltaRecord> persistentDeltas = persistentWorldRegistry.GetSaveSnapshotArray();
+                NativeArray<PersistentWorldDeltaRecord>.ReadOnly persistentDeltas = persistentWorldRegistry.GetSaveSnapshotArray();
                 int chunkSizeMeters = math.max(1, persistentWorldRegistry.ChunkSizeMeters);
                 for (int i = 0;
                      persistentDeltas.IsCreated &&
@@ -1533,7 +1533,7 @@ namespace Hecton8.PDA
             PersistentWorldRegistry persistentWorldRegistry = GlobalRegistry.PersistentWorldRegistry;
             if (persistentWorldRegistry != null && count < CartographyGridConstants.MaxPoiRevealPerSlowTick)
             {
-                NativeArray<PersistentWorldDeltaRecord> persistentDeltas = persistentWorldRegistry.GetSaveSnapshotArray();
+                NativeArray<PersistentWorldDeltaRecord>.ReadOnly persistentDeltas = persistentWorldRegistry.GetSaveSnapshotArray();
                 int chunkSizeMeters = math.max(1, persistentWorldRegistry.ChunkSizeMeters);
                 for (int i = 0;
                      persistentDeltas.IsCreated &&

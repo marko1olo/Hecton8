@@ -888,3 +888,27 @@ Cinematic Cheats used: No cave physics or collider query path was added. Predato
 Exact Microseconds saved: 0 us measured. Static outcome: broad audit dropped `nativeCollectionPublicMutableApiExposure` from `144` to `143`, `nativeApiExposureBuildPlayerRuntime` from `131` to `130`, `nativeApiExposureOutRefMutable` from `112` to `111`, and `nativeApiRiskRuntimeOutRefMutableView` from `68` to `67`.
 
 Evidence: Focused scan found the read-only cave SDF payload signature and predator caller. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_after_cave_sdf_readonly.json` returned `PASS_WITH_WARNINGS` with `nativeCollectionPublicMutableApiExposure=143`, `nativeApiExposureBuildPlayerRuntime=130`, `nativeApiExposureOutRefMutable=111`, and `nativeApiRiskRuntimeOutRefMutableView=67`. `git diff --check` on touched files reported only LF/CRLF normalization warnings. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Persistent World Save Snapshot Read-Only Handoff
+
+What was wrong: `PersistentWorldRegistry.GetSaveSnapshotArray()` returned a mutable native view of the persistent-world save snapshot. Current consumers in save serialization, PDA exploration reveal, and recovery smoke writing only read or serialize rows.
+
+What was done: Converted the registry snapshot return and save/PDA/binary writer pipeline to `NativeArray<PersistentWorldDeltaRecord>.ReadOnly`. The binary writer still copies records by value into the indexed save payload; sector override writer APIs remain mutable because they own temporary write staging arrays.
+
+Cinematic Cheats used: No scene scan, collider query, or managed save mirror was added. Persistent world state still flows as compact delta records instead of object graph serialization.
+
+Exact Microseconds saved: 0 us measured. Static outcome: broad audit dropped `nativeCollectionPublicMutableApiExposure` from `143` to `142`, `nativeApiExposureBuildPlayerRuntime` from `130` to `129`, `nativeApiExposureMutableReturn` from `32` to `31`, and `nativeApiRiskRuntimeDiagnosticNamedMutableView` from `25` to `24`.
+
+Evidence: Focused scan found read-only snapshot signatures and consumers. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_after_persistent_world_save_readonly.json` returned `PASS_WITH_WARNINGS` with `nativeCollectionPublicMutableApiExposure=142`, `nativeApiExposureBuildPlayerRuntime=129`, `nativeApiExposureMutableReturn=31`, and `nativeApiRiskRuntimeDiagnosticNamedMutableView=24`. `git diff --check` on touched files reported only LF/CRLF normalization warnings. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Economy Telemetry Read-Only Dump Route
+
+What was wrong: `Shinobu19EconomyLedger.TryResolveTelemetry` and economy dump helpers exposed the economy black-box telemetry ring as mutable native memory even though the selected route only reads entries for diagnostics and fault dumps.
+
+What was done: Converted `TryResolveTelemetry`, `DumpTelemetryRing`, `DumpTelemetryRingH8Dump`, `DumpTelemetryRingOrdered`, and `TryDumpTelemetryOnFault` to `NativeArray<EconomyTelemetryEntry>.ReadOnly`. The telemetry writer job and `RecordTelemetry` remain mutable and explicit.
+
+Cinematic Cheats used: No inventory replay, managed telemetry mirror, or per-item diagnostic object graph was added. The route remains a fixed 64-byte entry ring that can be dumped directly.
+
+Exact Microseconds saved: 0 us measured. Static outcome: broad audit dropped `nativeCollectionPublicMutableApiExposure` from `142` to `141`, `nativeApiExposureBuildPlayerRuntime` from `129` to `128`, `nativeApiExposureOutRefMutable` from `111` to `110`, and `nativeApiRiskRuntimeDiagnosticNamedMutableView` from `24` to `23`.
+
+Evidence: Focused scan found read-only economy telemetry resolver/dump signatures and no first-party external callers requiring mutable views. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_after_economy_telemetry_readonly.json` returned `PASS_WITH_WARNINGS` with `nativeCollectionPublicMutableApiExposure=141`, `nativeApiExposureBuildPlayerRuntime=128`, `nativeApiExposureOutRefMutable=110`, and `nativeApiRiskRuntimeDiagnosticNamedMutableView=23`. `git diff --check` on `Shinobu19EconomyLedger.cs` reported only LF/CRLF normalization warnings. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.

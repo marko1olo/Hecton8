@@ -2359,7 +2359,7 @@ namespace Hecton8.SaveSystem
             string absolutePath,
             SaveMetadata metadata,
             SaveData data,
-            NativeArray<PersistentWorldDeltaRecord> persistentWorldDeltas,
+            NativeArray<PersistentWorldDeltaRecord>.ReadOnly persistentWorldDeltas,
             NativeArray<EcosystemSectorSaveRecord>.ReadOnly ecosystemSectorStates,
             QuestSaveHeader packedQuestHeader,
             NativeArray<uint> packedQuestStateWords,
@@ -2452,7 +2452,7 @@ namespace Hecton8.SaveSystem
             string absolutePath,
             SaveMetadata metadata,
             SaveData data,
-            NativeArray<PersistentWorldDeltaRecord> persistentWorldDeltas,
+            NativeArray<PersistentWorldDeltaRecord>.ReadOnly persistentWorldDeltas,
             NativeArray<EcosystemSectorSaveRecord>.ReadOnly ecosystemSectorStates,
             QuestSaveHeader packedQuestHeader,
             NativeArray<uint> packedQuestStateWords,
@@ -6393,7 +6393,7 @@ namespace Hecton8.SaveSystem
             return ((long)sectorCoord.x << 32) | (uint)sectorCoord.y;
         }
 
-        private static IndexedSectorGroupBuffer BuildIndexedSectorGroups(NativeArray<PersistentWorldDeltaRecord> persistentWorldDeltas, int chunkSizeMeters)
+        private static IndexedSectorGroupBuffer BuildIndexedSectorGroups(NativeArray<PersistentWorldDeltaRecord>.ReadOnly persistentWorldDeltas, int chunkSizeMeters)
         {
             int sourceLength = persistentWorldDeltas.IsCreated ? persistentWorldDeltas.Length : 0;
             int capacity = math.max(4, sourceLength);
@@ -7164,7 +7164,7 @@ namespace Hecton8.SaveSystem
         }
 
         private static bool TryBuildPersistentWorldSectionTables(
-            NativeArray<PersistentWorldDeltaRecord> persistentWorldDeltas,
+            NativeArray<PersistentWorldDeltaRecord>.ReadOnly persistentWorldDeltas,
             out NativeParallelHashMap<int3, ushort> chunkLookup,
             out NativeList<int3> chunkTable,
             out NativeParallelHashMap<ulong, ushort> itemHashLookup,
@@ -7356,7 +7356,7 @@ namespace Hecton8.SaveSystem
 
         private static void WritePersistentWorldSection(
             byte* destination,
-            NativeArray<PersistentWorldDeltaRecord> persistentWorldDeltas,
+            NativeArray<PersistentWorldDeltaRecord>.ReadOnly persistentWorldDeltas,
             NativeParallelHashMap<int3, ushort> chunkLookup,
             NativeList<int3> chunkTable,
             NativeParallelHashMap<ulong, ushort> itemHashLookup,

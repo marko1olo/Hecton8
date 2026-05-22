@@ -406,7 +406,7 @@ namespace Hecton8.Dev
                     absolutePath,
                     metadata,
                     data,
-                    persistentWorldDeltas,
+                    persistentWorldDeltas.AsReadOnly(),
                     default,
                     default,
                     default,

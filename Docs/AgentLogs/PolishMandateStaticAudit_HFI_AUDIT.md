@@ -20,18 +20,18 @@ Evidence class: STATIC_SOURCE. No Unity import, compile, Play Mode, profiler, GC
 | `linqSurface` | 0 | 0 |
 | `nativeApiExposureAmbiguousMutable` | 0 | 0 |
 | `nativeApiExposureBuildEditorOnly` | 5 | 4 |
-| `nativeApiExposureBuildPlayerRuntime` | 130 | 59 |
+| `nativeApiExposureBuildPlayerRuntime` | 128 | 58 |
 | `nativeApiExposureBuildQaDevProof` | 8 | 2 |
-| `nativeApiExposureMutableReturn` | 32 | 20 |
-| `nativeApiExposureOutRefMutable` | 111 | 55 |
+| `nativeApiExposureMutableReturn` | 31 | 19 |
+| `nativeApiExposureOutRefMutable` | 110 | 55 |
 | `nativeApiExposurePrivateNestedSuppressed` | 9 | 6 |
 | `nativeApiRiskCoreVaultOrAllocatorSurface` | 21 | 3 |
 | `nativeApiRiskEditorOrProofSurface` | 13 | 6 |
 | `nativeApiRiskRuntimeAmbiguousMutableView` | 0 | 0 |
-| `nativeApiRiskRuntimeDiagnosticNamedMutableView` | 25 | 18 |
+| `nativeApiRiskRuntimeDiagnosticNamedMutableView` | 23 | 16 |
 | `nativeApiRiskRuntimeOutRefMutableView` | 67 | 40 |
 | `nativeApiRiskRuntimeReturnMutableView` | 17 | 10 |
-| `nativeCollectionPublicMutableApiExposure` | 143 | 65 |
+| `nativeCollectionPublicMutableApiExposure` | 141 | 64 |
 | `noAlias` | 2192 | 218 |
 | `packOne` | 0 | 0 |
 | `privateNativeBuildEditorOnly` | 48 | 18 |
@@ -116,7 +116,7 @@ Evidence class: STATIC_SOURCE. No Unity import, compile, Play Mode, profiler, GC
 | Path | Count |
 |---|---:|
 | `Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs` | 9 |
-| `Assets/_Project/Scripts/Inventory/Shinobu19EconomyLedger.cs` | 8 |
+| `Assets/_Project/Scripts/Inventory/Shinobu19EconomyLedger.cs` | 7 |
 | `Assets/_Project/Scripts/Core/HectonArenaAllocator.cs` | 6 |
 | `Assets/_Project/Scripts/Core/Memory/H8Memory.cs` | 6 |
 | `Assets/_Project/Scripts/Fauna/FaunaSimulationEngine.cs` | 5 |
@@ -142,8 +142,8 @@ Evidence class: STATIC_SOURCE. No Unity import, compile, Play Mode, profiler, GC
 
 | Path | Count |
 |---|---:|
-| `Assets/_Project/Scripts/Inventory/Shinobu19EconomyLedger.cs` | 8 |
 | `Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs` | 7 |
+| `Assets/_Project/Scripts/Inventory/Shinobu19EconomyLedger.cs` | 7 |
 | `Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementRuntime.cs` | 5 |
 | `Assets/_Project/Scripts/Construction/ModularBaseConstructionValidator.cs` | 4 |
 | `Assets/_Project/Scripts/Core/HectonArenaAllocator.cs` | 4 |
@@ -211,7 +211,7 @@ Evidence class: STATIC_SOURCE. No Unity import, compile, Play Mode, profiler, GC
 | Path | Count |
 |---|---:|
 | `Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs` | 9 |
-| `Assets/_Project/Scripts/Inventory/Shinobu19EconomyLedger.cs` | 8 |
+| `Assets/_Project/Scripts/Inventory/Shinobu19EconomyLedger.cs` | 7 |
 | `Assets/_Project/Scripts/Core/HectonArenaAllocator.cs` | 6 |
 | `Assets/_Project/Scripts/Core/Memory/H8Memory.cs` | 6 |
 | `Assets/_Project/Scripts/Fauna/FaunaSimulationEngine.cs` | 5 |

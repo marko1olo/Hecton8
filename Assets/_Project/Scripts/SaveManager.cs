@@ -2262,7 +2262,7 @@ namespace Hecton8.SaveSystem
         private unsafe void StageSnapshotHeader(
             uint operationId,
             string slotName,
-            NativeArray<PersistentWorldDeltaRecord> persistentWorldDeltas,
+            NativeArray<PersistentWorldDeltaRecord>.ReadOnly persistentWorldDeltas,
             NativeArray<EcosystemSectorSaveRecord>.ReadOnly ecosystemSectorStates,
             NativeArray<uint> packedQuestStateWords,
             NativeArray<byte> voxelDeltaSnapshot)
@@ -2858,7 +2858,7 @@ namespace Hecton8.SaveSystem
             double playTime = ResolveCurrentPlayTimeSeconds();
             SaveData data = SaveData.CreateNew(playTime);
             PersistentWorldRegistry persistentWorldRegistry = GlobalRegistry.PersistentWorldRegistry;
-            NativeArray<PersistentWorldDeltaRecord> persistentWorldDeltaSnapshot = default;
+            NativeArray<PersistentWorldDeltaRecord>.ReadOnly persistentWorldDeltaSnapshot = default;
             NativeArray<EcosystemSectorSaveRecord>.ReadOnly ecosystemSectorSnapshot = default;
             NativeArray<uint> packedQuestStateSnapshot = default;
             QuestSaveHeader packedQuestSaveHeader = default;
@@ -4070,7 +4070,7 @@ namespace Hecton8.SaveSystem
             string finalPath,
             SaveMetadata metadata,
             SaveData data,
-            NativeArray<PersistentWorldDeltaRecord> persistentWorldItems,
+            NativeArray<PersistentWorldDeltaRecord>.ReadOnly persistentWorldItems,
             NativeArray<EcosystemSectorSaveRecord>.ReadOnly ecosystemSectorStates,
             QuestSaveHeader packedQuestHeader,
             NativeArray<uint> packedQuestStateWords,
@@ -4917,7 +4917,7 @@ namespace Hecton8.SaveSystem
                         primarySavePath,
                         writeMetadata,
                         data,
-                        persistentWorldItemBuffer,
+                        persistentWorldItemBuffer.IsCreated ? persistentWorldItemBuffer.AsReadOnly() : default,
                         ecosystemSectorBuffer.IsCreated ? ecosystemSectorBuffer.AsReadOnly() : default,
                         packedQuestHeader,
                         packedQuestStateBuffer,

@@ -2278,10 +2278,10 @@ namespace Hecton8.World
             UpdateDiagnostics();
         }
 
-        internal NativeArray<PersistentWorldDeltaRecord> GetSaveSnapshotArray()
+        internal NativeArray<PersistentWorldDeltaRecord>.ReadOnly GetSaveSnapshotArray()
         {
             return _saveSnapshotDeltas.IsCreated
-                ? _saveSnapshotDeltas.AsArray()
+                ? _saveSnapshotDeltas.AsArray().AsReadOnly()
                 : default;
         }
 
