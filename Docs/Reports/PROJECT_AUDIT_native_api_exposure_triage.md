@@ -880,3 +880,86 @@ Rejected:
 - Decal writer/job changes.
 - Lock lifecycle changes.
 - Managed decal mirrors.
+
+## 2026-05-22 Scavenging Self-Audit Counter Read-Only Update
+
+Evidence class: STATIC_SOURCE / STATIC_TOOL only. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+Selected route:
+
+- `ScavengingLootOracleRuntime.TryRunDistributionSelfAudit` returns counters after a cold forced self-audit job.
+- Focused call-site search found one editor audit button consumer that reads four counter cells for a label.
+
+Patch:
+
+- Self-audit output now returns `NativeArray<uint>.ReadOnly`.
+- `DistributionAudit` remains mutable inside the owner Vault and self-audit job only.
+
+Updated static counts from `Docs/Reports/PROJECT_AUDIT_polish_after_scavenging_audit_readonly.json`:
+
+- `nativeCollectionPublicMutableApiExposure`: 115, down from 116.
+- `nativeApiExposureBuildPlayerRuntime`: 105, down from 106.
+- `nativeApiExposureOutRefMutable`: 84, down from 85.
+- `nativeApiRiskRuntimeOutRefMutableView`: 53, down from 54.
+
+Rejected:
+
+- Loot table writer buffer changes.
+- CSV ingest route changes.
+- Job scheduling/completion changes.
+- Managed counter copies.
+
+## 2026-05-22 Wrist HUD Quad Resolver Scope Update
+
+Evidence class: STATIC_SOURCE / STATIC_TOOL only. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+Selected route:
+
+- `WristHologramHudRuntime.TryResolveQuadBuffer` returned a mutable quad DTO buffer.
+- Focused call-site search found only same-file owner usage after the quad build job completes.
+
+Patch:
+
+- Resolver visibility changed from public to private.
+- Mutable quad DTO memory stays owner-local for GPU upload and draw-matrix fill.
+
+Updated static counts from `Docs/Reports/PROJECT_AUDIT_polish_after_wrist_quad_scope.json`:
+
+- `nativeCollectionPublicMutableApiExposure`: 114, down from 115.
+- `nativeApiExposureBuildPlayerRuntime`: 104, down from 105.
+- `nativeApiExposureOutRefMutable`: 83, down from 84.
+- `nativeApiRiskRuntimeOutRefMutableView`: 52, down from 53.
+
+Rejected:
+
+- Quad job buffer read-only facade churn.
+- GPU upload copy rewrites.
+- Quad DTO layout changes.
+
+## 2026-05-22 Base Atmosphere Front Read-Only Update
+
+Evidence class: STATIC_SOURCE / STATIC_TOOL only. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+Selected route:
+
+- Private `BaseAtmosphereEngine.TryReadFront` fed count, state-query, and black-box read code.
+- Compartment writes already route through `TryOpenCompartmentViews`.
+
+Patch:
+
+- `TryReadFront` now returns `NativeArray<CompartmentState>.ReadOnly`.
+- Count/state/black-box call sites consume the immutable alias.
+- Mutable compartment views remain owner-only writer routes.
+
+Updated static counts from `Docs/Reports/PROJECT_AUDIT_polish_after_atmosphere_front_readonly.json`:
+
+- `nativeCollectionPublicMutableApiExposure`: 114, unchanged.
+- `nativeApiExposureBuildPlayerRuntime`: 104, unchanged.
+- `nativeApiExposureOutRefMutable`: 83, unchanged.
+- `nativeApiRiskRuntimeOutRefMutableView`: 52, unchanged.
+
+Rejected:
+
+- Cold tick writer buffer changes.
+- Compartment DTO layout changes.
+- Managed front-buffer copies.

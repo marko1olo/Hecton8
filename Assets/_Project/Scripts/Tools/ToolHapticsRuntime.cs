@@ -289,9 +289,7 @@ namespace Hecton8.Tools
             return true;
         }
 
-        public int FrontCount => TryResolveFrontBuffer(out NativeArray<HapticCommand> frontBuffer)
-            ? math.min(math.max(0, _frontCount), frontBuffer.Length)
-            : 0;
+        public int FrontCount => ResolveFrontCount();
 
         private void Awake()
         {
@@ -416,6 +414,13 @@ namespace Hecton8.Tools
             bool frontResolved = TryResolveFrontBuffer(out frontBuffer);
             bool backResolved = TryResolveBackBuffer(out backBuffer);
             return frontResolved && backResolved;
+        }
+
+        private int ResolveFrontCount()
+        {
+            return TryResolveFrontBuffer(out NativeArray<HapticCommand> frontBuffer)
+                ? math.min(math.max(0, _frontCount), frontBuffer.Length)
+                : 0;
         }
 
         private bool TryResolveFrontBuffer(out NativeArray<HapticCommand> frontBuffer)

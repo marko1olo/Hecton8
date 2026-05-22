@@ -1116,3 +1116,39 @@ Cinematic Cheats used: Existing decal editor visualization remains a Gizmo proxy
 Exact Microseconds saved: 0 us measured. Static hygiene gain: `nativeCollectionPublicMutableApiExposure` 117 -> 116, `nativeApiExposureBuildPlayerRuntime` 107 -> 106, and `nativeApiExposureOutRefMutable` 86 -> 85 in `Docs/Reports/PROJECT_AUDIT_polish_after_dynamic_decal_readonly.json`.
 
 Verification: Focused scan found only read-only decal editor consumers. Static audit status remained `PASS_WITH_WARNINGS`. `git diff --check` reported only LF/CRLF normalization warnings. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Scavenging Self-Audit Counter Read-Only Pass
+
+What was wrong: `TryRunDistributionSelfAudit` returned a mutable distribution-audit counter buffer to an editor button that only reads four counter cells for display.
+
+What was done: Converted the self-audit output and editor consumer to `NativeArray<uint>.ReadOnly`. The Vault-owned audit counter buffer remains mutable only for the self-audit job.
+
+Cinematic Cheats used: Existing loot validation remains a counter histogram over deterministic rolls instead of spawning loot previews or scene objects.
+
+Exact Microseconds saved: 0 us measured. Static hygiene gain: `nativeCollectionPublicMutableApiExposure` 116 -> 115, `nativeApiExposureBuildPlayerRuntime` 106 -> 105, and `nativeApiExposureOutRefMutable` 85 -> 84 in `Docs/Reports/PROJECT_AUDIT_polish_after_scavenging_audit_readonly.json`.
+
+Verification: Focused scan found only read-only self-audit counter signatures. Static audit status remained `PASS_WITH_WARNINGS`. `git diff --check` reported only LF/CRLF normalization warnings. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Wrist HUD Quad Resolver Scope Pass
+
+What was wrong: `TryResolveQuadBuffer` exposed mutable wrist HUD quad DTO memory as a public method despite having only same-file owner call sites.
+
+What was done: Narrowed the resolver to `private`. Upload and draw-matrix fill still read the completed quad buffer inside the owner runtime.
+
+Cinematic Cheats used: Existing wrist HUD remains a DTO-to-quad GPU upload path instead of scene UI object generation.
+
+Exact Microseconds saved: 0 us measured. Static hygiene gain: `nativeCollectionPublicMutableApiExposure` 115 -> 114, `nativeApiExposureBuildPlayerRuntime` 105 -> 104, and `nativeApiExposureOutRefMutable` 84 -> 83 in `Docs/Reports/PROJECT_AUDIT_polish_after_wrist_quad_scope.json`.
+
+Verification: Focused scan found only private same-file uses. Static audit status remained `PASS_WITH_WARNINGS`. `git diff --check` reported only LF/CRLF normalization warnings. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Base Atmosphere Front Read-Only Pass
+
+What was wrong: Private `TryReadFront` returned mutable front-buffer aliases to read-only count/state/black-box code.
+
+What was done: Converted `TryReadFront` and its read call sites to `NativeArray<CompartmentState>.ReadOnly`. Owner mutation remains on `TryOpenCompartmentViews`.
+
+Cinematic Cheats used: Atmosphere reads remain scalar DTO sampling and Dalton-pressure approximation, not per-room physics scene queries.
+
+Exact Microseconds saved: 0 us measured. Static public counters did not move in `Docs/Reports/PROJECT_AUDIT_polish_after_atmosphere_front_readonly.json`; this is a private read-helper hardening.
+
+Verification: Focused scan found only read-only `TryReadFront` uses. Static audit status remained `PASS_WITH_WARNINGS`. `git diff --check` reported only LF/CRLF normalization warnings. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.

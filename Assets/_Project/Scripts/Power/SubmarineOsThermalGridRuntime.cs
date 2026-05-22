@@ -316,9 +316,9 @@ namespace Hecton8.Power
 
         public bool IsInitialized => _initialized;
 
-        public int NodeCount => TryResolveCounters(out NativeArray<int> counters) ? math.clamp(counters[CounterNodeCount], 0, MaxNodes) : 0;
+        public int NodeCount => ResolveNodeCount();
 
-        public int EdgeCount => TryResolveCounters(out NativeArray<int> counters) ? math.clamp(counters[CounterEdgeCount], 0, MaxEdges) : 0;
+        public int EdgeCount => ResolveEdgeCount();
 
         private struct VaultViews
         {
@@ -1296,6 +1296,20 @@ namespace Hecton8.Power
         private bool TryResolveCounters(out NativeArray<int> counters)
         {
             return TryResolveVaultBuffer(_countersHandle, CounterCount, out counters);
+        }
+
+        private int ResolveNodeCount()
+        {
+            return TryResolveCounters(out NativeArray<int> counters)
+                ? math.clamp(counters[CounterNodeCount], 0, MaxNodes)
+                : 0;
+        }
+
+        private int ResolveEdgeCount()
+        {
+            return TryResolveCounters(out NativeArray<int> counters)
+                ? math.clamp(counters[CounterEdgeCount], 0, MaxEdges)
+                : 0;
         }
 
         private bool TryAcquireCsvImportViews(out CsvImportViews views, out int lockedCount)

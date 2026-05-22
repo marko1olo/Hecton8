@@ -121,7 +121,7 @@ namespace Hecton8.Atmosphere
         private float _activeStaminaRecoveryMultiplier = 1f;
         private BaseAtmosphereSolveMode _lastSolveMode = BaseAtmosphereSolveMode.High5Hz;
 
-        public int CompartmentCount => TryReadFront(out NativeArray<CompartmentState> front) ? front.Length : 0;
+        public int CompartmentCount => TryReadFront(out NativeArray<CompartmentState>.ReadOnly front) ? front.Length : 0;
         public int ActiveCompartmentIndex => _activeCompartmentIndex;
         public bool IsColdTickRunning => _coldTickRunning;
         public float LastResolvedTickIntervalSeconds => _lastResolvedTickIntervalSeconds;
@@ -181,7 +181,7 @@ namespace Hecton8.Atmosphere
 
             EnsureNativeState();
             SeedDefaultAtmosphereIfNeeded();
-            if (_coldTickRunning || !TryReadFront(out NativeArray<CompartmentState> front))
+            if (_coldTickRunning || !TryReadFront(out NativeArray<CompartmentState>.ReadOnly front))
             {
                 _tickAccumulator += math.max(0f, fixedDeltaTime);
                 return;
@@ -208,7 +208,7 @@ namespace Hecton8.Atmosphere
 
         public bool TrySetActiveCompartmentIndex(int compartmentIndex)
         {
-            if (!TryReadFront(out NativeArray<CompartmentState> front) ||
+            if (!TryReadFront(out NativeArray<CompartmentState>.ReadOnly front) ||
                 compartmentIndex < 0 ||
                 compartmentIndex >= front.Length)
                 return false;
@@ -221,7 +221,7 @@ namespace Hecton8.Atmosphere
         public bool TryGetCompartmentState(int compartmentIndex, out CompartmentState state)
         {
             state = default;
-            if (!TryReadFront(out NativeArray<CompartmentState> front) ||
+            if (!TryReadFront(out NativeArray<CompartmentState>.ReadOnly front) ||
                 compartmentIndex < 0 ||
                 compartmentIndex >= front.Length)
                 return false;
@@ -602,7 +602,7 @@ namespace Hecton8.Atmosphere
         {
             EnsureBlackBoxState();
             if (!TryOpenBlackBox(out NativeArray<BaseAtmosphereTelemetryEntry> blackBox) ||
-                !TryReadFront(out NativeArray<CompartmentState> front))
+                !TryReadFront(out NativeArray<CompartmentState>.ReadOnly front))
                 return;
 
             int index = _blackBoxCursor;
@@ -688,9 +688,14 @@ namespace Hecton8.Atmosphere
                    carbonDioxideByteLane.Length >= front.Length;
         }
 
-        private bool TryReadFront(out NativeArray<CompartmentState> front)
+        private bool TryReadFront(out NativeArray<CompartmentState>.ReadOnly front)
         {
-            return TryReadVaultView(_dataVault, in _frontHandle, 1, out front);
+            front = default;
+            if (!TryReadVaultView(_dataVault, in _frontHandle, 1, out NativeArray<CompartmentState> mutableFront))
+                return false;
+
+            front = mutableFront.AsReadOnly();
+            return true;
         }
 
         private bool TryOpenBlackBox(out NativeArray<BaseAtmosphereTelemetryEntry> blackBox)

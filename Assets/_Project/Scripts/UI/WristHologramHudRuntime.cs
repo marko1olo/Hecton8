@@ -352,7 +352,7 @@ namespace Hecton8.UI
         private string _projectRoot;
         private string _csvOverridePath;
 
-        public bool TryResolveQuadBuffer(out NativeArray<WristHudQuadTransformDTO> quads)
+        private bool TryResolveQuadBuffer(out NativeArray<WristHudQuadTransformDTO> quads)
         {
             return TryResolveVaultBuffer(in _quadHandle, BufferID.WristHudQuads, 1, out quads);
         }
