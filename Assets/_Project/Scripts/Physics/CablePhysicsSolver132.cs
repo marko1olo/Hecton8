@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
@@ -441,7 +442,50 @@ namespace Hecton8.Physics
             return true;
         }
 
-        public static bool TryOpenOrAcquireTuningView(IDataVault vault, out NativeArray<VerletCableTuningDTO> tuning)
+        public static bool TrySampleTuning(IDataVault vault, out VerletCableTuningDTO tuning)
+        {
+            tuning = default;
+            if (!TryOpenOrAcquireTuningView(vault, out NativeArray<VerletCableTuningDTO> tuningView) ||
+                !tuningView.IsCreated ||
+                tuningView.Length <= 0)
+            {
+                return false;
+            }
+
+            tuning = SanitizeEditorTuning(tuningView[0]);
+            tuningView[0] = tuning;
+            return true;
+        }
+
+        public static bool TryWriteTuning(IDataVault vault, in VerletCableTuningDTO tuning)
+        {
+            if (!TryOpenOrAcquireTuningView(vault, out NativeArray<VerletCableTuningDTO> tuningView) ||
+                !tuningView.IsCreated ||
+                tuningView.Length <= 0)
+            {
+                return false;
+            }
+
+            tuningView[0] = SanitizeEditorTuning(in tuning);
+            return true;
+        }
+
+        public static bool TryApplyMaterialCsv(IDataVault vault, ReadOnlySpan<byte> csvBytes, out int parsed)
+        {
+            parsed = 0;
+            if (csvBytes.Length <= 0 ||
+                !TryOpenOrAcquireMaterialView(vault, out NativeArray<CableMaterialDTO> materials) ||
+                !materials.IsCreated ||
+                materials.Length <= 0)
+            {
+                return false;
+            }
+
+            parsed = CableMaterialCsvParser.ParseHashTable(csvBytes, materials);
+            return true;
+        }
+
+        private static bool TryOpenOrAcquireTuningView(IDataVault vault, out NativeArray<VerletCableTuningDTO> tuning)
         {
             return TryOpenOrAcquireVaultView(
                 vault,
@@ -451,7 +495,7 @@ namespace Hecton8.Physics
                 out tuning);
         }
 
-        public static bool TryOpenOrAcquireMaterialView(IDataVault vault, out NativeArray<CableMaterialDTO> materials)
+        private static bool TryOpenOrAcquireMaterialView(IDataVault vault, out NativeArray<CableMaterialDTO> materials)
         {
             return TryOpenOrAcquireVaultView(
                 vault,
@@ -459,6 +503,32 @@ namespace Hecton8.Physics
                 CablePhysics132Constants.MaterialCapacity,
                 NativeArrayOptions.ClearMemory,
                 out materials);
+        }
+
+        private static VerletCableTuningDTO SanitizeEditorTuning(in VerletCableTuningDTO tuning)
+        {
+            VerletCableTuningDTO sanitized = tuning;
+            if (math.lengthsq(sanitized.Gravity) <= 0.000001f || !math.all(math.isfinite(sanitized.Gravity)))
+                sanitized.Gravity = new float3(0f, -9.80665f, 0f);
+            if (!math.isfinite(sanitized.FluidFriction) || sanitized.FluidFriction <= 0f)
+                sanitized.FluidFriction = 0.975f;
+            if (!math.isfinite(sanitized.StretchThreshold01) || sanitized.StretchThreshold01 <= 0f)
+                sanitized.StretchThreshold01 = 0.18f;
+            if (!math.isfinite(sanitized.RockFriction01) || sanitized.RockFriction01 <= 0f)
+                sanitized.RockFriction01 = 0.58f;
+            if (!math.isfinite(sanitized.ReelSpeedMetersPerSecond) || sanitized.ReelSpeedMetersPerSecond <= 0f)
+                sanitized.ReelSpeedMetersPerSecond = 18f;
+            if (!math.isfinite(sanitized.Reserved0) || sanitized.Reserved0 <= 0f)
+                sanitized.Reserved0 = 50f;
+
+            sanitized.FluidFriction = math.saturate(sanitized.FluidFriction);
+            sanitized.ConstraintIterations = math.clamp(sanitized.ConstraintIterations, 0, 15);
+            sanitized.StretchThreshold01 = math.max(0.001f, sanitized.StretchThreshold01);
+            sanitized.BreakForce = math.max(0f, math.isfinite(sanitized.BreakForce) ? sanitized.BreakForce : 0f);
+            sanitized.RockFriction01 = math.saturate(sanitized.RockFriction01);
+            sanitized.ReelSpeedMetersPerSecond = math.max(0.001f, sanitized.ReelSpeedMetersPerSecond);
+            sanitized.Reserved0 = math.clamp(sanitized.Reserved0, 10f, 64f);
+            return sanitized;
         }
 
         private static bool TryOpenOrAcquireVaultView<T>(

@@ -1152,3 +1152,25 @@ Cinematic Cheats used: Atmosphere reads remain scalar DTO sampling and Dalton-pr
 Exact Microseconds saved: 0 us measured. Static public counters did not move in `Docs/Reports/PROJECT_AUDIT_polish_after_atmosphere_front_readonly.json`; this is a private read-helper hardening.
 
 Verification: Focused scan found only read-only `TryReadFront` uses. Static audit status remained `PASS_WITH_WARNINGS`. `git diff --check` reported only LF/CRLF normalization warnings. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Count Accessor Scope Cleanup
+
+What was wrong: `ToolHapticsRuntime.FrontCount` and `SubmarineOsThermalGridRuntime.NodeCount`/`EdgeCount` were public scalar properties whose expression bodies declared mutable `NativeArray` locals. This created focused public mutable API noise without granting callers actual native access.
+
+What was done: Moved the mutable native resolution into private scalar helpers and kept public properties scalar-only. Haptic buffer and thermal counter writer routes remain owner-local/private; no DTO, Vault handle, solver, or unsafe span path changed.
+
+Cinematic Cheats used: Scope narrowing only. No new simulation; no visual fake added in this micro-pass.
+
+Exact Microseconds saved: 0 us measured. Static proof: focused native accessor scan no longer reports the haptic/thermal count property lines; `python Tools\test_polish_mandate_static_audit.py` ran 12 tests OK; `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_after_count_accessors_scope.json --report-path Docs\Reports\PROJECT_AUDIT_polish_after_count_accessors_scope.md` returned `PASS_WITH_WARNINGS` with unchanged broad counters: `nativeCollectionPublicMutableApiExposure=114`, `nativeApiExposureBuildPlayerRuntime=104`, `nativeApiExposureOutRefMutable=83`, and `nativeApiRiskRuntimeOutRefMutableView=52`. `git diff --check` reported only LF-to-CRLF warnings. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Cable Editor Write API Split
+
+What was wrong: `CablePhysicsSolver132` exposed public mutable native tuning/material views that were only needed by one editor tuner.
+
+What was done: Added scalar/span owner APIs for tuning sample, tuning write, and material CSV apply. Made the raw native view openers private and updated `Shinobu132CablePhysicsTunerWindow` to use DTO/span routes.
+
+Cinematic Cheats used: Existing cable tuning stays a scalar DTO and material hash-table CSV lane; no scene cable objects or physics previews are spawned for editor tuning.
+
+Exact Microseconds saved: 0 us measured. Static hygiene gain: `nativeCollectionPublicMutableApiExposure` 114 -> 112, `nativeApiExposureBuildPlayerRuntime` 104 -> 102, `nativeApiExposureOutRefMutable` 83 -> 81, and `nativeApiRiskRuntimeOutRefMutableView` 52 -> 50 in `Docs/Reports/PROJECT_AUDIT_polish_after_cable_editor_write_api.json`.
+
+Verification: Focused scan no longer reports cable public native view APIs. `python Tools\test_polish_mandate_static_audit.py` passed 12 tests. Static audit status remained `PASS_WITH_WARNINGS`. `git diff --check` reported only LF/CRLF normalization warnings. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.

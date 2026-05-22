@@ -86,27 +86,12 @@ namespace Hecton8.Editor
 
         private void PullFromVault()
         {
-            if (!TryResolveTuning(out NativeArray<VerletCableTuningDTO> tuning))
+            if (!TryResolveTuning(out VerletCableTuningDTO dto))
             {
                 _status.text = "GlobalDataVault unavailable.";
                 return;
             }
 
-            VerletCableTuningDTO dto = tuning[0];
-            if (math.lengthsq(dto.Gravity) <= 0.000001f)
-                dto.Gravity = new float3(0f, -9.80665f, 0f);
-            if (dto.FluidFriction <= 0f)
-                dto.FluidFriction = 0.975f;
-            if (dto.StretchThreshold01 <= 0f)
-                dto.StretchThreshold01 = 0.18f;
-            if (dto.RockFriction01 <= 0f)
-                dto.RockFriction01 = 0.58f;
-            if (dto.ReelSpeedMetersPerSecond <= 0f)
-                dto.ReelSpeedMetersPerSecond = 18f;
-            if (dto.Reserved0 <= 0f)
-                dto.Reserved0 = 50f;
-
-            tuning[0] = dto;
             _gravity.SetValueWithoutNotify(dto.Gravity.y);
             _friction.SetValueWithoutNotify(dto.FluidFriction);
             _iterations.SetValueWithoutNotify(math.clamp(dto.ConstraintIterations, 0, 15));
@@ -120,13 +105,14 @@ namespace Hecton8.Editor
 
         private void ApplyTuning()
         {
-            if (!TryResolveTuning(out NativeArray<VerletCableTuningDTO> tuning))
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (vault == null)
             {
                 _status.text = "GlobalDataVault unavailable.";
                 return;
             }
 
-            tuning[0] = new VerletCableTuningDTO
+            VerletCableTuningDTO tuning = new VerletCableTuningDTO
             {
                 Gravity = new float3(0f, _gravity.value, 0f),
                 FluidFriction = math.saturate(_friction.value),
@@ -137,7 +123,9 @@ namespace Hecton8.Editor
                 ReelSpeedMetersPerSecond = math.max(0.001f, _reelSpeed.value),
                 Reserved0 = math.clamp(_splineSteps.value, 10, 64)
             };
-            _status.text = "SHINOBU_132 tuning written.";
+            _status.text = CablePhysicsSolver132.TryWriteTuning(vault, in tuning)
+                ? "SHINOBU_132 tuning written."
+                : "GlobalDataVault unavailable.";
         }
 
         private void ReloadCsv()
@@ -158,12 +146,6 @@ namespace Hecton8.Editor
                 return;
             }
 
-            if (!CablePhysicsSolver132.TryOpenOrAcquireMaterialView(vault, out NativeArray<CableMaterialDTO> materials))
-            {
-                _status.text = "Cable material Vault lane unavailable.";
-                return;
-            }
-
             FileInfo info = new FileInfo(path);
             if (info.Length <= 0L || info.Length > 1048576L)
             {
@@ -174,7 +156,7 @@ namespace Hecton8.Editor
             using (NativeArray<byte> csvBytes = new NativeArray<byte>((int)info.Length, Allocator.Temp, NativeArrayOptions.UninitializedMemory))
             {
                 int bytesRead = ReadFileIntoNativeScratch(path, csvBytes);
-                int parsed = ParseCsvBytes(csvBytes, bytesRead, materials);
+                int parsed = TryApplyCsvBytes(vault, csvBytes, bytesRead);
                 _status.text = parsed > 0 ? "CSV materials applied to SHINOBU_132." : "CSV parsed no rows.";
             }
         }
@@ -209,7 +191,7 @@ namespace Hecton8.Editor
                 " | hash 0x" + entry.StateHash.ToString("X8");
         }
 
-        private static bool TryResolveTuning(out NativeArray<VerletCableTuningDTO> tuning)
+        private static bool TryResolveTuning(out VerletCableTuningDTO tuning)
         {
             tuning = default;
             IDataVault vault = GlobalRegistry.DataVault;
@@ -217,10 +199,7 @@ namespace Hecton8.Editor
                 return false;
 
             CablePhysicsSolver132.EnsureMockBuffers(vault, HomeostasisBrain.GlobalQualityWeight, 0u);
-            if (!CablePhysicsSolver132.TryOpenOrAcquireTuningView(vault, out tuning))
-                return false;
-
-            return tuning.IsCreated && tuning.Length > 0;
+            return CablePhysicsSolver132.TrySampleTuning(vault, out tuning);
         }
 
         private static unsafe int ReadFileIntoNativeScratch(string path, NativeArray<byte> scratch)
@@ -235,13 +214,14 @@ namespace Hecton8.Editor
             }
         }
 
-        private static unsafe int ParseCsvBytes(NativeArray<byte> csvBytes, int byteCount, NativeArray<CableMaterialDTO> materials)
+        private static unsafe int TryApplyCsvBytes(IDataVault vault, NativeArray<byte> csvBytes, int byteCount)
         {
             if (!csvBytes.IsCreated || byteCount <= 0)
                 return 0;
 
             byte* pointer = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(csvBytes);
-            return CableMaterialCsvParser.ParseHashTable(new ReadOnlySpan<byte>(pointer, math.min(byteCount, csvBytes.Length)), materials);
+            ReadOnlySpan<byte> span = new ReadOnlySpan<byte>(pointer, math.min(byteCount, csvBytes.Length));
+            return CablePhysicsSolver132.TryApplyMaterialCsv(vault, span, out int parsed) ? parsed : 0;
         }
     }
 }
