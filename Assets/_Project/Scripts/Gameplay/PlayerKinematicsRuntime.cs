@@ -760,7 +760,7 @@ namespace Hecton8.Gameplay
                 _vault = null;
             }
 
-            public NativeArray<T> GetSubArray(int start, int length)
+            private NativeArray<T> GetSubArray(int start, int length)
             {
                 NativeArray<T> buffer = ResolveExisting();
                 return buffer.IsCreated ? buffer.GetSubArray(start, length) : default;

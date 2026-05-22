@@ -713,7 +713,7 @@ namespace Hecton8.AI
                 }
             }
 
-            public NativeArray<T> Open()
+            private NativeArray<T> Open()
             {
                 if (!IsCreated ||
                     _dataVault == null ||

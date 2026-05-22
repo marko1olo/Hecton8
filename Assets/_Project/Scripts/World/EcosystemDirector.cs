@@ -303,12 +303,12 @@ namespace Hecton8.World
                 }
             }
 
-            public NativeArray<T> GetSubArray(int start, int length)
+            private NativeArray<T> GetSubArray(int start, int length)
             {
                 return _array.IsCreated ? _array.GetSubArray(start, length) : default;
             }
 
-            public NativeArray<T> Resolve()
+            private NativeArray<T> Resolve()
             {
                 if (_array.IsCreated)
                     return _array;

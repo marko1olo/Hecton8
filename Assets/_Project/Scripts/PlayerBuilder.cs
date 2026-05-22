@@ -3080,16 +3080,13 @@ namespace Hecton8.Building
             _lastConstructionWorldSampler = worldSampler;
 
             IDataVault telemetryVault = _shinobuSocketVault;
-            if (ModularBaseConstructionValidator.EnsureTelemetryRing(telemetryVault, out var telemetryRing))
-            {
-                ModularBaseConstructionValidator.WriteTelemetry(
-                    telemetryRing,
-                    settings.Frame != 0u ? settings.Frame : CaptureShinobuFrameId(),
-                    in request,
-                    in result,
-                    0f,
-                    0u);
-            }
+            ModularBaseConstructionValidator.TryWriteTelemetryToVault(
+                telemetryVault,
+                settings.Frame != 0u ? settings.Frame : CaptureShinobuFrameId(),
+                in request,
+                in result,
+                0f,
+                0u);
 
             if ((result.FailureFlags & (uint)ConstructionValidationFlags.NonFiniteInput) != 0u)
             {

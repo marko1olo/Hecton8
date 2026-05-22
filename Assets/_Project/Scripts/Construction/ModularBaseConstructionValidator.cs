@@ -568,7 +568,22 @@ namespace Hecton8.Construction
             return telemetryBuffer.IsCreated && telemetryBuffer.Length > 0;
         }
 
-        public static bool EnsureTelemetryRing(
+        public static bool TryWriteTelemetryToVault(
+            IDataVault vault,
+            uint frame,
+            in ConstructionRequestDTO request,
+            in ConstructionValidationResultDTO result,
+            float globalQualityWeight,
+            uint flags)
+        {
+            if (!EnsureTelemetryRing(vault, out NativeArray<ConstructionTelemetryEntry> telemetryRing))
+                return false;
+
+            WriteTelemetry(telemetryRing, frame, in request, in result, globalQualityWeight, flags);
+            return true;
+        }
+
+        private static bool EnsureTelemetryRing(
             IDataVault vault,
             out NativeArray<ConstructionTelemetryEntry> telemetryRing)
         {
@@ -588,7 +603,7 @@ namespace Hecton8.Construction
             return telemetryRing.IsCreated && telemetryRing.Length > 0;
         }
 
-        public static bool EnsureBoundsOverrideBuffer(
+        private static bool EnsureBoundsOverrideBuffer(
             IDataVault vault,
             out NativeArray<StructuralBoundsDTO> boundsBuffer)
         {
@@ -621,7 +636,7 @@ namespace Hecton8.Construction
             return mutableOccupancyTable.IsCreated && mutableOccupancyTable.Length > 0;
         }
 
-        public static bool EnsureOccupancyHashTable(
+        private static bool EnsureOccupancyHashTable(
             IDataVault vault,
             out NativeArray<BaseModuleOccupancyDTO> occupancyTable)
         {

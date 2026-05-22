@@ -617,7 +617,7 @@ namespace Hecton8.Physics
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public NativeArray<T> OpenView()
+            private NativeArray<T> OpenView()
             {
                 if (_vault == null ||
                     !IsVehiclesPhysicsHandle(in _handle) ||

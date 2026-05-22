@@ -1258,3 +1258,27 @@ Cinematic Cheats used: Existing world sanity validation still patches anomaly th
 Exact Microseconds saved: 0 us measured. Static hygiene gain: `nativeCollectionPublicMutableApiExposure` 103 -> 102, `nativeApiExposureBuildEditorOnly` 3 -> 2, `nativeApiExposureMutableReturn` 28 -> 27, and `nativeApiRiskEditorOrProofSurface` 10 -> 9 in `Docs/Reports/PROJECT_AUDIT_polish_after_geography_profile_store.json`.
 
 Verification: Focused public/internal native signature scan found no `GeographySanityProfileCsv` public native collection API. `python Tools\test_polish_mandate_static_audit.py` passed 12 tests. Static audit status remained `PASS_WITH_WARNINGS`. `git diff --check` reported only LF/CRLF normalization warnings. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Topography Recipe CSV Store Split
+
+What was wrong: `TopographyBiomeCsv.LoadRecipes` and `AppendDefaultRecipes` exported editor CSV recipe loading through public `ref NativeList<TopographyBiomeRecipeDTO>` signatures. The topography preview and bake generator only need count plus indexed recipe reads before copying to kernel DTOs.
+
+What was done: Added `TopographyBiomeRecipeStore` as a disposable editor-only owner wrapper, changed `LoadRecipes` to return that wrapper, made default recipe append/factory helpers private, updated preview and bake generator consumers, and added exception cleanup so parse failures dispose the newly created NativeList before rethrow.
+
+Cinematic Cheats used: Existing topography preview remains a compact recipe-to-kernel path feeding preview jobs, not scene mesh/GameObject terrain instantiation. No physical simulation was added.
+
+Exact Microseconds saved: 0 us measured. Static hygiene gain: `nativeCollectionPublicMutableApiExposure` 102 -> 100, `nativeApiExposureBuildEditorOnly` 2 -> 0, `nativeApiExposureOutRefMutable` 75 -> 73, and `nativeApiRiskEditorOrProofSurface` 9 -> 7 in `Docs/Reports/PROJECT_AUDIT_polish_after_topography_recipe_store.json`.
+
+Verification: Focused scan found no public/internal native collection signatures in `TopographyBiomeCsv`. `python Tools\test_polish_mandate_static_audit.py` passed 12 tests. Static audit status remained `PASS_WITH_WARNINGS`. `git diff --check` on touched Topography files passed with no output. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Private Wrapper Tail Scope Pass
+
+What was wrong: Five native-return helper methods inside private implementation wrappers still used `public`: `PredatorCognitionDomain.VaultArray<T>.Open`, `PlayerKinematicsRuntime.VaultBufferBinding<T>.GetSubArray`, `SubmarineFluidDynamics.VaultNativeBuffer<T>.OpenView`, and `EcosystemDirector.VaultNativeArray<T>.GetSubArray/Resolve`.
+
+What was done: Narrowed those methods to private. Owner code still reaches them through containing-type access and existing implicit operators/indexers; Vault handles, DTOs, and job memory routes are unchanged.
+
+Cinematic Cheats used: Scope cleanup only. Existing systems keep their DataVault-backed SoA lanes and shader/DTO presentation tricks; no new simulation was added.
+
+Exact Microseconds saved: 0 us measured. Static hygiene gain: `nativeApiExposurePrivateNestedSuppressed` 5 -> 0 in `Docs/Reports/PROJECT_AUDIT_polish_after_private_wrapper_tail_scope.json`. Public mutable counters remained `nativeCollectionPublicMutableApiExposure=100`, `nativeApiExposureBuildPlayerRuntime=93`, and `nativeApiExposureOutRefMutable=73`.
+
+Verification: Focused scan found no public/internal native wrapper methods matching the selected names. `python Tools\test_polish_mandate_static_audit.py` passed 12 tests. Static audit status remained `PASS_WITH_WARNINGS`. `git diff --check` reported only LF/CRLF normalization warnings. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
