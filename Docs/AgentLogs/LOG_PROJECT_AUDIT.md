@@ -600,3 +600,27 @@ Cinematic Cheats used: No simulation was added. The lighting debug path remains 
 Exact Microseconds saved: 0 us measured. Static outcome: broad audit dropped `nativeCollectionPublicMutableApiExposure` from `209` to `203`, and `nativeApiExposureOutRefMutable` from `158` to `152`.
 
 Evidence: Focused scans found only read-only signatures/call sites for the narrowed lighting readbacks. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_after_lighting_readonly_readbacks.json` returned `PASS_WITH_WARNINGS` with `nativeCollectionPublicMutableApiExposure=203`, `nativeApiExposureBuildPlayerRuntime=190`, `nativeApiExposureOutRefMutable=152`, and `nativeApiRiskRuntimeDiagnosticNamedMutableView=45`. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Rollback Snapshot Read-Only Narrowing
+
+What was wrong: Rollback visual state/history and telemetry snapshot APIs returned mutable native arrays to editor-only diagnostics.
+
+What was done: Converted `TryGetVisualStates`, `TryGetVisualHistory`, `TryGetTelemetry`, and `TryGetInputPredictionTelemetry` to read-only views. Updated `RollbackNetcodeTunerWindow` to use read-only telemetry/state arrays and length checks.
+
+Cinematic Cheats used: No simulation was added. Rollback diagnostics remain an editor/gizmo projection over existing ring buffers, not copied managed history or scene-object markers.
+
+Exact Microseconds saved: 0 us measured. Static outcome: broad audit dropped `nativeCollectionPublicMutableApiExposure` from `203` to `199`, and `nativeApiExposureOutRefMutable` from `152` to `148`.
+
+Evidence: Focused scans found only read-only rollback snapshot signatures/call sites. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_after_rollback_readonly_snapshots.json` returned `PASS_WITH_WARNINGS` with `nativeCollectionPublicMutableApiExposure=199`, `nativeApiExposureBuildPlayerRuntime=186`, `nativeApiExposureOutRefMutable=148`, and `nativeApiRiskRuntimeOutRefMutableView=87`. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Physics Debug Readback Read-Only Narrowing
+
+What was wrong: Ballistics debug buffers, ballistics impact VFX staging, habitat fluid active compartment snapshots, and hydrodynamic KCC editor telemetry exposed owner-owned native arrays as mutable views to debug/editor readers.
+
+What was done: Converted the selected physics/debug accessors and their observed consumers to `NativeArray<T>.ReadOnly`. Owner mutation, topology/source installation, runtime job buffers, and Vault open helpers remain mutable where they own writes.
+
+Cinematic Cheats used: No simulation was added. Ballistics, compartment, and KCC diagnostics stay as cheap readback/gizmo overlays over existing native state instead of copied managed records or scene-object probes.
+
+Exact Microseconds saved: 0 us measured. Static outcome: broad audit dropped `nativeCollectionPublicMutableApiExposure` from `199` to `194`, `nativeApiExposureOutRefMutable` from `148` to `143`, and `nativeApiExposureBuildPlayerRuntime` from `186` to `181`.
+
+Evidence: Focused scans found only read-only signatures/call sites for the narrowed routes. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_after_physics_debug_readonly.json` returned `PASS_WITH_WARNINGS` with `nativeCollectionPublicMutableApiExposure=194`, `nativeApiExposureBuildPlayerRuntime=181`, `nativeApiExposureOutRefMutable=143`, `nativeApiRiskRuntimeDiagnosticNamedMutableView=39`, and `nativeApiRiskRuntimeOutRefMutableView=86`. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.

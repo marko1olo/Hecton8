@@ -189,40 +189,60 @@ namespace Hecton8.Networking
             return true;
         }
 
-        public static bool TryGetVisualStates(out NativeArray<VisualStateDTO> visualStates)
+        public static bool TryGetVisualStates(out NativeArray<VisualStateDTO>.ReadOnly visualStates)
         {
             visualStates = default;
             if (!TryGetReadyActiveInstance(out HectonRollbackNetcodeRuntime runtime))
                 return false;
 
-            return runtime.TryReadOwned(in runtime._visualStateHandle, out visualStates);
+            if (!runtime.TryReadOwned(in runtime._visualStateHandle, out NativeArray<VisualStateDTO> mutableVisualStates) ||
+                !mutableVisualStates.IsCreated)
+                return false;
+
+            visualStates = mutableVisualStates.AsReadOnly();
+            return visualStates.Length > 0;
         }
 
-        public static bool TryGetVisualHistory(out NativeArray<VisualStateHistoryDTO> visualHistory)
+        public static bool TryGetVisualHistory(out NativeArray<VisualStateHistoryDTO>.ReadOnly visualHistory)
         {
             visualHistory = default;
             if (!TryGetReadyActiveInstance(out HectonRollbackNetcodeRuntime runtime))
                 return false;
 
-            return runtime.TryReadOwned(in runtime._visualHistoryHandle, out visualHistory);
+            if (!runtime.TryReadOwned(in runtime._visualHistoryHandle, out NativeArray<VisualStateHistoryDTO> mutableVisualHistory) ||
+                !mutableVisualHistory.IsCreated)
+                return false;
+
+            visualHistory = mutableVisualHistory.AsReadOnly();
+            return visualHistory.Length > 0;
         }
 
-        public static bool TryGetTelemetry(out NativeArray<NetTelemetryEntry64> telemetry)
+        public static bool TryGetTelemetry(out NativeArray<NetTelemetryEntry64>.ReadOnly telemetry)
         {
             telemetry = default;
             if (!TryGetReadyActiveInstance(out HectonRollbackNetcodeRuntime runtime))
                 return false;
 
-            return runtime.TryReadOwned(in runtime._telemetryHandle, out telemetry);
+            if (!runtime.TryReadOwned(in runtime._telemetryHandle, out NativeArray<NetTelemetryEntry64> mutableTelemetry) ||
+                !mutableTelemetry.IsCreated)
+                return false;
+
+            telemetry = mutableTelemetry.AsReadOnly();
+            return telemetry.Length > 0;
         }
 
-        public static bool TryGetInputPredictionTelemetry(out NativeArray<InputPredictionTelemetryEntry> telemetry)
+        public static bool TryGetInputPredictionTelemetry(out NativeArray<InputPredictionTelemetryEntry>.ReadOnly telemetry)
         {
             telemetry = default;
             if (!TryGetReadyActiveInstance(out HectonRollbackNetcodeRuntime runtime))
                 return false;
 
-            return runtime.TryReadOwned(in runtime._inputPredictionTelemetryHandle, out telemetry);
+            if (!runtime.TryReadOwned(in runtime._inputPredictionTelemetryHandle, out NativeArray<InputPredictionTelemetryEntry> mutableTelemetry) ||
+                !mutableTelemetry.IsCreated)
+                return false;
+
+            telemetry = mutableTelemetry.AsReadOnly();
+            return telemetry.Length > 0;
         }
 
         public static bool TryGetPredictedInputCapacity(out int capacity)

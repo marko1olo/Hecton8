@@ -20,7 +20,11 @@ namespace Hecton8.Power
 
             SubmarineOsThermalGridRuntime runtime = SubmarineOsThermalGridRuntime.Active;
             if (runtime == null ||
-                !runtime.TryGetGridReadback(out NativeArray<GridNodeDTO> nodes, out NativeArray<ThermalGridAnchorDTO> anchors, out _, out int nodeCount))
+                !runtime.TryGetGridReadback(
+                    out NativeArray<GridNodeDTO>.ReadOnly nodes,
+                    out NativeArray<ThermalGridAnchorDTO>.ReadOnly anchors,
+                    out _,
+                    out int nodeCount))
             {
                 return;
             }

@@ -483,14 +483,26 @@ namespace Hecton8.Thermodynamics
         /// <summary>
         /// Copies front-grid metadata for editor gizmos without exposing managed collections.
         /// </summary>
-        public bool TryGetGridReadback(out NativeArray<float> temperature, out NativeArray<float> radiation, out int resolution, out double3 originAup, out float cellSize, out int version)
+        public bool TryGetGridReadback(
+            out NativeArray<float>.ReadOnly temperature,
+            out NativeArray<float>.ReadOnly radiation,
+            out int resolution,
+            out double3 originAup,
+            out float cellSize,
+            out int version)
         {
-            bool hasTemperature = TryOpenReadArray(in _temperatureFront, ActiveCellCount, out temperature);
-            bool hasRadiation = TryOpenReadArray(in _radiationFront, ActiveCellCount, out radiation);
+            temperature = default;
+            radiation = default;
+            bool hasTemperature = TryOpenReadArray(in _temperatureFront, ActiveCellCount, out NativeArray<float> mutableTemperature);
+            bool hasRadiation = TryOpenReadArray(in _radiationFront, ActiveCellCount, out NativeArray<float> mutableRadiation);
             resolution = _activeResolution;
             originAup = _gridOriginAup;
             cellSize = cellSizeMeters;
             version = _gridVersion;
+            if (hasTemperature)
+                temperature = mutableTemperature.AsReadOnly();
+            if (hasRadiation)
+                radiation = mutableRadiation.AsReadOnly();
             return hasTemperature && hasRadiation;
         }
 
@@ -511,7 +523,13 @@ namespace Hecton8.Thermodynamics
         /// <summary>
         /// Reads already prepared Vault-backed mirror views for editor visualization.
         /// </summary>
-        public bool TryGetVaultGridReadback(out NativeArray<float> temperature, out NativeArray<float> radiation, out int resolution, out double3 originAup, out float cellSize, out int version)
+        public bool TryGetVaultGridReadback(
+            out NativeArray<float>.ReadOnly temperature,
+            out NativeArray<float>.ReadOnly radiation,
+            out int resolution,
+            out double3 originAup,
+            out float cellSize,
+            out int version)
         {
             temperature = default;
             radiation = default;
@@ -520,19 +538,21 @@ namespace Hecton8.Thermodynamics
             cellSize = cellSizeMeters;
             version = _gridVersion;
 
-            if (!TryOpenReadArray(in _vaultTemperatureFrontMirror, ActiveCellCount, out temperature) ||
-                !TryOpenReadArray(in _vaultRadiationFrontMirror, ActiveCellCount, out radiation))
+            if (!TryOpenReadArray(in _vaultTemperatureFrontMirror, ActiveCellCount, out NativeArray<float> mutableTemperature) ||
+                !TryOpenReadArray(in _vaultRadiationFrontMirror, ActiveCellCount, out NativeArray<float> mutableRadiation))
             {
                 temperature = default;
                 radiation = default;
                 return false;
             }
 
+            temperature = mutableTemperature.AsReadOnly();
+            radiation = mutableRadiation.AsReadOnly();
             resolution = _activeResolution;
             originAup = _gridOriginAup;
             cellSize = cellSizeMeters;
             version = _vaultMirrorVersion;
-            return temperature.IsCreated && radiation.IsCreated;
+            return temperature.Length > 0 && radiation.Length > 0;
         }
 
         private int ActiveCellCount => _activeResolution * _activeResolution * _activeResolution;

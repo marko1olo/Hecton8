@@ -354,7 +354,7 @@ namespace Hecton8.Physics
         }
 
         /// <summary>Returns the currently readable flood compartment buffer for editor/debug consumers.</summary>
-        public bool TryGetActiveCompartmentSnapshot(out NativeArray<FluidCompartmentDTO> compartments, out int count)
+        public bool TryGetActiveCompartmentSnapshot(out NativeArray<FluidCompartmentDTO>.ReadOnly compartments, out int count)
         {
             if (!_buffersReady || _vault == null || _hasScheduled)
             {
@@ -363,8 +363,16 @@ namespace Hecton8.Physics
                 return false;
             }
 
-            compartments = ResolveActiveCompartments();
-            count = compartments.IsCreated ? math.min(compartmentCount, compartments.Length) : 0;
+            NativeArray<FluidCompartmentDTO> mutableCompartments = ResolveActiveCompartments();
+            if (!mutableCompartments.IsCreated)
+            {
+                compartments = default;
+                count = 0;
+                return false;
+            }
+
+            compartments = mutableCompartments.AsReadOnly();
+            count = math.min(compartmentCount, compartments.Length);
             return count > 0;
         }
 
@@ -1181,7 +1189,7 @@ namespace Hecton8.Physics
 
         private void OnDrawGizmos()
         {
-            if (!drawHeatmapGizmos || !TryGetActiveCompartmentSnapshot(out NativeArray<FluidCompartmentDTO> compartments, out int count))
+            if (!drawHeatmapGizmos || !TryGetActiveCompartmentSnapshot(out NativeArray<FluidCompartmentDTO>.ReadOnly compartments, out int count))
                 return;
 
             int capacity = ResolveCompartmentCapacity();

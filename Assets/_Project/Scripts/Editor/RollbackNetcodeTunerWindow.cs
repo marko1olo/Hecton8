@@ -150,7 +150,7 @@ namespace Hecton8.Editor
             bool hasPacketTelemetry = false;
             uint droppedPackets = 0u;
             uint duplicatedPackets = 0u;
-            if (HectonRollbackNetcodeRuntime.TryGetTelemetry(out Unity.Collections.NativeArray<NetTelemetryEntry64> telemetry) && telemetry.IsCreated && telemetry.Length > 0)
+            if (HectonRollbackNetcodeRuntime.TryGetTelemetry(out Unity.Collections.NativeArray<NetTelemetryEntry64>.ReadOnly telemetry) && telemetry.Length > 0)
             {
                 NetTelemetryEntry64 entry = telemetry[(int)(math.max(0, _hashCursor - 1) % telemetry.Length)];
                 droppedPackets = entry.DroppedPackets;
@@ -161,7 +161,7 @@ namespace Hecton8.Editor
             bool hasInputTelemetry = false;
             uint packetRedundancyCount = 0u;
             uint dearLieCount = 0u;
-            if (HectonRollbackNetcodeRuntime.TryGetInputPredictionTelemetry(out Unity.Collections.NativeArray<InputPredictionTelemetryEntry> inputTelemetry) && inputTelemetry.IsCreated && inputTelemetry.Length > 0)
+            if (HectonRollbackNetcodeRuntime.TryGetInputPredictionTelemetry(out Unity.Collections.NativeArray<InputPredictionTelemetryEntry>.ReadOnly inputTelemetry) && inputTelemetry.Length > 0)
             {
                 InputPredictionTelemetryEntry entry = inputTelemetry[(int)(math.max(0, _hashCursor - 1) % inputTelemetry.Length)];
                 packetRedundancyCount = entry.PacketRedundancyCount;
@@ -354,7 +354,7 @@ namespace Hecton8.Editor
 
         private static void DrawSceneGizmos(SceneView view)
         {
-            if (!HectonRollbackNetcodeRuntime.TryGetVisualStates(out Unity.Collections.NativeArray<VisualStateDTO> states) || !states.IsCreated)
+            if (!HectonRollbackNetcodeRuntime.TryGetVisualStates(out Unity.Collections.NativeArray<VisualStateDTO>.ReadOnly states) || states.Length <= 0)
                 return;
 
             for (int i = 0; i < states.Length; i++)

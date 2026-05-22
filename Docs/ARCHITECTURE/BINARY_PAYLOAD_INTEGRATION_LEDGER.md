@@ -4,6 +4,14 @@ Date: 2026-05-18
 Owner lane: H8BIN_GRAVEYARD_AUDITOR
 Status: STATIC SOURCE / FILESYSTEM LEDGER, RUNTIME PENDING
 
+## 2026-05-22 - SHINOBU_270 Visor AR Stencil Waypoint Quarantine And H8BIN Current Refresh
+
+- Owner: `SHINOBU_270 / VISOR_AR_STENCIL_RENDERER`, Echelon 8 Presentation & UX visor-HUD visual route. Evidence class: STATIC_SOURCE / STATIC_DOC / STATIC_TOOL only; Unity import, Play Mode, profiler, Frame Debugger, player-build, and SHINOBU_270 compile proof remain pending.
+- Authority delta: active stencil mode no longer consumes `EmergencyServiceRelayDirector` or `HectonMapMagicVegetationBridge` concrete provider reads. `ARWaypointOverlay` clears those caches when stencil mode activates and copies only externally registered waypoint snapshots until an owner-published relay/anchor snapshot route exists. Legacy Canvas mode may still use the old concrete providers; that path is outside the active stencil RenderGraph route.
+- Binary payload impact: none. BufferIDs `73180..73186`, DTO byte sizes, CBuffer/StructuredBuffer strides, telemetry dump ABI, CSV scratch lane, rollback/Merkle exclusion, save identity, and shader binding names are unchanged.
+- H8BIN current-report refresh: canonical `Tools/h8bin_validator.py` refreshed `Docs/Reports/SHINOBU_258_h8bin_validation_current.json` and `.junit.xml` using limited runtime roots `Assets/_Project/Scripts/Rendering/WaterOptics` and `Assets/_Project/Scripts/Visor`. Current failure is `STATIC_DATA_MISSING` for `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin`; stale Visor/WaterOptics runtime text `StreamingAssets` findings are absent from the refreshed current report.
+- Compile/report caveat: `HUDCanvasInquisition` actual path is `Assets/_Project/Scripts/UI/Editor/HUDCanvasInquisition.cs`. Generated `Hecton8.Core.csproj` remains stale for new SHINOBU_270 renderer/gizmo scripts, and the latest recorded full `Hecton8.slnx` build is red outside this route in Visor RenderGraph texture binding.
+
 ## 2026-05-22 - SHINOBU_270 Visor AR Descriptor Release Route
 
 - Owner: `SHINOBU_270 / VISOR_AR_STENCIL_RENDERER`, Echelon 8 Presentation & UX visor-HUD visual route. Evidence class: STATIC_SOURCE / STATIC_DOC only; Unity import, Play Mode, Memory Profiler, Frame Debugger, player-build, and compile proof remain pending.
@@ -4987,14 +4995,6 @@ Fault route: `ExosuitTelemetryEntry[300]` dumps fixed 64-byte rows to `Docs/Agen
 - Authority impact: WorldStreaming remains the owner. The patch removes external-view marking at cold acquisition while preserving existing fallback allocation and release-mask semantics.
 - Verification: focused scan clean for `TryGetBuffer`, `GetBuffer<`, `GetBufferHandle`, `TryGetBufferHandle`, `VaultBufferHandle<`, `ResolvePointer`, `GetElementAsRef`, `GetElementAsReadOnlyRef`, and `.ptr` in `WorldChunkResidencyManager.cs`; brace/preprocessor counts `489/489` and `15/15`; `git diff --check` passed. Build was not launched because `VBCSCompiler.exe` is active and full `Hecton8.slnx` remains blocked by external Visor RenderGraph texture-binding errors.
 
-## 2026-05-22 - SHINOBU_SYSTEMIC_SURGEON Carve Debris Compute Quality Continuum
-
-- `Assets/_Project/Scripts/VFX/Debris/CarveDebrisComputeRenderer.cs` now routes debris compute/render policy through continuous `qualityPressure01` and `visualOverkill01` from `SignalBusRegistry.GlobalQualityWeight01`; no DTO, SignalBus payload, BufferID, save identity, or asmdef dependency changed.
-- Binary payload impact: none. `CarveDebrisRequest` remains explicit 64 bytes with field offsets 0/12/24/28/32/36/40 plus 20 bytes padding. `CarveDebrisTelemetryEntry` remains explicit 64 bytes with offsets 0/4/8/12/16/20/24 plus 28 bytes padding. Telemetry flag bit position 1 is preserved but now means quality-pressure state, not hardware tier identity.
-- Vault route impact: unchanged. Runtime still requests `BufferID.CarveDebris`, `CarveDebrisVelocity`, `CarveDebrisRequests`, `CarveDebrisJobState`, and `CarveDebrisBlackBox` through Vault generation handles.
-- Shader route impact: `Assets/_Project/Art/Shaders/Hecton_FluidAdvection.compute` now treats flow/SDF/wake inputs as weights and quality pressure; `Assets/_Project/Art/Shaders/Hecton_CarveDebrisIndirect.shader` now scales spin, shadows, crystal relief, salt, rim, and fake subsurface through `visualOverkill01`. No shader variants were added.
-- Verification: focused scans found no carve-debris scalability listener route, no debris low/high tier shader gates, no `Pack=1`, no new native container allocation, and no `.Schedule()`/`.Complete()` in the touched runtime file. `git diff --check` passed with CRLF warnings only. Build was not launched because CPU was 22% but `VBCSCompiler` process `47044` was active.
-
 ## 2026-05-22 - SHINOBU_202 Flora VFX Vault Descriptor Route
 
 - `Assets/_Project/Scripts/World/FloraInteractionManager.cs` replaced ten pointer-bearing VFX Vault lanes with `VaultGenerationHandle<T>` descriptor routes.
@@ -5009,3 +5009,11 @@ Fault route: `ExosuitTelemetryEntry[300]` dumps fixed 64-byte rows to `Docs/Agen
 - Shader/render route impact: shared dry-volume shader now samples `_OceanCameraColorTexture`; `HectonDryVolumeFeature` obtains the donor texture through `IOceanVisualBridge.CameraColorTextureId` and republishes it to the vendor-neutral global. Crest-specific global identity stays inside the bridge.
 - Archive impact: stale profiler `.tvc` payloads and active CrestMigration dump payloads moved to `Docs/Archive/Crest_Version_Quarantine/`. These are forensic/tooling payloads, not runtime authority data.
 - Verification: `dotnet build Hecton8.slnx -nologo -clp:ErrorsOnly -maxcpucount:1` passed after generated-project cleanup with 0 errors and 171 warnings. Final Loop 23 static gates passed: `git diff --check`, report JSON/XML parse, py_compile, `Crest_Dependency_Scanner.py` with `breach_count=0`, and `Crest_Quarantine_Polish_Audit.py` with `failed_count=0`. Second build after the render-pass/shader patch was not launched because `VBCSCompiler` was active and CPU sampled at 89.8 percent.
+
+## 2026-05-22 - SHINOBU_SYSTEMIC_SURGEON Carve Debris Compute Quality Continuum
+
+- `Assets/_Project/Scripts/VFX/Debris/CarveDebrisComputeRenderer.cs` now routes debris compute/render policy through continuous `qualityPressure01` and `visualOverkill01` from `SignalBusRegistry.GlobalQualityWeight01`; no DTO, SignalBus payload, BufferID, save identity, or asmdef dependency changed.
+- Binary payload impact: none. `CarveDebrisRequest` remains explicit 64 bytes with field offsets 0/12/24/28/32/36/40 plus 20 bytes padding. `CarveDebrisTelemetryEntry` remains explicit 64 bytes with offsets 0/4/8/12/16/20/24 plus 28 bytes padding. Telemetry flag bit position 1 is preserved but now means quality-pressure state, not hardware tier identity.
+- Vault route impact: unchanged. Runtime still requests `BufferID.CarveDebris`, `CarveDebrisVelocity`, `CarveDebrisRequests`, `CarveDebrisJobState`, and `CarveDebrisBlackBox` through Vault generation handles.
+- Shader route impact: `Assets/_Project/Art/Shaders/Hecton_FluidAdvection.compute` now treats flow/SDF/wake inputs as weights and quality pressure; `Assets/_Project/Art/Shaders/Hecton_CarveDebrisIndirect.shader` now scales spin, shadows, crystal relief, salt, rim, and fake subsurface through `visualOverkill01`. No shader variants were added.
+- Verification: focused scans found no carve-debris scalability listener route, no debris low/high tier shader gates, no `Pack=1`, no new native container allocation, and no `.Schedule()`/`.Complete()` in the touched runtime file. `git diff --check` passed with CRLF warnings only. Build was not launched because CPU was 22% but `VBCSCompiler` process `47044` was active.

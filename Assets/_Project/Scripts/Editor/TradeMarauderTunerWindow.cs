@@ -92,9 +92,9 @@ namespace Hecton8.Editor
             TradeMarauderDirector director = TradeMarauderDirector.ActiveForEditor;
             if (director == null ||
                 !director.TryResolveEditorViews(
-                    out NativeArray<MarauderStateDTO> states,
-                    out NativeArray<MarauderRouteNodeDTO> routes,
-                    out NativeArray<byte> routeCounts))
+                    out NativeArray<MarauderStateDTO>.ReadOnly states,
+                    out NativeArray<MarauderRouteNodeDTO>.ReadOnly routes,
+                    out NativeArray<byte>.ReadOnly routeCounts))
             {
                 return;
             }

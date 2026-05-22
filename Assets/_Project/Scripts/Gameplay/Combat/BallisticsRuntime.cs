@@ -1059,11 +1059,11 @@ namespace Hecton8.Gameplay
         }
 
         internal static bool TryGetDebugBuffers(
-            out NativeArray<BallisticTrajectoryDTO> trajectories,
+            out NativeArray<BallisticTrajectoryDTO>.ReadOnly trajectories,
             out int trajectoryCount,
-            out NativeArray<AABBPrimitiveDTO> primitives,
+            out NativeArray<AABBPrimitiveDTO>.ReadOnly primitives,
             out int primitiveCount,
-            out NativeArray<BallisticHitResultDTO> hits)
+            out NativeArray<BallisticHitResultDTO>.ReadOnly hits)
         {
             trajectories = default;
             primitives = default;
@@ -1077,16 +1077,22 @@ namespace Hecton8.Gameplay
             if (_jobScheduled)
                 return false;
 
-            trajectories = ResolveActiveOrWriteTrajectories();
-            primitives = OpenVaultLane(in _primitiveHandle);
-            hits = OpenVaultLane(in _hitHandle);
+            NativeArray<BallisticTrajectoryDTO> mutableTrajectories = ResolveActiveOrWriteTrajectories();
+            NativeArray<AABBPrimitiveDTO> mutablePrimitives = OpenVaultLane(in _primitiveHandle);
+            NativeArray<BallisticHitResultDTO> mutableHits = OpenVaultLane(in _hitHandle);
+            if (!mutableTrajectories.IsCreated || !mutablePrimitives.IsCreated || !mutableHits.IsCreated)
+                return false;
+
+            trajectories = mutableTrajectories.AsReadOnly();
+            primitives = mutablePrimitives.AsReadOnly();
+            hits = mutableHits.AsReadOnly();
             trajectoryCount = _activeReadCount > 0 ? _activeReadCount : _pendingTrajectoryCount;
             primitiveCount = _primitiveCount;
-            return trajectories.IsCreated && primitives.IsCreated && hits.IsCreated;
+            return trajectories.Length > 0 && primitives.Length > 0 && hits.Length > 0;
         }
 
         public static bool TryGetImpactVfxStaging(
-            out NativeArray<BallisticImpactVfxDTO> impactVfx,
+            out NativeArray<BallisticImpactVfxDTO>.ReadOnly impactVfx,
             out int stagingCount,
             out uint frame)
         {
@@ -1100,11 +1106,12 @@ namespace Hecton8.Gameplay
             if (_jobScheduled)
                 return false;
 
-            impactVfx = OpenVaultLane(in _impactVfxHandle);
+            NativeArray<BallisticImpactVfxDTO> mutableImpactVfx = OpenVaultLane(in _impactVfxHandle);
             NativeArray<BallisticsCountersDTO> counters = OpenVaultLane(in _counterHandle);
-            if (!impactVfx.IsCreated || !counters.IsCreated || counters.Length <= 0)
+            if (!mutableImpactVfx.IsCreated || !counters.IsCreated || counters.Length <= 0)
                 return false;
 
+            impactVfx = mutableImpactVfx.AsReadOnly();
             BallisticsCountersDTO counter = counters[0];
             frame = counter.Frame;
             uint clampedCount = math.min(counter.TrajectoriesProcessed, (uint)int.MaxValue);

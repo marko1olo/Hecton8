@@ -20,17 +20,17 @@ Evidence class: STATIC_SOURCE. No Unity import, compile, Play Mode, profiler, GC
 | `linqSurface` | 0 | 0 |
 | `nativeApiExposureAmbiguousMutable` | 0 | 0 |
 | `nativeApiExposureBuildEditorOnly` | 5 | 4 |
-| `nativeApiExposureBuildPlayerRuntime` | 190 | 86 |
+| `nativeApiExposureBuildPlayerRuntime` | 181 | 82 |
 | `nativeApiExposureBuildQaDevProof` | 8 | 2 |
 | `nativeApiExposureMutableReturn` | 51 | 33 |
-| `nativeApiExposureOutRefMutable` | 152 | 73 |
+| `nativeApiExposureOutRefMutable` | 143 | 69 |
 | `nativeApiRiskCoreVaultOrAllocatorSurface` | 21 | 3 |
 | `nativeApiRiskEditorOrProofSurface` | 13 | 6 |
 | `nativeApiRiskRuntimeAmbiguousMutableView` | 0 | 0 |
-| `nativeApiRiskRuntimeDiagnosticNamedMutableView` | 45 | 31 |
-| `nativeApiRiskRuntimeOutRefMutableView` | 89 | 48 |
+| `nativeApiRiskRuntimeDiagnosticNamedMutableView` | 39 | 27 |
+| `nativeApiRiskRuntimeOutRefMutableView` | 86 | 46 |
 | `nativeApiRiskRuntimeReturnMutableView` | 35 | 23 |
-| `nativeCollectionPublicMutableApiExposure` | 203 | 92 |
+| `nativeCollectionPublicMutableApiExposure` | 194 | 88 |
 | `noAlias` | 2192 | 218 |
 | `packOne` | 0 | 0 |
 | `privateNativeBuildEditorOnly` | 48 | 18 |
@@ -172,8 +172,8 @@ Evidence class: STATIC_SOURCE. No Unity import, compile, Play Mode, profiler, GC
 | `Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementRuntime.cs` | 4 |
 | `Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs` | 3 |
 | `Assets/_Project/Scripts/Core/Data/H8StaticDataContracts.cs` | 2 |
-| `Assets/_Project/Scripts/Networking/HectonRollbackNetcodeRuntime.cs` | 2 |
-| `Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs` | 2 |
+| `Assets/_Project/Scripts/Quest/QuestManager.cs` | 2 |
+| `Assets/_Project/Scripts/Rendering/OceanSinglePass/ShorelineFoamGraftContracts.cs` | 2 |
 
 ### nativeApiRiskRuntimeOutRefMutableView
 

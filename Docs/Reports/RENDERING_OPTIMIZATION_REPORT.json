@@ -15,6 +15,9 @@
     "renderGraphSuppressionProof": "Canvas suppression flips true only after ArPass.RecordRenderGraph creates the resolve target, assigns resourceData.cameraColor, and marks the player-camera frame as resolved; endCameraRendering clears renderer-owned suppression on authorized player-camera frames without same-frame resolve proof.",
     "stencilLaneProof": "Hecton_VisorStencilMask and Hidden/Hecton8/VisorAR hard-code reserved stencil bit 0 (Ref 1, WriteMask 1, ReadMask 1); AddRenderPasses does not mutate Material stencil properties.",
     "vaultBufferIds": "73180..73186 visual-only UI lanes, rollback/Merkle/save excluded",
+    "stencilWaypointSourceProof": "Stencil-mode ARWaypointOverlay clears EmergencyServiceRelayDirector and HectonMapMagicVegetationBridge concrete provider caches and copies only externally registered waypoint snapshots until an owner-published relay/anchor snapshot route exists.",
+    "h8binValidatorRefresh": "Current SHINOBU_258 h8bin validator report was refreshed with the canonical tool against limited Visor/WaterOptics runtime roots; remaining blocker is missing Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin.",
+    "hudCanvasInquisitionPath": "Assets/_Project/Scripts/UI/Editor/HUDCanvasInquisition.cs",
     "compileStatus": "PENDING_SHINOBU_270_SOURCE_VERIFICATION: generated Hecton8.Core.csproj is stale for new SHINOBU_270 scripts; latest recorded full Hecton8.slnx build is RED outside this route in Visor RenderGraph texture binding.",
     "notes": "This section preserves neighboring report objects and exposes the generated-project stale gate even when the Unity editor menu has not regenerated the report."
   },
@@ -39,6 +42,7 @@
     "forbiddenTokenScan": "Targeted visor/UI scan returned no Shader.SetGlobalVector/Float, Canvas.ForceUpdateCanvases, TryGetLatestCreated, BurstCompile/IJob tiny wrappers, runtime Persistent NativeArray, or GlobalSignals reads in HectonVisorARStencilRendererFeature.",
     "authorityPolish": "Removed legacy stress/origin bridge fallback from the RenderGraph prep path; missing player AUP clears visual AR targets and records telemetry instead of fabricating world projection.",
     "uiSuppressionPolish": "SuitHUDV4CanvasOverlay scene-load bootstrap now returns immediately while renderer-owned stencil mode is active; ARWaypointOverlay no longer polls vegetation bridge from Tick/SlowTick and receives MapMagicVegetationRuntime through cold registry cache or hot-swap.",
+    "activeStencilWaypointQuarantine": "Stencil-mode ARWaypointOverlay no longer consumes EmergencyServiceRelayDirector or HectonMapMagicVegetationBridge concrete providers; it clears those caches and copies only externally registered waypoint snapshots until owner-published relay/anchor snapshots exist.",
     "blackBoxDumpPolish": "Dump_SHINOBU_270.bin now writes a fixed 32-byte little-endian header followed by raw 64-byte VisorTelemetryEntry rows through ReadOnlySpan<byte>; BinaryWriter was removed.",
     "legacyCanvasBufferPolish": "Legacy SuitHUDV4CanvasOverlay char staging no longer grows arrays during play; long templates are bounded/truncated into fixed buffers and stencil mode disables the legacy proxy-light AUP bridge.",
     "reportFacadePolish": "HUDCanvasInquisition now upserts a shinobu_270_visor_ar_stencil section into this shared report instead of overwriting neighboring report objects.",
@@ -51,6 +55,8 @@
     "renderGraphAbortFailOpen": "Stencil and AR RecordRenderGraph early exits for backbuffer or invalid source/depth resources clear renderer-owned stencil suppression instead of leaving Canvas fallback hidden after a previous good frame.",
     "stencilLanePolish": "Stencil read/write now reserve bit 0 only. Stencil ref/mask material properties were removed; both visor shaders hard-code Ref 1 with WriteMask/ReadMask 1 until a wider stencil-lane reservation is documented.",
     "shaderWarmupPolish": "Added Assets/_Project/Art/Shaders/Variants/Hecton_VisorAR_Stencil.shadervariants and routes it through BootstrapController shaderVariantCollections for cold bootstrap prewarm; renderer Create() does not own shader warmup. Actual Unity import/player first-use stutter proof remains pending.",
+    "h8binValidatorRefresh": "Tools/h8bin_validator.py refreshed Docs/Reports/SHINOBU_258_h8bin_validation_current.json and .junit.xml using limited runtime roots Assets/_Project/Scripts/Rendering/WaterOptics and Assets/_Project/Scripts/Visor; current failure is STATIC_DATA_MISSING only. Prior Visor/WaterOptics runtime StreamingAssets text findings are absent from the refreshed current report.",
+    "hudCanvasInquisitionPath": "Assets/_Project/Scripts/UI/Editor/HUDCanvasInquisition.cs",
     "compileStatus": "SHINOBU_270 new scripts remain unproven because generated Hecton8.Core.csproj is stale; latest recorded full Hecton8.slnx build is RED outside this route in Visor RenderGraph texture binding."
   },
   "jacobianFoam": {

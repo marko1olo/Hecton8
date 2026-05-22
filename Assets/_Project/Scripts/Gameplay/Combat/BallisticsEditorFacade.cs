@@ -1,6 +1,7 @@
 #if UNITY_EDITOR
 using System.Reflection;
 using Hecton8.Core;
+using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 using UnityEditor;
@@ -264,11 +265,11 @@ namespace Hecton8.Gameplay
         private void OnDrawGizmos()
         {
             if (!BallisticsRuntime.TryGetDebugBuffers(
-                    out var trajectories,
+                    out NativeArray<BallisticTrajectoryDTO>.ReadOnly trajectories,
                     out int trajectoryCount,
-                    out var primitives,
+                    out NativeArray<AABBPrimitiveDTO>.ReadOnly primitives,
                     out int primitiveCount,
-                    out var hits))
+                    out NativeArray<BallisticHitResultDTO>.ReadOnly hits))
                 return;
 
             int drawCount = math.min(maxDrawCount, trajectoryCount);
@@ -282,7 +283,7 @@ namespace Hecton8.Gameplay
                     if (!IsFinite(origin) || !IsFinite(direction))
                         continue;
 
-                    bool hit = hits.IsCreated && i < hits.Length && (hits[i].Flags & BallisticHitFlags.Hit) != 0u;
+                    bool hit = i < hits.Length && (hits[i].Flags & BallisticHitFlags.Hit) != 0u;
                     Gizmos.color = hit ? Color.red : Color.yellow;
                     float length = math.clamp(trajectory.Velocity * 0.12f, 0.5f, 24f);
                     Gizmos.DrawLine(origin, origin + (direction.normalized * length));

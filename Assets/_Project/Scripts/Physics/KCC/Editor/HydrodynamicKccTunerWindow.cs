@@ -281,7 +281,7 @@ namespace Hecton8.Physics.KCC.Editor
                 Rect rect = contentRect;
                 Painter2D painter = context.painter2D;
                 painter.lineWidth = 1f;
-                if (!HydrodynamicKccRuntime.TryGetEditorEnvironmentTelemetryVaultView(out NativeArray<KccEnvironmentTelemetryEntry> telemetry, out int cursorIndex, out int telemetryLength) ||
+                if (!HydrodynamicKccRuntime.TryGetEditorEnvironmentTelemetryVaultView(out NativeArray<KccEnvironmentTelemetryEntry>.ReadOnly telemetry, out int cursorIndex, out int telemetryLength) ||
                     telemetryLength <= 0)
                 {
                     painter.strokeColor = new Color(0.18f, 0.18f, 0.18f, 1f);
@@ -314,7 +314,7 @@ namespace Hecton8.Physics.KCC.Editor
             private static void DrawSeries(
                 Painter2D painter,
                 Rect rect,
-                NativeArray<KccEnvironmentTelemetryEntry> telemetry,
+                NativeArray<KccEnvironmentTelemetryEntry>.ReadOnly telemetry,
                 int telemetryLength,
                 int startIndex,
                 float maxValue,

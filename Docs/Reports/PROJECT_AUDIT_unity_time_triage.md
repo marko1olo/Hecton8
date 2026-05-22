@@ -475,6 +475,34 @@ Updated static counts from that artifact:
 
 This is static-source proof only. No Unity import, Console, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
 
+## 2026-05-22 Rollback Snapshot Native API Follow-Up
+
+Additional native API narrowing after the lighting readback pass:
+
+- `HectonRollbackNetcodeRuntime.TryGetVisualStates` now returns a read-only visual state view.
+- `HectonRollbackNetcodeRuntime.TryGetVisualHistory` now returns a read-only visual history view.
+- `HectonRollbackNetcodeRuntime.TryGetTelemetry` now returns a read-only net telemetry view.
+- `HectonRollbackNetcodeRuntime.TryGetInputPredictionTelemetry` now returns a read-only input prediction telemetry view.
+- `RollbackNetcodeTunerWindow` consumes read-only views.
+
+Rejected:
+
+- Tuning mutation, predicted input capacity, internal `TryReadOwned`, and runtime state copy routes because they are deterministic authority or internal owner routes.
+
+Focused proof:
+
+- Focused scans found only read-only rollback snapshot signatures/call sites.
+- Broad artifact: `Docs/Reports/PROJECT_AUDIT_polish_after_rollback_readonly_snapshots.json`.
+
+Updated static counts from that artifact:
+
+- `nativeCollectionPublicMutableApiExposure`: 199, down from 203.
+- `nativeApiExposureBuildPlayerRuntime`: 186, down from 190.
+- `nativeApiExposureOutRefMutable`: 148, down from 152.
+- `nativeApiRiskRuntimeOutRefMutableView`: 87, down from 89.
+
+This is static-source proof only. No Unity import, Console, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
 ## 2026-05-22 Lighting Readback Native API Follow-Up
 
 Additional native API narrowing after the animation matrix pass:
@@ -680,6 +708,36 @@ Updated static counts from that artifact:
 - `nativeApiExposureOutRefMutable`: 167, down from 168.
 - `nativeApiExposureBuildQaDevProof`: 8, down from 9.
 - `nativeApiRiskEditorOrProofSurface`: 13, down from 14.
+
+This is static-source proof only. No Unity import, Console, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 Physics Debug Native API Follow-Up
+
+Additional native API narrowing after the rollback snapshot pass:
+
+- `BallisticsRuntime.TryGetDebugBuffers` now returns read-only trajectory, primitive, and hit views.
+- `BallisticsRuntime.TryGetImpactVfxStaging` now returns a read-only impact VFX staging view.
+- `HabitatFluidIncursionDirector.TryGetActiveCompartmentSnapshot` now returns a read-only compartment snapshot.
+- `HydrodynamicKccRuntime.TryGetEditorTelemetryVaultView` now returns a read-only KCC telemetry view.
+- `HydrodynamicKccRuntime.TryGetEditorEnvironmentTelemetryVaultView` now returns a read-only KCC environment telemetry view.
+
+Rejected:
+
+- Source/topology installation, owner write buffers, KCC runtime job buffers, and Vault open helpers, because they are writer or owner routes.
+- Physics DTO layout changes and copied debug snapshots, because this pass was API mutability narrowing, not a data-format migration.
+
+Focused proof:
+
+- Focused scans found only read-only signatures/call sites for the narrowed routes.
+- Broad artifact: `Docs/Reports/PROJECT_AUDIT_polish_after_physics_debug_readonly.json`.
+
+Updated static counts from that artifact:
+
+- `nativeCollectionPublicMutableApiExposure`: 194, down from 199.
+- `nativeApiExposureBuildPlayerRuntime`: 181, down from 186.
+- `nativeApiExposureOutRefMutable`: 143, down from 148.
+- `nativeApiRiskRuntimeDiagnosticNamedMutableView`: 39, down from 43.
+- `nativeApiRiskRuntimeOutRefMutableView`: 86, down from 87.
 
 This is static-source proof only. No Unity import, Console, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
 

@@ -841,6 +841,32 @@ namespace Hecton8.Power
         }
 
         public bool TryGetGridReadback(
+            out NativeArray<GridNodeDTO>.ReadOnly nodes,
+            out NativeArray<ThermalGridAnchorDTO>.ReadOnly anchors,
+            out NativeArray<ThermalGridVisualStateDTO>.ReadOnly visualState,
+            out int nodeCount)
+        {
+            nodes = default;
+            anchors = default;
+            visualState = default;
+            nodeCount = 0;
+
+            if (!TryGetGridReadbackMutable(
+                    out NativeArray<GridNodeDTO> mutableNodes,
+                    out NativeArray<ThermalGridAnchorDTO> mutableAnchors,
+                    out NativeArray<ThermalGridVisualStateDTO> mutableVisualState,
+                    out nodeCount))
+            {
+                return false;
+            }
+
+            nodes = mutableNodes.AsReadOnly();
+            anchors = mutableAnchors.AsReadOnly();
+            visualState = mutableVisualState.AsReadOnly();
+            return true;
+        }
+
+        private bool TryGetGridReadbackMutable(
             out NativeArray<GridNodeDTO> nodes,
             out NativeArray<ThermalGridAnchorDTO> anchors,
             out NativeArray<ThermalGridVisualStateDTO> visualState,
@@ -929,7 +955,7 @@ namespace Hecton8.Power
 
         public bool TryUploadVisualScalars(GraphicsBuffer targetBuffer)
         {
-            if (targetBuffer == null || !TryGetGridReadback(out _, out _, out NativeArray<ThermalGridVisualStateDTO> visual, out int nodeCount))
+            if (targetBuffer == null || !TryGetGridReadbackMutable(out _, out _, out NativeArray<ThermalGridVisualStateDTO> visual, out int nodeCount))
                 return false;
 
             int count = math.min(nodeCount, visual.Length);
@@ -940,7 +966,7 @@ namespace Hecton8.Power
 
         public bool TryPublishVisualShaderScalars()
         {
-            if (!TryGetGridReadback(out _, out _, out NativeArray<ThermalGridVisualStateDTO> visual, out int nodeCount))
+            if (!TryGetGridReadback(out _, out _, out NativeArray<ThermalGridVisualStateDTO>.ReadOnly visual, out int nodeCount))
                 return false;
 
             int count = math.min(nodeCount, visual.Length);

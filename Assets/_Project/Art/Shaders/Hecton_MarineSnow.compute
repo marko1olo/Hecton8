@@ -12,7 +12,7 @@
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
 #define HECTON_DYNAMIC_WAKE_CAPACITY 16
-#define HECTON_DYNAMIC_WAKE_LOW_TIER_CAPACITY 4
+#define HECTON_DYNAMIC_WAKE_MIN_QUALITY_CAPACITY 4
 #define HECTON_PROPWASH_EVENT_CAPACITY 512
 #define HECTON_PROPWASH_EVENT_MIN_SAMPLE_CAPACITY 4
 
@@ -462,9 +462,9 @@ float3 SafeNormalize3(float3 value)
 float3 ResolveDynamicWakeFlow(float3 positionWS)
 {
     uint rawSlotLimit = (uint)min(max(_DynamicWakeParams.x, 0.0), HECTON_DYNAMIC_WAKE_CAPACITY);
-    float lowTier = saturate(_DynamicWakeParams.y);
-    uint tierSlotLimit = (uint)round(lerp((float)HECTON_DYNAMIC_WAKE_CAPACITY, (float)HECTON_DYNAMIC_WAKE_LOW_TIER_CAPACITY, lowTier));
-    uint slotLimit = min(rawSlotLimit, max(1u, tierSlotLimit));
+    float qualityPressure01 = saturate(_DynamicWakeParams.y);
+    uint qualitySlotLimit = (uint)round(lerp((float)HECTON_DYNAMIC_WAKE_CAPACITY, (float)HECTON_DYNAMIC_WAKE_MIN_QUALITY_CAPACITY, qualityPressure01));
+    uint slotLimit = min(rawSlotLimit, max(1u, qualitySlotLimit));
     if (slotLimit == 0u || _DynamicWakeParams.z <= 0.5)
         return float3(0.0, 0.0, 0.0);
 
@@ -492,12 +492,12 @@ float3 ResolveDynamicWakeFlow(float3 positionWS)
         float3 wakeAxis = SafeNormalize3(wakeVector.xyz);
         float3 highFlow = (wakeAxis + radial * 0.35) * (wake.w * falloff * wakeGain);
         float3 lowFlow = radial * (wake.w * falloff * wakeGain * 0.38);
-        flow += lerp(highFlow, lowFlow, lowTier);
+        flow += lerp(highFlow, lowFlow, qualityPressure01);
     }
 
     uint dtoSlotLimit = (uint)min(max(_DynamicWakeDtoParams.x, 0.0), HECTON_DYNAMIC_WAKE_CAPACITY);
     uint dtoActive = (uint)min(max(_DynamicWakeDtoParams.z, 0.0), dtoSlotLimit);
-    float dtoLowTier = saturate(_DynamicWakeDtoParams.y);
+    float dtoQualityPressure01 = saturate(_DynamicWakeDtoParams.y);
     float dtoGain = _DynamicWakeDtoParams.w > EPSILON ? _DynamicWakeDtoParams.w : 1.0;
     [loop]
     for (uint dtoIndex = 0u; dtoIndex < HECTON_DYNAMIC_WAKE_CAPACITY; dtoIndex++)
@@ -524,7 +524,7 @@ float3 ResolveDynamicWakeFlow(float3 positionWS)
         radial.y *= 0.2;
         float3 highFlow = (force + radial * (forceMagnitude * 0.25)) * falloff;
         float3 lowFlow = radial * (forceMagnitude * falloff * 0.35);
-        flow += lerp(highFlow, lowFlow, dtoLowTier);
+        flow += lerp(highFlow, lowFlow, dtoQualityPressure01);
     }
 
     return dot(flow, flow) < 1.0e32 ? flow : float3(0.0, 0.0, 0.0);
@@ -860,7 +860,7 @@ float3 ApplyMaelstromParticleForce(float3 positionWS, float3 velocityWS, float d
 
     float sharedRadius = max(_MarineSnowMaelstromParams.y, 1.0);
     float radiusSq = sharedRadius * sharedRadius;
-    float lowTier = saturate(_MarineSnowMaelstromParams.w);
+    float qualityPressure01 = saturate(_MarineSnowMaelstromParams.w);
     [loop]
     for (uint maelstromIndex = 0u; maelstromIndex < maelstromCount; maelstromIndex++)
     {
@@ -873,7 +873,7 @@ float3 ApplyMaelstromParticleForce(float3 positionWS, float3 velocityWS, float d
 
         float invDistance = rsqrt(max(distanceSq, EPSILON));
         float3 inward = toCenter * invDistance;
-        float3 tangent = cross(float3(0.0, 1.0, 0.0), toCenter) * invDistance * (1.0 - lowTier);
+        float3 tangent = cross(float3(0.0, 1.0, 0.0), toCenter) * invDistance * (1.0 - qualityPressure01);
         float falloff = saturate(1.0 - distanceSq * rcp(max(radiusSq, EPSILON)));
         float strength = max(maelstrom.w * sharedRadius, 0.0);
         float invSqGain = min(5.0, radiusSq * rcp(max(distanceSq, 1.0)));

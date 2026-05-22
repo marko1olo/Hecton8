@@ -2145,9 +2145,9 @@ namespace Hecton8.Economy
         }
 
         public bool TryResolveEditorViews(
-            out NativeArray<MarauderStateDTO> states,
-            out NativeArray<MarauderRouteNodeDTO> routes,
-            out NativeArray<byte> routeCounts)
+            out NativeArray<MarauderStateDTO>.ReadOnly states,
+            out NativeArray<MarauderRouteNodeDTO>.ReadOnly routes,
+            out NativeArray<byte>.ReadOnly routeCounts)
         {
             states = default;
             routes = default;
@@ -2155,9 +2155,17 @@ namespace Hecton8.Economy
             if (!EnsureVaultBuffers() || _vault == null)
                 return false;
 
-            return TryOpenVaultView(_vault, in _statesHandle, TradeMarauderConstants.MaxMarauders, out states) &&
-                   TryOpenVaultView(_vault, in _routesHandle, TradeMarauderConstants.MaxMarauders * TradeMarauderConstants.RouteNodeStride, out routes) &&
-                   TryOpenVaultView(_vault, in _routeCountsHandle, TradeMarauderConstants.MaxMarauders, out routeCounts);
+            if (!TryOpenVaultView(_vault, in _statesHandle, TradeMarauderConstants.MaxMarauders, out NativeArray<MarauderStateDTO> mutableStates) ||
+                !TryOpenVaultView(_vault, in _routesHandle, TradeMarauderConstants.MaxMarauders * TradeMarauderConstants.RouteNodeStride, out NativeArray<MarauderRouteNodeDTO> mutableRoutes) ||
+                !TryOpenVaultView(_vault, in _routeCountsHandle, TradeMarauderConstants.MaxMarauders, out NativeArray<byte> mutableRouteCounts))
+            {
+                return false;
+            }
+
+            states = mutableStates.AsReadOnly();
+            routes = mutableRoutes.AsReadOnly();
+            routeCounts = mutableRouteCounts.AsReadOnly();
+            return true;
         }
 
         public bool TryApplyCsvOverride(ReadOnlySpan<byte> csvBytes, out int acceptedRows, out int rejectedRows)

@@ -914,3 +914,82 @@ Build gate:
   <compile_guard note="No sibling runtime assembly reference added. Build not run because active compiler and CPU gates were closed, and generated project coverage remains stale."/>
   <dear_lie note="Legacy acoustic radar/chevron visuals are fenced out under stencil ownership; active presentation remains stencil-gated shader optics rather than Canvas/TMP/instanced legacy work."/>
 </SELF_AUDIT_ADDENDUM>
+
+## 2026-05-22 - Evidence Reconciliation / Stencil Waypoint Provider Quarantine
+
+What was wrong:
+- `ARWaypointOverlay` still demonstrated direct concrete provider reads for Emergency relay and MapMagic vegetation in the same source file used by the active stencil route. The new fence existed in code, but the durable reports did not state the boundary sharply enough.
+- `HUDCanvasInquisition` generated sections still omitted the active-stencil waypoint quarantine, current h8bin validator refresh, and actual source path.
+- `Docs/Reports/SHINOBU_258_h8bin_validation_current.json` had stale Visor/WaterOptics runtime `StreamingAssets` findings before the canonical tool refresh.
+- Prior evidence had one overbroad claim: layout offset validation is full only after the widened editor `UnsafeUtility.GetFieldOffset` checks.
+
+What was done:
+- Active stencil mode now clears `EmergencyServiceRelayDirector` and `HectonMapMagicVegetationBridge` caches, assigns null on hot-swap while stencil is active, and reads those concrete providers only inside `if (!s_stencilRenderGraphActive)`.
+- `HUDCanvasInquisition.BuildReportObject()` now emits `stencilWaypointSourceProof`, `h8binValidatorRefresh`, and `hudCanvasInquisitionPath`.
+- `RENDERING_OPTIMIZATION_REPORT.json`, `VISOR_AR_STENCIL_RENDERER.md`, `BINARY_PAYLOAD_INTEGRATION_LEDGER.md`, `Status_SHINOBU_270.md`, and `Rationale_SHINOBU_270.md` now carry the same proof.
+- Canonical `Tools/h8bin_validator.py` refreshed the SHINOBU_258 current JSON/JUnit with limited runtime roots `Assets/_Project/Scripts/Rendering/WaterOptics` and `Assets/_Project/Scripts/Visor`; the current failure is `STATIC_DATA_MISSING` for `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin`.
+
+Cinematic Cheats used:
+- No physical waypoint/anchor simulation or new cross-domain search was added. Stencil mode remains a visual snapshot consumer: external AUP waypoints are copied and projected into shader-side brackets; Emergency/Vegetation concrete route is legacy Canvas-only until an owner-published snapshot route exists.
+
+Exact Microseconds saved:
+- Active stencil concrete-provider quarantine: estimated 1-5 us CPU variance reduction on weak CPUs when relay/vegetation providers exist, pending profiler proof.
+- H8BIN report refresh: runtime 0 us; removes stale evidence only.
+- Report facade fields: runtime 0 us; editor menu writes a larger static object within the existing 2048-char builder.
+
+Verification:
+- `ARWaypointOverlay.CollectRuntimeWaypoints()` gates `EmergencyServiceRelayDirector.GetActiveRouteTarget()` and `HectonMapMagicVegetationBridge.TryGetActiveAbyssalAnchorAupPayload(...)` under `if (!s_stencilRenderGraphActive)`.
+- Refreshed h8bin current JSON/JUnit contain `STATIC_DATA_MISSING` and `H8VB_SCHEMA_VALIDATED`; they no longer contain the stale runtime StreamingAssets text-load finding.
+- Generated `Hecton8.Core.csproj` remains stale for `HectonVisorARStencilRendererFeature.cs` and `HectonVisorStencilPreviewGizmo.cs`.
+- Compile proof is still pending; no build was launched in this pass before the build gate was resampled.
+
+<SELF_AUDIT_ADDENDUM agent_id="SHINOBU_270" evidence="STATIC_SOURCE_AND_STATIC_TOOL" verification="PENDING_UNITY_IMPORT_AND_BUILD">
+  <task_reconciliation note="Tasks 01-20 remain PASS. Iteration 28 tightens Task 09 waypoint source authority, Task 19 report facade proof, and Task 20 self-audit evidence."/>
+  <struct_layout note="No DTO layout changed. Full route DTO size checks and editor field-offset checks are now documented."/>
+  <scalability note="No binary hardware route added. Stencil waypoint quarantine does not touch `GlobalQualityWeight`; visual overkill still lives in continuous shader math."/>
+  <h_phi note="No private persistent native container added. Vault lanes 73180..73186 remain visual-only UI generation descriptors."/>
+  <dependency_graph note="No new jobs, `.Run()`, or `.Complete()` added. Stencil mode consumes external waypoint snapshots and not Emergency/Vegetation concrete provider calls."/>
+  <compile_guard note="No new sibling assembly reference added. Build remains pending because generated project coverage is stale and the last recorded full solution failure is outside this route."/>
+  <dear_lie note="Visual AR waypoint brackets remain shader-side optical projection from bounded snapshots; no CPU GameObject rendering, no PhysX query, and no concrete provider simulation in active stencil mode."/>
+</SELF_AUDIT_ADDENDUM>
+
+## 2026-05-22 - Static Verification Gate / No-Build Discipline
+
+What was wrong:
+- Evidence edits needed fresh proof, but a build against generated `Hecton8.Core.csproj` still would not cover `HectonVisorARStencilRendererFeature.cs` or `HectonVisorStencilPreviewGizmo.cs`.
+- The latest full-solution red state is already known outside this route in Visor RenderGraph texture binding, so another full build would not isolate SHINOBU_270 evidence edits.
+
+What was done:
+- Parsed `Docs/Reports/RENDERING_OPTIMIZATION_REPORT.json`.
+- Parsed `Docs/Reports/SHINOBU_258_h8bin_validation_current.json`; current findings are `STATIC_DATA_MISSING` and `H8VB_SCHEMA_VALIDATED`.
+- Re-ran scoped stale-token scan and scoped forbidden-token scan.
+- Re-ran string/comment-aware brace balance on `ARWaypointOverlay.cs`, `HectonVisorARStencilRendererFeature.cs`, and `HUDCanvasInquisition.cs`.
+- Rechecked generated `Hecton8.Core.csproj` inclusion.
+- Ran `git diff --check` on the SHINOBU_270 patch surface.
+- Sampled compiler processes and CPU without launching `dotnet build`.
+
+Cinematic Cheats used:
+- No runtime cheat changed in this verification pass. Active route remains stencil-gated shader optics, bounded AR target snapshots, procedural digits, and shader fog.
+
+Exact Microseconds saved:
+- Runtime: 0 us.
+- Command discipline: avoided a non-proving build while generated project coverage is stale; wall-clock saved is environment dependent.
+
+Verification:
+- `FORBIDDEN_SCAN_CLEAN`.
+- `STALE_TOKEN_SCAN_CLEAN`.
+- Parsed brace balances: `ARWaypointOverlay.cs balance=0`, `HectonVisorARStencilRendererFeature.cs balance=0`, `HUDCanvasInquisition.cs balance=0`.
+- Generated project check: `CSProjRendererFeature=False`, `CSProjStencilPreviewGizmo=False`, `CSProjOldFluidFeature=True`.
+- `git diff --check` reports only LF-to-CRLF warnings on patched text files.
+- Build gate sample: `NO_COMPILER_PROCESSES`, `CIM_CPU=43`, processor counter `39.71,29.95,30.31`.
+- `dotnet build` not launched because it would not prove new SHINOBU_270 script coverage and the latest full-solution red state is outside this route.
+
+<SELF_AUDIT_ADDENDUM agent_id="SHINOBU_270" evidence="STATIC_SOURCE_AND_STATIC_TOOL" verification="PENDING_UNITY_IMPORT_AND_BUILD">
+  <task_reconciliation note="Tasks 01-20 remain PASS. Iteration 29 adds static verification after the stencil waypoint quarantine and report refresh."/>
+  <struct_layout note="No DTO layout changed. String/comment-aware parser confirms modified C# brace balance; runtime/editor DTO layout proof remains in `ValidateLayouts()`."/>
+  <scalability note="No `GlobalQualityWeight` route changed. Continuous shader math remains the only quality scaling path."/>
+  <h_phi note="No native ownership changed; Vault lanes 73180..73186 remain visual-only descriptors."/>
+  <dependency_graph note="No jobs, `.Run()`, `.Complete()`, or new dispatcher dependency added."/>
+  <compile_guard note="Generated project remains stale for new renderer/gizmo scripts, so build proof is pending despite a legal CPU/process sample."/>
+  <dear_lie note="No Canvas/TMP/physics/CPU particle route restored."/>
+</SELF_AUDIT_ADDENDUM>

@@ -452,11 +452,15 @@ namespace Hecton8.Construction
                    TryGetRoomWaterline(cachedRoomId, out snapshot);
         }
 
-        internal static bool TryGetLatestSiegeTargets(out NativeArray<HabitatSiegeTargetSnapshot> targets, out int count)
+        internal static bool TryGetLatestSiegeTargets(out NativeArray<HabitatSiegeTargetSnapshot>.ReadOnly targets, out int count)
         {
-            targets = s_latestSiegeTargets;
+            targets = default;
             count = s_latestSiegeTargetCount;
-            return s_latestSiegeTargetOwner != null && targets.IsCreated && count > 0;
+            if (s_latestSiegeTargetOwner == null || !s_latestSiegeTargets.IsCreated || count <= 0)
+                return false;
+
+            targets = s_latestSiegeTargets.AsReadOnly();
+            return true;
         }
 
         public void Dispose()

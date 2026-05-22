@@ -2441,7 +2441,7 @@ namespace Hecton8.Physics.KCC
 #if UNITY_EDITOR
         private static HydrodynamicKccRuntime EditorActiveRuntime;
 
-        public static bool TryGetEditorTelemetryVaultView(out NativeArray<KinematicTelemetryEntry> telemetry, out int cursor, out int length)
+        public static bool TryGetEditorTelemetryVaultView(out NativeArray<KinematicTelemetryEntry>.ReadOnly telemetry, out int cursor, out int length)
         {
             telemetry = default;
             cursor = 0;
@@ -2457,7 +2457,7 @@ namespace Hecton8.Physics.KCC
                 return false;
             }
 
-            if (!TryOpenVaultBuffer(runtime._dataVault, ref runtime._telemetryRingHandle, BufferID.ShinobuHydroKccTelemetryRing, SystemID.Physics, TelemetryCapacity, out telemetry))
+            if (!TryOpenVaultBuffer(runtime._dataVault, ref runtime._telemetryRingHandle, BufferID.ShinobuHydroKccTelemetryRing, SystemID.Physics, TelemetryCapacity, out NativeArray<KinematicTelemetryEntry> mutableTelemetry))
                 return false;
 
             NativeArray<int> cursorBuffer = TryOpenVaultBuffer(
@@ -2469,9 +2469,10 @@ namespace Hecton8.Physics.KCC
                 out NativeArray<int> resolvedCursor)
                 ? resolvedCursor
                 : default;
-            if (!telemetry.IsCreated || telemetry.Length == 0)
+            if (!mutableTelemetry.IsCreated || mutableTelemetry.Length == 0)
                 return false;
 
+            telemetry = mutableTelemetry.AsReadOnly();
             length = math.min(TelemetryCapacity, telemetry.Length);
             cursor = cursorBuffer.IsCreated && cursorBuffer.Length > 0
                 ? math.clamp(cursorBuffer[0], 0, length - 1)
@@ -2483,7 +2484,7 @@ namespace Hecton8.Physics.KCC
         public static bool TryReadEditorTelemetryVault(int index, out KinematicTelemetryEntry entry, out int cursor, out int length)
         {
             entry = default;
-            if (!TryGetEditorTelemetryVaultView(out NativeArray<KinematicTelemetryEntry> telemetry, out cursor, out length))
+            if (!TryGetEditorTelemetryVaultView(out NativeArray<KinematicTelemetryEntry>.ReadOnly telemetry, out cursor, out length))
                 return false;
 
             if (index < 0 || index >= length)
@@ -2493,7 +2494,7 @@ namespace Hecton8.Physics.KCC
             return true;
         }
 
-        public static bool TryGetEditorEnvironmentTelemetryVaultView(out NativeArray<KccEnvironmentTelemetryEntry> telemetry, out int cursor, out int length)
+        public static bool TryGetEditorEnvironmentTelemetryVaultView(out NativeArray<KccEnvironmentTelemetryEntry>.ReadOnly telemetry, out int cursor, out int length)
         {
             telemetry = default;
             cursor = 0;
@@ -2509,7 +2510,7 @@ namespace Hecton8.Physics.KCC
                 return false;
             }
 
-            if (!TryOpenVaultBuffer(runtime._dataVault, ref runtime._environmentTelemetryRingHandle, BufferID.ShinobuKccEnvironmentTelemetryRing, SystemID.Physics, TelemetryCapacity, out telemetry))
+            if (!TryOpenVaultBuffer(runtime._dataVault, ref runtime._environmentTelemetryRingHandle, BufferID.ShinobuKccEnvironmentTelemetryRing, SystemID.Physics, TelemetryCapacity, out NativeArray<KccEnvironmentTelemetryEntry> mutableTelemetry))
                 return false;
 
             NativeArray<int> cursorBuffer = TryOpenVaultBuffer(
@@ -2521,9 +2522,10 @@ namespace Hecton8.Physics.KCC
                 out NativeArray<int> resolvedCursor)
                 ? resolvedCursor
                 : default;
-            if (!telemetry.IsCreated || telemetry.Length == 0)
+            if (!mutableTelemetry.IsCreated || mutableTelemetry.Length == 0)
                 return false;
 
+            telemetry = mutableTelemetry.AsReadOnly();
             length = math.min(TelemetryCapacity, telemetry.Length);
             cursor = cursorBuffer.IsCreated && cursorBuffer.Length > 0
                 ? math.clamp(cursorBuffer[0], 0, length - 1)

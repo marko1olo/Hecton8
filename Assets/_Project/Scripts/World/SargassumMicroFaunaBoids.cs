@@ -143,29 +143,25 @@ namespace Hecton8.World
 
         private struct NativeRingBuffer<T> : IDisposable where T : struct
         {
-            private VaultBufferHandle<T> _itemsHandle;
+            private VaultGenerationHandle<T> _itemsHandle;
             private IDataVault _vault;
             private int _head;
             private int _count;
 
             public int Count => _count;
-            public bool IsCreated => _itemsHandle.IsCreated;
+            public bool IsCreated => _itemsHandle.Generation != 0u;
 
             public void EnsureCapacity(IDataVault vault, BufferID bufferId, int capacity, string label)
             {
                 if (capacity <= 0 || vault == null || bufferId == BufferID.Unknown)
                     return;
 
-                if (_itemsHandle.IsCreated && _itemsHandle.BufferId == bufferId && _itemsHandle.Length == capacity)
+                if (TryResolveSargassumVaultArray(vault, in _itemsHandle, bufferId, capacity, out _))
                     return;
 
                 Dispose();
                 _vault = vault;
-                _itemsHandle = vault.GetBufferHandle<T>(
-                    bufferId,
-                    capacity,
-                    SystemID.WorldSargassum,
-                    NativeArrayOptions.ClearMemory);
+                TryEnsureSargassumVaultArray(vault, ref _itemsHandle, bufferId, capacity, NativeArrayOptions.ClearMemory, out _);
                 _head = 0;
                 _count = 0;
             }
@@ -204,8 +200,8 @@ namespace Hecton8.World
 
             NativeArray<T> ResolveItems()
             {
-                return _vault != null && _itemsHandle.IsCreated
-                    ? _itemsHandle.Resolve(_vault)
+                return TryResolveSargassumVaultArray(_vault, in _itemsHandle, (BufferID)_itemsHandle.BufferID, 1, out NativeArray<T> items)
+                    ? items
                     : default;
             }
         }
@@ -1629,26 +1625,26 @@ namespace Hecton8.World
         private float[] _deepBiolumZoneScores;
         private BeaconNetworkSystem.BeaconSnapshot[] _formationBeaconSnapshots;
         private Collider[] _formationObstacleColliders;
-        private VaultBufferHandle<GrazingAnchorData> _grazingAnchorsHandle;
-        private VaultBufferHandle<MassiveThreatData> _massiveThreatsHandle;
-        private VaultBufferHandle<FormationBeaconData> _formationBeaconsHandle;
-        private VaultBufferHandle<FormationObstacleData> _formationObstaclesHandle;
-        private VaultBufferHandle<StaticObstacleData> _staticObstacleCacheHandle;
-        private VaultBufferHandle<BoidData> _boidStateHandle;
-        private VaultBufferHandle<BoidKillSignal> _killSignalHandle;
-        private VaultBufferHandle<int> _killSignalCountHandle;
-        private VaultBufferHandle<FoodChainTelemetryEntry> _foodChainTelemetryRingHandle;
-        private VaultBufferHandle<float3> _leviathanPathScratchHandle;
-        private VaultBufferHandle<LeviathanNodeData> _leviathanNodeFrontHandle;
-        private VaultBufferHandle<LeviathanNodeData> _leviathanNodeBackHandle;
-        private VaultBufferHandle<int> _leviathanNodeCountHandle;
-        private VaultBufferHandle<FoveatedSimulationInput> _foveatedSimulationInputHandle;
-        private VaultBufferHandle<FoveatedSimulationDecision> _foveatedSimulationFrontHandle;
-        private VaultBufferHandle<FoveatedSimulationDecision> _foveatedSimulationBackHandle;
-        private VaultBufferHandle<SimulationFrameConstants> _simulationFrameHandle;
-        private VaultBufferHandle<float4> _boidSensoryThreatsHandle;
-        private VaultBufferHandle<BoidSensoryBlackBoxEntry> _boidSensoryBlackBoxHandle;
-        private VaultBufferHandle<uint> _threatGridUploadHandle;
+        private VaultGenerationHandle<GrazingAnchorData> _grazingAnchorsHandle;
+        private VaultGenerationHandle<MassiveThreatData> _massiveThreatsHandle;
+        private VaultGenerationHandle<FormationBeaconData> _formationBeaconsHandle;
+        private VaultGenerationHandle<FormationObstacleData> _formationObstaclesHandle;
+        private VaultGenerationHandle<StaticObstacleData> _staticObstacleCacheHandle;
+        private VaultGenerationHandle<BoidData> _boidStateHandle;
+        private VaultGenerationHandle<BoidKillSignal> _killSignalHandle;
+        private VaultGenerationHandle<int> _killSignalCountHandle;
+        private VaultGenerationHandle<FoodChainTelemetryEntry> _foodChainTelemetryRingHandle;
+        private VaultGenerationHandle<float3> _leviathanPathScratchHandle;
+        private VaultGenerationHandle<LeviathanNodeData> _leviathanNodeFrontHandle;
+        private VaultGenerationHandle<LeviathanNodeData> _leviathanNodeBackHandle;
+        private VaultGenerationHandle<int> _leviathanNodeCountHandle;
+        private VaultGenerationHandle<FoveatedSimulationInput> _foveatedSimulationInputHandle;
+        private VaultGenerationHandle<FoveatedSimulationDecision> _foveatedSimulationFrontHandle;
+        private VaultGenerationHandle<FoveatedSimulationDecision> _foveatedSimulationBackHandle;
+        private VaultGenerationHandle<SimulationFrameConstants> _simulationFrameHandle;
+        private VaultGenerationHandle<float4> _boidSensoryThreatsHandle;
+        private VaultGenerationHandle<BoidSensoryBlackBoxEntry> _boidSensoryBlackBoxHandle;
+        private VaultGenerationHandle<uint> _threatGridUploadHandle;
         private GraphicsBuffer _boidsBufferA;
         private GraphicsBuffer _boidsBufferB;
         private GraphicsBuffer _boidIndirectArgsBuffer;
@@ -2625,24 +2621,24 @@ namespace Hecton8.World
             if (buffersChanged)
                 _computeStaticBuffersBound = false;
             IDataVault vault = _dataVault;
-            EnsureVaultBufferHandle(vault, ref _grazingAnchorsHandle, BufferID.SargassumGrazingAnchors, grazingAnchorCount);
-            EnsureVaultBufferHandle(vault, ref _massiveThreatsHandle, BufferID.SargassumMassiveThreats, maxMassiveThreatCount);
-            EnsureVaultBufferHandle(vault, ref _formationBeaconsHandle, BufferID.SargassumFormationBeacons, formationBeaconCapacity);
-            EnsureVaultBufferHandle(vault, ref _formationObstaclesHandle, BufferID.SargassumFormationObstacles, formationObstacleCapacity);
-            EnsureVaultBufferHandle(vault, ref _staticObstacleCacheHandle, BufferID.SargassumStaticObstacleCache, math.max(formationObstacleCapacity * 8, formationObstacleCapacity));
-            EnsureVaultBufferHandle(vault, ref _boidStateHandle, BufferID.SargassumBoidState, boidCount);
-            EnsureVaultBufferHandle(vault, ref _leviathanNodeFrontHandle, BufferID.SargassumLeviathanNodeFront, leviathanNodeCapacity);
-            EnsureVaultBufferHandle(vault, ref _leviathanNodeBackHandle, BufferID.SargassumLeviathanNodeBack, leviathanNodeCapacity);
-            EnsureVaultBufferHandle(vault, ref _leviathanNodeCountHandle, BufferID.SargassumLeviathanNodeCount, 1);
-            EnsureVaultBufferHandle(vault, ref _foveatedSimulationInputHandle, BufferID.SargassumFoveatedSimulationInput, 1);
-            EnsureVaultBufferHandle(vault, ref _foveatedSimulationFrontHandle, BufferID.SargassumFoveatedSimulationFront, 1);
-            EnsureVaultBufferHandle(vault, ref _foveatedSimulationBackHandle, BufferID.SargassumFoveatedSimulationBack, 1);
-            EnsureVaultBufferHandle(vault, ref _simulationFrameHandle, BufferID.SargassumSimulationFrame, 1);
-            EnsureVaultBufferHandle(vault, ref _boidSensoryThreatsHandle, BufferID.SargassumBoidSensoryThreats, PredatorAupBufferCapacity);
-            EnsureVaultBufferHandle(vault, ref _boidSensoryBlackBoxHandle, BufferID.SargassumBoidSensoryBlackBox, BoidSensoryBlackBoxCapacity);
-            EnsureVaultBufferHandle(vault, ref _foodChainTelemetryRingHandle, BufferID.SargassumFoodChainTelemetryRing, FoodChainTelemetryCapacity);
-            EnsureVaultBufferHandle(vault, ref _killSignalHandle, BufferID.SargassumKillSignals, PredatorKillSignalDrainLimit);
-            EnsureVaultBufferHandle(vault, ref _killSignalCountHandle, BufferID.SargassumKillSignalCount, 1);
+            EnsureSargassumVaultGenerationHandle(vault, ref _grazingAnchorsHandle, BufferID.SargassumGrazingAnchors, grazingAnchorCount);
+            EnsureSargassumVaultGenerationHandle(vault, ref _massiveThreatsHandle, BufferID.SargassumMassiveThreats, maxMassiveThreatCount);
+            EnsureSargassumVaultGenerationHandle(vault, ref _formationBeaconsHandle, BufferID.SargassumFormationBeacons, formationBeaconCapacity);
+            EnsureSargassumVaultGenerationHandle(vault, ref _formationObstaclesHandle, BufferID.SargassumFormationObstacles, formationObstacleCapacity);
+            EnsureSargassumVaultGenerationHandle(vault, ref _staticObstacleCacheHandle, BufferID.SargassumStaticObstacleCache, math.max(formationObstacleCapacity * 8, formationObstacleCapacity));
+            EnsureSargassumVaultGenerationHandle(vault, ref _boidStateHandle, BufferID.SargassumBoidState, boidCount);
+            EnsureSargassumVaultGenerationHandle(vault, ref _leviathanNodeFrontHandle, BufferID.SargassumLeviathanNodeFront, leviathanNodeCapacity);
+            EnsureSargassumVaultGenerationHandle(vault, ref _leviathanNodeBackHandle, BufferID.SargassumLeviathanNodeBack, leviathanNodeCapacity);
+            EnsureSargassumVaultGenerationHandle(vault, ref _leviathanNodeCountHandle, BufferID.SargassumLeviathanNodeCount, 1);
+            EnsureSargassumVaultGenerationHandle(vault, ref _foveatedSimulationInputHandle, BufferID.SargassumFoveatedSimulationInput, 1);
+            EnsureSargassumVaultGenerationHandle(vault, ref _foveatedSimulationFrontHandle, BufferID.SargassumFoveatedSimulationFront, 1);
+            EnsureSargassumVaultGenerationHandle(vault, ref _foveatedSimulationBackHandle, BufferID.SargassumFoveatedSimulationBack, 1);
+            EnsureSargassumVaultGenerationHandle(vault, ref _simulationFrameHandle, BufferID.SargassumSimulationFrame, 1);
+            EnsureSargassumVaultGenerationHandle(vault, ref _boidSensoryThreatsHandle, BufferID.SargassumBoidSensoryThreats, PredatorAupBufferCapacity);
+            EnsureSargassumVaultGenerationHandle(vault, ref _boidSensoryBlackBoxHandle, BufferID.SargassumBoidSensoryBlackBox, BoidSensoryBlackBoxCapacity);
+            EnsureSargassumVaultGenerationHandle(vault, ref _foodChainTelemetryRingHandle, BufferID.SargassumFoodChainTelemetryRing, FoodChainTelemetryCapacity);
+            EnsureSargassumVaultGenerationHandle(vault, ref _killSignalHandle, BufferID.SargassumKillSignals, PredatorKillSignalDrainLimit);
+            EnsureSargassumVaultGenerationHandle(vault, ref _killSignalCountHandle, BufferID.SargassumKillSignalCount, 1);
             _inactiveStatisticalSwarmRing.EnsureCapacity(vault, BufferID.SargassumInactiveSwarmRing, InactiveStatisticalSwarmRingCapacity, nameof(_inactiveStatisticalSwarmRing));
             _inactiveStatisticalSwarmCenterRing.EnsureCapacity(vault, BufferID.SargassumInactiveSwarmCenterRing, InactiveStatisticalSwarmRingCapacity, nameof(_inactiveStatisticalSwarmCenterRing));
 
@@ -2724,27 +2720,27 @@ namespace Hecton8.World
 
         private NativeArray<BoidData> ResolveBoidState()
         {
-            return ResolveVaultBuffer(ref _boidStateHandle);
+            return ResolveSargassumVaultArray(in _boidStateHandle, BufferID.SargassumBoidState, boidCount);
         }
 
         private NativeArray<GrazingAnchorData> ResolveGrazingAnchors()
         {
-            return ResolveVaultBuffer(ref _grazingAnchorsHandle);
+            return ResolveSargassumVaultArray(in _grazingAnchorsHandle, BufferID.SargassumGrazingAnchors, grazingAnchorCount);
         }
 
         private NativeArray<MassiveThreatData> ResolveMassiveThreats()
         {
-            return ResolveVaultBuffer(ref _massiveThreatsHandle);
+            return ResolveSargassumVaultArray(in _massiveThreatsHandle, BufferID.SargassumMassiveThreats, maxMassiveThreatCount);
         }
 
         private NativeArray<FormationBeaconData> ResolveFormationBeacons()
         {
-            return ResolveVaultBuffer(ref _formationBeaconsHandle);
+            return ResolveSargassumVaultArray(in _formationBeaconsHandle, BufferID.SargassumFormationBeacons, formationBeaconCapacity);
         }
 
         private NativeArray<FormationObstacleData> ResolveFormationObstacles()
         {
-            return ResolveVaultBuffer(ref _formationObstaclesHandle);
+            return ResolveSargassumVaultArray(in _formationObstaclesHandle, BufferID.SargassumFormationObstacles, formationObstacleCapacity);
         }
 
         private void UploadGrazingAnchors()
@@ -2900,8 +2896,8 @@ namespace Hecton8.World
             int cellCount = (int)cellCountLong;
             if (EnsureBufferCapacity(ref _threatGridBuffer, cellCount, ThreatGridStride))
                 _computeStaticBuffersBound = false;
-            EnsureVaultBufferHandle(_dataVault, ref _threatGridUploadHandle, BufferID.SargassumThreatGridUpload, cellCount);
-            var threatGridUpload = ResolveVaultBuffer(ref _threatGridUploadHandle);
+            EnsureSargassumVaultGenerationHandle(_dataVault, ref _threatGridUploadHandle, BufferID.SargassumThreatGridUpload, cellCount);
+            var threatGridUpload = ResolveSargassumVaultArray(in _threatGridUploadHandle, BufferID.SargassumThreatGridUpload, cellCount);
             if (!threatGridUpload.IsCreated || threatGridUpload.Length < cellCount)
             {
                 ResetThreatGridSnapshot();
@@ -3593,7 +3589,7 @@ namespace Hecton8.World
         private void RefreshStaticObstacleCache()
         {
             _staticObstacleCacheCount = 0;
-            var staticObstacleCache = ResolveVaultBuffer(ref _staticObstacleCacheHandle);
+            var staticObstacleCache = ResolveSargassumVaultArray(in _staticObstacleCacheHandle, BufferID.SargassumStaticObstacleCache, math.max(formationObstacleCapacity * 8, formationObstacleCapacity));
             if (_mapMagicVegetationBridge == null || !staticObstacleCache.IsCreated)
                 return;
 
@@ -3637,7 +3633,7 @@ namespace Hecton8.World
 
         private void HarvestFormationObstacles(Vector3 origin)
         {
-            var staticObstacleCache = ResolveVaultBuffer(ref _staticObstacleCacheHandle);
+            var staticObstacleCache = ResolveSargassumVaultArray(in _staticObstacleCacheHandle, BufferID.SargassumStaticObstacleCache, math.max(formationObstacleCapacity * 8, formationObstacleCapacity));
             var formationObstacles = ResolveFormationObstacles();
             int formationObstacleLimit = formationObstacles.IsCreated ? math.min(formationObstacleCapacity, formationObstacles.Length) : 0;
             if (formationObstacleLimit <= 0 || !staticObstacleCache.IsCreated)
@@ -3682,8 +3678,8 @@ namespace Hecton8.World
             _debugLeviathanNodeCount = _leviathanPathNodeCount;
             _debugLeviathanThreatLevel = 0f;
             _debugLeviathanHotspotWS = _leviathanHotspotWS;
-            var leviathanNodeFront = ResolveVaultBuffer(ref _leviathanNodeFrontHandle);
-            var leviathanNodeBack = ResolveVaultBuffer(ref _leviathanNodeBackHandle);
+            var leviathanNodeFront = ResolveSargassumVaultArray(in _leviathanNodeFrontHandle, BufferID.SargassumLeviathanNodeFront, leviathanNodeCapacity);
+            var leviathanNodeBack = ResolveSargassumVaultArray(in _leviathanNodeBackHandle, BufferID.SargassumLeviathanNodeBack, leviathanNodeCapacity);
             if (!leviathanNodeFront.IsCreated || !leviathanNodeBack.IsCreated || _mapMagicVegetationBridge == null || !hasPlayerPosition)
             {
                 ClearLeviathanSnapshot();
@@ -3719,16 +3715,16 @@ namespace Hecton8.World
         private void ScheduleLeviathanNodeBuild(NativeArray<Vector3> path, int pathCount)
         {
             int safePathCount = math.min(pathCount, path.Length);
-            var leviathanNodeBack = ResolveVaultBuffer(ref _leviathanNodeBackHandle);
-            var leviathanNodeCount = ResolveVaultBuffer(ref _leviathanNodeCountHandle);
+            var leviathanNodeBack = ResolveSargassumVaultArray(in _leviathanNodeBackHandle, BufferID.SargassumLeviathanNodeBack, leviathanNodeCapacity);
+            var leviathanNodeCount = ResolveSargassumVaultArray(in _leviathanNodeCountHandle, BufferID.SargassumLeviathanNodeCount, 1);
             if (safePathCount < 2 || !leviathanNodeBack.IsCreated || leviathanNodeBack.Length <= 0 || !leviathanNodeCount.IsCreated)
                 return;
 
             if (_leviathanNodeBuildScheduled)
                 return;
 
-            EnsureVaultBufferHandle(_dataVault, ref _leviathanPathScratchHandle, BufferID.SargassumLeviathanPathScratch, safePathCount);
-            var leviathanPathScratch = ResolveVaultBuffer(ref _leviathanPathScratchHandle);
+            EnsureSargassumVaultGenerationHandle(_dataVault, ref _leviathanPathScratchHandle, BufferID.SargassumLeviathanPathScratch, safePathCount);
+            var leviathanPathScratch = ResolveSargassumVaultArray(in _leviathanPathScratchHandle, BufferID.SargassumLeviathanPathScratch, safePathCount);
             if (!leviathanPathScratch.IsCreated || leviathanPathScratch.Length < safePathCount)
                 return;
 
@@ -3753,7 +3749,7 @@ namespace Hecton8.World
             positionWS = _fieldCenter;
             tangentWS = Vector3.forward;
             radiusWS = math.max(0.5f, leviathanBodyRadius);
-            var leviathanNodeFront = ResolveVaultBuffer(ref _leviathanNodeFrontHandle);
+            var leviathanNodeFront = ResolveSargassumVaultArray(in _leviathanNodeFrontHandle, BufferID.SargassumLeviathanNodeFront, leviathanNodeCapacity);
             if (!leviathanNodeFront.IsCreated || _leviathanPathNodeCount < 2)
                 return false;
 
@@ -3867,7 +3863,7 @@ namespace Hecton8.World
         private void BuildLeviathanSpawnSet(int spawnCount)
         {
             var boidState = ResolveBoidState();
-            var leviathanNodeFront = ResolveVaultBuffer(ref _leviathanNodeFrontHandle);
+            var leviathanNodeFront = ResolveSargassumVaultArray(in _leviathanNodeFrontHandle, BufferID.SargassumLeviathanNodeFront, leviathanNodeCapacity);
             if (_leviathanPathNodeCount < 2 || !boidState.IsCreated || !leviathanNodeFront.IsCreated)
                 return;
 
@@ -4675,7 +4671,7 @@ namespace Hecton8.World
             SimulationLodTier simulationLodTier,
             bool shouldRender)
         {
-            var simulationFrame = ResolveVaultBuffer(ref _simulationFrameHandle);
+            var simulationFrame = ResolveSargassumVaultArray(in _simulationFrameHandle, BufferID.SargassumSimulationFrame, 1);
             if (!simulationFrame.IsCreated || _simulationFrameBuffer == null)
                 return false;
 
@@ -5414,8 +5410,8 @@ namespace Hecton8.World
             float currentTimeSeconds)
         {
             var boidState = ResolveBoidState();
-            var killSignals = ResolveVaultBuffer(ref _killSignalHandle);
-            var killSignalCount = ResolveVaultBuffer(ref _killSignalCountHandle);
+            var killSignals = ResolveSargassumVaultArray(in _killSignalHandle, BufferID.SargassumKillSignals, PredatorKillSignalDrainLimit);
+            var killSignalCount = ResolveSargassumVaultArray(in _killSignalCountHandle, BufferID.SargassumKillSignalCount, 1);
             if (!boidState.IsCreated ||
                 !killSignals.IsCreated ||
                 !killSignalCount.IsCreated ||
@@ -5493,8 +5489,8 @@ namespace Hecton8.World
         private int DrainPredatorKillSignals(float currentTimeSeconds)
         {
             var boidState = ResolveBoidState();
-            var killSignals = ResolveVaultBuffer(ref _killSignalHandle);
-            var killSignalCount = ResolveVaultBuffer(ref _killSignalCountHandle);
+            var killSignals = ResolveSargassumVaultArray(in _killSignalHandle, BufferID.SargassumKillSignals, PredatorKillSignalDrainLimit);
+            var killSignalCount = ResolveSargassumVaultArray(in _killSignalCountHandle, BufferID.SargassumKillSignalCount, 1);
             if (!boidState.IsCreated || !killSignals.IsCreated || !killSignalCount.IsCreated || killSignalCount.Length <= 0)
                 return 0;
 
@@ -5701,7 +5697,7 @@ namespace Hecton8.World
 
         private void RecordFoodChainTelemetry(uint flags, Vector3 eventPositionWS, uint sourceHash, uint anomalyHash)
         {
-            var foodChainTelemetryRing = ResolveVaultBuffer(ref _foodChainTelemetryRingHandle);
+            var foodChainTelemetryRing = ResolveSargassumVaultArray(in _foodChainTelemetryRingHandle, BufferID.SargassumFoodChainTelemetryRing, FoodChainTelemetryCapacity);
             if (!foodChainTelemetryRing.IsCreated)
                 return;
 
@@ -5780,7 +5776,7 @@ namespace Hecton8.World
 
         private void TryDumpFoodChainTelemetry(uint anomalyHash)
         {
-            var foodChainTelemetryRing = ResolveVaultBuffer(ref _foodChainTelemetryRingHandle);
+            var foodChainTelemetryRing = ResolveSargassumVaultArray(in _foodChainTelemetryRingHandle, BufferID.SargassumFoodChainTelemetryRing, FoodChainTelemetryCapacity);
             if (_foodChainTelemetryDumped || !foodChainTelemetryRing.IsCreated)
                 return;
 
@@ -6707,7 +6703,7 @@ namespace Hecton8.World
             out SimulationLodTier simulationLodTier)
         {
             FoveatedSimulationDecision decision = default;
-            var foveatedSimulationFront = ResolveVaultBuffer(ref _foveatedSimulationFrontHandle);
+            var foveatedSimulationFront = ResolveSargassumVaultArray(in _foveatedSimulationFrontHandle, BufferID.SargassumFoveatedSimulationFront, 1);
             if (foveatedSimulationFront.IsCreated && foveatedSimulationFront.Length > 0)
                 decision = foveatedSimulationFront[0];
 
@@ -7260,12 +7256,12 @@ namespace Hecton8.World
         private void PrimeFoveatedSimulationDecision(float frameDeltaTime, float cameraDistanceSq)
         {
             IDataVault vault = _dataVault;
-            EnsureVaultBufferHandle(vault, ref _foveatedSimulationInputHandle, BufferID.SargassumFoveatedSimulationInput, 1);
-            EnsureVaultBufferHandle(vault, ref _foveatedSimulationFrontHandle, BufferID.SargassumFoveatedSimulationFront, 1);
-            EnsureVaultBufferHandle(vault, ref _foveatedSimulationBackHandle, BufferID.SargassumFoveatedSimulationBack, 1);
+            EnsureSargassumVaultGenerationHandle(vault, ref _foveatedSimulationInputHandle, BufferID.SargassumFoveatedSimulationInput, 1);
+            EnsureSargassumVaultGenerationHandle(vault, ref _foveatedSimulationFrontHandle, BufferID.SargassumFoveatedSimulationFront, 1);
+            EnsureSargassumVaultGenerationHandle(vault, ref _foveatedSimulationBackHandle, BufferID.SargassumFoveatedSimulationBack, 1);
             PopulateFoveatedSimulationInput(frameDeltaTime, cameraDistanceSq, previousAccumulator: 0f);
-            var foveatedSimulationInput = ResolveVaultBuffer(ref _foveatedSimulationInputHandle);
-            var foveatedSimulationBack = ResolveVaultBuffer(ref _foveatedSimulationBackHandle);
+            var foveatedSimulationInput = ResolveSargassumVaultArray(in _foveatedSimulationInputHandle, BufferID.SargassumFoveatedSimulationInput, 1);
+            var foveatedSimulationBack = ResolveSargassumVaultArray(in _foveatedSimulationBackHandle, BufferID.SargassumFoveatedSimulationBack, 1);
             if (!foveatedSimulationInput.IsCreated || !foveatedSimulationBack.IsCreated)
                 return;
 
@@ -7283,7 +7279,7 @@ namespace Hecton8.World
 
         private void PopulateFoveatedSimulationInput(float frameDeltaTime, float cameraDistanceSq, float previousAccumulator)
         {
-            var foveatedSimulationInput = ResolveVaultBuffer(ref _foveatedSimulationInputHandle);
+            var foveatedSimulationInput = ResolveSargassumVaultArray(in _foveatedSimulationInputHandle, BufferID.SargassumFoveatedSimulationInput, 1);
             if (!foveatedSimulationInput.IsCreated || foveatedSimulationInput.Length <= 0)
                 return;
 
@@ -7305,8 +7301,8 @@ namespace Hecton8.World
             if (_foveatedSimulationScheduled)
                 return;
 
-            var foveatedSimulationInput = ResolveVaultBuffer(ref _foveatedSimulationInputHandle);
-            var foveatedSimulationBack = ResolveVaultBuffer(ref _foveatedSimulationBackHandle);
+            var foveatedSimulationInput = ResolveSargassumVaultArray(in _foveatedSimulationInputHandle, BufferID.SargassumFoveatedSimulationInput, 1);
+            var foveatedSimulationBack = ResolveSargassumVaultArray(in _foveatedSimulationBackHandle, BufferID.SargassumFoveatedSimulationBack, 1);
             if (!foveatedSimulationInput.IsCreated ||
                 !foveatedSimulationBack.IsCreated ||
                 foveatedSimulationInput.Length <= 0 ||
@@ -7527,8 +7523,8 @@ namespace Hecton8.World
 
             _leviathanNodeBuildScheduled = false;
 
-            var leviathanNodeCount = ResolveVaultBuffer(ref _leviathanNodeCountHandle);
-            var leviathanNodeBack = ResolveVaultBuffer(ref _leviathanNodeBackHandle);
+            var leviathanNodeCount = ResolveSargassumVaultArray(in _leviathanNodeCountHandle, BufferID.SargassumLeviathanNodeCount, 1);
+            var leviathanNodeBack = ResolveSargassumVaultArray(in _leviathanNodeBackHandle, BufferID.SargassumLeviathanNodeBack, leviathanNodeCapacity);
             int safeCount = (leviathanNodeCount.IsCreated && leviathanNodeCount.Length > 0)
                 ? math.clamp(leviathanNodeCount[0], 0, leviathanNodeBack.IsCreated ? leviathanNodeBack.Length : 0)
                 : 0;
@@ -7541,7 +7537,7 @@ namespace Hecton8.World
 
         private void UploadActiveLeviathanSnapshot()
         {
-            var leviathanNodeFront = ResolveVaultBuffer(ref _leviathanNodeFrontHandle);
+            var leviathanNodeFront = ResolveSargassumVaultArray(in _leviathanNodeFrontHandle, BufferID.SargassumLeviathanNodeFront, leviathanNodeCapacity);
             if (_leviathanNodeBuffer == null || !leviathanNodeFront.IsCreated || _leviathanPathNodeCount <= 0)
                 return;
 
@@ -7560,12 +7556,12 @@ namespace Hecton8.World
 
         NativeArray<float4> ResolveBoidSensoryThreats()
         {
-            return ResolveVaultBuffer(ref _boidSensoryThreatsHandle);
+            return ResolveSargassumVaultArray(in _boidSensoryThreatsHandle, BufferID.SargassumBoidSensoryThreats, PredatorAupBufferCapacity);
         }
 
         NativeArray<BoidSensoryBlackBoxEntry> ResolveBoidSensoryBlackBox()
         {
-            return ResolveVaultBuffer(ref _boidSensoryBlackBoxHandle);
+            return ResolveSargassumVaultArray(in _boidSensoryBlackBoxHandle, BufferID.SargassumBoidSensoryBlackBox, BoidSensoryBlackBoxCapacity);
         }
 
         private GraphicsBuffer ResolveBoidSensoryThreatWriteBuffer()
@@ -7624,34 +7620,101 @@ namespace Hecton8.World
             _boidSensoryThreatUploadValidB = false;
         }
 
-        NativeArray<T> ResolveVaultBuffer<T>(ref VaultBufferHandle<T> handle) where T : struct
-        {
-            IDataVault vault = _dataVault;
-            return vault != null && handle.IsCreated
-                ? handle.Resolve(vault)
-                : default;
-        }
-
-        private static void EnsureVaultBufferHandle<T>(
-            IDataVault vault,
-            ref VaultBufferHandle<T> handle,
+        private NativeArray<T> ResolveSargassumVaultArray<T>(
+            in VaultGenerationHandle<T> handle,
             BufferID bufferId,
             int requiredLength) where T : struct
         {
-            if (requiredLength <= 0 || vault == null || bufferId == BufferID.Unknown)
+            return TryResolveSargassumVaultArray(_dataVault, in handle, bufferId, requiredLength, out NativeArray<T> buffer)
+                ? buffer
+                : default;
+        }
+
+        private static void EnsureSargassumVaultGenerationHandle<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength) where T : struct
+        {
+            if (!TryEnsureSargassumVaultArray(
+                    vault,
+                    ref handle,
+                    bufferId,
+                    requiredLength,
+                    NativeArrayOptions.ClearMemory,
+                    out _))
             {
                 handle = default;
-                return;
+            }
+        }
+
+        private static bool TryEnsureSargassumVaultArray<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            NativeArrayOptions options,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            if (vault == null ||
+                bufferId == BufferID.Unknown ||
+                requiredLength <= 0 ||
+                vault.IsCompactionFenceActive)
+            {
+                return false;
             }
 
-            if (handle.IsCreated && handle.BufferId == bufferId && handle.Length >= requiredLength)
-                return;
+            if (!TryResolveSargassumVaultArray(vault, in handle, bufferId, requiredLength, out buffer))
+            {
+                handle = vault.GetGenerationHandle<T>(
+                    bufferId,
+                    requiredLength,
+                    SystemID.WorldSargassum,
+                    options);
+            }
 
-            handle = vault.GetBufferHandle<T>(
-                bufferId,
-                requiredLength,
-                SystemID.WorldSargassum,
-                NativeArrayOptions.ClearMemory);
+            if (!TryResolveSargassumVaultArray(vault, in handle, bufferId, requiredLength, out buffer))
+            {
+                handle = default;
+                buffer = default;
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool TryResolveSargassumVaultArray<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            if (vault == null ||
+                bufferId == BufferID.Unknown ||
+                requiredLength <= 0 ||
+                vault.IsCompactionFenceActive ||
+                !IsSargassumVaultHandle(in handle, bufferId) ||
+                !vault.TryResolveHandle(in handle, out buffer) ||
+                !buffer.IsCreated ||
+                buffer.Length < requiredLength)
+            {
+                buffer = default;
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool IsSargassumVaultHandle<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId) where T : struct
+        {
+            return handle.BufferID == (uint)bufferId &&
+                   handle.SystemID == (uint)SystemID.WorldSargassum &&
+                   handle.Generation != 0u;
         }
 
         private bool ValidateGpuStructLayouts()
@@ -7960,7 +8023,7 @@ namespace Hecton8.World
                 UploadFormationObstacles();
             }
 
-            var leviathanNodeFront = ResolveVaultBuffer(ref _leviathanNodeFrontHandle);
+            var leviathanNodeFront = ResolveSargassumVaultArray(in _leviathanNodeFrontHandle, BufferID.SargassumLeviathanNodeFront, leviathanNodeCapacity);
             if (leviathanNodeFront.IsCreated)
             {
                 int frontCount = math.clamp(_leviathanPathNodeCount, 0, leviathanNodeFront.Length);
@@ -7974,7 +8037,7 @@ namespace Hecton8.World
                 GraphicsBufferUploadUtility.UploadNativeArray(_leviathanNodeBuffer, leviathanNodeFront, frontCount);
             }
 
-            var leviathanNodeBack = ResolveVaultBuffer(ref _leviathanNodeBackHandle);
+            var leviathanNodeBack = ResolveSargassumVaultArray(in _leviathanNodeBackHandle, BufferID.SargassumLeviathanNodeBack, leviathanNodeCapacity);
             if (leviathanNodeBack.IsCreated)
             {
                 int backCount = math.clamp(_leviathanPathNodeCount, 0, leviathanNodeBack.Length);

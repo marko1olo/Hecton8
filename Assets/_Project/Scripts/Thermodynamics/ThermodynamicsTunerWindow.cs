@@ -81,7 +81,13 @@ namespace Hecton8.Thermodynamics
             ThermodynamicsHazardGridRuntime runtime = ThermodynamicsHazardGridRuntime.ActiveRuntimeInstance;
             if (runtime == null ||
                 !runtime.PrepareVaultGridReadback() ||
-                !runtime.TryGetVaultGridReadback(out NativeArray<float> temperature, out NativeArray<float> radiation, out int resolution, out _, out float cellSize, out _))
+                !runtime.TryGetVaultGridReadback(
+                    out NativeArray<float>.ReadOnly temperature,
+                    out NativeArray<float>.ReadOnly radiation,
+                    out int resolution,
+                    out _,
+                    out float cellSize,
+                    out _))
             {
                 return;
             }

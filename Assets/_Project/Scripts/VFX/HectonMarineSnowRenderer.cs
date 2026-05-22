@@ -5,7 +5,6 @@ using System.Threading;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Memory;
 using Hecton8.Core.Contracts.Signals;
-using ScalabilityChangedEvent = Hecton8.Core.Contracts.Signals.ScalabilityChangedEvent;
 using Hecton8.Core;
 using Hecton8.Optimization;
 using Hecton8.Physics;
@@ -32,19 +31,17 @@ namespace Hecton8.Environment
         IOriginShiftListener,
         IVehicleCommandSignalListener,
         IGlobalRegistryHotSwapListener,
-        IGlobalRegistryHotSwapRefListener,
-        IScalabilityChangedEventListener
+        IGlobalRegistryHotSwapRefListener
     {
         private const float BiolumeSurgeDurationSeconds = 4f;
         private const int DefaultParticleThreadGroupSize = 64;
         private const int DefaultClearKernelTileSize = 8;
         private const int MaxParticleDispatchGroupsPerCall = 512;
-        private const int Mx350MarineSnowParticleCapacity = VfxComputeParticleBudgetCatalog.LowMarineSnowCount;
+        private const int MinimumMarineSnowParticleCapacity = VfxComputeParticleBudgetCatalog.LowMarineSnowCount;
         private const int MidMarineSnowParticleCapacity = VfxComputeParticleBudgetCatalog.MidMarineSnowCount;
         private const int HighMarineSnowParticleCapacity = VfxComputeParticleBudgetCatalog.HighMarineSnowCount;
         private const int UltraMarineSnowParticleCapacity = VfxComputeParticleBudgetCatalog.UltraMarineSnowCount;
         private const int MaxMarineSnowParticleCapacity = UltraMarineSnowParticleCapacity;
-        private const HectonQualityTier InvalidQualityTier = (HectonQualityTier)255;
         private const int ParticleDataStride = 32;
         private const int ParticleRenderMetaStride = 32;
         private const int ProceduralIndirectArgsStride = 16;
@@ -595,9 +592,8 @@ namespace Hecton8.Environment
         private float _simulationTime;
         private int _activeParticleCount;
         private int _allocatedParticleCapacity;
-        private int _resolvedParticleCapacity = Mx350MarineSnowParticleCapacity;
-        private HectonQualityTier _sampledQualityTier = HectonQualityTier.Unknown;
-        private HectonQualityTier _resolvedQualityTier = InvalidQualityTier;
+        private int _resolvedParticleCapacity = MinimumMarineSnowParticleCapacity;
+        private VfxComputeParticleBudget _resolvedPressureBudget = VfxComputeParticleBudget.Low;
         private VFXEmissionProfile.FluidType _resolvedFluidType = (VFXEmissionProfile.FluidType)255;
         private byte _resolvedPressureLevel = byte.MaxValue;
         private float _resolvedGlobalQualityWeight = -1f;
@@ -766,7 +762,6 @@ namespace Hecton8.Environment
         private bool _nativeStateReady;
         private bool _blackBoxDumped;
         private bool _hotSwapRegistered;
-        private bool _scalabilityEventsRegistered;
         private bool _dispatcherReady;
         private bool _particleBuffersNeedGpuBootstrap;
         private bool _externalGpuBindingsDirty = true;
@@ -774,8 +769,9 @@ namespace Hecton8.Environment
         private bool _fogDensityGlobalsDirty = true;
         [SerializeField] private int _debugActiveParticleCount;
         [SerializeField] private int _debugAllocatedParticleCapacity;
-        [SerializeField] private int _debugScalabilityParticleCapacity = Mx350MarineSnowParticleCapacity;
-        [SerializeField] private HectonQualityTier _debugScalabilityQualityTier = HectonQualityTier.Unknown;
+        [SerializeField] private int _debugScalabilityParticleCapacity = MinimumMarineSnowParticleCapacity;
+        [SerializeField] private float _debugGlobalQualityWeight01;
+        [SerializeField] private float _debugQualityPressure01 = 1f;
         [SerializeField] private float _debugAdaptiveRenderScale = 1f;
         [SerializeField] private float _debugAdaptiveBudgetScale = 1f;
         [SerializeField] private VRAMMonitor.VRAMPressureState _debugAdaptiveVramPressureState;
@@ -806,7 +802,6 @@ namespace Hecton8.Environment
             RefreshSpeedLineCache();
             ResolveTargetCamera();
             TryRegisterHotSwapListener();
-            TryRegisterScalabilityEvents();
             RefreshFluidBinding(force: true);
             RefreshDataVaultBinding(force: true);
             EnsureNativeState();
@@ -826,7 +821,6 @@ namespace Hecton8.Environment
         {
             HectonFloatingOrigin.UnregisterListener(this);
             UnregisterVehicleCommandListener();
-            TryUnregisterScalabilityEvents();
             TryUnregisterHotSwapListener();
             StopCsvProfileBackgroundReader();
             SetUnderwaterState(false, 0f, 0f, 1f, 0f);
@@ -854,7 +848,6 @@ namespace Hecton8.Environment
         {
             HectonFloatingOrigin.UnregisterListener(this);
             UnregisterVehicleCommandListener();
-            TryUnregisterScalabilityEvents();
             TryUnregisterHotSwapListener();
             StopCsvProfileBackgroundReader();
             ClearNativeStateLease();
@@ -949,35 +942,6 @@ namespace Hecton8.Environment
             _hotSwapRegistered = false;
         }
 
-        private void TryRegisterScalabilityEvents()
-        {
-            if (!_scalabilityEventsRegistered)
-            {
-                ScalabilityEvents.Register(this);
-                _scalabilityEventsRegistered = true;
-            }
-
-            _resolvedQualityTier = InvalidQualityTier;
-        }
-
-        private void TryUnregisterScalabilityEvents()
-        {
-            if (!_scalabilityEventsRegistered)
-                return;
-
-            ScalabilityEvents.Unregister(this);
-            _scalabilityEventsRegistered = false;
-        }
-
-        void IScalabilityChangedEventListener.OnScalabilityChanged(in ScalabilityChangedEvent payload)
-        {
-            if (_sampledQualityTier != payload.CurrentQualityTier)
-            {
-                _sampledQualityTier = payload.CurrentQualityTier;
-                _resolvedQualityTier = InvalidQualityTier;
-            }
-        }
-
         void IGlobalRegistryHotSwapRefListener.OnGlobalRegistryServiceRebound(
             GlobalRegistryServiceSlot serviceSlot,
             ref object currentService)
@@ -1007,8 +971,7 @@ namespace Hecton8.Environment
             ApplyRegistryServiceRebind(GlobalRegistryServiceSlot.Weather, GlobalRegistry.Weather);
             ApplyRegistryServiceRebind(GlobalRegistryServiceSlot.DynamicResolutionRuntime, GlobalRegistry.DynamicResolution);
             ApplyRegistryServiceRebind(GlobalRegistryServiceSlot.VRAMMonitorRuntime, GlobalRegistry.VRAMMonitor);
-            _sampledQualityTier = GlobalRegistry.QualityTier;
-            _resolvedQualityTier = InvalidQualityTier;
+            _resolvedGlobalQualityWeight = -1f;
         }
 
         private void ApplyRegistryServiceRebind(GlobalRegistryServiceSlot serviceSlot, object currentService)
@@ -3260,8 +3223,8 @@ namespace Hecton8.Environment
             GraphicsBuffer wakeVectorBuffer = _emptyAbyssalFlowBuffer;
             GraphicsBuffer wakeDtoBuffer = _mockWakeDtoBuffer != null ? _mockWakeDtoBuffer : _emptyAbyssalFlowBuffer;
             Vector4 wakeParams = Vector4.zero;
-            float wakeLowTierWeight = ResolveDynamicWakeLowTierWeight(_resolvedScalabilityParams.x);
-            Vector4 wakeDtoParams = _debugMockWakeCount > 0 ? new Vector4(MockWakeCapacity, wakeLowTierWeight, _debugMockWakeCount, math.max(0f, ResolveFlowParams().w)) : Vector4.zero;
+            float wakeQualityPressure01 = ResolveDynamicWakeQualityPressure01(_resolvedScalabilityParams.x);
+            Vector4 wakeDtoParams = _debugMockWakeCount > 0 ? new Vector4(MockWakeCapacity, wakeQualityPressure01, _debugMockWakeCount, math.max(0f, ResolveFlowParams().w)) : Vector4.zero;
 
             HectonFluidEngine fluidEngine = _fluidEngine;
             if (fluidEngine != null &&
@@ -3280,7 +3243,7 @@ namespace Hecton8.Environment
             {
                 wakeBuffer = _mockWakeBuffer;
                 wakeVectorBuffer = _mockWakeVectorBuffer;
-                wakeParams = new Vector4(MockWakeCapacity, wakeLowTierWeight, _debugMockWakeCount, math.max(0f, ResolveFlowParams().w));
+                wakeParams = new Vector4(MockWakeCapacity, wakeQualityPressure01, _debugMockWakeCount, math.max(0f, ResolveFlowParams().w));
             }
 
             SetKernelBufferIfChanged(_kernelIndex, ShaderIds.DynamicWakesId, wakeBuffer, ref _boundDynamicWakeBuffer);
@@ -3296,16 +3259,16 @@ namespace Hecton8.Environment
             if (!IsFiniteVector(wakeParams))
                 return Vector4.zero;
 
-            float lowTier = math.saturate(wakeParams.y);
-            float tierCapacity = math.lerp(16f, 4f, lowTier);
-            float slotLimit = math.clamp(wakeParams.x, 0f, tierCapacity);
+            float qualityPressure01 = math.saturate(wakeParams.y);
+            float continuousCapacity = math.lerp(16f, 4f, qualityPressure01);
+            float slotLimit = math.clamp(wakeParams.x, 0f, continuousCapacity);
             float activeCount = math.clamp(wakeParams.z, 0f, slotLimit);
-            return new Vector4(slotLimit, lowTier, activeCount, math.max(0f, wakeParams.w));
+            return new Vector4(slotLimit, qualityPressure01, activeCount, math.max(0f, wakeParams.w));
         }
 
-        private static float ResolveDynamicWakeLowTierWeight(float scalabilityTier)
+        private static float ResolveDynamicWakeQualityPressure01(float flowQualityWeight)
         {
-            return math.saturate(1f - math.saturate(scalabilityTier * 0.5f));
+            return math.saturate(1f - math.saturate(flowQualityWeight * 0.5f));
         }
 
         private void RefreshMaelstromBinding()
@@ -4436,8 +4399,7 @@ namespace Hecton8.Environment
             ulong killSwitchMask = VfxComputeParticleBudgetCatalog.ResolvePolicyKillSwitchMask(
                 pressureLevel,
                 HomeostasisBrain.CurrentKillSwitchMask);
-            VfxComputeParticleBudget pressureBudget =
-                VfxComputeParticleBudgetCatalog.ResolveBudgetForPressure(_resolvedQualityTier, pressureLevel);
+            VfxComputeParticleBudget pressureBudget = _resolvedPressureBudget;
             capacity = math.min(capacity, pressureBudget.ResolvePoolCapacity(fluidType));
             float systemStress01 = ResolveSystemStress01();
             float stressCapacityBlend = math.smoothstep(0.65f, 0.95f, systemStress01);
@@ -4734,21 +4696,21 @@ namespace Hecton8.Environment
 
         private void RefreshScalabilityProfile()
         {
-            HectonQualityTier qualityTier = _sampledQualityTier;
             byte pressureLevel = HomeostasisBrain.PressureLevel;
             float globalQualityWeight = math.saturate(HomeostasisBrain.GlobalQualityWeight);
             ulong killSwitchMask = VfxComputeParticleBudgetCatalog.ResolvePolicyKillSwitchMask(
                 pressureLevel,
                 HomeostasisBrain.CurrentKillSwitchMask);
-            if (qualityTier == _resolvedQualityTier &&
-                pressureLevel == _resolvedPressureLevel &&
+            if (pressureLevel == _resolvedPressureLevel &&
                 killSwitchMask == _resolvedKillSwitchMask &&
                 math.abs(globalQualityWeight - _resolvedGlobalQualityWeight) <= ShaderVectorPublishEpsilon &&
                 fluidType == _resolvedFluidType)
                 return;
 
-            VfxComputeParticleBudget pressureBudget =
-                VfxComputeParticleBudgetCatalog.ResolveBudgetForPressure(qualityTier, pressureLevel);
+            VfxComputeParticleBudget pressureBudget = BuildContinuousPressureBudget(
+                globalQualityWeight,
+                pressureLevel,
+                killSwitchMask);
             int particleCapacity = math.min(
                 ResolveContinuousPoolCapacity(fluidType, globalQualityWeight),
                 pressureBudget.ResolvePoolCapacity(fluidType));
@@ -4757,15 +4719,16 @@ namespace Hecton8.Environment
                 pressureLevel,
                 killSwitchMask);
 
-            _resolvedQualityTier = qualityTier;
             _resolvedPressureLevel = pressureLevel;
             _resolvedGlobalQualityWeight = globalQualityWeight;
             _resolvedKillSwitchMask = killSwitchMask;
             _resolvedFluidType = fluidType;
+            _resolvedPressureBudget = pressureBudget;
             _resolvedParticleCapacity = math.clamp(particleCapacity, 64, MaxMarineSnowParticleCapacity);
             _resolvedScalabilityParams = scalabilityParams;
-            _debugScalabilityQualityTier = qualityTier;
             _debugScalabilityParticleCapacity = _resolvedParticleCapacity;
+            _debugGlobalQualityWeight01 = globalQualityWeight;
+            _debugQualityPressure01 = ResolveDynamicWakeQualityPressure01(scalabilityParams.x);
             _debugHomeostasisPressureLevel = pressureLevel;
             _debugHomeostasisKillSwitchMaskLow32 = unchecked((uint)killSwitchMask);
             _debugBudgetedStepDistanceMeters = pressureBudget.StepDistanceMeters;
@@ -4788,6 +4751,140 @@ namespace Hecton8.Environment
             float collisionQuality = math.smoothstep(0.18f, 0.78f, thermalQuality) * policyCollisionWeight;
             float depthQuality = math.smoothstep(0.28f, 0.92f, thermalQuality) * policyCollisionWeight;
             return new Vector4(flowQuality * 2f, flowQuality, collisionQuality, depthQuality);
+        }
+
+        private static VfxComputeParticleBudget BuildContinuousPressureBudget(
+            float globalQualityWeight,
+            byte pressureLevel,
+            ulong killSwitchMask)
+        {
+            float q = math.saturate(globalQualityWeight);
+            float pressure01 = math.saturate(pressureLevel * 0.33333334f);
+            float lowToMid = math.smoothstep(0f, 0.45f, q);
+            float midToHigh = math.smoothstep(0.35f, 0.85f, q);
+            float highToUltra = math.smoothstep(0.72f, 1f, q);
+            float midPressure01 = math.smoothstep(0.18f, 0.45f, pressure01);
+            float emergencyPressure01 = math.smoothstep(0.48f, 0.90f, pressure01);
+
+            int marineSnowCount = ResolveContinuousBudgetCount(
+                VfxComputeParticleBudgetCatalog.LowMarineSnowCount,
+                VfxComputeParticleBudgetCatalog.MidMarineSnowCount,
+                VfxComputeParticleBudgetCatalog.HighMarineSnowCount,
+                VfxComputeParticleBudgetCatalog.UltraMarineSnowCount,
+                lowToMid,
+                midToHigh,
+                highToUltra,
+                midPressure01,
+                emergencyPressure01);
+            int bubbleCount = ResolveContinuousBudgetCount(
+                VfxComputeParticleBudgetCatalog.LowBubbleCount,
+                VfxComputeParticleBudgetCatalog.MidBubbleCount,
+                VfxComputeParticleBudgetCatalog.HighBubbleCount,
+                VfxComputeParticleBudgetCatalog.UltraBubbleCount,
+                lowToMid,
+                midToHigh,
+                highToUltra,
+                midPressure01,
+                emergencyPressure01);
+            int debrisCount = ResolveContinuousBudgetCount(
+                VfxComputeParticleBudgetCatalog.LowDebrisCount,
+                VfxComputeParticleBudgetCatalog.MidDebrisCount,
+                VfxComputeParticleBudgetCatalog.HighDebrisCount,
+                VfxComputeParticleBudgetCatalog.UltraDebrisCount,
+                lowToMid,
+                midToHigh,
+                highToUltra,
+                midPressure01,
+                emergencyPressure01);
+            float stepDistanceMeters = ResolveContinuousBudgetFloat(
+                VfxComputeParticleBudgetCatalog.LowStepDistanceMeters,
+                VfxComputeParticleBudgetCatalog.MidStepDistanceMeters,
+                VfxComputeParticleBudgetCatalog.HighStepDistanceMeters,
+                VfxComputeParticleBudgetCatalog.UltraStepDistanceMeters,
+                lowToMid,
+                midToHigh,
+                highToUltra);
+            stepDistanceMeters = math.lerp(
+                stepDistanceMeters,
+                math.max(stepDistanceMeters, VfxComputeParticleBudgetCatalog.MidStepDistanceMeters),
+                midPressure01);
+            stepDistanceMeters = math.lerp(
+                stepDistanceMeters,
+                VfxComputeParticleBudgetCatalog.LowStepDistanceMeters,
+                emergencyPressure01);
+
+            float shadowTapFloat = ResolveContinuousBudgetFloat(
+                VfxComputeParticleBudgetCatalog.LowShadowTaps,
+                VfxComputeParticleBudgetCatalog.MidShadowTaps,
+                VfxComputeParticleBudgetCatalog.HighShadowTaps,
+                VfxComputeParticleBudgetCatalog.UltraShadowTaps,
+                lowToMid,
+                midToHigh,
+                highToUltra);
+            shadowTapFloat = math.lerp(
+                shadowTapFloat,
+                math.min(shadowTapFloat, VfxComputeParticleBudgetCatalog.MidShadowTaps),
+                midPressure01);
+            shadowTapFloat = math.lerp(
+                shadowTapFloat,
+                VfxComputeParticleBudgetCatalog.LowShadowTaps,
+                emergencyPressure01);
+            int shadowTaps = math.clamp((int)(shadowTapFloat + 0.5f), 0, VfxComputeParticleBudgetCatalog.UltraShadowTaps);
+            if ((killSwitchMask & VfxComputeParticleBudgetCatalog.VolumetricFogHighResMask) != 0UL)
+                shadowTaps = math.min(shadowTaps, VfxComputeParticleBudgetCatalog.MidShadowTaps);
+
+            float flowFramesFloat = ResolveContinuousBudgetFloat(
+                VfxComputeParticleBudgetCatalog.LowFlowResampleFrames,
+                VfxComputeParticleBudgetCatalog.MidFlowResampleFrames,
+                VfxComputeParticleBudgetCatalog.HighFlowResampleFrames,
+                VfxComputeParticleBudgetCatalog.UltraFlowResampleFrames,
+                lowToMid,
+                midToHigh,
+                highToUltra);
+            flowFramesFloat = math.lerp(flowFramesFloat, VfxComputeParticleBudgetCatalog.LowFlowResampleFrames, emergencyPressure01);
+            int flowResampleFrames = math.clamp((int)(flowFramesFloat + 0.5f), 0, VfxComputeParticleBudgetCatalog.MidFlowResampleFrames);
+            if ((killSwitchMask & VfxComputeParticleBudgetCatalog.ParticleAdvectionMask) != 0UL)
+                flowResampleFrames = 0;
+
+            return new VfxComputeParticleBudget(
+                marineSnowCount + bubbleCount + debrisCount,
+                marineSnowCount,
+                bubbleCount,
+                debrisCount,
+                math.max(0.05f, stepDistanceMeters),
+                shadowTaps,
+                flowResampleFrames);
+        }
+
+        private static int ResolveContinuousBudgetCount(
+            int low,
+            int mid,
+            int high,
+            int ultra,
+            float lowToMid,
+            float midToHigh,
+            float highToUltra,
+            float midPressure01,
+            float emergencyPressure01)
+        {
+            float value = ResolveContinuousBudgetFloat(low, mid, high, ultra, lowToMid, midToHigh, highToUltra);
+            value = math.lerp(value, math.min(value, mid), midPressure01);
+            value = math.lerp(value, low, emergencyPressure01);
+            return math.max(0, (int)(value + 0.5f));
+        }
+
+        private static float ResolveContinuousBudgetFloat(
+            float low,
+            float mid,
+            float high,
+            float ultra,
+            float lowToMid,
+            float midToHigh,
+            float highToUltra)
+        {
+            float value = math.lerp(low, mid, lowToMid);
+            value = math.lerp(value, high, midToHigh);
+            return math.lerp(value, ultra, highToUltra);
         }
 
         private static int ResolveContinuousPoolCapacity(
