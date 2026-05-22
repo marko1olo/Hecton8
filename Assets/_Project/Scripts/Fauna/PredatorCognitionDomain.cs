@@ -748,31 +748,6 @@ namespace Hecton8.AI
             }
         }
 
-        private struct BorrowedArray<T> where T : struct
-        {
-            public NativeArray<T> Array;
-
-            public bool IsCreated => Array.IsCreated;
-
-            public int Length => Array.Length;
-
-            public T this[int index]
-            {
-                get => Array[index];
-                set => Array[index] = value;
-            }
-
-            public static implicit operator NativeArray<T>(BorrowedArray<T> array)
-            {
-                return array.Array;
-            }
-
-            public static implicit operator BorrowedArray<T>(NativeArray<T> array)
-            {
-                return new BorrowedArray<T> { Array = array };
-            }
-        }
-
         private static VaultArray<CognitionCore> _cores;
         private static VaultArray<CognitionControl> _controls;
         private static VaultArray<CognitionInput> _inputs;
@@ -839,12 +814,12 @@ namespace Hecton8.AI
         private static float3 _threatVoxelCellSize;
         private static byte _threatVoxelSolidThreshold = SolidThreatVoxel;
         private static bool _threatVoxelUsesSignedDistanceEncoding;
-        private static BorrowedArray<float4> _chemicalFrontGrid;
-        private static BorrowedArray<float4> _chemicalOverlayGrid;
+        private static NativeArray<float4>.ReadOnly _chemicalFrontGrid;
+        private static NativeArray<float4>.ReadOnly _chemicalOverlayGrid;
         private static int3 _chemicalGridDimensions;
         private static float3 _chemicalGridOrigin;
         private static float3 _chemicalGridCellSize = new float3(1f, 1f, 1f);
-        private static BorrowedArray<ChemicalInfluenceGrid.ChemicalBreadcrumbWaypoint> _chemicalBreadcrumbs;
+        private static NativeArray<ChemicalInfluenceGrid.ChemicalBreadcrumbWaypoint>.ReadOnly _chemicalBreadcrumbs;
         private static int _chemicalBreadcrumbCount;
         private static float _chemicalBreadcrumbFollowStepMeters = 12f;
         private static JobHandle _scheduledSwarmHandle;
@@ -4650,8 +4625,8 @@ namespace Hecton8.AI
 
             _lastChemicalGridBindFrame = frameId;
             if (ChemicalInfluenceGrid.TryGetPublishedSnapshot(
-                    out NativeArray<float4> frontGrid,
-                    out NativeArray<float4> overlayGrid,
+                    out NativeArray<float4>.ReadOnly frontGrid,
+                    out NativeArray<float4>.ReadOnly overlayGrid,
                     out int3 dimensions,
                     out float3 origin,
                     out float3 cellSize))
@@ -4672,7 +4647,7 @@ namespace Hecton8.AI
             }
 
             if (ChemicalInfluenceGrid.TryGetPublishedBreadcrumbs(
-                out NativeArray<ChemicalInfluenceGrid.ChemicalBreadcrumbWaypoint> breadcrumbs,
+                out NativeArray<ChemicalInfluenceGrid.ChemicalBreadcrumbWaypoint>.ReadOnly breadcrumbs,
                 out int count,
                 out float followStepMeters))
             {
@@ -5550,12 +5525,12 @@ namespace Hecton8.AI
             public float3 ThreatVoxelCellSize;
             public byte ThreatVoxelSolidThreshold;
             public int ThreatVoxelUsesSignedDistanceEncoding;
-            [ReadOnly] public NativeArray<float4> ChemicalFrontGrid;
-            [ReadOnly] public NativeArray<float4> ChemicalOverlayGrid;
+            [ReadOnly] public NativeArray<float4>.ReadOnly ChemicalFrontGrid;
+            [ReadOnly] public NativeArray<float4>.ReadOnly ChemicalOverlayGrid;
             public int3 ChemicalGridDimensions;
             public float3 ChemicalGridOrigin;
             public float3 ChemicalGridCellSize;
-            [ReadOnly] public NativeArray<ChemicalInfluenceGrid.ChemicalBreadcrumbWaypoint> ChemicalBreadcrumbs;
+            [ReadOnly] public NativeArray<ChemicalInfluenceGrid.ChemicalBreadcrumbWaypoint>.ReadOnly ChemicalBreadcrumbs;
             public int ChemicalBreadcrumbCount;
             public float ChemicalBreadcrumbFollowStepMeters;
             [ReadOnly] public NativeArray<LightSourceData> RetinalLightSources;

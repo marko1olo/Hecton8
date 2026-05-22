@@ -327,9 +327,9 @@ namespace Hecton8.Core
         /// Gets read-only access to the native prefab ID snapshot for Burst jobs.
         /// Returns default if not warmed up.
         /// </summary>
-        public NativeHashMap<int, int> GetNativeMap()
+        public NativeHashMap<int, int>.ReadOnly GetNativeMap()
         {
-            return _nativeMap;
+            return _nativeMap.IsCreated ? _nativeMap.AsReadOnly() : default;
         }
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•

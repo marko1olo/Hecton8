@@ -1175,8 +1175,8 @@ namespace Hecton8.World
         /// <summary>Current active instance count published into the indirect args payload.</summary>
         public int BoundInstanceCount => _instanceCount;
 
-        /// <summary>Renderer-owned SoA growth lane uploaded as _HectonFloraAges01. Negative entries are harvested/culling sentinels.</summary>
-        public NativeArray<float> FloraAges01 => _floraAges01;
+        /// <summary>Read-only renderer-owned SoA growth lane uploaded as _HectonFloraAges01. Negative entries are harvested/culling sentinels.</summary>
+        public NativeArray<float>.ReadOnly FloraAges01 => _floraAges01.IsCreated ? _floraAges01.AsReadOnly() : default;
 
         /// <summary>
         /// Writes one authored flora age into the renderer-owned SoA lane and schedules a GPU upload.
@@ -1200,7 +1200,7 @@ namespace Hecton8.World
         }
 
         /// <summary>
-        /// Marks externally-mutated <see cref="FloraAges01"/> data for upload without copying or allocating.
+        /// Marks renderer-owned flora age data for upload after an explicit owner-authorized write path.
         /// </summary>
         public void MarkFloraAgesDirty()
         {

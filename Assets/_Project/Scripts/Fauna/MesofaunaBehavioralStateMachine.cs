@@ -585,7 +585,7 @@ namespace Hecton8.AI
         [ReadOnly, NoAlias] public NativeArray<int> TargetHashBucketHeads;
         [ReadOnly, NoAlias] public NativeArray<int> TargetHashNext;
         [ReadOnly, NoAlias] public NativeArray<byte>.ReadOnly ThreatVoxelGrid;
-        [ReadOnly, NoAlias] public NativeArray<ChemicalInfluenceGrid.ChemicalBreadcrumbWaypoint> ChemicalBreadcrumbs;
+        [ReadOnly, NoAlias] public NativeArray<ChemicalInfluenceGrid.ChemicalBreadcrumbWaypoint>.ReadOnly ChemicalBreadcrumbs;
         public int3 ThreatVoxelDimensions;
         public float3 ThreatVoxelOrigin;
         public float3 ThreatVoxelCellSize;

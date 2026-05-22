@@ -176,3 +176,58 @@ Rejected:
 - Changing placement jobs or HZB/indirect draw paths.
 - Changing POI DTO layout or telemetry dump format.
 - Narrowing writer/acquire routes without call-site proof.
+
+## 2026-05-22 Flora Age Public Property Update
+
+Evidence class: STATIC_SOURCE / STATIC_TOOL only. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+Selected route:
+
+- `HectonIndirectVegetationRenderer.FloraAges01` was a public mutable native return for renderer-owned flora growth/harvest state.
+- Focused search found no first-party direct mutation consumers; explicit writer routes are `TrySetFloraAge01` and `TryCopyFloraAges01`.
+
+Patch:
+
+- `FloraAges01` now returns `NativeArray<float>.ReadOnly`.
+- The owner buffer, GPU upload path, culling compute binding, setter, and copy route remain unchanged.
+
+Updated static counts from `Docs/Reports/PROJECT_AUDIT_polish_after_flora_age_readonly_property.json`:
+
+- `nativeCollectionPublicMutableApiExposure`: 151, down from 152.
+- `nativeApiExposureBuildPlayerRuntime`: 138, down from 139.
+- `nativeApiExposureMutableReturn`: 33, down from 34.
+- `nativeApiRiskRuntimeReturnMutableView`: 18, down from 19.
+
+Rejected:
+
+- Cable telemetry private helper narrowing, because it was not an outward mutable API surface.
+- Raw external mutation through `FloraAges01`; external writes should go through explicit owner-authorized methods.
+- Changing GPU buffer layout, culling shader bindings, or flora age SoA storage.
+
+## 2026-05-22 Prefab Registry Native Map Update
+
+Evidence class: STATIC_SOURCE / STATIC_TOOL only. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+Selected route:
+
+- `PrefabRegistry.GetNativeMap()` returned `NativeHashMap<int,int>` while its documentation described read-only Burst access.
+- Focused search found no first-party call sites; Unity Collections package source confirms `NativeHashMap<TKey,TValue>.ReadOnly` and `AsReadOnly()`.
+
+Patch:
+
+- `GetNativeMap()` now returns `NativeHashMap<int,int>.ReadOnly`.
+- The static audit read-only suppression now covers `.ReadOnly` wrappers for native collection types, not only `NativeArray<T>.ReadOnly`.
+- Regression coverage was added to `test_detects_public_mutable_native_api_exposure`.
+
+Updated static counts from `Docs/Reports/PROJECT_AUDIT_polish_after_readonly_native_hashmap_filter.json`:
+
+- `nativeCollectionPublicMutableApiExposure`: 150, down from 151.
+- `nativeApiExposureBuildPlayerRuntime`: 137, down from 138.
+- `nativeApiExposureMutableReturn`: 32, down from 33.
+- `nativeApiRiskRuntimeReturnMutableView`: 17, down from 18.
+
+Rejected:
+
+- Changing registry warmup or disposal ownership.
+- Returning the mutable map just because no current caller exists.
+- Suppressing mutable queue writer, allocator, or ring-buffer owner APIs.

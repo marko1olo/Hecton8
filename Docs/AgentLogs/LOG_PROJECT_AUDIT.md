@@ -816,3 +816,27 @@ Cinematic Cheats used: No POI placement simulation was added. Existing placement
 Exact Microseconds saved: 0 us measured. Static outcome: broad audit dropped `nativeCollectionPublicMutableApiExposure` from `153` to `152`, `nativeApiExposureBuildPlayerRuntime` from `140` to `139`, `nativeApiExposureOutRefMutable` from `119` to `118`, and `nativeApiRiskRuntimeDiagnosticNamedMutableView` from `30` to `29`.
 
 Evidence: Focused search found no first-party call sites for `TryResolveExistingPlacementBuffers` and confirmed `AcquirePoiTransformBuffer`, `AcquireRouteBuffer`, and `AcquireTelemetryRing` remain mutable. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_after_biomimetic_poi_existing_readonly.json` returned `PASS_WITH_WARNINGS` with `nativeCollectionPublicMutableApiExposure=152`, `nativeApiExposureBuildPlayerRuntime=139`, `nativeApiExposureOutRefMutable=118`, and `nativeApiRiskRuntimeDiagnosticNamedMutableView=29`. `git diff --check` on touched files reported only LF/CRLF normalization warnings. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Flora Age Public Property Read-Only Narrowing
+
+What was wrong: `HectonIndirectVegetationRenderer.FloraAges01` exposed the renderer-owned growth SoA as a mutable public native return. Focused search found no first-party direct mutation consumers, and the renderer already provides explicit setter/copy writer routes.
+
+What was done: Converted `FloraAges01` to `NativeArray<float>.ReadOnly`. `TrySetFloraAge01`, `TryCopyFloraAges01`, GPU upload state, and culling compute bindings remain unchanged.
+
+Cinematic Cheats used: No flora simulation was added. Growth/harvest state remains a compact shader-uploaded SoA visual lane instead of per-flora GameObject state or physics.
+
+Exact Microseconds saved: 0 us measured. Static outcome: broad audit dropped `nativeCollectionPublicMutableApiExposure` from `152` to `151`, `nativeApiExposureBuildPlayerRuntime` from `139` to `138`, `nativeApiExposureMutableReturn` from `34` to `33`, and `nativeApiRiskRuntimeReturnMutableView` from `19` to `18`.
+
+Evidence: Focused search found the read-only `FloraAges01` property and no first-party raw property mutation consumers. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_after_flora_age_readonly_property.json` returned `PASS_WITH_WARNINGS` with `nativeCollectionPublicMutableApiExposure=151`, `nativeApiExposureBuildPlayerRuntime=138`, `nativeApiExposureMutableReturn=33`, and `nativeApiRiskRuntimeReturnMutableView=18`. `git diff --check` on the touched file reported only LF/CRLF normalization warnings. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Prefab Registry Native Map Read-Only Return
+
+What was wrong: `PrefabRegistry.GetNativeMap()` returned a mutable `NativeHashMap<int,int>` despite its own contract saying the map is for read-only Burst access. The static audit also treated `NativeHashMap<int,int>.ReadOnly` as mutable because the read-only suppression only covered `NativeArray<T>.ReadOnly`.
+
+What was done: Converted `GetNativeMap()` to `NativeHashMap<int,int>.ReadOnly` and returns `_nativeMap.AsReadOnly()` when the map is created. Updated `PolishMandateStaticAudit.py` and its regression test so native collection `.ReadOnly` wrapper returns are not counted as mutable exposure.
+
+Cinematic Cheats used: No prefab or scene instantiation path was added. The registry remains a warmed native lookup map instead of a scene scan or managed lookup inside Burst-facing code.
+
+Exact Microseconds saved: 0 us measured. Static outcome: broad audit dropped `nativeCollectionPublicMutableApiExposure` from `151` to `150`, `nativeApiExposureBuildPlayerRuntime` from `138` to `137`, `nativeApiExposureMutableReturn` from `33` to `32`, and `nativeApiRiskRuntimeReturnMutableView` from `18` to `17`.
+
+Evidence: Focused scan found the read-only native map return and no first-party callers of `GetNativeMap()`. `python Tools\test_polish_mandate_static_audit.py` ran 12 tests OK. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_after_readonly_native_hashmap_filter.json` returned `PASS_WITH_WARNINGS` with `nativeCollectionPublicMutableApiExposure=150`, `nativeApiExposureBuildPlayerRuntime=137`, `nativeApiExposureMutableReturn=32`, and `nativeApiRiskRuntimeReturnMutableView=17`. `git diff --check` on touched files reported only LF/CRLF normalization warnings. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.

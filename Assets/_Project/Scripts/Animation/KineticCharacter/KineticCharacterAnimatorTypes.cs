@@ -200,8 +200,8 @@ namespace Hecton8.Animation.KineticCharacter
         [FieldOffset(60)] public float SecondaryMotionStart01;
         [FieldOffset(64)] public uint Flags;
         [FieldOffset(68)] public int ActiveCharacterCount;
-        [FieldOffset(72)] public float LowTierCadenceHz;
-        [FieldOffset(76)] public float UltraTierCadenceHz;
+        [FieldOffset(72)] public float MinimumQualityCadenceHz;
+        [FieldOffset(76)] public float MaximumQualityCadenceHz;
         [FieldOffset(80)] public float SpineLeanRadians;
         [FieldOffset(84)] public float SwimBobMeters;
         [FieldOffset(88)] public float ToolHandSuppression01;
@@ -233,8 +233,8 @@ namespace Hecton8.Animation.KineticCharacter
             value.SecondaryMotionStart01 = 0.35f;
             value.Flags = KineticCharacterAnimatorConstants.RigFlagEmergencyMock;
             value.ActiveCharacterCount = 1;
-            value.LowTierCadenceHz = 24f;
-            value.UltraTierCadenceHz = 90f;
+            value.MinimumQualityCadenceHz = 24f;
+            value.MaximumQualityCadenceHz = 90f;
             value.SpineLeanRadians = 0.22f;
             value.SwimBobMeters = 0.045f;
             value.ToolHandSuppression01 = 0.55f;
@@ -314,8 +314,8 @@ namespace Hecton8.Animation.KineticCharacter
             tuning.DamageFlinchSeconds = math.clamp(PositiveFinite(tuning.DamageFlinchSeconds, 0.34f), 0.01f, 2f);
             tuning.SecondaryMotionStart01 = UnitFinite(tuning.SecondaryMotionStart01, 0.35f);
             tuning.ActiveCharacterCount = math.clamp(tuning.ActiveCharacterCount <= 0 ? 1 : tuning.ActiveCharacterCount, 0, KineticCharacterAnimatorConstants.CharacterCapacity);
-            tuning.LowTierCadenceHz = math.clamp(PositiveFinite(tuning.LowTierCadenceHz, 24f), 1f, 120f);
-            tuning.UltraTierCadenceHz = math.clamp(PositiveFinite(tuning.UltraTierCadenceHz, 90f), tuning.LowTierCadenceHz, 144f);
+            tuning.MinimumQualityCadenceHz = math.clamp(PositiveFinite(tuning.MinimumQualityCadenceHz, 24f), 1f, 120f);
+            tuning.MaximumQualityCadenceHz = math.clamp(PositiveFinite(tuning.MaximumQualityCadenceHz, 90f), tuning.MinimumQualityCadenceHz, 144f);
             tuning.SpineLeanRadians = math.clamp(NonNegativeFinite(tuning.SpineLeanRadians, 0.22f), 0f, 0.8f);
             tuning.SwimBobMeters = math.clamp(NonNegativeFinite(tuning.SwimBobMeters, 0.045f), 0f, 0.2f);
             tuning.ToolHandSuppression01 = UnitFinite(tuning.ToolHandSuppression01, 0.55f);

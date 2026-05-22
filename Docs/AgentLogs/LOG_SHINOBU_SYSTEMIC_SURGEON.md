@@ -3894,3 +3894,37 @@ Verification:
     Targeted scans found no old VFX endpoint constants, `VfxComputeParticleBudget.Low/Mid/High/Ultra`, `ResolveBudget(HectonQualityTier)`, volumetric `_MATH_LOD_LOW/_MATH_LOD_HIGH`, tier cap macro, or math-LOD multi-compile in the touched VFX/volumetric files. `git diff --check` passed with CRLF warnings only.
   </VERIFICATION>
 </SELF_AUDIT>
+
+<SELF_AUDIT id="SHINOBU_SYSTEMIC_SURGEON" pass="KineticCharacterAnimatorQualityEndpointNaming">
+  <WHAT_WAS_WRONG>
+    `KineticCharacterTuningDTO` named cadence endpoints `LowTierCadenceHz` and `UltraTierCadenceHz`; `KineticCharacterAnimatorJobs` named the minimum-quality triangle-wave breathing fake `lowTierTriangle`.
+  </WHAT_WAS_WRONG>
+  <WHAT_WAS_DONE>
+    Renamed the explicit DTO fields to `MinimumQualityCadenceHz` and `MaximumQualityCadenceHz` at the same offsets. Renamed the Burst local to `minimumQualityTriangle` while preserving the continuous `math.lerp(minimumQualityTriangle, authoredBreath, qualityCurve)` behavior.
+  </WHAT_WAS_DONE>
+  <TASK_RECONCILIATION>
+    01 [PASS] Status/rationale read before response and edit. 02 [PASS] Kinetic animation call sites scanned. 03 [PASS] Low/ultra tier cadence names removed. 04 [PASS] No asmdef/reference changed. 05 [PASS] No `Pack=1`. 06 [PASS] DTO offsets unchanged. 07 [PASS] No native container added. 08 [PASS] Vault route unchanged. 09 [PASS] No registry poll added. 10 [PASS] Existing continuous quality curve preserved. 11 [PASS] No RNG. 12 [PASS] Existing AUP observer-relative conversion untouched. 13 [PASS] Dear Lie triangle breath fake retained. 14 [PASS] Minimum endpoint retained. 15 [PASS] Maximum endpoint retained. 16 [PASS] Burst job fields unchanged. 17 [PASS] No job schedule/complete changed. 18 [PASS] Telemetry layout unchanged. 19 [PASS] Targeted scans clean for the old names in KineticCharacter. 20 [FAIL] Compile remains blocked by external scatter backend mismatch.
+  </TASK_RECONCILIATION>
+  <STRUCT_LAYOUT>
+    `KineticCharacterTuningDTO` remains `[StructLayout(LayoutKind.Explicit, Size = 128)]`. Renamed fields only: offset 72 `float MinimumQualityCadenceHz` 4B, offset 76 `float MaximumQualityCadenceHz` 4B. Surrounding fields and padding remain unchanged: offset 68 `int ActiveCharacterCount`, 80 `float SpineLeanRadians`, 84 `float SwimBobMeters`, 88 `float ToolHandSuppression01`, 92 `float FootPlantWeight01`, 96/100 pad floats, 104/112/120 ulong pads. Total remains 128 bytes.
+  </STRUCT_LAYOUT>
+  <SCALABILITY_CURVE>
+    The job keeps `quality = saturate(min(inputQuality, tuning.GlobalQualityWeight, GlobalQualityWeight))` and `qualityCurve = Smooth01(quality)`. Breathing blends from a cheap triangle-wave approximation at minimum quality to authored/fast-sine breathing at maximum quality; there is no binary branch.
+  </SCALABILITY_CURVE>
+  <H_PHI_VAULT_STATUS>
+    No `VaultBufferHandle`, `NativeArray`, `NativeList`, or `NativeHashMap` ownership changed. Existing kinetic animation vault lanes and telemetry ring remain unchanged.
+  </H_PHI_VAULT_STATUS>
+  <POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+    No Burst job field metadata or `JobHandle` dependency changed. The patch is naming-only inside the existing job and DTO row.
+  </POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+  <COMPILE_GUARD>
+    Guard sampled CPU 29.3 percent with no compiler processes, then `dotnet build Hecton8.Core.csproj --no-restore` failed only in `World/ScatterClassicBackendAdapters.cs` with the known `IScatterSimulationBackend.TrySchedule` mismatch. No kinetic diagnostics were emitted.
+  </COMPILE_GUARD>
+  <CINEMATIC_CHEATS>
+    The minimum-quality breath path remains a triangle-wave visual fake instead of extra procedural animation math. It is continuously blended, not hardware-switched.
+  </CINEMATIC_CHEATS>
+  <MICROSECONDS_SAVED estimate="0">No measured speed claim. Behavior unchanged; binary naming removed from hot animation code.</MICROSECONDS_SAVED>
+  <VERIFICATION>
+    Targeted scans found no `LowTierCadenceHz`, `UltraTierCadenceHz`, `lowTierTriangle`, `HighTier`, `LowTier`, `low-tier`, or `high-tier` hits in `Assets/_Project/Scripts/Animation/KineticCharacter`. Focused `git diff --check` passed with CRLF warnings only.
+  </VERIFICATION>
+</SELF_AUDIT>

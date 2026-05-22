@@ -274,8 +274,8 @@ namespace Hecton8.World
             public float GrowthPerSecond;
             public float DefoliantKillThreshold;
             public float MatureGrowthThreshold;
-            [ReadOnly, NoAlias] public NativeArray<float4> ChemicalFrontGrid;
-            [ReadOnly, NoAlias] public NativeArray<float4> ChemicalOverlayGrid;
+            [ReadOnly, NoAlias] public NativeArray<float4>.ReadOnly ChemicalFrontGrid;
+            [ReadOnly, NoAlias] public NativeArray<float4>.ReadOnly ChemicalOverlayGrid;
             public int3 ChemicalDimensions;
             public float3 ChemicalOrigin;
             public float3 ChemicalCellSize;
@@ -5250,8 +5250,8 @@ namespace Hecton8.World
             }
 
             ChemicalInfluenceGrid.TryGetActivePublishedSnapshot(
-                out NativeArray<float4> frontGrid,
-                out NativeArray<float4> overlayGrid,
+                out NativeArray<float4>.ReadOnly frontGrid,
+                out NativeArray<float4>.ReadOnly overlayGrid,
                 out int3 dimensions,
                 out float3 origin,
                 out float3 cellSize);

@@ -297,8 +297,8 @@ namespace Hecton8.Animation.KineticCharacter
 
             float breathPhase = input.BreathingPhase;
             float authoredBreath = math.isfinite(breathPhase) ? breathPhase : KineticCharacterMath.FastSin(localTime * tuning.BreathingFrequencyHz * KineticCharacterAnimatorConstants.TwoPi);
-            float lowTierTriangle = KineticCharacterMath.TriangleWaveSigned(localTime * tuning.BreathingFrequencyHz);
-            float breath = math.lerp(lowTierTriangle, authoredBreath, qualityCurve);
+            float minimumQualityTriangle = KineticCharacterMath.TriangleWaveSigned(localTime * tuning.BreathingFrequencyHz);
+            float breath = math.lerp(minimumQualityTriangle, authoredBreath, qualityCurve);
             float oxygenStress = 1f - math.saturate(input.OxygenLevel01);
             float breathAmp = (tuning.BreathingAmplitudeMeters + rig.BreathAmplitudeMeters) * math.lerp(0.7f, 1.55f, oxygenStress);
             float swimLean = math.saturate(input.SwimLeanWeight);

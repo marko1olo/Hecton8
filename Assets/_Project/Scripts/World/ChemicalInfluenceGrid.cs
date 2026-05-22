@@ -324,8 +324,8 @@ namespace Hecton8.World
         }
 
         internal static bool TryGetPublishedSnapshot(
-            out NativeArray<float4> frontGrid,
-            out NativeArray<float4> overlayGrid,
+            out NativeArray<float4>.ReadOnly frontGrid,
+            out NativeArray<float4>.ReadOnly overlayGrid,
             out int3 dimensions,
             out float3 origin,
             out float3 cellSize)
@@ -336,8 +336,8 @@ namespace Hecton8.World
         }
 
         internal static bool TryGetActivePublishedSnapshot(
-            out NativeArray<float4> frontGrid,
-            out NativeArray<float4> overlayGrid,
+            out NativeArray<float4>.ReadOnly frontGrid,
+            out NativeArray<float4>.ReadOnly overlayGrid,
             out int3 dimensions,
             out float3 origin,
             out float3 cellSize)
@@ -358,13 +358,15 @@ namespace Hecton8.World
         }
 
         internal static bool TryGetPublishedBreadcrumbs(
-            out NativeArray<ChemicalBreadcrumbWaypoint> breadcrumbs,
+            out NativeArray<ChemicalBreadcrumbWaypoint>.ReadOnly breadcrumbs,
             out int count,
             out float followStepMeters)
         {
             ChemicalInfluenceGrid instance = EnsureRuntimeInstance();
             instance.PublishFrame(instance.ResolveDeterministicFrameId(false));
-            breadcrumbs = instance.OpenChemicalVaultArray(ref instance._breadcrumbsHandle, BreadcrumbBufferId, DefaultBreadcrumbCapacity);
+            NativeArray<ChemicalBreadcrumbWaypoint> mutableBreadcrumbs =
+                instance.OpenChemicalVaultArray(ref instance._breadcrumbsHandle, BreadcrumbBufferId, DefaultBreadcrumbCapacity);
+            breadcrumbs = mutableBreadcrumbs.IsCreated ? mutableBreadcrumbs.AsReadOnly() : default;
             count = instance._breadcrumbCount;
             followStepMeters = math.max(1f, instance.breadcrumbRadiusMeters * 0.5f);
             return breadcrumbs.IsCreated && count > 0;
@@ -1235,14 +1237,16 @@ namespace Hecton8.World
         }
 
         private bool TryGetPublishedSnapshotInternal(
-            out NativeArray<float4> frontGrid,
-            out NativeArray<float4> overlayGrid,
+            out NativeArray<float4>.ReadOnly frontGrid,
+            out NativeArray<float4>.ReadOnly overlayGrid,
             out int3 dimensions,
             out float3 origin,
             out float3 cellSize)
         {
-            frontGrid = OpenChemicalVaultArray(ref _publishedGridHandle, PublishedGridBufferId, ChemicalCellCount);
-            overlayGrid = OpenChemicalVaultArray(ref _overlayGridHandle, OverlayGridBufferId, ChemicalCellCount);
+            NativeArray<float4> mutableFrontGrid = OpenChemicalVaultArray(ref _publishedGridHandle, PublishedGridBufferId, ChemicalCellCount);
+            NativeArray<float4> mutableOverlayGrid = OpenChemicalVaultArray(ref _overlayGridHandle, OverlayGridBufferId, ChemicalCellCount);
+            frontGrid = mutableFrontGrid.IsCreated ? mutableFrontGrid.AsReadOnly() : default;
+            overlayGrid = mutableOverlayGrid.IsCreated ? mutableOverlayGrid.AsReadOnly() : default;
             dimensions = GridDimensions;
             origin = _publishedRuntimeOrigin;
             cellSize = new float3(ResolveCellSizeMeters());

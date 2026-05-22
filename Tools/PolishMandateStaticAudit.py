@@ -131,7 +131,9 @@ PUBLIC_API_NATIVE_COLLECTION_RE = re.compile(
     r"(?:static\s+|readonly\s+|virtual\s+|override\s+|sealed\s+|unsafe\s+)*"
 )
 NATIVE_COLLECTION_TOKEN_RE = re.compile(r"\bNative(?:Array|List|HashMap|ParallelHashMap|Queue)\s*<")
-NATIVE_COLLECTION_READONLY_RE = re.compile(r"\bNativeArray\s*<[^>]+>\s*\.ReadOnly\b")
+NATIVE_COLLECTION_READONLY_RE = re.compile(
+    r"\bNative(?:Array|List|HashMap|ParallelHashMap|Queue)\s*<[^>]+>\s*\.ReadOnly\b"
+)
 PUBLIC_NATIVE_RETURN_RE = re.compile(
     r"^\s*(?:public|internal|protected)\s+"
     r"(?:static\s+|readonly\s+|virtual\s+|override\s+|sealed\s+|unsafe\s+)*"

@@ -5152,3 +5152,11 @@ Fault route: `ExosuitTelemetryEntry[300]` dumps fixed 64-byte rows to `Docs/Agen
 - Binary payload impact: `VfxComputeParticleBudget` remains explicit 32 bytes at offsets 0/4/8/12/16/20/24/28. No DTO, SignalBus payload, Vault BufferID, save identity, shader property name, or telemetry row size changed.
 - Authority impact: VFX remains presentation owner. Quality scales capacity, fake occlusion taps, flow cadence, and step distance only; it does not change gameplay truth, save identity, or rollback authority.
 - Verification: targeted scans found no old VFX endpoint constants, no `HectonQualityTier` budget resolver, and no volumetric light math-LOD shader variant in the touched files; focused `git diff --check` passed with CRLF warnings only. Guarded build failed only in the known external scatter backend contract mismatch.
+
+## 2026-05-22 - SHINOBU_SYSTEMIC_SURGEON Kinetic Character Animator Quality Endpoint Naming
+
+- `Assets/_Project/Scripts/Animation/KineticCharacter/KineticCharacterAnimatorTypes.cs` renamed `KineticCharacterTuningDTO` cadence endpoints at offsets 72/76 to `MinimumQualityCadenceHz` and `MaximumQualityCadenceHz`.
+- `Assets/_Project/Scripts/Animation/KineticCharacter/KineticCharacterAnimatorJobs.cs` renamed the minimum-quality triangle-wave breath local to `minimumQualityTriangle`.
+- Binary payload impact: none. `KineticCharacterTuningDTO` remains explicit 128 bytes; field offsets, sizes, BufferID `KineticCharacterAnimatorBufferIds.Tuning`, save identity, telemetry rows, and vault lane ownership are unchanged.
+- Authority impact: kinetic animation presentation still consumes continuous quality and does not change player kinematic truth or rollback state. The triangle-wave breath path remains a visual fake endpoint.
+- Verification: targeted scans found no old low/ultra tier cadence names or low-tier triangle local in the KineticCharacter files; focused `git diff --check` passed with CRLF warnings only. Guarded build failed only in the known external scatter backend contract mismatch.

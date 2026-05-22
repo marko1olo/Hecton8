@@ -313,6 +313,11 @@ public sealed class NativeApi
         rows = default;
         return false;
     }
+
+    public NativeHashMap<int, int>.ReadOnly ReadOnlyMap()
+    {
+        return default;
+    }
 }
 """,
                 encoding="utf-8",
