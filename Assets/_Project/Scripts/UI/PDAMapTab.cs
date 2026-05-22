@@ -455,9 +455,9 @@ namespace Hecton8.UI
 
             PlayerExplorationTracker explorationTracker = ResolvePlayerExplorationTracker();
             if (explorationTracker == null ||
-                !explorationTracker.TryGetDiscoveredSectorsPayload(
-                    out NativeArray<ulong> discoveredSectors,
+                !explorationTracker.TryPrepareDiscoveredSectorsInfo(
                     out int axisLength,
+                    out _,
                     out _,
                     out _,
                     out _))
@@ -468,7 +468,7 @@ namespace Hecton8.UI
                 return;
             }
 
-            _pointCloudMapReady = discoveredSectors.IsCreated;
+            _pointCloudMapReady = true;
             RefreshThreatPings();
             WriteOnlineStatus(new Vector3Int(axisLength, 1, axisLength));
         }
@@ -726,13 +726,12 @@ namespace Hecton8.UI
 
             PlayerExplorationTracker explorationTracker = ResolvePlayerExplorationTracker();
             if (explorationTracker == null ||
-                !explorationTracker.TryGetDiscoveredSectorsPayload(
-                    out NativeArray<ulong> discoveredSectors,
+                !explorationTracker.TryPrepareDiscoveredSectorsInfo(
                     out int axisLength,
                     out int originOffset,
                     out int cellSizeMeters,
-                    out uint revision) ||
-                !discoveredSectors.IsCreated)
+                    out uint revision,
+                    out _))
             {
                 return;
             }
@@ -748,17 +747,12 @@ namespace Hecton8.UI
 
             bool uploadDue = _packedUploadCountdown <= 0 || _uploadedPackedCartographyRevision != revision;
             if (uploadDue &&
-                explorationTracker.TryPrepareCartographyUpload(
-                    quality,
-                    out NativeArray<uint> packedR8,
-                    out int resolvedCadence,
-                    out uint uploadRevision) &&
-                packedR8.IsCreated)
-            {
-                GraphicsBufferUploadUtility.UploadNativeArray(
+                explorationTracker.TryUploadPreparedCartography(
                     _cartographyPackedR8Buffer,
-                    packedR8,
-                    math.min(packedR8.Length, CartographyGridConstants.PackedUploadWordCount));
+                    quality,
+                    out int resolvedCadence,
+                    out uint uploadRevision))
+            {
                 _uploadedPackedCartographyRevision = uploadRevision;
                 framesBetweenUploads = math.max(1, resolvedCadence);
                 _packedUploadCountdown = framesBetweenUploads;
@@ -938,23 +932,29 @@ namespace Hecton8.UI
 
             PlayerExplorationTracker explorationTracker = ResolvePlayerExplorationTracker();
             if (explorationTracker == null ||
-                !explorationTracker.TryGetDiscoveredSectorsPayload(
-                    out NativeArray<ulong> discoveredSectors,
+                !explorationTracker.TryPrepareDiscoveredSectorsInfo(
                     out int axisLength,
                     out int originOffset,
                     out int cellSizeMeters,
-                    out uint revision) ||
-                !discoveredSectors.IsCreated)
+                    out uint revision,
+                    out int wordCount))
             {
                 return false;
             }
 
             if (!_cartographySectorBufferUploaded || _uploadedCartographyRevision != revision)
             {
-                GraphicsBufferUploadUtility.UploadNativeArray(
+                if (!explorationTracker.TryUploadDiscoveredSectors(
                     _cartographySectorWordBuffer,
-                    discoveredSectors,
-                    math.min(discoveredSectors.Length, CartographyGridConstants.WordCount));
+                    out axisLength,
+                    out originOffset,
+                    out cellSizeMeters,
+                    out revision,
+                    out wordCount))
+                {
+                    return false;
+                }
+
                 _uploadedCartographyRevision = revision;
                 _cartographySectorBufferUploaded = true;
             }
@@ -964,7 +964,6 @@ namespace Hecton8.UI
                 return false;
 
             float qualityCurve = Smooth01(globalQualityWeight);
-            int wordCount = math.min(discoveredSectors.Length, CartographyGridConstants.WordCount);
             int maxBitsPerWord = math.clamp((int)math.round(math.lerp(1f, 4f, qualityCurve)), 1, 4);
             int wordStride = math.clamp((int)math.round(math.lerp(8f, 1f, qualityCurve)), 1, 8);
             int dispatchWordCount = CeilDividePositive(wordCount, wordStride);

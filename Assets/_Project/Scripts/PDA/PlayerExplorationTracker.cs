@@ -644,21 +644,47 @@ namespace Hecton8.PDA
             return ownerMaskWords.IsCreated;
         }
 
-        public bool TryGetDiscoveredSectorsPayload(
-            out NativeArray<ulong> discoveredSectors,
+        public bool TryPrepareDiscoveredSectorsInfo(
             out int axisLength,
             out int originOffset,
             out int cellSizeMeters,
-            out uint revision)
+            out uint revision,
+            out int wordCount)
         {
             InitializeExplorationMask();
             bool resolved = TryResolveCartographyBuffers(out CartographyVaultBuffers buffers);
-            discoveredSectors = resolved ? buffers.DiscoveryWords : default;
             axisLength = CartographyGridConstants.AxisLength;
             originOffset = CartographyGridConstants.OriginOffset;
             cellSizeMeters = CartographyGridConstants.MacroCellSizeMeters;
             revision = _cartographyRevision;
-            return resolved && discoveredSectors.IsCreated;
+            wordCount = resolved && buffers.DiscoveryWords.IsCreated
+                ? math.min(buffers.DiscoveryWords.Length, CartographyGridConstants.WordCount)
+                : 0;
+            return resolved && buffers.DiscoveryWords.IsCreated;
+        }
+
+        public bool TryUploadDiscoveredSectors(
+            GraphicsBuffer destination,
+            out int axisLength,
+            out int originOffset,
+            out int cellSizeMeters,
+            out uint revision,
+            out int wordCount)
+        {
+            if (!TryPrepareDiscoveredSectorsInfo(out axisLength, out originOffset, out cellSizeMeters, out revision, out wordCount) ||
+                destination == null ||
+                !destination.IsValid() ||
+                !TryResolveCartographyBuffers(out CartographyVaultBuffers buffers) ||
+                !buffers.DiscoveryWords.IsCreated)
+            {
+                return false;
+            }
+
+            GraphicsBufferUploadUtility.UploadNativeArray(
+                destination,
+                buffers.DiscoveryWords,
+                wordCount);
+            return true;
         }
 
         public bool EnqueueMapReveal(in MapRevealSignal signal)
@@ -1645,7 +1671,30 @@ namespace Hecton8.PDA
             return true;
         }
 
-        public bool TryPrepareCartographyUpload(
+        public bool TryUploadPreparedCartography(
+            GraphicsBuffer destination,
+            float globalQualityWeight,
+            out int framesBetweenUploads,
+            out uint revision)
+        {
+            framesBetweenUploads = CartographyGridMath.ResolveUploadIntervalFrames(globalQualityWeight);
+            revision = _cartographyRevision;
+            if (destination == null ||
+                !destination.IsValid() ||
+                !TryPrepareCartographyUpload(globalQualityWeight, out NativeArray<uint> packedR8, out framesBetweenUploads, out revision) ||
+                !packedR8.IsCreated)
+            {
+                return false;
+            }
+
+            GraphicsBufferUploadUtility.UploadNativeArray(
+                destination,
+                packedR8,
+                math.min(packedR8.Length, CartographyGridConstants.PackedUploadWordCount));
+            return true;
+        }
+
+        private bool TryPrepareCartographyUpload(
             float globalQualityWeight,
             out NativeArray<uint> packedR8,
             out int framesBetweenUploads,

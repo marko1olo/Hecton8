@@ -1282,7 +1282,7 @@ namespace Hecton8.Inventory
             return ShinobuTransactionStatus.Success;
         }
 
-        public static ShinobuTransactionStatus ExportRleToVaultScratch(
+        private static ShinobuTransactionStatus ExportRleToVaultScratch(
             IDataVault vault,
             NativeArray<uint> hashes,
             NativeArray<int> quantities,

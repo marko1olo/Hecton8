@@ -1390,3 +1390,39 @@ Cinematic Cheats used: No new rendering work. The TBDR route still feeds fixed v
 Exact Microseconds saved: 0 us measured. Static API risk moved `nativeCollectionPublicMutableApiExposure=85->83`, `nativeApiExposureBuildPlayerRuntime=81->79`, `nativeApiExposureOutRefMutable=64->62`, and `nativeApiRiskRuntimeOutRefMutableView=41->39`.
 
 Evidence: `Docs/Reports/PROJECT_AUDIT_polish_after_tbdr_descriptor_scope.json`; `python Tools\test_polish_mandate_static_audit.py` passed 12 tests; focused scan found no `TBDRVaultDescriptorRoutes.OpenOrAcquire/TryOpen` calls and no public static declarations for those helpers; targeted `git diff --check` reported only LF/CRLF normalization warnings. Batch re-check found no `<AGENT_PROMPT id="PROJECT_AUDIT">` block. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Fauna Vault Route Helper Scope Pass
+
+What was wrong: `FaunaVaultBufferRoutes.OpenOrAcquire` and `TryOpen` remained internal mutable out-`NativeArray` helpers after the fauna facade had already been converted to owner methods.
+
+What was done: Added private Vault helper methods inside `FaunaSimulationMemory` and `FaunaSimulationFreeSlotStack`, switched both owner structs to those methods, and narrowed the shared route helper methods to private.
+
+Cinematic Cheats used: No new simulation. Fauna offscreen residency remains a data-only LOD approximation instead of hydrated GameObject/physics simulation.
+
+Exact Microseconds saved: 0 us measured. Static API risk moved `nativeCollectionPublicMutableApiExposure=83->81`, `nativeApiExposureBuildPlayerRuntime=79->77`, `nativeApiExposureOutRefMutable=62->60`, and `nativeApiRiskRuntimeOutRefMutableView=39->37`.
+
+Evidence: `Docs/Reports/PROJECT_AUDIT_polish_after_fauna_vault_routes_scope.json`; `python Tools\test_polish_mandate_static_audit.py` passed 12 tests; focused scan found no `FaunaVaultBufferRoutes.*` calls and no internal static route methods; targeted `git diff --check` produced no output. Batch re-check found no `<AGENT_PROMPT id="PROJECT_AUDIT">` block. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Cartography Owner Upload Split
+
+What was wrong: `PlayerExplorationTracker` exposed mutable discovered-sector and packed-R8 native arrays to `PDAMapTab`, which only used them for metadata and graphics-buffer upload.
+
+What was done: Added scalar metadata and owner-upload methods on the tracker, moved packed cartography upload behind `TryUploadPreparedCartography`, and updated `PDAMapTab` to pass graphics buffers instead of receiving native arrays.
+
+Cinematic Cheats used: No new simulation. PDA cartography remains a packed R8/sector-word GPU projection instead of CPU-generated UI geometry.
+
+Exact Microseconds saved: 0 us measured. Static API risk moved `nativeCollectionPublicMutableApiExposure=81->79`, `nativeApiExposureBuildPlayerRuntime=77->75`, `nativeApiExposureOutRefMutable=60->58`, and `nativeApiRiskRuntimeOutRefMutableView=37->35`.
+
+Evidence: `Docs/Reports/PROJECT_AUDIT_polish_after_cartography_owner_upload.json`; `python Tools\test_polish_mandate_static_audit.py` passed 12 tests; focused scan found no `TryGetDiscoveredSectorsPayload` and no external `TryPrepareCartographyUpload` caller; targeted `git diff --check` reported only LF/CRLF normalization warnings. Batch re-check found no `<AGENT_PROMPT id="PROJECT_AUDIT">` block. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Inventory RLE Scratch Route Scope Pass
+
+What was wrong: `Shinobu19EconomyLedger.ExportRleToVaultScratch` exposed a public mutable `out NativeArray<byte>` Vault scratch route with no active first-party caller.
+
+What was done: Narrowed `ExportRleToVaultScratch` to private. The RLE encoder, `BufferID.ShinobuRleScratch`, destination sizing, and transaction status path remain unchanged; active recipe/ingredient/physical-constants editor routes were not touched.
+
+Cinematic Cheats used: No new simulation. RLE remains a compact binary projection for sparse inventory state instead of managed object-per-slot export state.
+
+Exact Microseconds saved: 0 us measured. Static API risk moved `nativeCollectionPublicMutableApiExposure=79->78`, `nativeApiExposureBuildPlayerRuntime=75->74`, `nativeApiExposureOutRefMutable=58->57`, and `nativeApiRiskRuntimeOutRefMutableView=35->34`.
+
+Evidence: `Docs/Reports/PROJECT_AUDIT_polish_after_inventory_rle_scratch_scope.json`; `python Tools\test_polish_mandate_static_audit.py` passed 12 tests; focused scan found only the private declaration; targeted `git diff --check` reported only LF/CRLF normalization warnings. Batch re-check found no `<AGENT_PROMPT id="PROJECT_AUDIT">` block. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
