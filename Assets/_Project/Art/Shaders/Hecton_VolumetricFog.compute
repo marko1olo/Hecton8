@@ -52,7 +52,7 @@ CBUFFER_START(HectonVolumetricFogFrameParams)
     float4 _HectonMarineSnowFogDensityParams;   // x=strength, y=encoded scale, z=size gain, w=active
     float4 _AbyssalFlowCenter;
     float4 _AbyssalFlowSpacing;
-    float4 _AbyssalFlowTextureParams;           // x=resolution, y=world size, z=dt, w=high-tier enabled
+    float4 _AbyssalFlowTextureParams;           // x=resolution, y=world size, z=dt, w=flow texture detail weight
     float _AbyssalFlowTextureActive;
     float3 _HectonVolumetricFogPad0;
     float4x4 _HectonVolumetricFogInverseViewProjection;
@@ -369,8 +369,8 @@ float ResolveFogDensity(float3 samplePositionLocal, float3 samplePositionWS, flo
     float quality = SafeFiniteSaturate(_HectonVolumetricFogQualityAndLimits.x);
     float flowRamp = SafeFiniteSaturate((quality - 0.18) * rcp(0.57));
     flowRamp = flowRamp * flowRamp * (3.0 - 2.0 * flowRamp);
-    float highTierWeight = SafeFiniteSaturate(_AbyssalFlowTextureParams.w);
-    float flowWeight = flowRamp * lerp(0.25, 1.0, highTierWeight);
+    float flowTextureDetailWeight = SafeFiniteSaturate(_AbyssalFlowTextureParams.w);
+    float flowWeight = flowRamp * lerp(0.25, 1.0, flowTextureDetailWeight);
     float3 flow = flowWeight > 0.001 ? SampleAbyssalFlow(samplePositionWS) * flowWeight : float3(0.0, 0.0, 0.0);
     float advectionStrength = max(0.0, SafeFiniteScalar(_HectonVolumetricFogFlowAdvection.w, 0.0));
     float3 safeFlowOffset = all(isfinite(_HectonVolumetricFogFlowAdvection.xyz)) ? _HectonVolumetricFogFlowAdvection.xyz : float3(0.0, 0.0, 0.0);

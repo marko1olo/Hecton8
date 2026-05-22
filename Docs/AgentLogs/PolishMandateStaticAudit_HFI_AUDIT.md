@@ -15,22 +15,22 @@ Evidence class: STATIC_SOURCE. No Unity import, compile, Play Mode, profiler, GC
 | `burstMissingCompileSynchronously` | 0 | 0 |
 | `burstMissingFloatMode` | 0 | 0 |
 | `burstMissingFloatPrecision` | 0 | 0 |
-| `globalQualityWeight` | 1905 | 430 |
+| `globalQualityWeight` | 1906 | 430 |
 | `jobHandleComplete` | 112 | 31 |
 | `linqSurface` | 0 | 0 |
 | `nativeApiExposureAmbiguousMutable` | 0 | 0 |
 | `nativeApiExposureBuildEditorOnly` | 5 | 4 |
-| `nativeApiExposureBuildPlayerRuntime` | 159 | 71 |
+| `nativeApiExposureBuildPlayerRuntime` | 154 | 71 |
 | `nativeApiExposureBuildQaDevProof` | 8 | 2 |
 | `nativeApiExposureMutableReturn` | 43 | 29 |
-| `nativeApiExposureOutRefMutable` | 129 | 60 |
+| `nativeApiExposureOutRefMutable` | 124 | 60 |
 | `nativeApiRiskCoreVaultOrAllocatorSurface` | 21 | 3 |
 | `nativeApiRiskEditorOrProofSurface` | 13 | 6 |
 | `nativeApiRiskRuntimeAmbiguousMutableView` | 0 | 0 |
 | `nativeApiRiskRuntimeDiagnosticNamedMutableView` | 31 | 21 |
-| `nativeApiRiskRuntimeOutRefMutableView` | 80 | 43 |
+| `nativeApiRiskRuntimeOutRefMutableView` | 75 | 43 |
 | `nativeApiRiskRuntimeReturnMutableView` | 27 | 19 |
-| `nativeCollectionPublicMutableApiExposure` | 172 | 77 |
+| `nativeCollectionPublicMutableApiExposure` | 167 | 77 |
 | `noAlias` | 2192 | 218 |
 | `packOne` | 0 | 0 |
 | `privateNativeBuildEditorOnly` | 48 | 18 |
@@ -56,14 +56,14 @@ Evidence class: STATIC_SOURCE. No Unity import, compile, Play Mode, profiler, GC
 | `structAutoProperties` | 0 | 0 |
 | `unityRandom` | 0 | 0 |
 | `unityTimeBuildEditorOnly` | 14 | 8 |
-| `unityTimeBuildPlayerRuntime` | 831 | 230 |
+| `unityTimeBuildPlayerRuntime` | 830 | 230 |
 | `unityTimeBuildQaDevProof` | 23 | 7 |
-| `unityTimeCritical` | 868 | 245 |
+| `unityTimeCritical` | 867 | 245 |
 | `unityTimeDelta` | 1 | 1 |
-| `unityTimeFrameCount` | 833 | 236 |
+| `unityTimeFrameCount` | 832 | 236 |
 | `unityTimeRiskCooldownOrPerfLog` | 34 | 13 |
 | `unityTimeRiskEditorOrProof` | 37 | 15 |
-| `unityTimeRiskFrameStampOrTelemetry` | 797 | 222 |
+| `unityTimeRiskFrameStampOrTelemetry` | 796 | 222 |
 | `unityTimeRiskGameplayDelta` | 0 | 0 |
 | `unityTimeRiskGameplayWallClock` | 0 | 0 |
 | `unityTimeWallClock` | 34 | 13 |
@@ -183,7 +183,7 @@ Evidence class: STATIC_SOURCE. No Unity import, compile, Play Mode, profiler, GC
 | `Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs` | 5 |
 | `Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs` | 4 |
 | `Assets/_Project/Scripts/HectonVoxelVolume.cs` | 4 |
-| `Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs` | 4 |
+| `Assets/_Project/Scripts/Core/Signals/SignalWardenRuntime.cs` | 3 |
 
 ### nativeApiRiskRuntimeReturnMutableView
 

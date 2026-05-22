@@ -5345,7 +5345,7 @@ namespace Hecton8.Bootstrap
 
         /// <inheritdoc />
         public bool TryGetAcousticRadarGridPayload(
-            out NativeArray<float> energyGrid,
+            out NativeArray<float>.ReadOnly energyGrid,
             out int azimuthBins,
             out int elevationBins,
             out ComputeBuffer gridBuffer)

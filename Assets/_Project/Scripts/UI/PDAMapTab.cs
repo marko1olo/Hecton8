@@ -1463,7 +1463,7 @@ namespace Hecton8.UI
                 return;
             }
 
-            NativeArray<float> gridEnergy = default;
+            NativeArray<float>.ReadOnly gridEnergy = default;
             int azimuthBins = 0;
             int elevationBins = 0;
             ComputeBuffer radarGridBuffer = null;

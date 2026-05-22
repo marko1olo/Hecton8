@@ -59,7 +59,7 @@ int _AbyssalFlowHeatSourceCount;
 int _AbyssalFlowWeatherStateMask;
 int _AbyssalFlowUpdateBucket;
 int _AbyssalFlowUpdateBucketMask;
-float4 _AbyssalFlowTextureParams;      // x: resolution, y: world size, z: dt, w: high-tier enabled
+float4 _AbyssalFlowTextureParams;      // x: resolution, y: world size, z: dt, w: flow texture detail weight
 float4 _AbyssalFlowNoiseOffset;        // xyz: absolute-universe offset, w: origin-shift sequence
 float4 _AbyssalFlowWakeSphere;         // xyz: submarine center, w: radius
 float4 _AbyssalFlowWakeVelocity;       // xyz: velocity, w: speed
@@ -252,7 +252,8 @@ float3 ResolveBaseFlowTextureVelocity(float3 nodeWorldPos)
         flow += windDirection * (FastSinApprox(phase) * windIntensity * 0.04);
     }
 
-    if (_AbyssalFlowTextureParams.w > 0.5)
+    float flowTextureDetailWeight = saturate(_AbyssalFlowTextureParams.w);
+    if (flowTextureDetailWeight > 0.001)
     {
         int heatSourceCount = clamp(_AbyssalFlowHeatSourceCount, 0, HECTON_ABYSSAL_HEAT_SOURCE_CAPACITY);
         [loop]
@@ -272,7 +273,7 @@ float3 ResolveBaseFlowTextureVelocity(float3 nodeWorldPos)
             float falloff = 1.0 - smoothstep(0.0, radiusSq, distSq);
             float3 radial = SafeNormalize(delta, float3(0.0, 1.0, 0.0));
             float3 tangent = SafeNormalize(cross(float3(0.0, 1.0, 0.0), radial), float3(1.0, 0.0, 0.0));
-            flow += float3(tangent.x * 0.35, 1.0, tangent.z * 0.35) * (falloff * heat.Intensity * FlowTextureGeyserUpdraftScale);
+            flow += float3(tangent.x * 0.35, 1.0, tangent.z * 0.35) * (falloff * heat.Intensity * FlowTextureGeyserUpdraftScale * flowTextureDetailWeight);
         }
     }
 
@@ -399,7 +400,8 @@ void InjectAbyssalWakeTexture(uint3 dispatchThreadId : SV_DispatchThreadID)
 
     float radius = max(_AbyssalFlowWakeSphere.w, 0.05);
     float speed = max(_AbyssalFlowWakeVelocity.w, 0.0);
-    if (_AbyssalFlowTextureParams.w <= 0.5 || speed <= 0.05 || radius <= 0.05)
+    float flowTextureDetailWeight = saturate(_AbyssalFlowTextureParams.w);
+    if (flowTextureDetailWeight <= 0.001 || speed <= 0.05 || radius <= 0.05)
         return;
 
     int3 coord = int3(dispatchThreadId.xyz);
@@ -419,6 +421,7 @@ void InjectAbyssalWakeTexture(uint3 dispatchThreadId : SV_DispatchThreadID)
     float3 injectedVelocity =
         (radialDirection * (speed * 0.30 * lateralPulse)) -
         (velocityDirection * (speed * FlowTextureWakeStrength * falloff));
+    injectedVelocity *= flowTextureDetailWeight;
 
     float4 current = _AbyssalFlowTextureRW[coord];
     float3 resolved = current.xyz + injectedVelocity;
@@ -433,7 +436,8 @@ void InjectAbyssalVortexTexture(uint3 dispatchThreadId : SV_DispatchThreadID)
     if (dispatchThreadId.x >= resolution || dispatchThreadId.y >= resolution || dispatchThreadId.z >= resolution)
         return;
 
-    if (_AbyssalFlowTextureParams.w <= 0.5)
+    float flowTextureDetailWeight = saturate(_AbyssalFlowTextureParams.w);
+    if (flowTextureDetailWeight <= 0.001)
         return;
 
     float radius = max(_AbyssalFlowVortexSphere.w, 0.05);
@@ -458,7 +462,7 @@ void InjectAbyssalVortexTexture(uint3 dispatchThreadId : SV_DispatchThreadID)
     float falloff = 1.0 - smoothstep(0.0, radiusSq, distSq);
     float columnGate = 1.0 - saturate(abs(axialDistance) / max(radius * 0.75, 0.001));
     float swirl = falloff * (0.35 + columnGate * 0.65);
-    float3 injectedVelocity = (tangent * strength + radial * (strength * 0.14)) * swirl;
+    float3 injectedVelocity = (tangent * strength + radial * (strength * 0.14)) * (swirl * flowTextureDetailWeight);
 
     float4 current = _AbyssalFlowTextureRW[coord];
     float3 resolved = current.xyz + injectedVelocity;

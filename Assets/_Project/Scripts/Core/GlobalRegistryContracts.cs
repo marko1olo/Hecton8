@@ -1218,7 +1218,7 @@ namespace Hecton8.Core
         /// Returns the 8x4 acoustic radar grid payload when available.
         /// </summary>
         bool TryGetAcousticRadarGridPayload(
-            out NativeArray<float> energyGrid,
+            out NativeArray<float>.ReadOnly energyGrid,
             out int azimuthBins,
             out int elevationBins,
             out ComputeBuffer gridBuffer);

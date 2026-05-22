@@ -475,6 +475,62 @@ Updated static counts from that artifact:
 
 This is static-source proof only. No Unity import, Console, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
 
+## 2026-05-22 Acoustic Radar Grid Follow-Up
+
+Additional native API narrowing after the abyssal flow pass:
+
+- `IAudioService.TryGetAcousticRadarGridPayload` now returns `NativeArray<float>.ReadOnly`.
+- `SpatialAudioManager` and the bootstrap audio stub implement the read-only grid signature.
+- `PDAMapTab` reads the grid through `NativeArray<float>.ReadOnly`.
+
+Rejected:
+
+- The 360-bin acoustic radar ring route, because `SuitHUDV4CanvasOverlay` still sends it into `Texture2D.SetPixelData`.
+- ComputeBuffer route changes.
+- Audio-owned radar buffer or grid-dimension changes.
+
+Focused proof:
+
+- Focused scan found read-only grid signatures/consumer and unchanged mutable radar ring.
+- Broad artifact: `Docs/Reports/PROJECT_AUDIT_polish_after_acoustic_grid_readonly.json`.
+
+Updated static counts from that artifact:
+
+- `nativeCollectionPublicMutableApiExposure`: 167, down from 169.
+- `nativeApiExposureBuildPlayerRuntime`: 154, down from 156.
+- `nativeApiExposureOutRefMutable`: 124, down from 126.
+- `nativeApiRiskRuntimeOutRefMutableView`: 75, down from 77.
+
+This is static-source proof only. No Unity import, Console, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 Abyssal Flow Payload Follow-Up
+
+Additional native API narrowing after the marching-cubes table pass:
+
+- `HectonMapMagicVegetationBridge.TryGetAbyssalThermalGridPayload` now returns `NativeArray<float>.ReadOnly`.
+- Both `HectonMapMagicVegetationBridge.TryGetAbyssalFlowVolumePayload` overloads now return `NativeArray<float3>.ReadOnly`.
+- `DroneFleetManager.TryResolveAbyssalFlowVolumePayload` and `DroneCognitionJob.AbyssalFlowVolume` now consume the read-only flow-volume view.
+
+Rejected:
+
+- Ecosystem flow-field payload conversion in this pass, because flora and marine-snow consumers upload it through `GraphicsBufferUploadUtility.UploadNativeArray(NativeArray<T>)`.
+- Core upload-helper changes without a separate call-site proof pass.
+- Abyssal grid writer, ring-offset, flow sampling, or DTO layout changes.
+
+Focused proof:
+
+- Focused scan found read-only abyssal payload signatures/job field and unchanged owner writer buffers.
+- Broad artifact: `Docs/Reports/PROJECT_AUDIT_polish_after_abyssal_flow_readonly.json`.
+
+Updated static counts from that artifact:
+
+- `nativeCollectionPublicMutableApiExposure`: 169, down from 172.
+- `nativeApiExposureBuildPlayerRuntime`: 156, down from 159.
+- `nativeApiExposureOutRefMutable`: 126, down from 129.
+- `nativeApiRiskRuntimeOutRefMutableView`: 77, down from 80.
+
+This is static-source proof only. No Unity import, Console, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
 ## 2026-05-22 Rollback Snapshot Native API Follow-Up
 
 Additional native API narrowing after the lighting readback pass:

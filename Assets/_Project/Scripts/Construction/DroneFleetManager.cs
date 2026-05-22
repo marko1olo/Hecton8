@@ -1736,7 +1736,7 @@ namespace Hecton8.Construction
             bool hasPlayer = TryResolvePlayerPosition(out Vector3 playerPosition);
             bool hasFormationAnchor = TryResolveFormationAnchor(out Vector3 formationAnchorPosition);
             bool hasAbyssalFlow = TryResolveAbyssalFlowVolumePayload(
-                out NativeArray<float3> abyssalFlowVolume,
+                out NativeArray<float3>.ReadOnly abyssalFlowVolume,
                 out Vector3 abyssalFlowCenter,
                 out int abyssalFlowResolutionXZ,
                 out int abyssalFlowResolutionY,
@@ -4167,7 +4167,7 @@ namespace Hecton8.Construction
         }
 
         private static bool TryResolveAbyssalFlowVolumePayload(
-            out NativeArray<float3> flowVolume,
+            out NativeArray<float3>.ReadOnly flowVolume,
             out Vector3 center,
             out int resolutionXZ,
             out int resolutionY,

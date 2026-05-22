@@ -151,14 +151,16 @@ namespace Hecton8.World
         /// Returns the current abyssal thermal-grid payload and metadata for survival and environment consumers.
         /// </summary>
         public bool TryGetAbyssalThermalGridPayload(
-            out NativeArray<float> temperatures,
+            out NativeArray<float>.ReadOnly temperatures,
             out int horizontalResolution,
             out int verticalResolution,
             out Vector3 gridCenter,
             out float horizontalCellSize,
             out float verticalCellSize)
         {
-            temperatures = _nativeMemory.AbyssalThermalGridNative;
+            temperatures = _nativeMemory.AbyssalThermalGridNative.IsCreated
+                ? _nativeMemory.AbyssalThermalGridNative.AsReadOnly()
+                : default;
             horizontalResolution = _abyssalThermalGridResolutionXZ;
             verticalResolution = _abyssalThermalGridResolutionY;
             gridCenter = _abyssalThermalGridCenter;
@@ -173,14 +175,16 @@ namespace Hecton8.World
         /// Returns the current 3D abyssal flow-volume payload and metadata for current-driven deep-ocean consumers.
         /// </summary>
         public bool TryGetAbyssalFlowVolumePayload(
-            out NativeArray<float3> flowVectors,
+            out NativeArray<float3>.ReadOnly flowVectors,
             out int horizontalResolution,
             out int verticalResolution,
             out Vector3 gridCenter,
             out float horizontalCellSize,
             out float verticalCellSize)
         {
-            flowVectors = _nativeMemory.AbyssalFlowVolumeCurrentNative;
+            flowVectors = _nativeMemory.AbyssalFlowVolumeCurrentNative.IsCreated
+                ? _nativeMemory.AbyssalFlowVolumeCurrentNative.AsReadOnly()
+                : default;
             horizontalResolution = _abyssalThermalGridResolutionXZ;
             verticalResolution = _abyssalThermalGridResolutionY;
             gridCenter = _abyssalThermalGridCenter;
@@ -195,7 +199,7 @@ namespace Hecton8.World
         /// Returns the current read-only abyssal flow volume and ring-buffer metadata for Burst consumers.
         /// </summary>
         public bool TryGetAbyssalFlowVolumePayload(
-            out NativeArray<float3> flowVolume,
+            out NativeArray<float3>.ReadOnly flowVolume,
             out Vector3 center,
             out int resolutionXZ,
             out int resolutionY,
@@ -207,7 +211,9 @@ namespace Hecton8.World
             out float surfaceY,
             out float depthMeters)
         {
-            flowVolume = _nativeMemory.AbyssalFlowVolumeCurrentNative;
+            flowVolume = _nativeMemory.AbyssalFlowVolumeCurrentNative.IsCreated
+                ? _nativeMemory.AbyssalFlowVolumeCurrentNative.AsReadOnly()
+                : default;
             center = _abyssalThermalGridCenter;
             resolutionXZ = _abyssalThermalGridResolutionXZ;
             resolutionY = _abyssalThermalGridResolutionY;

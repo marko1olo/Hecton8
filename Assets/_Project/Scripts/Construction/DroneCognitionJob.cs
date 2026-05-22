@@ -318,7 +318,7 @@ namespace Hecton8.Construction
         [ReadOnly, NoAlias] public NativeArray<int> DroneSpatialBucketHeads;
         [ReadOnly, NoAlias] public NativeArray<int> DroneSpatialNextIndices;
         [ReadOnly, NoAlias] public NativeArray<int> DroneSpatialKeys;
-        [ReadOnly, NoAlias] public NativeArray<float3> AbyssalFlowVolume;
+        [ReadOnly, NoAlias] public NativeArray<float3>.ReadOnly AbyssalFlowVolume;
         [ReadOnly, NoAlias] public NativeArray<PathWaypointDTO> MacroWaypoints;
         [ReadOnly, NoAlias] public NativeArray<byte> MacroWaypointStates;
 

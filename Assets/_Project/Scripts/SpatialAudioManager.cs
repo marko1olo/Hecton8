@@ -4641,12 +4641,12 @@ namespace Hecton8.Audio
 
         /// <summary>Returns the persistent 8x4 acoustic radar grid and its GPU upload buffer.</summary>
         public bool TryGetAcousticRadarGridPayload(
-            out NativeArray<float> gridEnergy,
+            out NativeArray<float>.ReadOnly gridEnergy,
             out int azimuthBins,
             out int elevationBins,
             out ComputeBuffer gridBuffer)
         {
-            gridEnergy = _acousticRadarGrid;
+            gridEnergy = _acousticRadarGrid.IsCreated ? _acousticRadarGrid.AsReadOnly() : default;
             azimuthBins = AcousticRadarGridAzimuthBins;
             elevationBins = AcousticRadarGridElevationBins;
             gridBuffer = _acousticRadarGridBuffer;

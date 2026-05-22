@@ -732,3 +732,27 @@ Cinematic Cheats used: No terrain physics was added. The voxel pipeline continue
 Exact Microseconds saved: 0 us measured. Static outcome: broad audit dropped `nativeCollectionPublicMutableApiExposure` from `174` to `172`, `nativeApiExposureBuildPlayerRuntime` from `161` to `159`, `nativeApiExposureMutableReturn` from `45` to `43`, and `nativeApiRiskRuntimeReturnMutableView` from `29` to `27`.
 
 Evidence: Focused scan found read-only static table properties/job fields and unchanged table lifecycle. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_after_mctables_readonly.json` returned `PASS_WITH_WARNINGS` with `nativeCollectionPublicMutableApiExposure=172`, `nativeApiExposureBuildPlayerRuntime=159`, `nativeApiExposureMutableReturn=43`, and `nativeApiRiskRuntimeReturnMutableView=27`. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Abyssal Flow Payload Read-Only Narrowing
+
+What was wrong: Abyssal thermal and flow-volume payload APIs exposed bridge-owned simulation grids as mutable native arrays.
+
+What was done: Converted `TryGetAbyssalThermalGridPayload` and both `TryGetAbyssalFlowVolumePayload` overloads to `NativeArray<T>.ReadOnly`. The drone manager and `DroneCognitionJob` now consume the abyssal flow volume as a read-only job input.
+
+Cinematic Cheats used: No fluid simulation was added. The route remains a compact precomputed current volume sampled by drones instead of per-drone scene physics or fluid queries.
+
+Exact Microseconds saved: 0 us measured. Static outcome: broad audit dropped `nativeCollectionPublicMutableApiExposure` from `172` to `169`, `nativeApiExposureOutRefMutable` from `129` to `126`, and `nativeApiExposureBuildPlayerRuntime` from `159` to `156`.
+
+Evidence: Focused scan found read-only abyssal payload signatures/job field and unchanged owner writer buffers. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_after_abyssal_flow_readonly.json` returned `PASS_WITH_WARNINGS` with `nativeCollectionPublicMutableApiExposure=169`, `nativeApiExposureBuildPlayerRuntime=156`, `nativeApiExposureOutRefMutable=126`, and `nativeApiRiskRuntimeOutRefMutableView=77`. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Acoustic Radar Grid Read-Only Contract Narrowing
+
+What was wrong: `IAudioService.TryGetAcousticRadarGridPayload` exposed the 8x4 audio-owned radar grid as a mutable native array to the PDA map.
+
+What was done: Converted the grid payload contract, bootstrap stub, spatial audio implementation, and PDA map consumer to `NativeArray<float>.ReadOnly`. The 360-bin radar ring route remains mutable because the HUD texture upload still requires that path.
+
+Cinematic Cheats used: No sonar simulation was added. The PDA map continues to use a compact 8x4 acoustic grid as a visual threat proxy instead of dense scene/audio ray queries.
+
+Exact Microseconds saved: 0 us measured. Static outcome: broad audit dropped `nativeCollectionPublicMutableApiExposure` from `169` to `167`, `nativeApiExposureOutRefMutable` from `126` to `124`, and `nativeApiExposureBuildPlayerRuntime` from `156` to `154`.
+
+Evidence: Focused scan found read-only grid signatures/consumer and unchanged mutable radar ring. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_after_acoustic_grid_readonly.json` returned `PASS_WITH_WARNINGS` with `nativeCollectionPublicMutableApiExposure=167`, `nativeApiExposureBuildPlayerRuntime=154`, `nativeApiExposureOutRefMutable=124`, and `nativeApiRiskRuntimeOutRefMutableView=75`. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
