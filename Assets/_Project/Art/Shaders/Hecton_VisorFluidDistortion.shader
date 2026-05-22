@@ -50,7 +50,7 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
             #define _HectonVisorFluidDepthSoftness _HectonVisorFluidParams1.z
             #define _HectonWaterDensitySignal _HectonVisorFluidParams1.w
             #define _HectonVisorFluidHomeostasisFallback _HectonVisorFluidParams2.x
-            #define _HectonVisorFluidLowTier _HectonVisorFluidParams2.y
+            #define _HectonVisorFluidQualityPressure _HectonVisorFluidParams2.y
             #define _HectonVisorFluidVisualOverkill _HectonVisorFluidParams2.z
             #define _HectonVisorFluidRunoffSpeed _HectonVisorFluidParams2.w
             #define _HectonVisorFluidDropletScale _HectonVisorFluidParams3.x
@@ -244,10 +244,10 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
                 return saturate((specks * (0.32 + edgeMask * 0.68) + scratch * 0.35) * centerProtection);
             }
 
-            float ComputeSaltCrystalMask(float2 uv, float wetness, float inverseDirtRefraction, float depthRefractionMask, float lowTierMode)
+            float ComputeSaltCrystalMask(float2 uv, float wetness, float inverseDirtRefraction, float depthRefractionMask, float qualityPressureMode)
             {
                 float overkill = HectonFinite01(_HectonVisorFluidVisualOverkill);
-                float crystalDrive = HectonFinite01(overkill * HectonFinite01(wetness) * HectonFinite01(inverseDirtRefraction) * HectonFinite01(depthRefractionMask) * (1.0 - HectonFinite01(lowTierMode)));
+                float crystalDrive = HectonFinite01(overkill * HectonFinite01(wetness) * HectonFinite01(inverseDirtRefraction) * HectonFinite01(depthRefractionMask) * (1.0 - HectonFinite01(qualityPressureMode)));
                 if (crystalDrive <= 0.0001)
                     return 0.0;
 
@@ -264,13 +264,13 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
                 return saturate((ridge * 0.78 + ridge * branch * 0.42) * active * growth * crystalDrive);
             }
 
-            float ComputeSuspendedSiltMask(float2 uv, float wetness, float rainIntensity, float inverseDirtRefraction, float depthRefractionMask, float lowTierMode, float4 localVelocity)
+            float ComputeSuspendedSiltMask(float2 uv, float wetness, float rainIntensity, float inverseDirtRefraction, float depthRefractionMask, float qualityPressureMode, float4 localVelocity)
             {
                 float2 safeUv = saturate(HectonFinite2(uv, float2(0.5, 0.5)));
                 float2 screenParams = max(HectonFinite4(_ScreenParams, float4(1.0, 1.0, 1.0, 1.0)).xy, float2(1.0, 1.0));
                 float overkill = HectonFinite01(_HectonVisorFluidVisualOverkill);
                 float activity = max(HectonFinite01(wetness), HectonFinite01(rainIntensity) * 0.45);
-                float siltDrive = HectonFinite01(overkill * activity * HectonFinite01(inverseDirtRefraction) * HectonFinite01(depthRefractionMask) * (1.0 - HectonFinite01(lowTierMode)));
+                float siltDrive = HectonFinite01(overkill * activity * HectonFinite01(inverseDirtRefraction) * HectonFinite01(depthRefractionMask) * (1.0 - HectonFinite01(qualityPressureMode)));
                 if (siltDrive <= 0.0001)
                     return 0.0;
 
@@ -405,9 +405,9 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
                         SAMPLE_TEXTURE2D(_HectonDiegeticVisorLensMaskTex, sampler_LinearClamp, visorMaskUV),
                         float4(0.0, 0.0, 0.0, 0.0)));
                 }
-                float lowTierMode = max(HectonFinite01(_HectonVisorFluidLowTier), HectonFinite01(_HectonVisorFluidHomeostasisFallback));
-                lowTierMode = max(lowTierMode, HectonFinite01(1.0 - lensRefractionScale));
-                float dynamicVisorWeight = saturate(1.0 - lowTierMode);
+                float qualityPressureMode = max(HectonFinite01(_HectonVisorFluidQualityPressure), HectonFinite01(_HectonVisorFluidHomeostasisFallback));
+                qualityPressureMode = max(qualityPressureMode, HectonFinite01(1.0 - lensRefractionScale));
+                float dynamicVisorWeight = saturate(1.0 - qualityPressureMode);
                 localVelocity.xy += clamp(lensParams0.xy, float2(-1.0, -1.0), float2(1.0, 1.0));
                 wetness = HectonFinite01(max(wetness, max(lensDroplets, lensCondensation * 0.35)));
                 hullStress = HectonFinite01(max(hullStress, lensCrack));
@@ -481,7 +481,7 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
 
                 float2 refractionOffset = float2(0.0, 0.0);
                 float inverseDirtRefraction = HectonInverseDirtMask(dustMask + lensDirt * 0.35 + combinedMask * 0.15);
-                float refractionWeight = saturate(1.0 - lowTierMode);
+                float refractionWeight = saturate(1.0 - qualityPressureMode);
                 [branch]
                 if (combinedMask > 0.0001 && refractionWeight > 0.001)
                 {
@@ -511,9 +511,9 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
                     color.rgb = lerp(color.rgb, refractedColor, (half)saturate(combinedMask * 0.82 * refractionWeight));
                 }
                 [branch]
-                if ((combinedMask > 0.0001 || hullStress > 0.001) && lowTierMode > 0.001)
+                if ((combinedMask > 0.0001 || hullStress > 0.001) && qualityPressureMode > 0.001)
                 {
-                    float chromaDrive = saturate((combinedMask + hullStress * 0.35) * depthRefractionMask * inverseDirtRefraction * lowTierMode);
+                    float chromaDrive = saturate((combinedMask + hullStress * 0.35) * depthRefractionMask * inverseDirtRefraction * qualityPressureMode);
                     float2 chromaOffset = HectonClampUvOffset(float2(0.0012 + hullStress * 0.0022, 0.0) * chromaDrive, 0.004);
                     half red = SAMPLE_TEXTURE2D_X(_CameraOpaqueTexture, sampler_CameraOpaqueTexture, saturate(screenUV + chromaOffset)).r;
                     half blue = SAMPLE_TEXTURE2D_X(_CameraOpaqueTexture, sampler_CameraOpaqueTexture, saturate(screenUV - chromaOffset)).b;
@@ -573,14 +573,14 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
                     float reflectionMask = HectonFinite01(lensReflection * (0.24 + edgeMask * 0.76) * (0.36 + lensDarkness * 0.64) * (0.45 + lensQuality * 0.55));
                     color.rgb += half3(0.022h, 0.04h, 0.052h) * (half)reflectionMask;
                 }
-                float crystalMask = ComputeSaltCrystalMask(screenUV, wetness, inverseDirtRefraction, depthRefractionMask, lowTierMode);
+                float crystalMask = ComputeSaltCrystalMask(screenUV, wetness, inverseDirtRefraction, depthRefractionMask, qualityPressureMode);
                 [branch]
                 if (crystalMask > 0.0001)
                 {
                     half3 crystalTint = half3(0.13h, 0.17h, 0.18h);
                     color.rgb += crystalTint * (half)crystalMask;
                 }
-                float siltMask = ComputeSuspendedSiltMask(screenUV, max(wetness, lensSilt), rainIntensity, inverseDirtRefraction, depthRefractionMask, lowTierMode, localVelocity);
+                float siltMask = ComputeSuspendedSiltMask(screenUV, max(wetness, lensSilt), rainIntensity, inverseDirtRefraction, depthRefractionMask, qualityPressureMode, localVelocity);
                 [branch]
                 if (siltMask > 0.0001)
                 {

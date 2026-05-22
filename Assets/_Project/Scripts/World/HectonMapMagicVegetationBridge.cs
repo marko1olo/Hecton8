@@ -2866,12 +2866,14 @@ namespace Hecton8.World
         /// Returns the current surface semantic payload as native memory for AI and deep-biome consumers.
         /// </summary>
         public bool TryGetActiveSurfaceSemanticPayload(
-            out NativeArray<int> semanticTypes,
-            out NativeArray<byte> biomeLayers,
+            out NativeArray<int>.ReadOnly semanticTypes,
+            out NativeArray<byte>.ReadOnly biomeLayers,
             out int count)
         {
-            semanticTypes = _surfaceAggregateFrontBuffers.SemanticTypes;
-            biomeLayers = _surfaceAggregateFrontBuffers.BiomeLayers;
+            NativeArray<int> semanticTypeView = _surfaceAggregateFrontBuffers.SemanticTypes;
+            NativeArray<byte> biomeLayerView = _surfaceAggregateFrontBuffers.BiomeLayers;
+            semanticTypes = semanticTypeView.IsCreated ? semanticTypeView.AsReadOnly() : default;
+            biomeLayers = biomeLayerView.IsCreated ? biomeLayerView.AsReadOnly() : default;
             count = _surfaceFrontCount;
             return count > 0 && semanticTypes.IsCreated && biomeLayers.IsCreated;
         }
@@ -2921,12 +2923,14 @@ namespace Hecton8.World
         /// Returns the current underwater semantic payload as native memory for AI and deep-biome consumers.
         /// </summary>
         public bool TryGetActiveUnderwaterSemanticPayload(
-            out NativeArray<int> semanticTypes,
-            out NativeArray<byte> biomeLayers,
+            out NativeArray<int>.ReadOnly semanticTypes,
+            out NativeArray<byte>.ReadOnly biomeLayers,
             out int count)
         {
-            semanticTypes = _underwaterAggregateFrontBuffers.SemanticTypes;
-            biomeLayers = _underwaterAggregateFrontBuffers.BiomeLayers;
+            NativeArray<int> semanticTypeView = _underwaterAggregateFrontBuffers.SemanticTypes;
+            NativeArray<byte> biomeLayerView = _underwaterAggregateFrontBuffers.BiomeLayers;
+            semanticTypes = semanticTypeView.IsCreated ? semanticTypeView.AsReadOnly() : default;
+            biomeLayers = biomeLayerView.IsCreated ? biomeLayerView.AsReadOnly() : default;
             count = _underwaterFrontCount;
             return count > 0 && semanticTypes.IsCreated && biomeLayers.IsCreated;
         }
@@ -3078,12 +3082,13 @@ namespace Hecton8.World
         /// Layout: [x + y * width + z * width * height].
         /// </summary>
         public bool TryGetEcosystemThreatVoxelPayload(
-            out NativeArray<byte> threatVoxels,
+            out NativeArray<byte>.ReadOnly threatVoxels,
             out Vector3Int gridDimensions,
             out Vector3 gridOrigin,
             out Vector3 voxelCellSize)
         {
-            threatVoxels = _nativeMemory.EcosystemThreatVoxelCurrentNative;
+            NativeArray<byte> threatVoxelView = _nativeMemory.EcosystemThreatVoxelCurrentNative;
+            threatVoxels = threatVoxelView.IsCreated ? threatVoxelView.AsReadOnly() : default;
             gridDimensions = new Vector3Int(_ecosystemThreatGridResolution, _ecosystemThreatGridResolutionY, _ecosystemThreatGridResolution);
             gridOrigin = _ecosystemThreatVoxelOrigin;
             voxelCellSize = new Vector3(threatGridCellSize, thermalGridVerticalCellSize, threatGridCellSize);

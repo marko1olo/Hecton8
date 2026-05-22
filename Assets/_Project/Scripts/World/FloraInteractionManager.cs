@@ -4850,7 +4850,7 @@ namespace Hecton8.World
             if (!hasPayload || !matrices.IsCreated || !metadata.IsCreated || !types.IsCreated || count <= 0)
                 return;
 
-            NativeArray<int> semanticTypes;
+            NativeArray<int>.ReadOnly semanticTypes;
             int semanticCount;
             bool hasSemanticPayload = underwater
                 ? _vegetationBridge.TryGetActiveUnderwaterSemanticPayload(out semanticTypes, out _, out semanticCount)

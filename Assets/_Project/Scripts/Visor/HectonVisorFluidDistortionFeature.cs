@@ -11,6 +11,7 @@ using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.RenderGraphModule;
 using UnityEngine.Rendering.Universal;
+using UnityEngine.Serialization;
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -41,7 +42,7 @@ namespace Hecton8.Visor
         private const uint BlackBoxVersion = 1u;
         private const uint BlackBoxFlagPlayerCamera = 1u << 0;
         private const uint BlackBoxFlagVisualActive = 1u << 1;
-        private const uint BlackBoxFlagLowTier = 1u << 2;
+        private const uint BlackBoxFlagQualityPressure = 1u << 2;
         private const uint BlackBoxFlagHomeostasisFallback = 1u << 3;
         private const uint BlackBoxFlagNonFiniteInput = 1u << 4;
         private const uint BlackBoxFlagThermalMotionCull = 1u << 5;
@@ -68,7 +69,7 @@ namespace Hecton8.Visor
             [Tooltip("Maximum UV refraction applied by the procedural fluid mask.")]
             [Range(0f, 0.04f)] public float distortionStrength = 0.012f;
 
-            [Tooltip("Snell approximation strength. Low tier drops to chromatic-only sampling.")]
+            [Tooltip("Snell approximation strength. Minimum quality pressure fades toward chromatic-only sampling.")]
             [Range(0f, 0.04f)] public float snellStrength = 0.014f;
 
             [Tooltip("Air, seawater, dense water, and visor glass IOR values consumed as a compact LUT.")]
@@ -80,8 +81,9 @@ namespace Hecton8.Visor
             [Tooltip("Hull stress above this value degrades to the cheap chromatic fallback.")]
             [Range(0f, 1f)] public float stressFallbackThreshold = 0.82f;
 
-            [Tooltip("Graphics memory at or below this value uses the MX350 chromatic-only path.")]
-            [Min(256)] public int lowTierVideoMemoryMb = 2048;
+            [Tooltip("Graphics memory at or below this value raises continuous visor quality pressure.")]
+            [FormerlySerializedAs("lowTierVideoMemoryMb")]
+            [Min(256)] public int minimumQualityVideoMemoryMb = 2048;
 
             [Tooltip("Base vertical runoff speed for droplets sliding down the visor.")]
             [Range(0.1f, 4f)] public float runoffSpeed = 1.2f;
@@ -110,7 +112,7 @@ namespace Hecton8.Visor
             [Tooltip("How aggressively ambient light exposes visor dust.")]
             [Range(0f, 4f)] public float ambientDustResponse = 1.45f;
 
-            [Tooltip("High/Ultra-only salt crystal growth and fine caustic glint. Forced off on low-tier hardware.")]
+            [Tooltip("Visual-overkill salt crystal growth and fine caustic glint. Collapses under quality pressure.")]
             [Range(0f, 1f)] public float visualOverkillStrength = 1f;
 
             [Tooltip("Upper render scale for the compute-resolved lens mask. GlobalQualityWeight still collapses it downward.")]
@@ -129,13 +131,13 @@ namespace Hecton8.Visor
                 float thermalMotionCull01,
                 float waterDensitySignal01,
                 float homeostasisFallback01,
-                float lowTierWeight01,
+                float qualityPressure01,
                 float visualOverkill01,
+                float qualityWeight01,
                 Vector4 diegeticLensState,
                 Vector4 diegeticLensParams0,
                 Vector4 diegeticLensParams1,
                 Vector4 diegeticLensParams2,
-                HectonQualityTier qualityTier,
                 uint telemetryFlags)
             {
                 Wetness = wetness;
@@ -147,13 +149,13 @@ namespace Hecton8.Visor
                 ThermalMotionCull01 = thermalMotionCull01;
                 WaterDensitySignal01 = waterDensitySignal01;
                 HomeostasisFallback01 = homeostasisFallback01;
-                LowTierWeight01 = lowTierWeight01;
+                QualityPressure01 = qualityPressure01;
                 VisualOverkill01 = visualOverkill01;
+                QualityWeight01 = qualityWeight01;
                 DiegeticLensState = diegeticLensState;
                 DiegeticLensParams0 = diegeticLensParams0;
                 DiegeticLensParams1 = diegeticLensParams1;
                 DiegeticLensParams2 = diegeticLensParams2;
-                QualityTier = qualityTier;
                 TelemetryFlags = telemetryFlags;
             }
 
@@ -166,13 +168,13 @@ namespace Hecton8.Visor
             public readonly float ThermalMotionCull01;
             public readonly float WaterDensitySignal01;
             public readonly float HomeostasisFallback01;
-            public readonly float LowTierWeight01;
+            public readonly float QualityPressure01;
             public readonly float VisualOverkill01;
+            public readonly float QualityWeight01;
             public readonly Vector4 DiegeticLensState;
             public readonly Vector4 DiegeticLensParams0;
             public readonly Vector4 DiegeticLensParams1;
             public readonly Vector4 DiegeticLensParams2;
-            public readonly HectonQualityTier QualityTier;
             public readonly uint TelemetryFlags;
         }
 
@@ -191,7 +193,7 @@ namespace Hecton8.Visor
             [FieldOffset(36)] public ushort CameraPixelWidth;
             [FieldOffset(38)] public ushort CameraPixelHeight;
             [FieldOffset(40)] public uint VaultGeneration;
-            [FieldOffset(44)] public uint QualityTier;
+            [FieldOffset(44)] public uint QualityWeightQ16;
         }
 
         private sealed class VisorFluidPass : ScriptableRenderPass
@@ -416,7 +418,7 @@ namespace Hecton8.Visor
                         Sanitize01(runtimeState.WaterDensitySignal01)),
                     new Vector4(
                         Sanitize01(runtimeState.HomeostasisFallback01),
-                        Sanitize01(runtimeState.LowTierWeight01),
+                        Sanitize01(runtimeState.QualityPressure01),
                         Sanitize01(runtimeState.VisualOverkill01),
                         SanitizeAtLeast(settings.runoffSpeed, 0.1f)),
                     SanitizeIorLut(settings.refractionIndexLut),
@@ -513,7 +515,7 @@ namespace Hecton8.Visor
                     new Vector4(
                         Time.timeSinceLevelLoad,
                         Sanitize01(lensMaskBlend),
-                        Sanitize01(runtimeState.LowTierWeight01),
+                        Sanitize01(runtimeState.QualityPressure01),
                         Sanitize01(runtimeState.VisualOverkill01)));
 
                 GraphicsBuffer writeBuffer = ResolveNextLensComputeGlobalsBuffer();
@@ -623,8 +625,8 @@ namespace Hecton8.Visor
             {
                 float quality = Sanitize01(runtimeState.DiegeticLensParams1.x);
                 float qualityBlend = Smooth01((quality - 0.22f) * (1f / 0.5f));
-                float lowTierAttenuation = 1f - Sanitize01(runtimeState.LowTierWeight01) * 0.82f;
-                return math.saturate(qualityBlend * lowTierAttenuation + Sanitize01(runtimeState.VisualOverkill01) * 0.18f);
+                float pressureAttenuation = 1f - Sanitize01(runtimeState.QualityPressure01) * 0.82f;
+                return math.saturate(qualityBlend * pressureAttenuation + Sanitize01(runtimeState.VisualOverkill01) * 0.18f);
             }
 
             private static float ResolveLensMaskRenderScale(FeatureSettings settings, in RuntimeState runtimeState)
@@ -970,16 +972,15 @@ namespace Hecton8.Visor
                 localVelocity.y * localVelocity.y +
                 localVelocity.z * localVelocity.z;
             float thermalMotionCull01 = Smooth01((localVelocitySq - ThermalDistortionCullStartSpeedMetersPerSecondSq) * ThermalDistortionCullInvSpeedRangeSq);
-            HectonQualityTier qualityTier = GlobalRegistry.ScalabilityTier;
             float waterDensitySignal01 = ResolveWaterDensitySignal01(ref telemetryFlags);
             float globalQualityWeight = ResolveGlobalQualityWeight();
-            float qualityLowPressure01 = 1f - Smooth01((globalQualityWeight - 0.18f) * (1f / 0.12f));
-            float hardwareLowPressure01 = ResolveHardwareLowPressure01(settings);
-            float lensLowPressure01 = lensContribution > 0.001f ? 1f - lensRefractionScale : 0f;
+            float qualityPressureFromWeight01 = 1f - Smooth01((globalQualityWeight - 0.18f) * (1f / 0.12f));
+            float hardwareQualityPressure01 = ResolveHardwareQualityPressure01(settings);
+            float lensQualityPressure01 = lensContribution > 0.001f ? 1f - lensRefractionScale : 0f;
             float stressFallback01 = Smooth01((hullStress - Sanitize01(settings.stressFallbackThreshold)) * 5f);
-            float lowTierWeight01 = math.saturate(math.max(math.max(qualityLowPressure01, hardwareLowPressure01), lensLowPressure01));
-            float homeostasisFallback01 = math.saturate(math.max(lowTierWeight01, stressFallback01));
-            float visualOverkill01 = ResolveVisualOverkill01(settings, lowTierWeight01, globalQualityWeight);
+            float qualityPressure01 = math.saturate(math.max(math.max(qualityPressureFromWeight01, hardwareQualityPressure01), lensQualityPressure01));
+            float homeostasisFallback01 = math.saturate(math.max(qualityPressure01, stressFallback01));
+            float visualOverkill01 = ResolveVisualOverkill01(settings, qualityPressure01, globalQualityWeight);
             runtimeState = new RuntimeState(
                 wetness,
                 hullStress,
@@ -990,13 +991,13 @@ namespace Hecton8.Visor
                 thermalMotionCull01,
                 waterDensitySignal01,
                 homeostasisFallback01,
-                lowTierWeight01,
+                qualityPressure01,
                 visualOverkill01,
+                globalQualityWeight,
                 sanitizedLensState,
                 sanitizedLensParams0,
                 sanitizedLensParams1,
                 sanitizedLensParams2,
-                qualityTier,
                 telemetryFlags);
             return true;
         }
@@ -1086,9 +1087,9 @@ namespace Hecton8.Visor
             return new Vector4(air, water, denseWater, glass);
         }
 
-        private static float ResolveHardwareLowPressure01(FeatureSettings settings)
+        private static float ResolveHardwareQualityPressure01(FeatureSettings settings)
         {
-            int thresholdMb = settings != null ? math.max(256, settings.lowTierVideoMemoryMb) : 2048;
+            int thresholdMb = settings != null ? math.max(256, settings.minimumQualityVideoMemoryMb) : 2048;
             float graphicsMemoryMb = SystemInfo.graphicsMemorySize;
             if (!math.isfinite(graphicsMemoryMb) || graphicsMemoryMb <= 0f)
                 return 0f;
@@ -1109,11 +1110,11 @@ namespace Hecton8.Visor
             return x * x * (3f - 2f * x);
         }
 
-        private static float ResolveVisualOverkill01(FeatureSettings settings, float lowTierWeight01, float globalQualityWeight)
+        private static float ResolveVisualOverkill01(FeatureSettings settings, float qualityPressure01, float globalQualityWeight)
         {
             float configuredStrength = settings != null ? Sanitize01(settings.visualOverkillStrength) : 0f;
             float qualityOverkill = Smooth01((Sanitize01(globalQualityWeight) - 0.56f) * (1f / 0.44f));
-            float thermalHeadroom = 1f - Sanitize01(lowTierWeight01);
+            float thermalHeadroom = 1f - Sanitize01(qualityPressure01);
             return configuredStrength * thermalHeadroom * qualityOverkill;
         }
 
@@ -1196,8 +1197,8 @@ namespace Hecton8.Visor
             uint flags = BlackBoxFlagPlayerCamera | runtimeState.TelemetryFlags;
             if (runtimeState.EffectIntensity > 0.001f || runtimeState.RainIntensity > 0.001f)
                 flags |= BlackBoxFlagVisualActive;
-            if (runtimeState.LowTierWeight01 >= 0.5f)
-                flags |= BlackBoxFlagLowTier;
+            if (runtimeState.QualityPressure01 > 0.001f)
+                flags |= BlackBoxFlagQualityPressure;
             if (runtimeState.HomeostasisFallback01 > 0.5f)
                 flags |= BlackBoxFlagHomeostasisFallback;
             if (runtimeState.ThermalMotionCull01 > 0.5f)
@@ -1220,7 +1221,7 @@ namespace Hecton8.Visor
                 CameraPixelWidth = ClampUShort(renderCamera != null ? renderCamera.pixelWidth : 0),
                 CameraPixelHeight = ClampUShort(renderCamera != null ? renderCamera.pixelHeight : 0),
                 VaultGeneration = _blackBoxVaultGeneration,
-                QualityTier = (uint)runtimeState.QualityTier
+                QualityWeightQ16 = EncodeQualityQ16(runtimeState.QualityWeight01)
             };
 
             if ((flags & BlackBoxFlagNonFiniteInput) != 0u)
@@ -1371,14 +1372,19 @@ namespace Hecton8.Visor
             hash = MixHash(hash, math.asuint(Sanitize01(runtimeState.Wetness)));
             hash = MixHash(hash, math.asuint(Sanitize01(runtimeState.HullStress)));
             hash = MixHash(hash, math.asuint(Sanitize01(runtimeState.WaterDensitySignal01)));
-            hash = MixHash(hash, math.asuint(Sanitize01(runtimeState.LowTierWeight01)));
+            hash = MixHash(hash, math.asuint(Sanitize01(runtimeState.QualityPressure01)));
             hash = MixHash(hash, math.asuint(Sanitize01(runtimeState.VisualOverkill01)));
+            hash = MixHash(hash, EncodeQualityQ16(runtimeState.QualityWeight01));
             Vector3 velocity = SanitizeVector(runtimeState.LocalVelocity);
             hash = MixHash(hash, math.asuint(velocity.x));
             hash = MixHash(hash, math.asuint(velocity.y));
             hash = MixHash(hash, math.asuint(velocity.z));
-            hash = MixHash(hash, (uint)runtimeState.QualityTier);
             return hash;
+        }
+
+        private static uint EncodeQualityQ16(float qualityWeight01)
+        {
+            return (uint)math.round(Sanitize01(qualityWeight01) * 65535f);
         }
 
         private static uint MixHash(uint hash, uint value)
@@ -1457,7 +1463,7 @@ namespace Hecton8.Visor
             writer.Write(entry.CameraPixelWidth);
             writer.Write(entry.CameraPixelHeight);
             writer.Write(entry.VaultGeneration);
-            writer.Write(entry.QualityTier);
+            writer.Write(entry.QualityWeightQ16);
         }
 
         private static void RecreateMaterial(ref Material material, Shader shader)

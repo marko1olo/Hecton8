@@ -12,6 +12,7 @@ using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.RenderGraphModule;
 using UnityEngine.Rendering.Universal;
+using UnityEngine.Serialization;
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -143,14 +144,15 @@ namespace Hecton8.Visor
             [Tooltip("Heat haze sine speed.")]
             [Min(0f)] public float heatHazeSpeed = 0.62f;
 
-            [Tooltip("Heat haze UV displacement amplitude. Forced to zero on low tier.")]
+            [Tooltip("Heat haze UV displacement amplitude. Collapses continuously under quality pressure.")]
             [Range(0f, 0.006f)] public float heatHazeAmplitude = 0.0017f;
 
             [Tooltip("Damage/stress vignette strength.")]
             [Range(0f, 1f)] public float damageVignetteStrength = 0.24f;
 
-            [Tooltip("Below or equal to this VRAM amount, heat haze is disabled.")]
-            [Min(256)] public int lowTierVideoMemoryMb = 2048;
+            [Tooltip("Below or equal to this VRAM amount, heat haze receives continuous quality pressure.")]
+            [FormerlySerializedAs("lowTierVideoMemoryMb")]
+            [Min(256)] public int minimumQualityVideoMemoryMb = 2048;
 
             [Tooltip("Oxygen value below which hypoxia ramps when no stronger global signal is published.")]
             [Range(0.01f, 1f)] public float hypoxiaSafeOxygen01 = DefaultHypoxiaSafeOxygen01;
@@ -179,7 +181,7 @@ namespace Hecton8.Visor
                 Vector4 vrComfortJerkState,
                 Vector4 internalWaterlineParams,
                 Vector4 internalWaterlineDistortion,
-                float lowTierWeight01,
+                float qualityPressure01,
                 bool depthlessTBDR)
             {
                 VisorPostActive = visorPostActive ? (byte)1 : (byte)0;
@@ -196,7 +198,7 @@ namespace Hecton8.Visor
                 VrComfortJerkState = vrComfortJerkState;
                 InternalWaterlineParams = internalWaterlineParams;
                 InternalWaterlineDistortion = internalWaterlineDistortion;
-                LowTierWeight01 = lowTierWeight01;
+                QualityPressure01 = qualityPressure01;
                 DepthlessTBDR = depthlessTBDR ? (byte)1 : (byte)0;
             }
 
@@ -214,7 +216,7 @@ namespace Hecton8.Visor
             public readonly Vector4 VrComfortJerkState;
             public readonly Vector4 InternalWaterlineParams;
             public readonly Vector4 InternalWaterlineDistortion;
-            public readonly float LowTierWeight01;
+            public readonly float QualityPressure01;
             public readonly byte DepthlessTBDR;
         }
 
@@ -288,7 +290,7 @@ namespace Hecton8.Visor
                 internal float AupShiftFrame;
                 internal float VrComfortVignette01;
                 internal float DepthlessTBDR;
-                internal float LowTierWeight01;
+                internal float QualityPressure01;
                 internal bool HasDepth;
             }
 
@@ -536,7 +538,7 @@ namespace Hecton8.Visor
                 RuntimeState runtimeState,
                 float visualTimeSeconds)
             {
-                float lowTierWeight01 = Sanitize01(runtimeState.LowTierWeight01);
+                float qualityPressure01 = Sanitize01(runtimeState.QualityPressure01);
                 passData.VisualTimeSeconds = SanitizeFinite(visualTimeSeconds, 0f);
                 passData.HealthFraction = Sanitize01(runtimeState.HealthFraction);
                 passData.LocalTemperature = SanitizeFinite(runtimeState.LocalTemperature, 0f);
@@ -552,7 +554,7 @@ namespace Hecton8.Visor
                 passData.VrComfortJerkState = SanitizeVrComfortJerkState(runtimeState.VrComfortJerkState);
                 passData.InternalWaterlineParams = SanitizeInternalWaterlineParams(runtimeState.InternalWaterlineParams);
                 passData.InternalWaterlineDistortion = SanitizeInternalWaterlineDistortion(runtimeState.InternalWaterlineDistortion);
-                passData.LowTierWeight01 = lowTierWeight01;
+                passData.QualityPressure01 = qualityPressure01;
                 passData.Strengths0 = new Vector4(
                     math.saturate(settings.chromaticStrength),
                     math.saturate(settings.hypoxiaDesaturationStrength),
@@ -566,7 +568,7 @@ namespace Hecton8.Visor
                 passData.WaveParams = new Vector4(
                     math.max(1f, settings.heatHazeFrequency),
                     math.max(0f, settings.heatHazeSpeed),
-                    math.clamp(settings.heatHazeAmplitude, 0f, 0.006f) * (1f - lowTierWeight01),
+                    math.clamp(settings.heatHazeAmplitude, 0f, 0.006f) * (1f - qualityPressure01),
                     math.saturate(settings.damageVignetteStrength));
                 passData.TextureFlags = new Vector4(
                     settings.crackTexture != null ? 1f : 0f,
@@ -597,7 +599,7 @@ namespace Hecton8.Visor
                 cmd.SetGlobalFloat(ShaderConstants.AupShiftFrameId, data.AupShiftFrame);
                 cmd.SetGlobalFloat(ShaderConstants.VrComfortVignette01Id, data.VrComfortVignette01);
                 cmd.SetGlobalFloat(ShaderConstants.DepthlessTBDRId, data.DepthlessTBDR);
-                cmd.SetGlobalFloat(ShaderConstants.LowTierId, data.LowTierWeight01);
+                cmd.SetGlobalFloat(ShaderConstants.QualityPressureId, data.QualityPressure01);
                 cmd.SetGlobalFloat(ShaderConstants.UberVisualTimeId, data.VisualTimeSeconds);
                 cmd.SetGlobalVector(ShaderConstants.VrComfortJerkStateId, data.VrComfortJerkState);
                 cmd.SetGlobalVector(ShaderConstants.InternalWaterlineParamsId, data.InternalWaterlineParams);
@@ -628,7 +630,7 @@ namespace Hecton8.Visor
             internal static readonly int InternalWaterlineRuntimeId = Shader.PropertyToID("_InternalWaterlineRuntime");
             internal static readonly int InternalWaterlineParamsId = Shader.PropertyToID("_InternalWaterlineParams");
             internal static readonly int InternalWaterlineDistortionId = Shader.PropertyToID("_InternalWaterlineDistortion");
-            internal static readonly int LowTierId = Shader.PropertyToID("_HectonUberLowTier");
+            internal static readonly int QualityPressureId = Shader.PropertyToID("_HectonUberQualityPressure");
             internal static readonly int UberVisualTimeId = Shader.PropertyToID("_HectonUberVisualTime");
             internal static readonly int Strengths0Id = Shader.PropertyToID("_HectonUberStrengths0");
             internal static readonly int Strengths1Id = Shader.PropertyToID("_HectonUberStrengths1");
@@ -788,10 +790,10 @@ namespace Hecton8.Visor
         private bool _reconstructionDumpWritten;
         private bool _aestheticCsvLoaded;
         private bool _aestheticCsvLoadAttempted;
-        private int _cachedLowTierThresholdMb = int.MinValue;
+        private int _cachedMinimumQualityThresholdMb = int.MinValue;
         private int _cachedGraphicsMemoryMb;
         private int _cachedDepthlessTBDRFrame = int.MinValue;
-        private float _cachedLowTierFloor01;
+        private float _cachedMemoryQualityPressureFloor01;
         private bool _cachedDepthlessTBDR;
         private ICameraHistoryReadAccess _rawColorHistoryReadAccess;
         private Camera _rawColorHistoryCamera;
@@ -880,8 +882,8 @@ namespace Hecton8.Visor
             }
 
             Camera renderCamera = renderingData.cameraData.camera;
-            float lowTierFloor01 = ResolveLowTierFloor01(settings);
-            if (!TryBuildRuntimeState(renderCamera, settings, lowTierFloor01, out RuntimeState runtimeState))
+            float memoryQualityPressureFloor01 = ResolveMemoryQualityPressureFloor01(settings);
+            if (!TryBuildRuntimeState(renderCamera, settings, memoryQualityPressureFloor01, out RuntimeState runtimeState))
             {
                 ClearRawColorHistoryRequest();
                 ClearPendingReconstructionInput();
@@ -1872,19 +1874,19 @@ namespace Hecton8.Visor
             return false;
         }
 
-        private float ResolveLowTierWeight01(float lowTierFloor01)
+        private float ResolveQualityPressure01(float memoryQualityPressureFloor01)
         {
-            float qualityWeight01 = ResolveCurrentQualityWeight01(lowTierFloor01);
-            float qualityLowTier01 = 1f - Smooth01(math.saturate((qualityWeight01 - 0.18f) * 1.2195122f));
-            return math.max(Sanitize01(lowTierFloor01), qualityLowTier01);
+            float qualityWeight01 = ResolveCurrentQualityWeight01(memoryQualityPressureFloor01);
+            float qualityPressureFromWeight01 = 1f - Smooth01(math.saturate((qualityWeight01 - 0.18f) * 1.2195122f));
+            return math.max(Sanitize01(memoryQualityPressureFloor01), qualityPressureFromWeight01);
         }
 
-        private float ResolveCurrentQualityWeight01(float lowTierFloor01)
+        private float ResolveCurrentQualityWeight01(float memoryQualityPressureFloor01)
         {
             ResolutionScaleState state;
             return TryUseCachedResolutionState(out state)
                 ? Sanitize01(state.GlobalQualityWeight01)
-                : math.lerp(1f, 0.35f, Sanitize01(lowTierFloor01));
+                : math.lerp(1f, 0.35f, Sanitize01(memoryQualityPressureFloor01));
         }
 
         private static bool ReconstructionConstantsEqual(
@@ -2034,7 +2036,7 @@ namespace Hecton8.Visor
             return math.isfinite(value);
         }
 
-        private bool TryBuildRuntimeState(Camera renderCamera, FeatureSettings settings, float lowTierFloor01, out RuntimeState runtimeState)
+        private bool TryBuildRuntimeState(Camera renderCamera, FeatureSettings settings, float memoryQualityPressureFloor01, out RuntimeState runtimeState)
         {
             runtimeState = default;
             if (renderCamera == null || settings == null)
@@ -2073,15 +2075,15 @@ namespace Hecton8.Visor
                 Sanitize01(Shader.GetGlobalFloat(ShaderConstants.VrComfortVignette01Id)),
                 Sanitize01(Shader.GetGlobalFloat(ShaderConstants.SomaticComfortVignetteId)));
             Vector4 vrComfortJerkState = SanitizeVrComfortJerkState(Shader.GetGlobalVector(ShaderConstants.VrComfortJerkStateId));
-            float lowTierWeight01 = ResolveLowTierWeight01(lowTierFloor01);
+            float qualityPressure01 = ResolveQualityPressure01(memoryQualityPressureFloor01);
             Vector4 internalWaterlineParams = ResolveInternalWaterlineParams(renderCamera, settings);
-            Vector4 internalWaterlineDistortion = ResolveInternalWaterlineDistortion(lowTierWeight01);
+            Vector4 internalWaterlineDistortion = ResolveInternalWaterlineDistortion(qualityPressure01);
             bool depthlessTBDR = ResolveDepthlessTBDRPath();
             float lightShaftActiveCount = math.max(0f, SanitizeFinite(Shader.GetGlobalVector(ShaderConstants.LightShaftParamsId).x, 0f));
 
-            float visualBudget01 = 1f - lowTierWeight01;
+            float visualBudget01 = 1f - qualityPressure01;
             float bulletTimeVisual01 = Sanitize01(GlobalSignals.BulletTimeVisualIntensity01) * visualBudget01;
-            float pressureSurge01 = ResolvePressureSurgeVisual01(ambientPressure, hullStress, lowTierWeight01, settings);
+            float pressureSurge01 = ResolvePressureSurgeVisual01(ambientPressure, hullStress, qualityPressure01, settings);
             float playerStress = math.saturate(math.max(frequencyTuningError01, math.max(globalStress, math.max(hullStress, 1f - healthFraction))));
             playerStress = math.max(playerStress, math.max(bulletTimeVisual01, pressureSurge01 * 0.5f));
             float hypoxia = math.max(
@@ -2123,7 +2125,7 @@ namespace Hecton8.Visor
                 vrComfortJerkState,
                 internalWaterlineParams,
                 internalWaterlineDistortion,
-                lowTierWeight01,
+                qualityPressure01,
                 depthlessTBDR);
             return true;
         }
@@ -2182,28 +2184,28 @@ namespace Hecton8.Visor
                 pitchY * math.saturate(settings.internalWaterlinePitchScale));
         }
 
-        private static Vector4 ResolveInternalWaterlineDistortion(float lowTierWeight01)
+        private static Vector4 ResolveInternalWaterlineDistortion(float qualityPressure01)
         {
             Vector4 distortion = Shader.GetGlobalVector(ShaderConstants.InternalWaterlineDistortionId);
-            lowTierWeight01 = Sanitize01(lowTierWeight01);
-            float visualBudget01 = 1f - lowTierWeight01;
+            qualityPressure01 = Sanitize01(qualityPressure01);
+            float visualBudget01 = 1f - qualityPressure01;
             return new Vector4(
                 math.max(0f, SanitizeFinite(distortion.x, 0f)) * visualBudget01,
                 Sanitize01(distortion.y),
                 math.max(0.001f, SanitizeFinite(distortion.z, 0.018f)),
-                math.lerp(Sanitize01(distortion.w), 1f, lowTierWeight01));
+                math.lerp(Sanitize01(distortion.w), 1f, qualityPressure01));
         }
 
         private static float ResolvePressureSurgeVisual01(
             float ambientPressure,
             float hullStress01,
-            float lowTierWeight01,
+            float qualityPressure01,
             FeatureSettings currentSettings)
         {
             float safeRange = currentSettings != null ? math.max(0.0001f, currentSettings.pressureInvRange) : 1f;
             float pressureDrive01 = math.saturate((math.max(1f, SanitizeFinite(ambientPressure, 1f)) - 1f) * math.rcp(safeRange));
             float stressDrive01 = Sanitize01(hullStress01) * 0.35f;
-            float visualBudget01 = 1f - Sanitize01(lowTierWeight01);
+            float visualBudget01 = 1f - Sanitize01(qualityPressure01);
             return math.smoothstep(0f, 1f, math.max(pressureDrive01, stressDrive01)) * visualBudget01;
         }
 
@@ -2254,21 +2256,21 @@ namespace Hecton8.Visor
                 out statusMask);
         }
 
-        private float ResolveLowTierFloor01(FeatureSettings currentSettings)
+        private float ResolveMemoryQualityPressureFloor01(FeatureSettings currentSettings)
         {
-            int thresholdMb = currentSettings != null ? math.max(256, currentSettings.lowTierVideoMemoryMb) : 2048;
-            if (_cachedLowTierThresholdMb == thresholdMb)
-                return _cachedLowTierFloor01;
+            int thresholdMb = currentSettings != null ? math.max(256, currentSettings.minimumQualityVideoMemoryMb) : 2048;
+            if (_cachedMinimumQualityThresholdMb == thresholdMb)
+                return _cachedMemoryQualityPressureFloor01;
 
             _cachedGraphicsMemoryMb = SystemInfo.graphicsMemorySize;
-            _cachedLowTierThresholdMb = thresholdMb;
+            _cachedMinimumQualityThresholdMb = thresholdMb;
             float memoryMb = math.max(1f, _cachedGraphicsMemoryMb);
             float softCeilingMb = thresholdMb * 1.25f;
             float softRangeMb = math.max(1f, thresholdMb * 0.5f);
             float memoryShortage01 = Smooth01(math.saturate((softCeilingMb - memoryMb) * math.rcp(softRangeMb)));
             float memoryKnown01 = math.saturate((float)_cachedGraphicsMemoryMb);
-            _cachedLowTierFloor01 = 0.25f * memoryKnown01 * memoryShortage01;
-            return _cachedLowTierFloor01;
+            _cachedMemoryQualityPressureFloor01 = 0.25f * memoryKnown01 * memoryShortage01;
+            return _cachedMemoryQualityPressureFloor01;
         }
 
         private bool ResolveDepthlessTBDRPath()

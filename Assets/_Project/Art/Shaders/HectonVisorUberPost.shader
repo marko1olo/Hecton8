@@ -5,7 +5,7 @@ Shader "Hidden/Hecton8/VisorUberPost"
         _HectonVisorCrackTex ("Packed Crack Normal Alpha", 2D) = "black" {}
         _HectonLensDirtTex ("Lens Dirt", 2D) = "white" {}
         _HectonBlueNoiseTex ("Blue Noise", 2D) = "gray" {}
-        _HectonVRComfortMaskTex ("VR Comfort Low Tier Mask", 2D) = "gray" {}
+        _HectonVRComfortMaskTex ("VR Comfort Quality Pressure Mask", 2D) = "gray" {}
     }
 
     SubShader
@@ -46,7 +46,7 @@ Shader "Hidden/Hecton8/VisorUberPost"
             float _HectonUberWetLens01;
             float _HectonUberHullStress01;
             float _HectonUberAupShiftFrame;
-            float _HectonUberLowTier;
+            float _HectonUberQualityPressure;
             float _HectonUberVisualTime;
             float _HectonUberDepthlessTBDR;
             float _VRComfortVignette01;
@@ -163,11 +163,11 @@ Shader "Hidden/Hecton8/VisorUberPost"
                 return saturate(centered * 0.5 + 0.5);
             }
 
-            float2 HeatHazeOffset(float2 uv, float heat01, float lowTier)
+            float2 HeatHazeOffset(float2 uv, float heat01, float qualityPressure01)
             {
                 float4 waveParams = HectonFinite4(_HectonUberWaveParams, float4(1.0, 0.0, 0.0, 0.0));
                 float2 safeUv = all(isfinite(uv)) ? saturate(uv) : float2(0.0, 0.0);
-                float enabled = 1.0 - smoothstep(0.35, 0.95, HectonFinite01(lowTier));
+                float enabled = 1.0 - smoothstep(0.35, 0.95, HectonFinite01(qualityPressure01));
                 float freq = max(1.0, waveParams.x);
                 float speed = waveParams.y;
                 float amplitude = HectonFiniteValue(waveParams.z, 0.0) * HectonFinite01(heat01) * enabled;
@@ -316,15 +316,15 @@ Shader "Hidden/Hecton8/VisorUberPost"
                 float4 textureFlags = HectonFinite4(_HectonUberTextureFlags, float4(0.0, 0.0, 0.0, 0.0));
                 float4 comfortJerkState = HectonFinite4(_HectonVRComfortJerkState, float4(0.0, 0.0, 0.0, 0.0));
                 float2 safeUv = all(isfinite(uv)) ? saturate(uv) : float2(0.5, 0.5);
-                float lowTier = HectonFinite01(_HectonUberLowTier);
+                float qualityPressure01 = HectonFinite01(_HectonUberQualityPressure);
                 float comfortVignette01 = HectonFinite01(max(HectonFinite01(_VRComfortVignette01), comfortJerkState.x * comfortJerkState.w));
                 float comfortEdgeProcedural = smoothstep(0.16, 1.0, edge01);
-                float comfortEdgeLowTier = smoothstep(0.36, 0.48, edge01);
-                float comfortLowTier01 = smoothstep(0.25, 0.95, lowTier);
+                float comfortEdgePressure = smoothstep(0.36, 0.48, edge01);
+                float comfortQualityPressure01 = smoothstep(0.25, 0.95, qualityPressure01);
                 float comfortMaskTexture = SAMPLE_TEXTURE2D(_HectonVRComfortMaskTex, sampler_HectonVRComfortMaskTex, safeUv).r;
-                comfortEdgeLowTier = lerp(comfortEdgeLowTier, comfortMaskTexture, saturate(textureFlags.w));
+                comfortEdgePressure = lerp(comfortEdgePressure, comfortMaskTexture, saturate(textureFlags.w));
 
-                float comfortEdge = lerp(comfortEdgeProcedural, comfortEdgeLowTier, comfortLowTier01);
+                float comfortEdge = lerp(comfortEdgeProcedural, comfortEdgePressure, comfortQualityPressure01);
                 return 1.0 - saturate(comfortEdge * comfortVignette01 * 0.92);
             }
 
@@ -390,8 +390,8 @@ Shader "Hidden/Hecton8/VisorUberPost"
                 float2 safeUv = saturate(HectonFinite2(uv, float2(0.5, 0.5)));
                 float4 shaftParams = HectonFinite4(_HectonLightShaftParams, float4(0.0, 0.0, 0.0, 0.0));
                 float4 shaftQuality = HectonFinite4(_HectonLightShaftQuality, float4(0.01, 1.0, 0.001, 1.0));
-                float lowTier = HectonFinite01(_HectonUberLowTier);
-                float shaftQualityWeight = 1.0 - smoothstep(0.35, 0.95, lowTier);
+                float qualityPressure01 = HectonFinite01(_HectonUberQualityPressure);
+                float shaftQualityWeight = 1.0 - smoothstep(0.35, 0.95, qualityPressure01);
 
                 [branch]
                 if (HectonFinite01(_HectonUberDepthlessTBDR) > 0.5)
@@ -437,7 +437,7 @@ Shader "Hidden/Hecton8/VisorUberPost"
                     (half)(1.0 - grime * 0.18));
             }
 
-            half3 ApplyBrinePlaneFog(half3 color, float2 uv, float lowTier)
+            half3 ApplyBrinePlaneFog(half3 color, float2 uv, float qualityPressure01)
             {
             #if defined(SHADER_API_MOBILE)
                 return color;
@@ -458,7 +458,7 @@ Shader "Hidden/Hecton8/VisorUberPost"
                 float belowPlane = depthValid * step(worldPosition.y, brineHeightY) * step(0.0001, brineColor.a);
                 float softFog = saturate(distanceBelowPlane * 0.20);
                 float hardFog = step(0.0001, distanceBelowPlane);
-                float fogMode = HectonFinite01(max(lowTier, hardClip));
+                float fogMode = HectonFinite01(max(qualityPressure01, hardClip));
                 float fog = belowPlane * lerp(softFog, hardFog, fogMode) * HectonFinite01(brineColor.a);
                 return lerp(color, (half3)brineColor.rgb, (half)fog);
             #endif
@@ -487,7 +487,7 @@ Shader "Hidden/Hecton8/VisorUberPost"
                 float heat01 = HectonFinite01(abs(localTemperature) * strengths1.y);
                 float stress01 = HectonFinite01(_HectonUberPlayerStress01);
                 float hypoxia01 = HectonFinite01(_HectonUberHypoxia01);
-                float lowTier01 = HectonFinite01(_HectonUberLowTier);
+                float qualityPressure01 = HectonFinite01(_HectonUberQualityPressure);
                 float hullStress01 = HectonFinite01(_HectonUberHullStress01);
                 float wetLens01 = HectonFinite01(_HectonUberWetLens01);
 
@@ -512,7 +512,7 @@ Shader "Hidden/Hecton8/VisorUberPost"
                 float2 visorEdgeNormal = visorEdgeSeed * rsqrt(max(dot(visorEdgeSeed, visorEdgeSeed), 0.0001));
 
                 float2 warpedUV = BarrelWarp(uv, pressure01, strengths0.z);
-                warpedUV += HeatHazeOffset(uv, heat01, lowTier01);
+                warpedUV += HeatHazeOffset(uv, heat01, qualityPressure01);
                 warpedUV += HectonClampUvOffset(crackNormal * (crackMask * HectonFiniteValue(strengths1.z, 0.0)), 0.1);
                 warpedUV += HectonClampUvOffset(visorEdgeNormal * (tornEdgeMask * HectonFiniteValue(strengths1.z, 0.0) * 0.35), 0.04);
                 warpedUV = saturate(warpedUV);
@@ -557,7 +557,7 @@ Shader "Hidden/Hecton8/VisorUberPost"
 
                 float damageDrive = HectonFinite01(max(damage01, max(hullStress01, stress01)) + crackMask * 0.35);
                 color.rgb = ApplySingleSampleChroma(color.rgb, edge01, damageDrive, strengths0.x);
-                color.rgb = ApplyBrinePlaneFog(color.rgb, uv, lowTier01);
+                color.rgb = ApplyBrinePlaneFog(color.rgb, uv, qualityPressure01);
 
                 float shiftSalt = frac(HectonFiniteValue(_HectonUberAupShiftFrame, 0.0) * 0.6180339887);
                 float blueNoise = ResolveDitherNoise(uv, shiftSalt);
@@ -586,11 +586,11 @@ Shader "Hidden/Hecton8/VisorUberPost"
 
                 float comfortVignette01 = HectonFinite01(max(HectonFinite01(_VRComfortVignette01), comfortJerkState.x * comfortJerkState.w));
                 float comfortEdgeProcedural = smoothstep(0.16, 1.0, edge01);
-                float comfortEdgeLowTier = smoothstep(0.36, 0.48, edge01);
-                float comfortLowTier01 = smoothstep(0.25, 0.95, lowTier01);
+                float comfortEdgePressure = smoothstep(0.36, 0.48, edge01);
+                float comfortQualityPressure01 = smoothstep(0.25, 0.95, qualityPressure01);
                 float comfortMaskTexture = SAMPLE_TEXTURE2D(_HectonVRComfortMaskTex, sampler_HectonVRComfortMaskTex, uv).r;
-                comfortEdgeLowTier = lerp(comfortEdgeLowTier, comfortMaskTexture, saturate(textureFlags.w));
-                float comfortEdge = lerp(comfortEdgeProcedural, comfortEdgeLowTier, comfortLowTier01);
+                comfortEdgePressure = lerp(comfortEdgePressure, comfortMaskTexture, saturate(textureFlags.w));
+                float comfortEdge = lerp(comfortEdgeProcedural, comfortEdgePressure, comfortQualityPressure01);
                 float vignette = saturate(
                     edge01 * stress01 * strengths1.w +
                     edge01 * damageDrive * waveParams.w +

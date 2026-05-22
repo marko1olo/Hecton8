@@ -3598,7 +3598,7 @@ namespace Hecton8.World
                     out NativeArray<HectonVegetationInstanceData> metadata,
                     out _,
                     out int count) ||
-                !_mapMagicVegetationBridge.TryGetActiveUnderwaterSemanticPayload(out NativeArray<int> semanticTypes, out _, out _))
+                !_mapMagicVegetationBridge.TryGetActiveUnderwaterSemanticPayload(out NativeArray<int>.ReadOnly semanticTypes, out _, out _))
             {
                 return;
             }

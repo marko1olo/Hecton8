@@ -20,36 +20,36 @@ Evidence class: STATIC_SOURCE. No Unity import, compile, Play Mode, profiler, GC
 | `linqSurface` | 0 | 0 |
 | `nativeApiExposureAmbiguousMutable` | 0 | 0 |
 | `nativeApiExposureBuildEditorOnly` | 5 | 4 |
-| `nativeApiExposureBuildPlayerRuntime` | 154 | 71 |
+| `nativeApiExposureBuildPlayerRuntime` | 151 | 71 |
 | `nativeApiExposureBuildQaDevProof` | 8 | 2 |
 | `nativeApiExposureMutableReturn` | 43 | 29 |
-| `nativeApiExposureOutRefMutable` | 124 | 60 |
+| `nativeApiExposureOutRefMutable` | 121 | 60 |
 | `nativeApiRiskCoreVaultOrAllocatorSurface` | 21 | 3 |
 | `nativeApiRiskEditorOrProofSurface` | 13 | 6 |
 | `nativeApiRiskRuntimeAmbiguousMutableView` | 0 | 0 |
 | `nativeApiRiskRuntimeDiagnosticNamedMutableView` | 31 | 21 |
-| `nativeApiRiskRuntimeOutRefMutableView` | 75 | 43 |
+| `nativeApiRiskRuntimeOutRefMutableView` | 72 | 43 |
 | `nativeApiRiskRuntimeReturnMutableView` | 27 | 19 |
-| `nativeCollectionPublicMutableApiExposure` | 167 | 77 |
+| `nativeCollectionPublicMutableApiExposure` | 164 | 77 |
 | `noAlias` | 2192 | 218 |
 | `packOne` | 0 | 0 |
 | `privateNativeBuildEditorOnly` | 48 | 18 |
-| `privateNativeBuildPlayerRuntime` | 1255 | 204 |
+| `privateNativeBuildPlayerRuntime` | 1256 | 204 |
 | `privateNativeBuildQaDevProof` | 14 | 7 |
 | `privateNativeCollectionBlackBoxTelemetry` | 83 | 59 |
-| `privateNativeCollectionField` | 1317 | 229 |
+| `privateNativeCollectionField` | 1318 | 229 |
 | `privateNativeCollectionOwnerLocalScratch` | 79 | 50 |
 | `privateNativeCollectionStaticQueueLane` | 209 | 58 |
-| `privateNativeCollectionUnclassified` | 918 | 148 |
+| `privateNativeCollectionUnclassified` | 919 | 148 |
 | `privateNativeCollectionVaultAlias` | 28 | 1 |
 | `privateNativeDeclarationAmbiguous` | 0 | 0 |
-| `privateNativeDeclarationField` | 1185 | 181 |
+| `privateNativeDeclarationField` | 1186 | 182 |
 | `privateNativeDeclarationMethodReturn` | 132 | 58 |
 | `privateNativeRiskEditorOrProofNativeState` | 45 | 16 |
 | `privateNativeRiskJobStructNativeView` | 0 | 0 |
 | `privateNativeRiskMethodReturningNativeCollection` | 132 | 58 |
 | `privateNativeRiskOwnerLocalRuntimeNativeState` | 776 | 97 |
-| `privateNativeRiskStaticGlobalNativeState` | 117 | 20 |
+| `privateNativeRiskStaticGlobalNativeState` | 118 | 21 |
 | `privateNativeRiskStaticSignalOrEventBridge` | 218 | 62 |
 | `privateNativeRiskUnclassifiedNativeCollection` | 0 | 0 |
 | `privateNativeRiskVaultAliasOrVaultResolver` | 29 | 2 |
@@ -144,8 +144,8 @@ Evidence class: STATIC_SOURCE. No Unity import, compile, Play Mode, profiler, GC
 | `Assets/_Project/Scripts/Inventory/Shinobu19EconomyLedger.cs` | 8 |
 | `Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs` | 7 |
 | `Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementRuntime.cs` | 5 |
-| `Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs` | 5 |
 | `Assets/_Project/Scripts/Construction/ModularBaseConstructionValidator.cs` | 4 |
+| `Assets/_Project/Scripts/Core/HectonArenaAllocator.cs` | 4 |
 
 ### nativeApiRiskCoreVaultOrAllocatorSurface
 
@@ -180,10 +180,10 @@ Evidence class: STATIC_SOURCE. No Unity import, compile, Play Mode, profiler, GC
 | Path | Count |
 |---|---:|
 | `Assets/_Project/Scripts/Inventory/Shinobu19EconomyLedger.cs` | 7 |
-| `Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs` | 5 |
 | `Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs` | 4 |
 | `Assets/_Project/Scripts/HectonVoxelVolume.cs` | 4 |
 | `Assets/_Project/Scripts/Core/Signals/SignalWardenRuntime.cs` | 3 |
+| `Assets/_Project/Scripts/Graphics/Culling/TBDRPipelineSurgeonTypes.cs` | 3 |
 
 ### nativeApiRiskRuntimeReturnMutableView
 

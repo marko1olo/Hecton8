@@ -316,7 +316,7 @@ namespace Hecton8.World
             NativeArray<Matrix4x4> matrices = underwater ? _underwaterMatrices : _surfaceMatrices;
             NativeArray<HectonVegetationInstanceData> metadata = underwater ? _underwaterMetadata : _surfaceMetadata;
             NativeArray<int> types = underwater ? _underwaterTypes : _surfaceTypes;
-            NativeArray<int> semanticTypes = underwater ? _underwaterSemanticTypes : _surfaceSemanticTypes;
+            NativeArray<int>.ReadOnly semanticTypes = underwater ? _underwaterSemanticTypes : _surfaceSemanticTypes;
             NativeArray<uint> instanceUids = underwater ? _underwaterInstanceUids : _surfaceInstanceUids;
             NativeArray<byte> materialClasses = underwater ? _underwaterMaterialClasses : _surfaceMaterialClasses;
             NativeArray<Unity.Mathematics.half> health = underwater ? _underwaterHealth : _surfaceHealth;
@@ -597,11 +597,11 @@ namespace Hecton8.World
         private NativeArray<Matrix4x4> _surfaceMatrices;
         private NativeArray<HectonVegetationInstanceData> _surfaceMetadata;
         private NativeArray<int> _surfaceTypes;
-        private NativeArray<int> _surfaceSemanticTypes;
+        private NativeArray<int>.ReadOnly _surfaceSemanticTypes;
         private NativeArray<Matrix4x4> _underwaterMatrices;
         private NativeArray<HectonVegetationInstanceData> _underwaterMetadata;
         private NativeArray<int> _underwaterTypes;
-        private NativeArray<int> _underwaterSemanticTypes;
+        private NativeArray<int>.ReadOnly _underwaterSemanticTypes;
 
         private int[] _templateIndexByMaterialClass;
         private int[] _harvestDescriptorIndexByFloraTemplateIndex = Array.Empty<int>();
@@ -2714,7 +2714,7 @@ namespace Hecton8.World
             NativeArray<Matrix4x4> matrices = _underwaterMatrices;
             NativeArray<HectonVegetationInstanceData> metadata = _underwaterMetadata;
             NativeArray<int> types = _underwaterTypes;
-            NativeArray<int> semanticTypes = _underwaterSemanticTypes;
+            NativeArray<int>.ReadOnly semanticTypes = _underwaterSemanticTypes;
             NativeArray<uint> instanceUids = _underwaterInstanceUids;
             NativeArray<byte> materialClasses = _underwaterMaterialClasses;
             int count = _underwaterCount;
@@ -2948,7 +2948,7 @@ namespace Hecton8.World
             NativeArray<Matrix4x4> matrices = underwater ? _underwaterMatrices : _surfaceMatrices;
             NativeArray<HectonVegetationInstanceData> metadata = underwater ? _underwaterMetadata : _surfaceMetadata;
             NativeArray<int> types = underwater ? _underwaterTypes : _surfaceTypes;
-            NativeArray<int> semanticTypes = underwater ? _underwaterSemanticTypes : _surfaceSemanticTypes;
+            NativeArray<int>.ReadOnly semanticTypes = underwater ? _underwaterSemanticTypes : _surfaceSemanticTypes;
             NativeArray<uint> instanceUids = underwater ? _underwaterInstanceUids : _surfaceInstanceUids;
             NativeArray<byte> materialClasses = underwater ? _underwaterMaterialClasses : _surfaceMaterialClasses;
             int count = underwater ? _underwaterCount : _surfaceCount;
@@ -3002,7 +3002,7 @@ namespace Hecton8.World
             NativeArray<Matrix4x4> matrices = underwater ? _underwaterMatrices : _surfaceMatrices;
             NativeArray<HectonVegetationInstanceData> metadata = underwater ? _underwaterMetadata : _surfaceMetadata;
             NativeArray<int> types = underwater ? _underwaterTypes : _surfaceTypes;
-            NativeArray<int> semanticTypes = underwater ? _underwaterSemanticTypes : _surfaceSemanticTypes;
+            NativeArray<int>.ReadOnly semanticTypes = underwater ? _underwaterSemanticTypes : _surfaceSemanticTypes;
             NativeArray<uint> instanceUids = underwater ? _underwaterInstanceUids : _surfaceInstanceUids;
             NativeArray<byte> materialClasses = underwater ? _underwaterMaterialClasses : _surfaceMaterialClasses;
             int count = underwater ? _underwaterCount : _surfaceCount;
@@ -3182,7 +3182,7 @@ namespace Hecton8.World
             NativeArray<Matrix4x4> matrices;
             NativeArray<HectonVegetationInstanceData> metadata;
             NativeArray<int> types;
-            NativeArray<int> semanticTypes;
+            NativeArray<int>.ReadOnly semanticTypes;
             int count;
             int semanticCount;
             bool hasNativePayload;
@@ -4410,7 +4410,7 @@ namespace Hecton8.World
             NativeArray<Matrix4x4> matrices = underwater ? _underwaterMatrices : _surfaceMatrices;
             NativeArray<HectonVegetationInstanceData> metadata = underwater ? _underwaterMetadata : _surfaceMetadata;
             NativeArray<int> types = underwater ? _underwaterTypes : _surfaceTypes;
-            NativeArray<int> semanticTypes = underwater ? _underwaterSemanticTypes : _surfaceSemanticTypes;
+            NativeArray<int>.ReadOnly semanticTypes = underwater ? _underwaterSemanticTypes : _surfaceSemanticTypes;
             if (!matrices.IsCreated ||
                 !metadata.IsCreated ||
                 !types.IsCreated ||

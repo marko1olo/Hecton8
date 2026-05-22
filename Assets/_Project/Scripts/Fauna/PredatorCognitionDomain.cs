@@ -833,7 +833,7 @@ namespace Hecton8.AI
         private static VaultArray<byte> _mesofaunaCsvScratch;
         private static VaultArray<int> _mesofaunaTargetHashBucketHeads;
         private static VaultArray<int> _mesofaunaTargetHashNext;
-        private static BorrowedArray<byte> _threatVoxelGrid;
+        private static NativeArray<byte>.ReadOnly _threatVoxelGrid;
         private static int3 _threatVoxelDimensions;
         private static float3 _threatVoxelOrigin;
         private static float3 _threatVoxelCellSize;
@@ -4611,7 +4611,7 @@ namespace Hecton8.AI
             _lastThreatVoxelBindFrame = frameId;
             HectonMapMagicVegetationBridge bridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
             if (bridge != null &&
-                bridge.TryGetEcosystemThreatVoxelPayload(out NativeArray<byte> threatVoxels, out Vector3Int gridDimensions, out Vector3 gridOrigin, out Vector3 voxelCellSize))
+                bridge.TryGetEcosystemThreatVoxelPayload(out NativeArray<byte>.ReadOnly threatVoxels, out Vector3Int gridDimensions, out Vector3 gridOrigin, out Vector3 voxelCellSize))
             {
                 _threatVoxelGrid = threatVoxels;
                 _threatVoxelDimensions = new int3(gridDimensions.x, gridDimensions.y, gridDimensions.z);
@@ -4626,7 +4626,7 @@ namespace Hecton8.AI
             if (caveLightingVolume != null &&
                 caveLightingVolume.TryGetPublishedSignedDistanceVoxelPayload(out NativeArray<byte> signedDistanceVoxels, out Vector3Int sdfDimensions, out Vector3 sdfOrigin, out Vector3 sdfCellSize))
             {
-                _threatVoxelGrid = signedDistanceVoxels;
+                _threatVoxelGrid = signedDistanceVoxels.IsCreated ? signedDistanceVoxels.AsReadOnly() : default;
                 _threatVoxelDimensions = new int3(sdfDimensions.x, sdfDimensions.y, sdfDimensions.z);
                 _threatVoxelOrigin = new float3(sdfOrigin.x, sdfOrigin.y, sdfOrigin.z);
                 _threatVoxelCellSize = new float3(sdfCellSize.x, sdfCellSize.y, sdfCellSize.z);
@@ -5544,7 +5544,7 @@ namespace Hecton8.AI
             [NativeDisableParallelForRestriction] public NativeArray<float> StalkingPhaseStartTimes;
             [NativeDisableParallelForRestriction] public NativeArray<int> BoidClaimTable;
             public NativeArray<PackedCognitionOutput> Outputs;
-            [ReadOnly] public NativeArray<byte> ThreatVoxelGrid;
+            [ReadOnly] public NativeArray<byte>.ReadOnly ThreatVoxelGrid;
             public int3 ThreatVoxelDimensions;
             public float3 ThreatVoxelOrigin;
             public float3 ThreatVoxelCellSize;

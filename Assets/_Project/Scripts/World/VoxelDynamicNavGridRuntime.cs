@@ -2251,7 +2251,7 @@ namespace Hecton8.World
                     out NativeArray<int> underwaterTypes,
                     out int underwaterCount) &&
                 vegetationBridge.TryGetActiveUnderwaterSemanticPayload(
-                    out NativeArray<int> underwaterSemanticTypes,
+                    out NativeArray<int>.ReadOnly underwaterSemanticTypes,
                     out _,
                     out int underwaterSemanticCount))
             {
@@ -2269,7 +2269,7 @@ namespace Hecton8.World
                     out NativeArray<int> surfaceTypes,
                     out int surfaceCount) &&
                 vegetationBridge.TryGetActiveSurfaceSemanticPayload(
-                    out NativeArray<int> surfaceSemanticTypes,
+                    out NativeArray<int>.ReadOnly surfaceSemanticTypes,
                     out _,
                     out int surfaceSemanticCount))
             {
@@ -2288,7 +2288,7 @@ namespace Hecton8.World
             NativeArray<Matrix4x4> matrices,
             NativeArray<HectonVegetationInstanceData> metadata,
             NativeArray<int> types,
-            NativeArray<int> semanticTypes,
+            NativeArray<int>.ReadOnly semanticTypes,
             int count)
         {
             if (!matrices.IsCreated ||
@@ -2324,7 +2324,7 @@ namespace Hecton8.World
                 return;
 
             if (vegetationBridge.TryGetActiveUnderwaterNativePayload(out NativeArray<Matrix4x4> underwaterMatrices, out NativeArray<HectonVegetationInstanceData> underwaterMetadata, out NativeArray<int> underwaterTypes, out int underwaterCount) &&
-                vegetationBridge.TryGetActiveUnderwaterSemanticPayload(out NativeArray<int> underwaterSemanticTypes, out _, out int underwaterSemanticCount))
+                vegetationBridge.TryGetActiveUnderwaterSemanticPayload(out NativeArray<int>.ReadOnly underwaterSemanticTypes, out _, out int underwaterSemanticCount))
             {
                 WriteMacroFloraObstacles(
                     underwaterMatrices,
@@ -2337,7 +2337,7 @@ namespace Hecton8.World
             }
 
             if (vegetationBridge.TryGetActiveSurfaceNativePayload(out NativeArray<Matrix4x4> surfaceMatrices, out NativeArray<HectonVegetationInstanceData> surfaceMetadata, out NativeArray<int> surfaceTypes, out int surfaceCount) &&
-                vegetationBridge.TryGetActiveSurfaceSemanticPayload(out NativeArray<int> surfaceSemanticTypes, out _, out int surfaceSemanticCount))
+                vegetationBridge.TryGetActiveSurfaceSemanticPayload(out NativeArray<int>.ReadOnly surfaceSemanticTypes, out _, out int surfaceSemanticCount))
             {
                 WriteMacroFloraObstacles(
                     surfaceMatrices,
@@ -2481,7 +2481,7 @@ namespace Hecton8.World
             NativeArray<Matrix4x4> matrices,
             NativeArray<HectonVegetationInstanceData> metadata,
             NativeArray<int> types,
-            NativeArray<int> semanticTypes,
+            NativeArray<int>.ReadOnly semanticTypes,
             int count,
             ref NativeArray<NavObstaclePrimitive> snapshot,
             ref int writeIndex)

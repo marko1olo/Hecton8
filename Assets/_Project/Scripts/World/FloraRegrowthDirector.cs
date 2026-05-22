@@ -572,7 +572,7 @@ namespace Hecton8.World
             if (!hasPayload || count <= 0)
                 return;
 
-            NativeArray<int> semanticTypes;
+            NativeArray<int>.ReadOnly semanticTypes;
             int semanticCount;
             bool hasSemanticPayload = underwater
                 ? vegetationBridge.TryGetActiveUnderwaterSemanticPayload(out semanticTypes, out _, out semanticCount)

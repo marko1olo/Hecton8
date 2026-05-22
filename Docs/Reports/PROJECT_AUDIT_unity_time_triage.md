@@ -1103,3 +1103,61 @@ Updated static counts from that artifact:
 - `nativeApiRiskRuntimeReturnMutableView`: 27, down from 29.
 
 This is static-source proof only. No Unity import, Console, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 Vegetation Semantic Payload Follow-Up
+
+Additional native API narrowing after the acoustic radar grid pass:
+
+- `HectonMapMagicVegetationBridge.TryGetActiveSurfaceSemanticPayload` returns `NativeArray<int>.ReadOnly` and `NativeArray<byte>.ReadOnly`.
+- `HectonMapMagicVegetationBridge.TryGetActiveUnderwaterSemanticPayload` returns `NativeArray<int>.ReadOnly` and `NativeArray<byte>.ReadOnly`.
+- Current consumers in destructible organic, flora regrowth, flora interaction, Sargassum boids, and dynamic nav-grid code hold semantic views as read-only.
+
+Rejected:
+
+- Native matrix/metadata/type payload conversion in this pass.
+- MapMagic ingestion, upload, copy, cache, or nav-grid writer path changes.
+- Fabricating a source edit after the current tree already held the intended read-only semantic contract.
+
+Focused proof:
+
+- Focused scan found no stale mutable semantic payload declarations.
+- Broad artifact: `Docs/Reports/PROJECT_AUDIT_polish_after_vegetation_semantics_readonly.json`.
+
+Updated static counts from that artifact:
+
+- `nativeCollectionPublicMutableApiExposure`: 165, down from 167.
+- `nativeApiExposureBuildPlayerRuntime`: 152, down from 154.
+- `nativeApiExposureOutRefMutable`: 122, down from 124.
+- `nativeApiRiskRuntimeOutRefMutableView`: 73, down from 75.
+
+This is static-source proof only. No Unity import, Console, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 Ecosystem Threat Voxel Follow-Up
+
+Additional native API narrowing after the vegetation semantic payload pass:
+
+- `HectonMapMagicVegetationBridge.TryGetEcosystemThreatVoxelPayload` now returns `NativeArray<byte>.ReadOnly`.
+- `PredatorCognitionDomain` caches the bridge/cave voxel borrow as a read-only native alias.
+- Predator and mesofauna jobs now consume `NativeArray<byte>.ReadOnly` threat voxel grids.
+
+Rejected:
+
+- Cave SDF public payload conversion in the same pass.
+- Threat voxel copies into fauna-owned buffers.
+- Voxel dimension/origin/cell-size math changes.
+- Vegetation bridge front/back ownership changes.
+
+Focused proof:
+
+- Focused scan found read-only threat voxel accessor/cache/job fields.
+- Broad artifact: `Docs/Reports/PROJECT_AUDIT_polish_after_threat_voxel_readonly.json`.
+
+Updated static counts from that artifact:
+
+- `nativeCollectionPublicMutableApiExposure`: 164, down from 165.
+- `nativeApiExposureBuildPlayerRuntime`: 151, down from 152.
+- `nativeApiExposureOutRefMutable`: 121, down from 122.
+- `nativeApiRiskRuntimeOutRefMutableView`: 72, down from 73.
+- `privateNativeCollectionField`: 1318, up from 1317 because the existing fauna borrow is now an explicit read-only native alias.
+
+This is static-source proof only. No Unity import, Console, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.

@@ -3750,3 +3750,39 @@ Verification:
     Targeted scans found no `LowTierResolutionBias`, `UltraTierResolutionBias`, low-tier, or high-tier naming in `JacobianFoamContracts.cs`; focused `git diff --check` passed with CRLF warning only; guarded build passed.
   </VERIFICATION>
 </SELF_AUDIT>
+
+<SELF_AUDIT id="SHINOBU_SYSTEMIC_SURGEON" pass="AbyssalFlowTextureQualityContinuum">
+  <WHAT_WAS_WRONG>
+    `HectonFluidEngine` used scalability-event listener state, cached `HectonQualityTier`, direct `GlobalRegistry.ScalabilityTier` reads, low/high tier names, and shader-side boolean gates for abyssal visual flow and splashdown presentation. That made a visual fake depend on binary hardware identity.
+  </WHAT_WAS_WRONG>
+  <WHAT_WAS_DONE>
+    Removed scalability listener lifecycle and cached tier fields. Cached thermodynamics runtime through cold registry/service-replaced routes. Converted `_AbyssalFlowTextureParams.w` to continuous `flowTextureDetail01` from `HomeostasisBrain.GlobalQualityWeight`. Heat-source probe budget, splashdown bubble/impulse pressure, wake/vortex injection, and volumetric fog flow sampling now scale through smooth quality weights. Authoritative wave count no longer accepts a hardware tier.
+  </WHAT_WAS_DONE>
+  <TASK_RECONCILIATION>
+    01 [PASS] Status/rationale read before response and edit. 02 [PASS] Current batch/log/ledger context checked. 03 [PASS] Scalability listener route removed. 04 [PASS] No sibling asmdef/reference was changed. 05 [PASS] No `Pack=1` introduced. 06 [PASS] No DTO layout changed. 07 [PASS] No private native container added. 08 [PASS] No Vault handle lifecycle changed. 09 [PASS] Hot `GlobalRegistry.ScalabilityTier` route removed. 10 [PASS] Continuous `GlobalQualityWeight` drives presentation detail. 11 [PASS] No gameplay RNG route touched. 12 [PASS] AUP-local runtime position path unchanged. 13 [PASS] Rollback-sensitive buoyancy/wave truth does not depend on quality. 14 [PASS] Dear Lie remains GPU flow/fog fake. 15 [PASS] Heat probes and wake/vortex weights collapse continuously at minimum quality. 16 [PASS] Existing Burst job aliasing/dependency route unchanged. 17 [PASS] No `.Complete()` or same-frame readback added. 18 [PASS] Existing telemetry rows remain fixed size. 19 [PASS] Shader property ABI unchanged. 20 [FAIL] Guarded compile is blocked by external scatter backend contract mismatch, not by the touched fluid files.
+  </TASK_RECONCILIATION>
+  <STRUCT_LAYOUT>
+    No primary C# DTO layout changed in this pass. The existing shader lane `_AbyssalFlowTextureParams` remains a 16-byte `float4`: offset 0 `globalFlowWeight`, offset 4 `foamAdvectionWeight`, offset 8 `flowTextureEnabled/detail-gated z lane`, offset 12 `flowTextureDetail01`. Final size = 16 bytes, aligned to 16. Existing telemetry structs and job DTOs were not resized.
+  </STRUCT_LAYOUT>
+  <SCALABILITY_CURVE>
+    `flowTextureDetail01 = q*q*(3-2*q)` after finite saturation of `HomeostasisBrain.GlobalQualityWeight`. Below quality 0.3 the heat-source budget tends toward one probe, wake/vortex shader injection tends toward zero, fog flow sampling receives a near-minimum detail weight, and splashdown field radius/strength shrink while bubble pressure rises. Middle devices interpolate probe count and shader contribution. High/ultra reaches full heat probes, wake/vortex advection, splashdown field radius/strength, and fog flow texture detail without a tier snap.
+  </SCALABILITY_CURVE>
+  <H_PHI_VAULT_STATUS>
+    No new `NativeArray`, `NativeList`, or `NativeHashMap` was introduced. Existing fluid buffers, shader upload buffers, and telemetry ownership are unchanged. No new `VaultBufferHandle` ID is requested by this pass.
+  </H_PHI_VAULT_STATUS>
+  <POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+    No new Burst job was added. Existing fluid jobs keep their dispatcher-owned dependency route and no new hidden `JobHandle.Complete()` was introduced. No aliasing annotations were removed.
+  </POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+  <COMPILE_GUARD>
+    No asmdef, SignalBus payload, BufferID, save identity, or material property name changed. Guarded compile was attempted only after CPU/process gate allowed it. It failed in `World/ScatterClassicBackendAdapters.cs`; source inspection shows interface/implementations agree on `.ReadOnly`, so this is logged as an external/generated dependency mismatch.
+  </COMPILE_GUARD>
+  <CINEMATIC_CHEATS>
+    Abyssal currents remain a sampled GPU flow texture plus fog/compute advection fake. Rejected route: CPU Navier-Stokes, GameObject bubbles, or physics wakes. Theoretical heavy route is O(grid * solverIterations * neighbors); retained route is O(flowTextureCells * continuousProbeBudget) plus shader ALU weighted by quality.
+  </CINEMATIC_CHEATS>
+  <MICROSECONDS_SAVED estimate="0">
+    No measured speed claim. Static savings: listener/tier cache removed, heat probes scale 1..8, wake/vortex/fog work collapses by scalar weight. Requires profiler capture for exact frame time.
+  </MICROSECONDS_SAVED>
+  <VERIFICATION>
+    Targeted scans found no `HectonQualityTier`, `lowTier`, `LowTier`, `highTier`, `HighTier`, `ScalabilityTier`, `ScalabilityEvents`, `IScalabilityChangedEventListener`, `AuthorityFluidWaveTier`, or `ResolveGerstnerWaveBudget` in `HectonFluidEngine.cs`, `AbyssalFlowField.compute`, and `Hecton_VolumetricFog.compute`. `git diff --check` passed with CRLF warnings only. Guarded build failed in the external scatter contract path described above.
+  </VERIFICATION>
+</SELF_AUDIT>

@@ -756,3 +756,27 @@ Cinematic Cheats used: No sonar simulation was added. The PDA map continues to u
 Exact Microseconds saved: 0 us measured. Static outcome: broad audit dropped `nativeCollectionPublicMutableApiExposure` from `169` to `167`, `nativeApiExposureOutRefMutable` from `126` to `124`, and `nativeApiExposureBuildPlayerRuntime` from `156` to `154`.
 
 Evidence: Focused scan found read-only grid signatures/consumer and unchanged mutable radar ring. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_after_acoustic_grid_readonly.json` returned `PASS_WITH_WARNINGS` with `nativeCollectionPublicMutableApiExposure=167`, `nativeApiExposureBuildPlayerRuntime=154`, `nativeApiExposureOutRefMutable=124`, and `nativeApiRiskRuntimeOutRefMutableView=75`. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Vegetation Semantic Payload Read-Only Reconciliation
+
+What was wrong: Vegetation semantic payloads are classification facts owned by `HectonMapMagicVegetationBridge`; exposing them as mutable native arrays would let downstream flora/AI/nav-grid consumers modify owner truth.
+
+What was done: Reconciled the current tree and verified `TryGetActiveSurfaceSemanticPayload` and `TryGetActiveUnderwaterSemanticPayload` return `NativeArray<int>.ReadOnly` and `NativeArray<byte>.ReadOnly`. Current consumers in destructible organic, flora regrowth, flora interaction, Sargassum boids, and dynamic nav-grid code consume semantic views read-only. No new source edit was needed in this continuation because the code was already in the intended state.
+
+Cinematic Cheats used: No simulation was added. Downstream systems continue to use compact semantic classification snapshots instead of scanning scene flora objects or performing per-instance terrain/biome queries.
+
+Exact Microseconds saved: 0 us measured. Static outcome: broad audit dropped `nativeCollectionPublicMutableApiExposure` from `167` to `165`, `nativeApiExposureOutRefMutable` from `124` to `122`, and `nativeApiExposureBuildPlayerRuntime` from `154` to `152`.
+
+Evidence: Focused scan found no stale mutable semantic payload declarations. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_after_vegetation_semantics_readonly.json` returned `PASS_WITH_WARNINGS` with `nativeCollectionPublicMutableApiExposure=165`, `nativeApiExposureBuildPlayerRuntime=152`, `nativeApiExposureOutRefMutable=122`, and `nativeApiRiskRuntimeOutRefMutableView=73`. `git diff --check` on the inspected vegetation files reported only LF/CRLF normalization warnings. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Ecosystem Threat Voxel Read-Only Payload Narrowing
+
+What was wrong: `TryGetEcosystemThreatVoxelPayload` returned the vegetation bridge's 3D threat voxel front buffer as a mutable `NativeArray<byte>` even though observed consumers only sample it for fauna line-of-sight, crevice, and obstacle-pressure decisions.
+
+What was done: Converted the bridge accessor to `NativeArray<byte>.ReadOnly`. `PredatorCognitionDomain` now caches the borrowed grid as a read-only native alias, converts the cave SDF fallback to read-only at the borrow boundary, and feeds read-only grid fields into predator and mesofauna jobs.
+
+Cinematic Cheats used: No collision or scene query simulation was added. Fauna still uses compact byte voxel threat snapshots for DDA/gradient heuristics instead of physics raycasts or scene-object obstacle scans.
+
+Exact Microseconds saved: 0 us measured. Static outcome: broad audit dropped `nativeCollectionPublicMutableApiExposure` from `165` to `164`, `nativeApiExposureOutRefMutable` from `122` to `121`, and `nativeApiExposureBuildPlayerRuntime` from `152` to `151`. Raw private native field count rose from `1317` to `1318` because the cached borrow is now explicitly typed as a read-only native alias.
+
+Evidence: Focused scan found the read-only threat voxel accessor, read-only fauna cache, and read-only predator/mesofauna job fields. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_after_threat_voxel_readonly.json` returned `PASS_WITH_WARNINGS` with `nativeCollectionPublicMutableApiExposure=164`, `nativeApiExposureBuildPlayerRuntime=151`, `nativeApiExposureOutRefMutable=121`, and `nativeApiRiskRuntimeOutRefMutableView=72`. `git diff --check` on touched files reported only LF/CRLF normalization warnings. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
