@@ -1010,9 +1010,46 @@ namespace Hecton8.Physics
         }
     }
 
-    internal static class TetherAupVaultRoute
+    public static class TetherAupRuntimeIntrospection
     {
-        public static bool TryOpenExistingBuffer<T>(
+        public static bool TrySampleLatestTelemetry(IDataVault vault, out TetherAupTelemetryEntry telemetry)
+        {
+            telemetry = default;
+            if (!TryOpenExistingBuffer(
+                    vault,
+                    BufferID.Shinobu143TetherTelemetryRing,
+                    TetherAupRuntimeConstants.TelemetryCapacity,
+                    out NativeArray<TetherAupTelemetryEntry> ring) ||
+                !TryOpenExistingBuffer(
+                    vault,
+                    BufferID.Shinobu143TetherTelemetryHead,
+                    1,
+                    out NativeArray<int> head))
+            {
+                return false;
+            }
+
+            if (!ring.IsCreated || ring.Length == 0 || !head.IsCreated || head.Length == 0)
+                return false;
+
+            int capacity = math.min(TetherAupRuntimeConstants.TelemetryCapacity, ring.Length);
+            int index = head[0] - 1;
+            if (index < 0)
+                index = capacity - 1;
+            if ((uint)index >= (uint)capacity)
+                index = 0;
+
+            telemetry = ring[index];
+            return telemetry.NodeCount > 0 || telemetry.FrameIndex != 0u;
+        }
+
+        public static bool TryDumpCableSurgeon(IDataVault vault, uint reasonFlags)
+        {
+            DirectoryInfo projectRoot = Directory.GetParent(Application.dataPath);
+            return projectRoot != null && TetherAupBlackBoxDumper.TryDumpLatestVault(vault, projectRoot.FullName, reasonFlags);
+        }
+
+        private static bool TryOpenExistingBuffer<T>(
             IDataVault vault,
             BufferID bufferId,
             int requiredLength,
@@ -1030,7 +1067,158 @@ namespace Hecton8.Physics
             return TryOpenBuffer(vault, in handle, bufferId, requiredLength, out buffer);
         }
 
-        public static bool OpenOrAcquireBuffer<T>(
+        private static bool TryOpenBuffer<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            buffer = default;
+            if (vault == null ||
+                requiredLength <= 0 ||
+                !IsPhysicsHandle(in handle, bufferId) ||
+                !vault.TryResolveHandle(in handle, out buffer) ||
+                !buffer.IsCreated ||
+                buffer.Length < requiredLength)
+            {
+                buffer = default;
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool IsPhysicsHandle<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId)
+            where T : struct
+        {
+            return handle.BufferID == (uint)bufferId &&
+                   handle.SystemID == (uint)SystemID.Physics &&
+                   handle.Generation != 0u;
+        }
+    }
+
+    public static class TetherAupBlackBoxDumper
+    {
+        private const ulong DumpMagic = 0x3134335F55424F53ul; // SOBU_431
+        private const string LegacyDumpRelativePath = "Docs/AgentLogs/Dump_CABLE_SURGEON.bin";
+        private const string H8DumpRelativePath = "Docs/AgentLogs/Dump_CABLE_SURGEON.h8dump";
+
+        public static bool TryDumpLatestVault(IDataVault vault, string projectRoot, uint reasonFlags)
+        {
+            if (vault == null || string.IsNullOrEmpty(projectRoot))
+                return false;
+            if (!TryOpenExistingBuffer(
+                    vault,
+                    BufferID.Shinobu143TetherTelemetryRing,
+                    TetherAupRuntimeConstants.TelemetryCapacity,
+                    out NativeArray<TetherAupTelemetryEntry> ring) ||
+                !TryOpenExistingBuffer(
+                    vault,
+                    BufferID.Shinobu143TetherTelemetryHead,
+                    1,
+                    out NativeArray<int> head))
+            {
+                return false;
+            }
+
+            if (!ring.IsCreated || ring.Length == 0 || !head.IsCreated || head.Length == 0)
+                return false;
+
+            int capacity = math.min(TetherAupRuntimeConstants.TelemetryCapacity, ring.Length);
+            int normalizedHead = head[0];
+            if ((uint)normalizedHead >= (uint)capacity)
+                normalizedHead = 0;
+
+            string legacyPath = Path.Combine(projectRoot, LegacyDumpRelativePath.Replace('/', Path.DirectorySeparatorChar));
+            string h8Path = Path.Combine(projectRoot, H8DumpRelativePath.Replace('/', Path.DirectorySeparatorChar));
+            NativeArray<TetherAupTelemetryEntry> slice = ring.GetSubArray(0, capacity);
+            TetherBlackBoxDumpWriter.WritePrimaryAndLegacy(
+                h8Path,
+                legacyPath,
+                DumpMagic,
+                slice,
+                normalizedHead,
+                reasonFlags);
+            return true;
+        }
+
+        private static bool TryOpenExistingBuffer<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            buffer = default;
+            if (vault == null ||
+                requiredLength <= 0 ||
+                !vault.TryGetGenerationHandle(bufferId, out VaultGenerationHandle<T> handle))
+            {
+                return false;
+            }
+
+            return TryOpenBuffer(vault, in handle, bufferId, requiredLength, out buffer);
+        }
+
+        private static bool TryOpenBuffer<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            buffer = default;
+            if (vault == null ||
+                requiredLength <= 0 ||
+                !IsPhysicsHandle(in handle, bufferId) ||
+                !vault.TryResolveHandle(in handle, out buffer) ||
+                !buffer.IsCreated ||
+                buffer.Length < requiredLength)
+            {
+                buffer = default;
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool IsPhysicsHandle<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId)
+            where T : struct
+        {
+            return handle.BufferID == (uint)bufferId &&
+                   handle.SystemID == (uint)SystemID.Physics &&
+                   handle.Generation != 0u;
+        }
+    }
+
+    internal static class TetherAupVaultBootstrap
+    {
+        private static bool TryOpenExistingBuffer<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            buffer = default;
+            if (vault == null ||
+                requiredLength <= 0 ||
+                !vault.TryGetGenerationHandle(bufferId, out VaultGenerationHandle<T> handle))
+            {
+                return false;
+            }
+
+            return TryOpenBuffer(vault, in handle, bufferId, requiredLength, out buffer);
+        }
+
+        private static bool OpenOrAcquireBuffer<T>(
             IDataVault vault,
             BufferID bufferId,
             int requiredLength,
@@ -1087,102 +1275,13 @@ namespace Hecton8.Physics
                    handle.SystemID == (uint)SystemID.Physics &&
                    handle.Generation != 0u;
         }
-    }
 
-    public static class TetherAupRuntimeIntrospection
-    {
-        public static bool TrySampleLatestTelemetry(IDataVault vault, out TetherAupTelemetryEntry telemetry)
-        {
-            telemetry = default;
-            if (!TetherAupVaultRoute.TryOpenExistingBuffer(
-                    vault,
-                    BufferID.Shinobu143TetherTelemetryRing,
-                    TetherAupRuntimeConstants.TelemetryCapacity,
-                    out NativeArray<TetherAupTelemetryEntry> ring) ||
-                !TetherAupVaultRoute.TryOpenExistingBuffer(
-                    vault,
-                    BufferID.Shinobu143TetherTelemetryHead,
-                    1,
-                    out NativeArray<int> head))
-            {
-                return false;
-            }
-
-            if (!ring.IsCreated || ring.Length == 0 || !head.IsCreated || head.Length == 0)
-                return false;
-
-            int capacity = math.min(TetherAupRuntimeConstants.TelemetryCapacity, ring.Length);
-            int index = head[0] - 1;
-            if (index < 0)
-                index = capacity - 1;
-            if ((uint)index >= (uint)capacity)
-                index = 0;
-
-            telemetry = ring[index];
-            return telemetry.NodeCount > 0 || telemetry.FrameIndex != 0u;
-        }
-
-        public static bool TryDumpCableSurgeon(IDataVault vault, uint reasonFlags)
-        {
-            DirectoryInfo projectRoot = Directory.GetParent(Application.dataPath);
-            return projectRoot != null && TetherAupBlackBoxDumper.TryDumpLatestVault(vault, projectRoot.FullName, reasonFlags);
-        }
-    }
-
-    public static class TetherAupBlackBoxDumper
-    {
-        private const ulong DumpMagic = 0x3134335F55424F53ul; // SOBU_431
-        private const string LegacyDumpRelativePath = "Docs/AgentLogs/Dump_CABLE_SURGEON.bin";
-        private const string H8DumpRelativePath = "Docs/AgentLogs/Dump_CABLE_SURGEON.h8dump";
-
-        public static bool TryDumpLatestVault(IDataVault vault, string projectRoot, uint reasonFlags)
-        {
-            if (vault == null || string.IsNullOrEmpty(projectRoot))
-                return false;
-            if (!TetherAupVaultRoute.TryOpenExistingBuffer(
-                    vault,
-                    BufferID.Shinobu143TetherTelemetryRing,
-                    TetherAupRuntimeConstants.TelemetryCapacity,
-                    out NativeArray<TetherAupTelemetryEntry> ring) ||
-                !TetherAupVaultRoute.TryOpenExistingBuffer(
-                    vault,
-                    BufferID.Shinobu143TetherTelemetryHead,
-                    1,
-                    out NativeArray<int> head))
-            {
-                return false;
-            }
-
-            if (!ring.IsCreated || ring.Length == 0 || !head.IsCreated || head.Length == 0)
-                return false;
-
-            int capacity = math.min(TetherAupRuntimeConstants.TelemetryCapacity, ring.Length);
-            int normalizedHead = head[0];
-            if ((uint)normalizedHead >= (uint)capacity)
-                normalizedHead = 0;
-
-            string legacyPath = Path.Combine(projectRoot, LegacyDumpRelativePath.Replace('/', Path.DirectorySeparatorChar));
-            string h8Path = Path.Combine(projectRoot, H8DumpRelativePath.Replace('/', Path.DirectorySeparatorChar));
-            NativeArray<TetherAupTelemetryEntry> slice = ring.GetSubArray(0, capacity);
-            TetherBlackBoxDumpWriter.WritePrimaryAndLegacy(
-                h8Path,
-                legacyPath,
-                DumpMagic,
-                slice,
-                normalizedHead,
-                reasonFlags);
-            return true;
-        }
-    }
-
-    internal static class TetherAupVaultBootstrap
-    {
         public static void EnsureMockBuffers(IDataVault vault, float globalQualityWeight, uint frameIndex)
         {
             if (vault == null)
                 return;
 
-            if (!TetherAupVaultRoute.OpenOrAcquireBuffer(
+            if (!OpenOrAcquireBuffer(
                     vault,
                     BufferID.Shinobu143TetherBootstrapState,
                     1,
@@ -1205,79 +1304,79 @@ namespace Hecton8.Physics
             NativeArray<CableMaterialDTO> materials = default;
 
             bool buffersReady =
-                TetherAupVaultRoute.OpenOrAcquireBuffer(
+                OpenOrAcquireBuffer(
                     vault,
                     BufferID.Shinobu143TetherAupNodes,
                     TetherAupRuntimeConstants.MockNodeCapacity,
                     NativeArrayOptions.UninitializedMemory,
                     out nodes) &&
-                TetherAupVaultRoute.OpenOrAcquireBuffer(
+                OpenOrAcquireBuffer(
                     vault,
                     BufferID.Shinobu143TetherConstraints,
                     TetherAupRuntimeConstants.MockConstraintCapacity,
                     NativeArrayOptions.UninitializedMemory,
                     out constraints) &&
-                TetherAupVaultRoute.OpenOrAcquireBuffer(
+                OpenOrAcquireBuffer(
                     vault,
                     BufferID.Shinobu143TetherEndpoints,
                     TetherAupRuntimeConstants.MockTetherCount,
                     NativeArrayOptions.UninitializedMemory,
                     out endpoints) &&
-                TetherAupVaultRoute.OpenOrAcquireBuffer<TetherSplineVertexDTO>(
+                OpenOrAcquireBuffer<TetherSplineVertexDTO>(
                     vault,
                     BufferID.Shinobu143TetherSplineVertices,
                     TetherAupRuntimeConstants.MockSplineVertexCapacity,
                     NativeArrayOptions.UninitializedMemory,
                     out _) &&
-                TetherAupVaultRoute.OpenOrAcquireBuffer<TetherForcePacketDTO>(
+                OpenOrAcquireBuffer<TetherForcePacketDTO>(
                     vault,
                     BufferID.Shinobu143TetherForcePackets,
                     TetherAupRuntimeConstants.MockForcePacketCapacity,
                     NativeArrayOptions.UninitializedMemory,
                     out _) &&
-                TetherAupVaultRoute.OpenOrAcquireBuffer(
+                OpenOrAcquireBuffer(
                     vault,
                     BufferID.Shinobu143TetherSegmentTensions,
                     TetherAupRuntimeConstants.MockConstraintCapacity,
                     NativeArrayOptions.UninitializedMemory,
                     out segmentTensions) &&
-                TetherAupVaultRoute.OpenOrAcquireBuffer(
+                OpenOrAcquireBuffer(
                     vault,
                     BufferID.Shinobu143TetherSolverStats,
                     TetherAupRuntimeConstants.SolverStatsCapacity,
                     NativeArrayOptions.ClearMemory,
                     out solverStats) &&
-                TetherAupVaultRoute.OpenOrAcquireBuffer(
+                OpenOrAcquireBuffer(
                     vault,
                     BufferID.Shinobu143TetherPinnedAups,
                     TetherAupRuntimeConstants.MockNodeCapacity,
                     NativeArrayOptions.UninitializedMemory,
                     out pinnedAups) &&
-                TetherAupVaultRoute.OpenOrAcquireBuffer(
+                OpenOrAcquireBuffer(
                     vault,
                     BufferID.Shinobu143TetherPinnedMask,
                     TetherAupRuntimeConstants.MockNodeCapacity,
                     NativeArrayOptions.UninitializedMemory,
                     out pinnedMask) &&
-                TetherAupVaultRoute.OpenOrAcquireBuffer<TetherAupTelemetryEntry>(
+                OpenOrAcquireBuffer<TetherAupTelemetryEntry>(
                     vault,
                     BufferID.Shinobu143TetherTelemetryRing,
                     TetherAupRuntimeConstants.TelemetryCapacity,
                     NativeArrayOptions.UninitializedMemory,
                     out _) &&
-                TetherAupVaultRoute.OpenOrAcquireBuffer<int>(
+                OpenOrAcquireBuffer<int>(
                     vault,
                     BufferID.Shinobu143TetherTelemetryHead,
                     1,
                     NativeArrayOptions.ClearMemory,
                     out _) &&
-                TetherAupVaultRoute.OpenOrAcquireBuffer(
+                OpenOrAcquireBuffer(
                     vault,
                     BufferID.Shinobu143CableMaterials,
                     TetherAupRuntimeConstants.MaterialCapacity,
                     NativeArrayOptions.UninitializedMemory,
                     out materials) &&
-                TetherAupVaultRoute.OpenOrAcquireBuffer<byte>(
+                OpenOrAcquireBuffer<byte>(
                     vault,
                     BufferID.Shinobu143CableMaterialCsvScratch,
                     16 * 1024,

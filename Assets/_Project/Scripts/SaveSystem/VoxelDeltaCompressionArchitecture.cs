@@ -322,7 +322,16 @@ namespace Hecton8.SaveSystem
             UnsafeUtility.MemCpy(destinationPtr, &schema, UnsafeUtility.SizeOf<VoxelDeltaMockSchemaDTO>());
         }
 
-        public static bool TryGenerateEmergencyMockVoxelSchema(IDataVault vault, uint seed, out NativeArray<byte> schemaBytes)
+        public static bool TryGenerateEmergencyMockVoxelSchema(IDataVault vault, uint seed)
+        {
+            if (!TryResolveEmergencyMockVoxelSchemaBuffer(vault, out NativeArray<byte> schemaBytes))
+                return false;
+
+            GenerateEmergencyMockVoxelSchema(schemaBytes, seed);
+            return true;
+        }
+
+        private static bool TryResolveEmergencyMockVoxelSchemaBuffer(IDataVault vault, out NativeArray<byte> schemaBytes)
         {
             schemaBytes = default;
             if (vault == null)
@@ -332,7 +341,6 @@ namespace Hecton8.SaveSystem
             if (!schemaBytes.IsCreated)
                 return false;
 
-            GenerateEmergencyMockVoxelSchema(schemaBytes, seed);
             return true;
         }
 

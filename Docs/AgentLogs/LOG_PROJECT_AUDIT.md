@@ -1426,3 +1426,51 @@ Cinematic Cheats used: No new simulation. RLE remains a compact binary projectio
 Exact Microseconds saved: 0 us measured. Static API risk moved `nativeCollectionPublicMutableApiExposure=79->78`, `nativeApiExposureBuildPlayerRuntime=75->74`, `nativeApiExposureOutRefMutable=58->57`, and `nativeApiRiskRuntimeOutRefMutableView=35->34`.
 
 Evidence: `Docs/Reports/PROJECT_AUDIT_polish_after_inventory_rle_scratch_scope.json`; `python Tools\test_polish_mandate_static_audit.py` passed 12 tests; focused scan found only the private declaration; targeted `git diff --check` reported only LF/CRLF normalization warnings. Batch re-check found no `<AGENT_PROMPT id="PROJECT_AUDIT">` block. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Tether AUP Vault Route Scope Pass
+
+What was wrong: `TetherAupVaultRoute.TryOpenExistingBuffer` and `OpenOrAcquireBuffer` exposed shared mutable Vault open/acquire helpers, while all active calls were confined to telemetry sampling, black-box dump, and bootstrap code in `TetherAupVerletJobs.cs`.
+
+What was done: Moved Vault open/acquire logic into private owner-local helpers on `TetherAupRuntimeIntrospection`, `TetherAupBlackBoxDumper`, and `TetherAupVaultBootstrap`, then removed the shared route class.
+
+Cinematic Cheats used: No new simulation. The tether system keeps the existing AUP Verlet/data-only cable fake and black-box telemetry rather than introducing Unity joint stacks or public mutable buffer access.
+
+Exact Microseconds saved: 0 us measured. Static API risk moved `nativeCollectionPublicMutableApiExposure=78->76`, `nativeApiExposureBuildPlayerRuntime=74->72`, `nativeApiExposureOutRefMutable=57->55`, and `nativeApiRiskRuntimeOutRefMutableView=34->32`.
+
+Evidence: `Docs/Reports/PROJECT_AUDIT_polish_after_tether_vault_route_scope.json`; `python Tools\test_polish_mandate_static_audit.py` passed 12 tests; focused scan found no `TetherAupVaultRoute` symbol and no public/internal generic tether Vault opener declaration; targeted `git diff --check` reported only LF/CRLF normalization warnings. Batch re-check found no `<AGENT_PROMPT id="PROJECT_AUDIT">` block. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Save Mock Schema Owner-Write Split
+
+What was wrong: `EntityDeltaCompressionArchitecture.TryGenerateEmergencyMockEntitySchema` exposed the emergency schema bytes as a mutable `out NativeArray<byte>` even though no current first-party caller needed the raw buffer.
+
+What was done: Kept a public bool-only fallback generator and moved the raw Vault buffer resolution behind private `TryResolveEmergencyMockEntitySchemaBuffer`.
+
+Cinematic Cheats used: No new simulation. Emergency schema generation remains a deterministic compact byte pattern/header writer instead of managed schema-object construction.
+
+Exact Microseconds saved: 0 us measured. Static API risk moved `nativeCollectionPublicMutableApiExposure=76->75`, `nativeApiExposureBuildPlayerRuntime=72->71`, `nativeApiExposureOutRefMutable=55->54`, and `nativeApiRiskRuntimeOutRefMutableView=32->31`.
+
+Evidence: `Docs/Reports/PROJECT_AUDIT_polish_after_save_mock_schema_owner_write.json`; `python Tools\test_polish_mandate_static_audit.py` passed 12 tests; focused scan found public bool-only generator plus private raw resolver only; targeted `git diff --check` reported only LF/CRLF normalization warnings. Batch re-check found no `<AGENT_PROMPT id="PROJECT_AUDIT">` block. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Voxel Mock Schema Owner-Write Split
+
+What was wrong: `VoxelDeltaCompressionArchitecture.TryGenerateEmergencyMockVoxelSchema` exposed emergency voxel schema bytes as a mutable `out NativeArray<byte>` even though no current first-party caller needed the raw buffer.
+
+What was done: Kept a public bool-only fallback generator and moved raw Vault buffer resolution behind private `TryResolveEmergencyMockVoxelSchemaBuffer`.
+
+Cinematic Cheats used: No new simulation. Emergency voxel schema generation remains a deterministic compact byte pattern plus `VoxelDeltaMockSchemaDTO` header write instead of managed schema-object construction.
+
+Exact Microseconds saved: 0 us measured. Static API risk moved `nativeCollectionPublicMutableApiExposure=75->74`, `nativeApiExposureBuildPlayerRuntime=71->70`, `nativeApiExposureOutRefMutable=54->53`, and `nativeApiRiskRuntimeOutRefMutableView=31->30`.
+
+Evidence: `Docs/Reports/PROJECT_AUDIT_polish_after_voxel_mock_schema_owner_write.json`; `python Tools\test_polish_mandate_static_audit.py` passed 12 tests; focused scan found public bool-only generator plus private raw resolver only; targeted `git diff --check` reported only LF/CRLF normalization warnings. Batch re-check found no `<AGENT_PROMPT id="PROJECT_AUDIT">` block. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Crest Writer Route Removal
+
+What was wrong: `Crest4KinematicsAdapter.TryGetRequestParallelWriter` exposed a public ocean sample request queue writer with no current first-party caller.
+
+What was done: Removed the stale public writer helper. Existing Crest queued sample draining and cached Dear Lie fluid sampling are unchanged.
+
+Cinematic Cheats used: No new simulation. Ocean kinematics still use queued analytical/cached sample jobs instead of direct Unity water physics or public writer ownership leaks.
+
+Exact Microseconds saved: 0 us measured. Static API risk moved `nativeCollectionPublicMutableApiExposure=74->73`, `nativeApiExposureBuildPlayerRuntime=70->69`, `nativeApiExposureOutRefMutable=53->52`, and `nativeApiRiskRuntimeOutRefMutableView=30->29`.
+
+Evidence: `Docs/Reports/PROJECT_AUDIT_polish_after_crest_writer_route_removal.json`; `python Tools\test_polish_mandate_static_audit.py` passed 12 tests; focused scan found no `TryGetRequestParallelWriter`; targeted `git diff --check` reported only LF/CRLF normalization warnings. Batch re-check found no `<AGENT_PROMPT id="PROJECT_AUDIT">` block. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.

@@ -379,7 +379,16 @@ namespace Hecton8.SaveSystem
                 (uint)UnsafeUtility.SizeOf<EntityDeltaDataRecordDTO>());
         }
 
-        public static bool TryGenerateEmergencyMockEntitySchema(IDataVault vault, uint seed, out NativeArray<byte> schemaBytes)
+        public static bool TryGenerateEmergencyMockEntitySchema(IDataVault vault, uint seed)
+        {
+            if (!TryResolveEmergencyMockEntitySchemaBuffer(vault, out NativeArray<byte> schemaBytes))
+                return false;
+
+            GenerateEmergencyMockEntitySchema(schemaBytes, seed);
+            return true;
+        }
+
+        private static bool TryResolveEmergencyMockEntitySchemaBuffer(IDataVault vault, out NativeArray<byte> schemaBytes)
         {
             schemaBytes = default;
             if (vault == null)
@@ -389,7 +398,6 @@ namespace Hecton8.SaveSystem
             if (!schemaBytes.IsCreated)
                 return false;
 
-            GenerateEmergencyMockEntitySchema(schemaBytes, seed);
             return true;
         }
 

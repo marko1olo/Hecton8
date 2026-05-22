@@ -321,21 +321,6 @@ namespace Hecton8.Physics
         }
 
         /// <summary>
-        /// Exposes the multi-producer/single-consumer lane expected by KCC, submarine, and flora dispatchers.
-        /// </summary>
-        public static bool TryGetRequestParallelWriter(
-            NativeQueue<OceanKinematicsSampleRequestDTO> pendingRequests,
-            out NativeQueue<OceanKinematicsSampleRequestDTO>.ParallelWriter writer)
-        {
-            writer = default;
-            if (!pendingRequests.IsCreated)
-                return false;
-
-            writer = pendingRequests.AsParallelWriter();
-            return true;
-        }
-
-        /// <summary>
         /// Drains queued requests and resolves previous-frame cached water using dispatcher-owned deterministic tuning.
         /// </summary>
         public JobHandle ScheduleQueuedDearLieCachedFluidSamples(
