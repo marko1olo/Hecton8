@@ -69,7 +69,7 @@ namespace Hecton8.Core
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-4000)]
-    public sealed class ScavengePopulator : MonoBehaviour, ISlowTickable, IServiceHeartbeat, IServiceShutdown
+    public sealed class ScavengePopulator : MonoBehaviour, ISlowTickable, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener
     {
         // ══════════════════════════════════════════════════════════
         //  REGISTRY SERVICE
@@ -214,6 +214,8 @@ namespace Hecton8.Core
 
         /// <summary>Keshirovannyy Transform igroka.</summary>
         private Transform _playerTransform;
+        private ObjectPoolManager _objectPool;
+        private WorldStateManager _worldState;
 
         /// <summary>Kvadrat unloadDistance — dlya sqrMagnitude sravneniy.</summary>
         private float _unloadDistanceSqr;
@@ -236,6 +238,7 @@ namespace Hecton8.Core
         private bool _isDuplicateInstance;
         private bool _registeredToSlowTickManager;
         private bool _serviceRegistered;
+        private bool _hotSwapRegistered;
 
         public ServiceHeartbeatState HeartbeatState
         {
@@ -268,6 +271,7 @@ namespace Hecton8.Core
             _initialized    = true;
 
             RefreshRuntimeStreamingSettings();
+            CacheRegistryServicesCold();
         }
 
         private void OnEnable()
@@ -282,6 +286,9 @@ namespace Hecton8.Core
                 enabled = false;
                 return;
             }
+
+            CacheRegistryServicesCold();
+            TryRegisterHotSwapListener();
 
             if (!_registeredToSlowTickManager && Application.isPlaying && GlobalRegistry.Dispatcher != null)
             {
@@ -317,6 +324,8 @@ namespace Hecton8.Core
             }
 
             DespawnAllChunks();
+            TryUnregisterHotSwapListener();
+            ClearCachedRegistryServices();
         }
 
         public void OnServiceShutdown()
@@ -334,6 +343,8 @@ namespace Hecton8.Core
             }
 
             DespawnAllChunks();
+            TryUnregisterHotSwapListener();
+            ClearCachedRegistryServices();
             _chunks?.Clear();
             _spawnQueue?.Clear();
             _chunksToUnload?.Clear();
@@ -343,6 +354,54 @@ namespace Hecton8.Core
         private void OnDestroy()
         {
             OnServiceShutdown();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.ObjectPool:
+                    _objectPool = currentService as ObjectPoolManager;
+                    break;
+                case GlobalRegistryServiceSlot.WorldStateRuntime:
+                    _worldState = currentService as WorldStateManager;
+                    break;
+            }
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            if (_objectPool == null)
+                _objectPool = GlobalRegistry.ObjectPool;
+
+            if (_worldState == null)
+                _worldState = GlobalRegistry.WorldState;
+        }
+
+        private void ClearCachedRegistryServices()
+        {
+            _objectPool = null;
+            _worldState = null;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -464,8 +523,8 @@ namespace Hecton8.Core
         {
             if (_spawnQueue.Count == 0) return;
 
-            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
-            WorldStateManager wsm  = Hecton8.Core.GlobalRegistry.WorldState;
+            ObjectPoolManager pool = _objectPool;
+            WorldStateManager wsm  = _worldState;
 
             if (pool == null) return;
 
@@ -623,7 +682,7 @@ namespace Hecton8.Core
             if (!_chunks.TryGetValue(coord, out ChunkData chunk))
                 return;
 
-            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
+            ObjectPoolManager pool = _objectPool;
 
             List<ActiveNode> nodes = chunk.activeNodes;
             int count = nodes.Count;

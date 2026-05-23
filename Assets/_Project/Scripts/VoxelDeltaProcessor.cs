@@ -57,7 +57,7 @@ namespace Hecton8.Caves
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(HectonVoxelEngine))]
-    public sealed class VoxelDeltaProcessor : MonoBehaviour, ISaveable, IUpdatable, ILateFrameTickable
+    public sealed class VoxelDeltaProcessor : MonoBehaviour, ISaveable, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const int ChunkResolution = 32;
         private const int ChunkCellCount = VoxelDeltaChunkDTO.CellCount;
@@ -151,10 +151,12 @@ namespace Hecton8.Caves
         private IDataVault _dataVault;
         private ISimulationBucketer _simulationBucketer;
         private ISaveService _saveService;
+        private AbyssalFluidDecalManager _fluidDecals;
         private HectonQualityTier _cachedScalabilityTier;
         private bool _saveRegistered;
         private bool _dispatcherRegistered;
         private bool _lateFrameRegistered;
+        private bool _hotSwapRegistered;
 
         // COLD ALLOC: Dictionary<ChunkAddress, ChunkDeltaState>[InitialChunkRegistryCapacity] - persistent voxel delta chunk registry - owner: VoxelDeltaProcessor
         private readonly Dictionary<ChunkAddress, ChunkDeltaState> _chunkStates = new Dictionary<ChunkAddress, ChunkDeltaState>(InitialChunkRegistryCapacity);
@@ -216,7 +218,9 @@ namespace Hecton8.Caves
             _dataVault = GlobalRegistry.DataVault;
             _simulationBucketer = GlobalRegistry.SimulationBucketer;
             _saveService = GlobalRegistry.Save;
+            _fluidDecals = GlobalRegistry.AbyssalFluidDecals;
             _cachedScalabilityTier = GlobalRegistry.ScalabilityTier;
+            TryRegisterHotSwapListener();
             EnsureCarveEventQueue();
             EnsureBlackBox();
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -251,6 +255,7 @@ namespace Hecton8.Caves
             DisposeScheduledCarveBuffers();
             DisposeScheduledCompactionBuffers();
             _simulationBucketer = null;
+            TryUnregisterHotSwapListener();
             if (_dispatcherRegistered)
             {
                 GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
@@ -270,6 +275,7 @@ namespace Hecton8.Caves
             }
 
             _saveService = null;
+            _fluidDecals = null;
             _pendingCarveCount = 0;
             _pendingCarveHead = 0;
             _queuedCarveEventCount = 0;
@@ -326,6 +332,32 @@ namespace Hecton8.Caves
         internal static bool DebugShouldReplaceQueuedCompaction(int requestDirtyCount, int candidateDirtyCount)
         {
             return ShouldReplaceQueuedCompaction(requestDirtyCount, candidateDirtyCount);
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.AbyssalFluidDecalRuntime)
+                _fluidDecals = currentService as AbyssalFluidDecalManager;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
 
         internal static float DebugResolveThermalMeltProgress(float elapsedSeconds)
@@ -3658,12 +3690,12 @@ namespace Hecton8.Caves
             return math.clamp(baseRadius + request.AccumulatedDamage * 0.08f, baseRadius, math.max(baseRadius, MaxCarveRadiusMeters));
         }
 
-        private static void EmitCaveInDustDecal(in PendingCarveRequest request, float radius)
+        private void EmitCaveInDustDecal(in PendingCarveRequest request, float radius)
         {
             if ((request.DeltaFlags & DeltaModeAdditive) != 0 || radius <= 0f)
                 return;
 
-            AbyssalFluidDecalManager fluidDecals = GlobalRegistry.AbyssalFluidDecals;
+            AbyssalFluidDecalManager fluidDecals = _fluidDecals;
             if (fluidDecals == null)
                 return;
 

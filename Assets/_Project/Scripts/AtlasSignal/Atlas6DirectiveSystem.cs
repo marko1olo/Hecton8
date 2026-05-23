@@ -676,7 +676,7 @@ namespace Hecton8.AtlasSignal
 
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-80)]
-    public sealed class Atlas6DirectiveSystem : MonoBehaviour, ISaveable, ISlowTickable, INarrativeEventListener, IAtlas6EventListener
+    public sealed class Atlas6DirectiveSystem : MonoBehaviour, ISaveable, ISlowTickable, INarrativeEventListener, IAtlas6EventListener, IGlobalRegistryHotSwapListener
     {
         private const int MinimumRevealStageForDirectiveIdentity = 3;
         private const string SignalIdentityDiscoveryId = "atlas6_signal_identified";
@@ -722,7 +722,10 @@ namespace Hecton8.AtlasSignal
         private bool _directiveConflictTriggered;
         private bool _registered;
         private bool _serviceRegistered;
+        private bool _hotSwapRegistered;
         private HectonPlayerMovement _playerMovement;
+        private AtlasSignalSystem _atlasSignal;
+        private FirstHourDirector _firstHourDirector;
         private uint _latestScarcityDirectiveQuestHash;
         private uint _latestScarcityDirectiveResourceHash;
 
@@ -770,6 +773,8 @@ namespace Hecton8.AtlasSignal
             if (!TryRegisterService())
                 return;
 
+            CacheAtlasDependenciesCold();
+            TryRegisterHotSwapListener();
             TryRegister();
 
             if (Hecton8.Core.GlobalRegistry.SaveRuntime != null)
@@ -784,6 +789,8 @@ namespace Hecton8.AtlasSignal
         {
             TryUnregister();
             TryUnregisterService();
+            TryUnregisterHotSwapListener();
+            ClearAtlasDependencies();
 
             if (Hecton8.Core.GlobalRegistry.SaveRuntime != null)
                 Hecton8.Core.GlobalRegistry.SaveRuntime.Unregister(this);
@@ -796,6 +803,8 @@ namespace Hecton8.AtlasSignal
         {
             TryUnregister();
             TryUnregisterService();
+            TryUnregisterHotSwapListener();
+            ClearAtlasDependencies();
         }
 
         // ══════════════════════════════════════════════════════════
@@ -804,7 +813,7 @@ namespace Hecton8.AtlasSignal
 
         public void SlowTick()
         {
-            AtlasSignalSystem signal = Hecton8.Core.GlobalRegistry.AtlasSignal;
+            AtlasSignalSystem signal = _atlasSignal;
             if (signal == null) return;
             if (!signal.IsDetected) return;
             if (!TryResolvePlayerAup(out AbsoluteUniversePosition playerAup))
@@ -878,6 +887,54 @@ namespace Hecton8.AtlasSignal
 
             Hecton8.Core.GlobalRegistry.UnregisterAtlas6DirectiveRuntime(this);
             _serviceRegistered = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.AtlasSignalRuntime:
+                    _atlasSignal = currentService as AtlasSignalSystem;
+                    break;
+                case GlobalRegistryServiceSlot.FirstHourRuntime:
+                    _firstHourDirector = currentService as FirstHourDirector;
+                    break;
+            }
+        }
+
+        private void CacheAtlasDependenciesCold()
+        {
+            if (_atlasSignal == null)
+                _atlasSignal = Hecton8.Core.GlobalRegistry.AtlasSignal;
+
+            if (_firstHourDirector == null)
+                _firstHourDirector = Hecton8.Core.GlobalRegistry.FirstHour;
+        }
+
+        private void ClearAtlasDependencies()
+        {
+            _atlasSignal = null;
+            _firstHourDirector = null;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -977,11 +1034,11 @@ namespace Hecton8.AtlasSignal
             if (!IsDirectiveIdentityDiscovery(discoveryHash))
                 return false;
 
-            AtlasSignalSystem signal = Hecton8.Core.GlobalRegistry.AtlasSignal;
+            AtlasSignalSystem signal = _atlasSignal;
             if (signal != null)
                 return signal.CurrentRevealStage >= MinimumRevealStageForDirectiveIdentity;
 
-            FirstHourDirector firstHourDirector = Hecton8.Core.GlobalRegistry.FirstHour;
+            FirstHourDirector firstHourDirector = _firstHourDirector;
             if (firstHourDirector != null)
                 return firstHourDirector.IsMilestoneComplete(FirstHourMilestone.HumCloser);
 

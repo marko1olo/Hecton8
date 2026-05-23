@@ -27,7 +27,7 @@ namespace Hecton8.AtlasSignal
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-90)]
-    public sealed class AtlasSignalDecoder : MonoBehaviour, ISlowTickable, IAtlasSignalEventListener
+    public sealed class AtlasSignalDecoder : MonoBehaviour, ISlowTickable, IAtlasSignalEventListener, IGlobalRegistryHotSwapListener
     {
         private const int MaximumSynchronizedPhase = 3;
         private const float SlowTickDeltaSeconds = 0.5f;
@@ -71,6 +71,9 @@ namespace Hecton8.AtlasSignal
         private bool _registered;
         private bool _serviceRegistered;
         private bool _atlasSignalEventRegistered;
+        private bool _hotSwapRegistered;
+        private AtlasSignalSystem _atlasSignal;
+        private FirstHourDirector _firstHourDirector;
         private bool _decodeWindowOpen;
         private float _decodeProgress;
         private float _submittedCarrierFrequencyHz;
@@ -113,6 +116,8 @@ namespace Hecton8.AtlasSignal
                 return;
 
             TryRegister();
+            CacheAtlasSignalCold();
+            TryRegisterHotSwapListener();
 
             TryRegisterAtlasSignalEvents();
             TrySynchronizePhaseFromSignal();
@@ -123,6 +128,9 @@ namespace Hecton8.AtlasSignal
             TryUnregister();
             TryUnregisterFromGlobalRegistry();
             TryUnregisterAtlasSignalEvents();
+            TryUnregisterHotSwapListener();
+            _atlasSignal = null;
+            _firstHourDirector = null;
         }
 
         private void OnDestroy()
@@ -130,6 +138,9 @@ namespace Hecton8.AtlasSignal
             TryUnregister();
             TryUnregisterFromGlobalRegistry();
             TryUnregisterAtlasSignalEvents();
+            TryUnregisterHotSwapListener();
+            _atlasSignal = null;
+            _firstHourDirector = null;
         }
 
         // ----------------------------------------------------------
@@ -140,7 +151,7 @@ namespace Hecton8.AtlasSignal
         {
             if (_fullyDecoded) return;
 
-            AtlasSignalSystem sys = Hecton8.Core.GlobalRegistry.AtlasSignal;
+            AtlasSignalSystem sys = _atlasSignal;
             if (sys == null) return;
             if (!CanDecodeSignal(sys)) return;
 
@@ -200,6 +211,43 @@ namespace Hecton8.AtlasSignal
             _registered = false;
         }
 
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.AtlasSignalRuntime)
+                _atlasSignal = currentService as AtlasSignalSystem;
+            else if (serviceSlot == GlobalRegistryServiceSlot.FirstHourRuntime)
+                _firstHourDirector = currentService as FirstHourDirector;
+        }
+
+        private void CacheAtlasSignalCold()
+        {
+            if (_atlasSignal == null)
+                _atlasSignal = Hecton8.Core.GlobalRegistry.AtlasSignal;
+
+            if (_firstHourDirector == null)
+                _firstHourDirector = Hecton8.Core.GlobalRegistry.FirstHour;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
+        }
+
         private bool TryRegisterToGlobalRegistry()
         {
             if (_serviceRegistered || !Application.isPlaying)
@@ -255,7 +303,7 @@ namespace Hecton8.AtlasSignal
             // Signal pulse accelerates decode; check phase immediately.
             if (_fullyDecoded) return;
 
-            AtlasSignalSystem sys = Hecton8.Core.GlobalRegistry.AtlasSignal;
+            AtlasSignalSystem sys = _atlasSignal;
             if (sys == null) return;
             if (!CanDecodeSignal(sys)) return;
 
@@ -280,7 +328,7 @@ namespace Hecton8.AtlasSignal
             if (_fullyDecoded)
                 return;
 
-            AtlasSignalSystem sys = Hecton8.Core.GlobalRegistry.AtlasSignal;
+            AtlasSignalSystem sys = _atlasSignal;
             if (sys == null)
                 return;
 
@@ -306,7 +354,7 @@ namespace Hecton8.AtlasSignal
             if (sys == null || sys.CurrentRevealStage <= 0)
                 return false;
 
-            FirstHourDirector firstHourDirector = Hecton8.Core.GlobalRegistry.FirstHour;
+            FirstHourDirector firstHourDirector = _firstHourDirector;
             if (firstHourDirector == null)
                 return true;
 
