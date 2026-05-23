@@ -13,7 +13,7 @@ namespace Hecton8.Visor
     /// <summary>
     /// Persists active-sonar contact hits into a screen-space point-cloud history so abyss silhouettes survive after the pulse passes.
     /// </summary>
-    public sealed class HectonSonarPointCloudFeature : ScriptableRendererFeature
+    public sealed class HectonSonarPointCloudFeature : ScriptableRendererFeature, IGlobalRegistryHotSwapListener
     {
         [Serializable]
         private sealed class FeatureSettings
@@ -74,6 +74,7 @@ namespace Hecton8.Visor
             private Vector2 _worldCenterXZ;
             private Vector2 _worldScrollUvOffset;
             private float _worldMemoryWorldSize;
+            private HectonFloatingOrigin _floatingOrigin;
 
             public SonarPointCloudPass()
             {
@@ -81,10 +82,11 @@ namespace Hecton8.Visor
                 requiresIntermediateTexture = true;
             }
 
-            public void Setup(FeatureSettings settings, Material material)
+            public void Setup(FeatureSettings settings, Material material, HectonFloatingOrigin floatingOrigin)
             {
                 _settings = settings;
                 _material = material;
+                _floatingOrigin = floatingOrigin;
                 renderPassEvent = settings != null ? settings.injectionPoint : RenderPassEvent.BeforeRenderingPostProcessing;
                 ConfigureInput(ScriptableRenderPassInput.Depth);
                 requiresIntermediateTexture = true;
@@ -108,6 +110,7 @@ namespace Hecton8.Visor
                 _worldCenterXZ = Vector2.zero;
                 _worldScrollUvOffset = Vector2.zero;
                 _worldMemoryWorldSize = 0f;
+                _floatingOrigin = null;
             }
 
             public bool HasHistory =>
@@ -144,7 +147,7 @@ namespace Hecton8.Visor
                 TextureHandle worldHistoryReadTexture = renderGraph.ImportTexture(_worldHistoryRead);
                 TextureHandle worldHistoryWriteTexture = renderGraph.ImportTexture(_worldHistoryWrite);
 
-                HectonFloatingOrigin floatingOrigin = GlobalRegistry.FloatingOrigin;
+                HectonFloatingOrigin floatingOrigin = _floatingOrigin;
                 Vector3 floatingOriginOffset = floatingOrigin != null ? floatingOrigin.TotalOffset : Vector3.zero;
                 Vector3 absoluteCameraPosition = cameraData.camera.transform.position + floatingOriginOffset;
                 RefreshWorldMemoryRect(new Vector2(absoluteCameraPosition.x, absoluteCameraPosition.z), false);
@@ -404,6 +407,8 @@ namespace Hecton8.Visor
 
         private SonarPointCloudPass _pass;
         private Material _material;
+        private HectonFloatingOrigin _cachedFloatingOrigin;
+        private bool _hotSwapRegistered;
 
         /// <inheritdoc />
         public override void Create()
@@ -416,6 +421,8 @@ namespace Hecton8.Visor
                 _pass = new SonarPointCloudPass();
 
             RecreateMaterial(ref _material, shader);
+            TryRegisterHotSwapListener();
+            _cachedFloatingOrigin = GlobalRegistry.FloatingOrigin;
         }
 
         /// <inheritdoc />
@@ -431,7 +438,7 @@ namespace Hecton8.Visor
             if (!_pass.HasHistory && Shader.GetGlobalFloat(ShaderConstants.SonarRevealExpireTimeId) <= 0f)
                 return;
 
-            _pass.Setup(settings, _material);
+            _pass.Setup(settings, _material, _cachedFloatingOrigin);
             renderer.EnqueuePass(_pass);
         }
 
@@ -441,6 +448,39 @@ namespace Hecton8.Visor
             _pass?.Dispose();
             CoreUtils.Destroy(_material);
             _material = null;
+            _cachedFloatingOrigin = null;
+            TryUnregisterHotSwapListener();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.FloatingOriginRuntime)
+                _cachedFloatingOrigin = currentService as HectonFloatingOrigin;
+        }
+
+        private void OnDisable()
+        {
+            TryUnregisterHotSwapListener();
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
 
         private static void RecreateMaterial(ref Material material, Shader shader)

@@ -410,3 +410,31 @@ Verification:
 - `git diff --check` on touched code file: no whitespace errors; Git reported LF->CRLF warning only.
 - Guarded build waited while CPU was 98-100 percent with active dotnet/compiler processes, then ran after CPU dropped below 50 percent and no `dotnet/csc` process was active. Idle `VBCSCompiler` remained, so shared compilation was disabled.
 - `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal /p:UseSharedCompilation=false`: succeeded, 0 warnings, 0 errors.
+
+## 2026-05-23 Visor RenderGraph Service Cache Tranche
+
+What was wrong:
+
+- `HectonSonarPointCloudFeature.RecordRenderGraph()` read `GlobalRegistry.FloatingOrigin` while recording sonar point-cloud history.
+- `HectonFluidAdvectionRenderFeature.RecordRenderGraph()` read `GlobalRegistry.Fluid` while recording GPU fluid advection.
+
+What was done:
+
+- Added cached `HectonFloatingOrigin` to the sonar point-cloud feature and passed it into the pass through `Setup()`.
+- Added cached `HectonFluidEngine` to the fluid advection feature and passed it into the pass through `Setup()`.
+- Added `IGlobalRegistryHotSwapListener` handling for `FloatingOriginRuntime` and `FluidRuntime`.
+- Left RenderGraph payload layout, shader IDs, RT allocation policy, and compute dispatch payload unchanged.
+
+Cinematic Cheats used:
+
+- Existing cheats preserved: sonar memory remains a treadmill/history texture fake; fluid advection remains bounded GPU visual dispatch. No new physical simulation was added.
+
+Exact microseconds saved:
+
+- No profiler claim. STATIC_SOURCE estimate only: removes 1 floating-origin registry read per sonar point-cloud RenderGraph record and 1 fluid-engine registry read per fluid advection RenderGraph record.
+
+Verification:
+
+- `git diff --check` on touched code files: no whitespace errors; Git reported LF->CRLF warnings only.
+- Guarded build ran at CPU 30 percent with no `dotnet/csc/VBCSCompiler` processes active.
+- `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal`: succeeded, 0 warnings, 0 errors.

@@ -1,6 +1,6 @@
 # Rationale_EXTERNAL_FIXER
 Date: 2026-05-23
-Status: VERIFIED - FOURTEENTH HOT-PATH REGISTRY TRANCHE
+Status: VERIFIED - FIFTEENTH HOT-PATH REGISTRY TRANCHE
 
 ## Decision 1
 
@@ -153,3 +153,11 @@ Solution: Work with the dirty partial patch and complete the cache route for `At
 Rejected Alternatives: Reverting the pre-existing dirty partial patch was rejected because it was relevant and would destroy another agent/user edit. A new signal lane was rejected because ending execution needs immediate owner-service commands, not broadcast state. Staging unrelated dirty files was rejected.
 Scalability potential: Low tier keeps ending slow checks cheap; Middle keeps identical quest/Atlas behavior; High and Ultra preserve richer ending presentation without adding service-locator reads to ending execution.
 Hardware Impact: STATIC estimate only: removes registry reads from ending condition checks, quest activation/completion, Atlas shutdown/amplify execution, and fallback localization. No profiler microsecond claim.
+
+## Decision 20
+
+Problem: `HectonSonarPointCloudFeature.RecordRenderGraph()` and `HectonFluidAdvectionRenderFeature.RecordRenderGraph()` resolved `FloatingOrigin` and `Fluid` through `GlobalRegistry` during per-camera RenderGraph recording.
+Solution: Cache `HectonFloatingOrigin` and `HectonFluidEngine` on the `ScriptableRendererFeature` lifecycle, refresh them through `IGlobalRegistryHotSwapListener`, and pass the cached owner references into the render passes through `Setup()`.
+Rejected Alternatives: Per-record registry lookup was rejected because RenderGraph recording is a VISUAL_SYNC hot route. A shared render-feature base class was rejected because the two-file patch is smaller in the dirty multi-agent workspace. A new signal lane was rejected because these are immediate owner snapshots/commands, not broadcast events.
+Scalability potential: Low tier keeps sonar history and fluid advection recording cheap; Middle keeps identical visual behavior; High and Ultra preserve headroom for denser sonar memory and richer GPU fluid visuals without changing shader DTO or gameplay truth ownership.
+Hardware Impact: STATIC estimate only: removes 1 floating-origin registry read per sonar point-cloud RenderGraph record and 1 fluid-engine registry read per fluid advection RenderGraph record. No profiler microsecond claim.

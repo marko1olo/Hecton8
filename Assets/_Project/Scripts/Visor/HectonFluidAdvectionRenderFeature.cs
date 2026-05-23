@@ -10,7 +10,7 @@ namespace Hecton8.Visor
     /// <summary>
     /// RenderGraph-owned dispatch bridge for bounded GPU fluid particle advection.
     /// </summary>
-    public sealed class HectonFluidAdvectionRenderFeature : ScriptableRendererFeature
+    public sealed class HectonFluidAdvectionRenderFeature : ScriptableRendererFeature, IGlobalRegistryHotSwapListener
     {
         private sealed class FluidAdvectionPass : ScriptableRenderPass
         {
@@ -25,11 +25,17 @@ namespace Hecton8.Visor
             }
 
             private readonly ProfilingSampler _profilingSampler = new ProfilingSampler("Hecton Fluid Advection");
+            private HectonFluidEngine _engine;
 
             public FluidAdvectionPass()
             {
                 profilingSampler = _profilingSampler;
                 renderPassEvent = VisualSyncRenderPassEvent;
+            }
+
+            public void Setup(HectonFluidEngine engine)
+            {
+                _engine = engine;
             }
 
             public override void RecordRenderGraph(RenderGraph renderGraph, ContextContainer frameData)
@@ -39,7 +45,7 @@ namespace Hecton8.Visor
                 if (cameraType == CameraType.Preview || cameraType == CameraType.Reflection || cameraType == CameraType.SceneView)
                     return;
 
-                HectonFluidEngine engine = GlobalRegistry.Fluid;
+                HectonFluidEngine engine = _engine;
                 if (engine == null ||
                     !engine.TryBuildFluidAdvectionRenderGraphPayload(out HectonFluidEngine.FluidAdvectionRenderGraphPayload payload) ||
                     payload.Compute == null ||
@@ -95,11 +101,16 @@ namespace Hecton8.Visor
         }
 
         private FluidAdvectionPass _pass;
+        private HectonFluidEngine _cachedFluidEngine;
+        private bool _hotSwapRegistered;
 
         public override void Create()
         {
             if (_pass == null)
                 _pass = new FluidAdvectionPass();
+
+            TryRegisterHotSwapListener();
+            _cachedFluidEngine = GlobalRegistry.Fluid;
         }
 
         public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
@@ -111,7 +122,45 @@ namespace Hecton8.Visor
             if (cameraType == CameraType.Preview || cameraType == CameraType.Reflection || cameraType == CameraType.SceneView)
                 return;
 
+            _pass.Setup(_cachedFluidEngine);
             renderer.EnqueuePass(_pass);
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            _cachedFluidEngine = null;
+            TryUnregisterHotSwapListener();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.FluidRuntime)
+                _cachedFluidEngine = currentService as HectonFluidEngine;
+        }
+
+        private void OnDisable()
+        {
+            TryUnregisterHotSwapListener();
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
     }
 }

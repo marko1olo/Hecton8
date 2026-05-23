@@ -1,6 +1,6 @@
 # Status EXTERNAL_FIXER
 Date: 2026-05-23
-Status: VERIFIED - FOURTEENTH HOT-PATH REGISTRY TRANCHE
+Status: VERIFIED - FIFTEENTH HOT-PATH REGISTRY TRANCHE
 
 - [x] Task 1 - Rule intake and mandate selection | Justification: read AGENTS.md, domain map, and mandates for Zero GC, GlobalRegistry/DI, execution phases, signal lanes, performance budgets, ARM64 DTO layout, crash telemetry, and evidence law before touching code. Alternative rejected: broad blind edits. Microseconds saved: 0 audit setup.
 - [x] Task 2 - Find high-confidence source defects | Justification: scoped hot-path scans found direct GlobalRegistry reads in ScavengePopulator.ProcessSpawnQueue/DespawnChunk, VoxelDeltaProcessor.EmitCaveInDustDecal, Atlas6DirectiveSystem.SlowTick/identity adoption, and AtlasSignalDecoder.SlowTick/pulse decode. False positives in editor-only and teardown code rejected. Microseconds saved: 0 measured, candidate selection only.
@@ -111,3 +111,11 @@ Status: VERIFIED - FOURTEENTH HOT-PATH REGISTRY TRANCHE
 - [x] Task 68 - Verify ending tranche | Justification: `git diff --check` passed with LF->CRLF warning only; guarded build waited while CPU was 98-100 percent with active dotnet/compiler processes, then `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal /p:UseSharedCompilation=false` succeeded with 0 errors and 0 warnings. Alternative rejected: launching build during active compiler/CPU window. Microseconds saved: not measured.
 - [x] Task 69 - Append ending rationale/report | Justification: rationale and LOG entries record the pre-existing dirty partial patch, completed service cache, rejected revert, scalability tiers, and static-only estimate. Alternative rejected: chat-only record. Microseconds saved: not measured.
 - [x] Task 70 - Commit/push ending tranche | Justification: commit/push limited to `EndingSystem.cs` plus EXTERNAL_FIXER docs after exact-file checks. Alternative rejected: staging unrelated dirty workspace edits. Microseconds saved: not measured.
+
+## Continuation Pass 2026-05-23 - Visor RenderGraph Service Cache Tranche
+
+- [x] Task 71 - Select clean RenderGraph service defects | Justification: `HectonSonarPointCloudFeature.cs` and `HectonFluidAdvectionRenderFeature.cs` were clean and read `GlobalRegistry.FloatingOrigin` / `GlobalRegistry.Fluid` inside `RecordRenderGraph()`. Alternative rejected: touching unrelated dirty render/world files. Microseconds saved: 0 discovery only.
+- [x] Task 72 - Patch render-feature service caches | Justification: added cached `HectonFloatingOrigin` and `HectonFluidEngine` references at `ScriptableRendererFeature` lifecycle level, refreshed by `IGlobalRegistryHotSwapListener`; render passes now receive cached owner references through `Setup()`. Alternative rejected: keeping registry reads in RenderGraph record callbacks. Microseconds saved: STATIC estimate only: removes 1 floating-origin registry read per sonar point-cloud RenderGraph record and 1 fluid-engine registry read per fluid advection RenderGraph record.
+- [x] Task 73 - Verify RenderGraph cache tranche | Justification: `git diff --check` passed with LF->CRLF warnings only; guarded `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal` ran at CPU 30 percent with no compiler processes and succeeded with 0 errors and 0 warnings. Alternative rejected: claiming RenderGraph runtime/profiler evidence without Editor capture. Microseconds saved: not measured.
+- [x] Task 74 - Append RenderGraph rationale/report | Justification: rationale and LOG entries record VISUAL_SYNC route, rejected hot registry polling, scalability tiers, and static-only estimates. Alternative rejected: chat-only record. Microseconds saved: not measured.
+- [x] Task 75 - Commit/push RenderGraph cache tranche | Justification: commit/push limited to two visor RenderGraph features plus EXTERNAL_FIXER docs after exact-file checks. Alternative rejected: staging unrelated dirty workspace edits. Microseconds saved: not measured.
