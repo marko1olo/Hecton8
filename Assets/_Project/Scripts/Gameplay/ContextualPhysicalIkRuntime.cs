@@ -1494,7 +1494,7 @@ namespace Hecton8.Gameplay
 
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-9920)]
-    internal sealed class ContextualPhysicalIkRuntime : MonoBehaviour, IFastTickable, ILateFrameTickable, IOriginShiftListener
+    internal sealed class ContextualPhysicalIkRuntime : MonoBehaviour, IFastTickable, ILateFrameTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener
     {
         private const int MaxEntities = 128;
         internal const int RaysPerEntity = 6;
@@ -1555,11 +1555,13 @@ namespace Hecton8.Gameplay
         private JobHandle _pendingGroundResponseHandle;
         private JobHandle _disposeHandle;
         private Transform _cameraTransform;
+        private IPlayerRuntimeContext _cachedPlayerContext;
         private bool _groundResponseScheduled;
         private bool _registered;
         private bool _registeredFastTick;
         private bool _registeredLateFrame;
         private bool _registeredOriginShiftListener;
+        private bool _registeredHotSwapListener;
         private int _freeSlotCount;
         private float _cameraResolveRetryTimer;
         private float3 _lastKccVelocity;
@@ -1594,13 +1596,16 @@ namespace Hecton8.Gameplay
             }
 
             GlobalRegistry.RegisterContextualPhysicalIkRuntime(this);
+            CachePlayerContextCold();
             InitializeFreeSlots();
             EnsurePersistentBuffers();
         }
 
         private void OnEnable()
         {
+            CachePlayerContextCold();
             EnsurePersistentBuffers();
+            TryRegisterHotSwapListener();
             TryRegister();
             TryRegisterOriginShiftListener();
         }
@@ -1609,16 +1614,41 @@ namespace Hecton8.Gameplay
         {
             CompletePendingGroundResponseForRuntimeDisable();
             TryUnregisterOriginShiftListener();
+            TryUnregisterHotSwapListener();
             TryUnregister();
         }
 
         private void OnDestroy()
         {
             TryUnregisterOriginShiftListener();
+            TryUnregisterHotSwapListener();
             TryUnregister();
             JobHandle dependency = _groundResponseScheduled ? _pendingGroundResponseHandle : default;
             DisposeBuffers(dependency);
+            _cachedPlayerContext = null;
+            _cameraTransform = null;
             GlobalRegistry.ClearContextualPhysicalIkRuntime(this);
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Player)
+                return;
+
+            IPlayerRuntimeContext previousContext = previousService as IPlayerRuntimeContext;
+            Camera previousCamera = previousContext != null ? previousContext.PlayerCamera : null;
+            if (previousCamera != null && ReferenceEquals(_cameraTransform, previousCamera.transform))
+                _cameraTransform = null;
+
+            _cachedPlayerContext = currentService as IPlayerRuntimeContext;
+            Camera currentCamera = _cachedPlayerContext != null ? _cachedPlayerContext.PlayerCamera : null;
+            if (currentCamera != null)
+                _cameraTransform = currentCamera.transform;
+
+            _cameraResolveRetryTimer = 0.0f;
         }
 
         /// <inheritdoc />
@@ -1940,6 +1970,31 @@ namespace Hecton8.Gameplay
 
             HectonFloatingOrigin.UnregisterListener(this);
             _registeredOriginShiftListener = false;
+        }
+
+        private void CachePlayerContextCold()
+        {
+            _cachedPlayerContext = GlobalRegistry.Player;
+            Camera playerCamera = _cachedPlayerContext != null ? _cachedPlayerContext.PlayerCamera : null;
+            if (playerCamera != null)
+                _cameraTransform = playerCamera.transform;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwapListener || !Application.isPlaying)
+                return;
+
+            _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwapListener)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwapListener = false;
         }
 
         private void CompletePendingGroundResponseForOriginShift()
@@ -2318,7 +2373,8 @@ namespace Hecton8.Gameplay
                 return false;
 
             _cameraResolveRetryTimer = CameraResolveRetryInterval;
-            Camera playerCamera = GlobalRegistry.Player != null ? GlobalRegistry.Player.PlayerCamera : null;
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
+            Camera playerCamera = playerContext != null ? playerContext.PlayerCamera : null;
             if (playerCamera == null)
                 return false;
 

@@ -217,3 +217,11 @@ Solution: Cache `IPlayerRuntimeContext` and `HectonPlayerMovement` during cold l
 Rejected Alternatives: Leaving a registry read behind a `TryResolve*` helper was rejected because read-looking helpers on tick call stacks must not hide service-locator polling. Editing dirty `VRSomaticProvider.cs` or `HazardZoneManager.cs` in the same tranche was rejected to avoid overwriting another agent/user work.
 Scalability potential: Low tier keeps many resource highlight ticks cheap; Middle keeps identical visibility behavior; High and Ultra preserve headroom for denser resource readability and richer shimmer without changing item/player truth ownership.
 Hardware Impact: STATIC estimate only: removes one player registry read per item highlight tick distance evaluation. No profiler microsecond claim.
+
+## Decision 28
+
+Problem: `ContextualPhysicalIkRuntime.FastTick()` reached `TryResolveViewerPose()`, whose camera retry path polled `GlobalRegistry.Player` when `_cameraTransform` was unresolved.
+Solution: Cache `IPlayerRuntimeContext` during cold lifecycle, refresh Player through `IGlobalRegistryHotSwapListener`, and resolve viewer camera from cached owner context during retry windows.
+Rejected Alternatives: Keeping the retry-loop registry read was rejected because contextual IK is a fast-tick system. Editing dirty `PlayerKinematicsRuntime.cs`, `TerminalOsRuntime.cs`, or `PersistentWorldRegistry.cs` in the same tranche was rejected to avoid mixing unrelated agent/user edits.
+Scalability potential: Low tier keeps IK viewer resolution cheap; Middle keeps identical contextual IK behavior; High and Ultra preserve headroom for denser contextual hand/foot targets without changing KCC/player truth ownership or job DTO layout.
+Hardware Impact: STATIC estimate only: removes player registry reads from contextual IK viewer-camera retry windows. No profiler microsecond claim.

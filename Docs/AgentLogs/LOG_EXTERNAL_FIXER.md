@@ -626,3 +626,23 @@ Exact microseconds saved:
 Verification:
 - `git diff --check -- Assets/_Project/Scripts/Gameplay/ItemHighlight.cs` passed with LF->CRLF warning only.
 - `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal /p:UseSharedCompilation=false /nr:false` succeeded with 0 warnings and 0 errors.
+
+## 2026-05-23 - Contextual IK Player Camera Cache Tranche
+
+What was wrong:
+- `ContextualPhysicalIkRuntime.TryResolveViewerPose()` polled `GlobalRegistry.Player` from the `FastTick()` viewer-camera retry path.
+
+What was done:
+- Added cached `IPlayerRuntimeContext` to contextual IK runtime.
+- Added Player-slot hot-swap refresh and cold lifecycle seeding.
+- Routed retry-window camera resolution through cached player context.
+
+Cinematic cheats used:
+- No IK math or job expansion. Existing viewer pose, raycast schedule, and target DTOs remain unchanged.
+
+Exact microseconds saved:
+- Not measured. STATIC estimate only: removes player registry reads from contextual IK viewer-camera retry windows.
+
+Verification:
+- `git diff --check -- Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRuntime.cs` passed with LF->CRLF warning only.
+- `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal /p:UseSharedCompilation=false /nr:false` succeeded with 0 warnings and 0 errors.
