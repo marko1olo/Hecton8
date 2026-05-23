@@ -201,3 +201,11 @@ Solution: Cache `IPlayerRuntimeContext` during lifecycle wiring, refresh it thro
 Rejected Alternatives: Runtime scene/reference fallback from slow tick was rejected because player runtime context already owns the authoritative route. A larger scatter-pipeline patch was rejected because this local file had the narrower provable defect.
 Scalability potential: Low tier keeps world-interest cadence cheap; Middle keeps identical scatter/slice scaling; High and Ultra preserve richer interest-anchor density without adding player registry polling to slow tick.
 Hardware Impact: STATIC estimate only: removes player registry reads from world-interest slow tick and auto-resolve paths. No profiler microsecond claim.
+
+## Decision 26
+
+Problem: `HectonScanMarkerSystem` resolved `GlobalRegistry.Player` inside the scanner marker AUP helper reached from tick-time matrix building, and `WorldProceduralScatterDirectorSamplingPipeline` resolved `GlobalRegistry.Player` inside sampling begin context despite the director already owning a cached player context.
+Solution: Add `IGlobalRegistryHotSwapListener` handling to scanner markers and seed player context during cold lifecycle; route scanner AUP resolution through the cached context. Convert scatter sampling AUP resolution from a static registry helper to an instance helper that consumes `_cachedPlayerContext`.
+Rejected Alternatives: Keeping a mixed cache/polling route was rejected because player pose resolution is runtime cadence work. Editing dirty `HazardZoneManager.cs` in the same tranche was rejected because its file state belongs to another agent/user and would widen attribution.
+Scalability potential: Low tier keeps scanner marker and scatter sampling routes cheap; Middle keeps identical marker/scatter behavior; High and Ultra preserve headroom for denser HUD markers and richer scatter windows without changing player truth ownership.
+Hardware Impact: STATIC estimate only: removes one player registry read per scanner marker matrix build and one player registry read per scatter sampling begin context. No profiler microsecond claim.

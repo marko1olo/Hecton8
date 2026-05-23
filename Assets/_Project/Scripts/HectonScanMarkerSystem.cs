@@ -14,7 +14,7 @@ using UnityEditor;
 namespace Hecton8.Gameplay
 {
     [DisallowMultipleComponent]
-    public sealed class HectonScanMarkerSystem : MonoBehaviour, ITickable, IUpdatable, IScanEventListener
+    public sealed class HectonScanMarkerSystem : MonoBehaviour, ITickable, IUpdatable, IScanEventListener, IGlobalRegistryHotSwapListener
     {
         private const string MarkerShaderPath = "Assets/_Project/Art/Shaders/Hecton_ScannerMarkerInstanced.shader";
         private const int MaxMarkers = 64;
@@ -98,6 +98,7 @@ namespace Hecton8.Gameplay
         private int _cachedPixelHeight = -1;
         private bool _markerMaterialDirty = true;
         private bool _registered;
+        private bool _registeredHotSwapListener;
 
         public void Initialize(Shader shaderOverride)
         {
@@ -109,6 +110,7 @@ namespace Hecton8.Gameplay
         {
             // COLD ALLOC: ActiveMarker[64] — fixed scan marker slot buffer — owner: HectonScanMarkerSystem
             _markers = new ActiveMarker[MaxMarkers];
+            CachePlayerContextCold();
             EnsureHudCamera();
             EnsurePlayerTransform();
             EnsureRuntimeResources();
@@ -116,6 +118,8 @@ namespace Hecton8.Gameplay
 
         private void OnEnable()
         {
+            CachePlayerContextCold();
+            TryRegisterHotSwapListener();
             ScanEvents.Register(this);
             RegisterTick();
         }
@@ -124,11 +128,13 @@ namespace Hecton8.Gameplay
         {
             ScanEvents.Unregister(this);
             UnregisterTick();
+            TryUnregisterHotSwapListener();
         }
 
         private void OnDestroy()
         {
             UnregisterTick();
+            TryUnregisterHotSwapListener();
 
             if (_runtimeMarkerMaterial != null)
             {
@@ -144,6 +150,18 @@ namespace Hecton8.Gameplay
 
             _cachedPlayerContext = null;
             _cachedPlayerMovement = null;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Player)
+                return;
+
+            _cachedPlayerContext = currentService as IPlayerRuntimeContext;
+            _cachedPlayerMovement = _cachedPlayerContext != null ? _cachedPlayerContext.PlayerMovement : null;
         }
 
         public void Tick(float deltaTime)
@@ -428,6 +446,29 @@ namespace Hecton8.Gameplay
             _registered = false;
         }
 
+        private void CachePlayerContextCold()
+        {
+            _cachedPlayerContext = GlobalRegistry.Player;
+            _cachedPlayerMovement = _cachedPlayerContext != null ? _cachedPlayerContext.PlayerMovement : null;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwapListener || !Application.isPlaying)
+                return;
+
+            _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwapListener)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwapListener = false;
+        }
+
         private static Mesh CreateMarkerQuadMesh()
         {
             Mesh mesh = new Mesh
@@ -469,13 +510,8 @@ namespace Hecton8.Gameplay
         private bool TryResolvePlayerAup(Vector3 fallbackRuntimePosition, out AbsoluteUniversePosition playerAup)
         {
             playerAup = default;
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
-            if (!ReferenceEquals(playerContext, _cachedPlayerContext))
-            {
-                _cachedPlayerContext = playerContext;
-                _cachedPlayerMovement = playerContext != null ? playerContext.PlayerMovement : null;
-            }
-            else if (_cachedPlayerMovement == null && playerContext != null)
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
+            if (_cachedPlayerMovement == null && playerContext != null)
             {
                 _cachedPlayerMovement = playerContext.PlayerMovement;
             }

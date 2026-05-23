@@ -586,3 +586,23 @@ Verification:
 - `git diff --check` on touched code file: no whitespace errors; Git reported LF->CRLF warning only.
 - Guarded build waited through repeated external `csc.exe`/`dotnet.exe` windows. Final gate had CPU 45 percent, no `dotnet/csc`, and only idle `VBCSCompiler`.
 - `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal /p:UseSharedCompilation=false /nr:false`: succeeded, 0 warnings, 0 errors.
+## 2026-05-23 - Scanner And Scatter Player Cache Tranche
+
+What was wrong:
+- `HectonScanMarkerSystem.TryResolvePlayerAup()` polled `GlobalRegistry.Player` from the tick-time marker matrix path.
+- `WorldProceduralScatterDirectorSamplingPipeline.TryResolvePlayerAup()` polled `GlobalRegistry.Player` from scatter sampling begin context even though the director already maintained `_cachedPlayerContext`.
+
+What was done:
+- Added scanner marker cold player-context seeding plus `IGlobalRegistryHotSwapListener` refresh for the Player slot.
+- Routed scanner marker AUP lookup through cached `IPlayerRuntimeContext` / `HectonPlayerMovement`.
+- Converted scatter sampling AUP lookup from static registry polling to an instance helper using `_cachedPlayerContext`.
+
+Cinematic cheats used:
+- No simulation expansion. Kept existing approximate AUP distance, marker projection, and scatter sampling math unchanged.
+
+Exact microseconds saved:
+- Not measured. STATIC estimate only: removes one player registry read per scanner marker matrix build and one player registry read per scatter sampling begin context.
+
+Verification:
+- `git diff --check -- Assets/_Project/Scripts/HectonScanMarkerSystem.cs Assets/_Project/Scripts/WorldProceduralScatterDirectorSamplingPipeline.cs Docs/Tasks/Status_EXTERNAL_FIXER.md` passed with LF->CRLF warnings only.
+- `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal /p:UseSharedCompilation=false /nr:false` succeeded with 0 warnings and 0 errors.

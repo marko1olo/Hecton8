@@ -163,11 +163,11 @@ namespace Hecton8.World
             return true;
         }
 
-        private static bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)
+        private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)
         {
             playerAup = default;
 
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
             if (playerContext == null)
                 return false;
 
