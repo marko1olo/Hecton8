@@ -662,7 +662,7 @@ namespace Hecton8.Gameplay
 
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-65)]
-    public sealed class FirstHourDirector : MonoBehaviour, ISaveable, ISlowTickable, IQuestEventListener, IAudioLogEventListener, INarrativeEventListener, IScanEventListener, ICraftingEventListener, IInteractionEventListener
+    public sealed class FirstHourDirector : MonoBehaviour, ISaveable, ISlowTickable, IQuestEventListener, IAudioLogEventListener, INarrativeEventListener, IScanEventListener, ICraftingEventListener, IInteractionEventListener, IGlobalRegistryHotSwapListener
     {
         [Flags]
         private enum GuidanceStateFlags
@@ -749,6 +749,12 @@ namespace Hecton8.Gameplay
         private float _nextContextualGuidanceTime;
         private WorldZoneDirector _worldZoneDirector;
         private BiomeMatrixDirector _biomeMatrixDirector;
+        private QuestManager _cachedQuestManager;
+        private AtlasSignalSystem _cachedAtlasSignalSystem;
+        private EmergencyServiceRelayDirector _cachedEmergencyRelayDirector;
+        private AudioLogSystem _cachedAudioLogSystem;
+        private IPlayerRuntimeContext _cachedPlayerContext;
+        private LocalizationManager _cachedLocalization;
         private WorldZoneAnchor _lastObservedZone;
         private bool _lastContextResourceCompleted;
         private bool _lastContextDepthCompleted;
@@ -760,6 +766,7 @@ namespace Hecton8.Gameplay
         private uint _firstDepthQuestHash;
         private int _firstResourceItemHash;
         private bool _firstResourceIsCopper;
+        private bool _hotSwapRegistered;
 
         private const float MinEarnedOrientationTime = 75f;
         private const string DataCopperItemId = "Data_Copper";
@@ -821,6 +828,8 @@ namespace Hecton8.Gameplay
                 return;
 
             TryRegister();
+            CacheRuntimeServices();
+            TryRegisterHotSwapListener();
 
             if (Hecton8.Core.GlobalRegistry.SaveRuntime != null)
                 Hecton8.Core.GlobalRegistry.SaveRuntime.Register(this);
@@ -852,6 +861,8 @@ namespace Hecton8.Gameplay
             InteractionEvents.Unregister(this);
             AudioLogEvents.Unregister(this);
 
+            TryUnregisterHotSwapListener();
+            ClearCachedRuntimeServices();
             _lastObservedZone = null;
             _nextContextualGuidanceTime = 0f;
             _lastContextResourceCompleted = false;
@@ -862,6 +873,7 @@ namespace Hecton8.Gameplay
         private void OnDestroy()
         {
             TryUnregister();
+            TryUnregisterHotSwapListener();
             TryUnregisterService();
         }
 
@@ -871,6 +883,8 @@ namespace Hecton8.Gameplay
                 return;
 
             TryRegister();
+            CacheRuntimeServices();
+            TryRegisterHotSwapListener();
             Hecton8.Core.GlobalRegistry.SaveRuntime?.Register(this);
             RefreshCachedHashes();
             ResolveSurvivalSystem();
@@ -926,6 +940,71 @@ namespace Hecton8.Gameplay
             _serviceRegistered = false;
         }
 
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.QuestRuntime:
+                    _cachedQuestManager = currentService as QuestManager;
+                    break;
+                case GlobalRegistryServiceSlot.AtlasSignalRuntime:
+                    _cachedAtlasSignalSystem = currentService as AtlasSignalSystem;
+                    break;
+                case GlobalRegistryServiceSlot.EmergencyRelayRuntime:
+                    _cachedEmergencyRelayDirector = currentService as EmergencyServiceRelayDirector;
+                    break;
+                case GlobalRegistryServiceSlot.AudioLogRuntime:
+                    _cachedAudioLogSystem = currentService as AudioLogSystem;
+                    break;
+                case GlobalRegistryServiceSlot.Player:
+                    _cachedPlayerContext = currentService as IPlayerRuntimeContext;
+                    break;
+                case GlobalRegistryServiceSlot.LocalizationRuntime:
+                    _cachedLocalization = currentService as LocalizationManager;
+                    break;
+            }
+        }
+
+        private void CacheRuntimeServices()
+        {
+            _cachedQuestManager = GlobalRegistry.Quest;
+            _cachedAtlasSignalSystem = Hecton8.Core.GlobalRegistry.AtlasSignal;
+            _cachedEmergencyRelayDirector = Hecton8.Core.GlobalRegistry.EmergencyRelay;
+            _cachedAudioLogSystem = Hecton8.Core.GlobalRegistry.AudioLogs;
+            _cachedPlayerContext = Hecton8.Core.GlobalRegistry.Player;
+            _cachedLocalization = Hecton8.Core.GlobalRegistry.Localization;
+        }
+
+        private void ClearCachedRuntimeServices()
+        {
+            _cachedQuestManager = null;
+            _cachedAtlasSignalSystem = null;
+            _cachedEmergencyRelayDirector = null;
+            _cachedAudioLogSystem = null;
+            _cachedPlayerContext = null;
+            _cachedLocalization = null;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
+        }
+
         // ══════════════════════════════════════════════════════════
         //  ISlowTickable
         // ══════════════════════════════════════════════════════════
@@ -959,8 +1038,8 @@ namespace Hecton8.Gameplay
                 !IsMilestoneComplete(FirstHourMilestone.FirstModule) &&
                 _sessionTime >= firstModuleTime &&
                 currentDepthTier > 1 &&
-                GlobalRegistry.Quest != null &&
-                GlobalRegistry.Quest.IsCompleted(_firstDepthQuestHash))
+                _cachedQuestManager != null &&
+                _cachedQuestManager.IsCompleted(_firstDepthQuestHash))
             {
                 _firstModuleHintIssued = true;
                 _firstModuleReminderIssued = true;
@@ -1038,7 +1117,7 @@ namespace Hecton8.Gameplay
                 CheckMilestone(FirstHourMilestone.FirstModule, true);
             }
 
-            EmergencyServiceRelayDirector relayDirector = Hecton8.Core.GlobalRegistry.EmergencyRelay;
+            EmergencyServiceRelayDirector relayDirector = _cachedEmergencyRelayDirector;
             if (relayDirector != null && relayDirector.IsRelayDiscoveryHash(payload.DiscoveryHash))
                 _hasLoreRouteContact = true;
         }
@@ -1146,11 +1225,11 @@ namespace Hecton8.Gameplay
 
         private void SynchronizeContextFromRuntimeSystems()
         {
-            AudioLogSystem audioLogSystem = Hecton8.Core.GlobalRegistry.AudioLogs;
+            AudioLogSystem audioLogSystem = _cachedAudioLogSystem;
             if (audioLogSystem != null && audioLogSystem.DiscoveredCount > 0)
                 _hasLoreRouteContact = true;
 
-            EmergencyServiceRelayDirector relayDirector = Hecton8.Core.GlobalRegistry.EmergencyRelay;
+            EmergencyServiceRelayDirector relayDirector = _cachedEmergencyRelayDirector;
             if (relayDirector != null && relayDirector.HasDiscoveredRelayInDrivenChain())
                 _hasLoreRouteContact = true;
         }
@@ -1262,7 +1341,7 @@ namespace Hecton8.Gameplay
             if (questHash == 0u)
                 return;
 
-            QuestManager questManager = GlobalRegistry.Quest;
+            QuestManager questManager = _cachedQuestManager;
             if (questManager == null)
                 return;
 
@@ -1275,7 +1354,7 @@ namespace Hecton8.Gameplay
             if (questHash == 0u)
                 return;
 
-            QuestManager questManager = GlobalRegistry.Quest;
+            QuestManager questManager = _cachedQuestManager;
             if (questManager == null)
                 return;
 
@@ -1295,7 +1374,7 @@ namespace Hecton8.Gameplay
             ActivateQuest(_firstResourceQuestHash);
             TryAdvanceFirstResourceGoalFromRuntimeInventory();
 
-            QuestManager questManager = GlobalRegistry.Quest;
+            QuestManager questManager = _cachedQuestManager;
             if (questManager != null && questManager.IsCompleted(_firstResourceQuestHash))
             {
                 _firstResourceReminderIssued = true;
@@ -1324,7 +1403,7 @@ namespace Hecton8.Gameplay
 
         private int GetCurrentAtlasRevealStage()
         {
-            AtlasSignalSystem atlasSignalSystem = Hecton8.Core.GlobalRegistry.AtlasSignal;
+            AtlasSignalSystem atlasSignalSystem = _cachedAtlasSignalSystem;
             return atlasSignalSystem != null ? atlasSignalSystem.CurrentRevealStage : 0;
         }
 
@@ -1409,7 +1488,7 @@ namespace Hecton8.Gameplay
             if (!IsMilestoneComplete(FirstHourMilestone.Orientation))
                 return;
 
-            QuestManager questManager = GlobalRegistry.Quest;
+            QuestManager questManager = _cachedQuestManager;
             if (questManager == null)
                 return;
 
@@ -1461,7 +1540,7 @@ namespace Hecton8.Gameplay
             if (Time.unscaledTime < _nextContextualGuidanceTime)
                 return;
 
-            QuestManager questManager = GlobalRegistry.Quest;
+            QuestManager questManager = _cachedQuestManager;
             if (questManager == null)
                 return;
 
@@ -1511,7 +1590,7 @@ namespace Hecton8.Gameplay
 
         private bool TryIssueServiceRelayGuidance()
         {
-            EmergencyServiceRelayDirector relayDirector = Hecton8.Core.GlobalRegistry.EmergencyRelay;
+            EmergencyServiceRelayDirector relayDirector = _cachedEmergencyRelayDirector;
             if (relayDirector == null ||
                 !relayDirector.TryBuildContextualGuidanceMessage(out string relayMessage))
             {
@@ -1797,7 +1876,7 @@ namespace Hecton8.Gameplay
             return fallback;
         }
 
-        private static bool TryGetRuntimeInventory(out PlayerInventory inventory)
+        private bool TryGetRuntimeInventory(out PlayerInventory inventory)
         {
             inventory = null;
 
@@ -1811,13 +1890,14 @@ namespace Hecton8.Gameplay
             if (inventory != null)
                 return true;
 
-            inventory = ((Hecton8.Core.GlobalRegistry.Player != null && Hecton8.Core.GlobalRegistry.Player.Inventory != null) ? Hecton8.Core.GlobalRegistry.Player.Inventory : playerTransform.GetComponent<PlayerInventory>());
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
+            inventory = playerContext != null ? playerContext.Inventory : null;
             return inventory != null;
         }
 
-        private static string ResolveLocalized(string key, string fallback)
+        private string ResolveLocalized(string key, string fallback)
         {
-            LocalizationManager localization = Hecton8.Core.GlobalRegistry.Localization;
+            LocalizationManager localization = _cachedLocalization;
             return localization != null ? localization.GetOrFallback(localization.CurrentLanguage, key, fallback) : fallback;
         }
 

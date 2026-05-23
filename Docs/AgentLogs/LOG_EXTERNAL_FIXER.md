@@ -325,3 +325,34 @@ Verification:
 - `git diff --check` on touched code files: no whitespace errors; Git reported LF->CRLF warnings only.
 - Guarded build ran after CPU samples of 13.7, 5.0, and 0.8 percent and no active dotnet/csc/VBCSCompiler process.
 - `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal`: succeeded, 0 warnings, 0 errors.
+
+## 2026-05-23 First Hour Director Cache Tranche
+
+What was wrong:
+
+- `FirstHourDirector.SlowTick()` and guidance helpers polled `GlobalRegistry.Quest`.
+- Atlas reveal checks polled `GlobalRegistry.AtlasSignal`.
+- Relay/lore contact checks polled `GlobalRegistry.EmergencyRelay` and `GlobalRegistry.AudioLogs`.
+- Runtime inventory fallback polled `GlobalRegistry.Player`.
+- Guidance fallback text polled `GlobalRegistry.Localization`.
+
+What was done:
+
+- Added cached `QuestManager`, `AtlasSignalSystem`, `EmergencyServiceRelayDirector`, `AudioLogSystem`, `IPlayerRuntimeContext`, and `LocalizationManager` fields.
+- Added `IGlobalRegistryHotSwapListener` handling for the corresponding runtime slots.
+- Changed first-hour slow-tick guidance, quest sync, event callbacks, inventory fallback, Atlas checks, and localization fallback to use cached services.
+- Kept lifecycle/service self-registration and save registration unchanged.
+
+Cinematic Cheats used:
+
+- None. This tranche is first-hour route/guidance hardening, not simulation or visual math.
+
+Exact microseconds saved:
+
+- No profiler claim. STATIC_SOURCE estimate only: removes Quest/Atlas/Relay/AudioLogs/Player/Localization registry reads from first-hour slow-tick and guidance paths.
+
+Verification:
+
+- `git diff --check` on touched code file: no whitespace errors; Git reported LF->CRLF warning only.
+- Guarded build waited while CPU was 100 percent with active dotnet/csc/VBCSCompiler processes, then ran after latest CPU samples dropped below 50 percent and compiler processes cleared.
+- `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal`: succeeded, 0 warnings, 0 errors.

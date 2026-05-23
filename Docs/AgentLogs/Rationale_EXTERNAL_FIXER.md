@@ -1,6 +1,6 @@
 # Rationale_EXTERNAL_FIXER
 Date: 2026-05-23
-Status: VERIFIED - ELEVENTH HOT-PATH REGISTRY TRANCHE
+Status: VERIFIED - TWELFTH HOT-PATH REGISTRY TRANCHE
 
 ## Decision 1
 
@@ -129,3 +129,11 @@ Solution: Cache `IPlayerRuntimeContext` during feature `Create()`, refresh it th
 Rejected Alternatives: Leaving static helpers to poll the registry was rejected because render feature state build runs per camera/frame. Rewriting the features into a shared base class was rejected because the five-file local patch is smaller and safer in a dirty multi-agent workspace.
 Scalability potential: Low tier avoids service-locator reads in VISUAL_SYNC gates; Middle keeps the same render gating; High and Ultra preserve richer visor/noir/VR presentation headroom without changing player truth ownership or shader DTO layout.
 Hardware Impact: STATIC estimate only: removes 1 registry read per BIOS loot cache refresh, 1 registry read per noir surface-readability check, 1 registry read per atmosphere soot state build, 1 registry read per retina state build, and 1 registry read per VR brownout state build. No profiler microsecond claim.
+
+## Decision 17
+
+Problem: `FirstHourDirector` mixed first-hour slow-tick guidance with direct `GlobalRegistry` reads for Quest, AtlasSignal, EmergencyRelay, AudioLogs, Player, and Localization services.
+Solution: Cache those owner services during lifecycle wiring, refresh them through `IGlobalRegistryHotSwapListener`, and keep slow-tick guidance, quest synchronization, event callbacks, inventory fallback, and localization fallback on cached owner references.
+Rejected Alternatives: Leaving `TryGetRuntimeInventory()` and `ResolveLocalized()` as static registry helpers was rejected because they are called by first-hour guidance paths. Patching `EndingSystem` in the same commit was rejected to keep compile attribution narrow.
+Scalability potential: Low tier keeps first-hour guidance cadence cheap and predictable; Middle keeps identical quest/route behavior; High and Ultra preserve richer first-hour guidance, relay, and localization presentation without adding service-locator polling to cadence paths.
+Hardware Impact: STATIC estimate only: removes Quest/Atlas/Relay/AudioLogs/Player/Localization registry reads from first-hour slow-tick and guidance paths. No profiler microsecond claim.
