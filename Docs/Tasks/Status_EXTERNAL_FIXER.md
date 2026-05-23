@@ -1,6 +1,6 @@
 # Status EXTERNAL_FIXER
 Date: 2026-05-23
-Status: VERIFIED - SECOND HOT-PATH REGISTRY TRANCHE
+Status: VERIFIED - THIRD HOT-PATH REGISTRY TRANCHE
 
 - [x] Task 1 - Rule intake and mandate selection | Justification: read AGENTS.md, domain map, and mandates for Zero GC, GlobalRegistry/DI, execution phases, signal lanes, performance budgets, ARM64 DTO layout, crash telemetry, and evidence law before touching code. Alternative rejected: broad blind edits. Microseconds saved: 0 audit setup.
 - [x] Task 2 - Find high-confidence source defects | Justification: scoped hot-path scans found direct GlobalRegistry reads in ScavengePopulator.ProcessSpawnQueue/DespawnChunk, VoxelDeltaProcessor.EmitCaveInDustDecal, Atlas6DirectiveSystem.SlowTick/identity adoption, and AtlasSignalDecoder.SlowTick/pulse decode. False positives in editor-only and teardown code rejected. Microseconds saved: 0 measured, candidate selection only.
@@ -15,3 +15,11 @@ Status: VERIFIED - SECOND HOT-PATH REGISTRY TRANCHE
 - [x] Task 8 - Patch second defect tranche | Justification: added cached `RenderTextureLifecycleTracker` references plus `IGlobalRegistryHotSwapListener` handling to four RT budget managers; measurement now reads cached owner service and keeps existing allocation lists. Alternative rejected: new shared base class/refactor across managers while workspace is dirty. Microseconds saved: STATIC estimate only: removes 2 registry reads per RT budget manager slow tick, 8 total reads per full RT budget sweep.
 - [x] Task 9 - Verify second tranche | Justification: `git diff --check` on touched files passed with LF->CRLF warnings only; guarded `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal` succeeded with 0 errors and 0 warnings after CPU/process gate cleared. Alternative rejected: launching build while CPU was 58 percent. Microseconds saved: not measured.
 - [x] Task 10 - Append report and commit/push | Justification: report appended to `LOG_EXTERNAL_FIXER.md`; commit/push limited to owned files only and excludes unrelated dirty workspace edits. Alternative rejected: staging the dirty tree. Microseconds saved: not measured.
+
+## Continuation Pass 2026-05-23 - VRAM Fallback Registry Tranche
+
+- [x] Task 11 - Select clean follow-up defect | Justification: `TetherManager` was rejected for this tranche because it already contains unrelated dirty HarpoonTension/Vault changes; `VRAMMonitor.cs` was clean and had a direct `GlobalRegistry.RenderTextureLifecycle` fallback inside the slow-tick measurement path. Alternative rejected: mixing ownership in a dirty file. Microseconds saved: 0 discovery only.
+- [x] Task 12 - Patch VRAM fallback cache | Justification: added cached `RenderTextureLifecycleTracker` plus `IGlobalRegistryHotSwapListener` handling to `VRAMMonitor`; render-texture fallback now uses the cached tracker. Alternative rejected: removing the fallback counter path because platforms may not expose a profiler RT counter. Microseconds saved: STATIC estimate only: removes 1 registry read per VRAM slow tick when profiler RT counter is unavailable.
+- [x] Task 13 - Verify VRAM fallback tranche | Justification: `git diff --check` passed with LF->CRLF warning only; guarded `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal` waited through active `dotnet/csc/VBCSCompiler` work and then succeeded with 0 errors and 0 warnings. Alternative rejected: launching compile while CPU was 100 percent. Microseconds saved: not measured.
+- [x] Task 14 - Append VRAM rationale/report | Justification: rationale and LOG entries record evidence class, rejected alternatives, scalability tiers, and no-profiler performance limits. Alternative rejected: chat-only update. Microseconds saved: not measured.
+- [x] Task 15 - Commit/push VRAM tranche | Justification: commit/push limited to `VRAMMonitor.cs` plus EXTERNAL_FIXER docs. Alternative rejected: staging unrelated dirty workspace edits. Microseconds saved: not measured.

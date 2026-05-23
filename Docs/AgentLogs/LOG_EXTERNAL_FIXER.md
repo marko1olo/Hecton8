@@ -72,3 +72,30 @@ Verification:
 - `git diff --check` on touched files: no whitespace errors; Git reported LF->CRLF warnings only.
 - Guarded build: CPU/process gate waited until CPU was 5 percent and no dotnet/csc/VBCSCompiler process was present.
 - `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal`: succeeded, 0 warnings, 0 errors.
+
+## 2026-05-23 VRAM Monitor Fallback Cache Tranche
+
+What was wrong:
+
+- `VRAMMonitor.ReadRenderTextureMemoryBytes()` used `GlobalRegistry.RenderTextureLifecycle` from the slow-tick measurement path when the profiler RT counter returned zero.
+- `TetherManager` also has slow-tick registry polling, but the file is already dirty with unrelated HarpoonTension/Vault changes, so it was not touched in this commit.
+
+What was done:
+
+- Added a cached `RenderTextureLifecycleTracker` to `VRAMMonitor`.
+- Added `IGlobalRegistryHotSwapListener` handling for `GlobalRegistryServiceSlot.RenderTextureLifecycleRuntime`.
+- Kept profiler counters as first source of truth and used the cached lifecycle tracker only for fallback RT bytes.
+
+Cinematic Cheats used:
+
+- None. This tranche is service-route hardening, not simulation or visual approximation.
+
+Exact microseconds saved:
+
+- No profiler claim. STATIC_SOURCE estimate only: removes 1 registry read per VRAM slow tick when profiler RT memory counter is unavailable.
+
+Verification:
+
+- `git diff --check` on touched files: no whitespace errors; Git reported LF->CRLF warnings only.
+- Guarded build waited while CPU was 100 percent with active `dotnet`, `csc`, and `VBCSCompiler`, then ran after the compiler window cleared.
+- `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal`: succeeded, 0 warnings, 0 errors.

@@ -15,7 +15,7 @@ namespace Hecton8.Optimization
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-8000)]
-    public sealed class VRAMMonitor : MonoBehaviour, ISlowTickable
+    public sealed class VRAMMonitor : MonoBehaviour, ISlowTickable, IGlobalRegistryHotSwapListener
     {
         /// <summary>
         /// High-level VRAM pressure state derived from budget utilization.
@@ -43,9 +43,11 @@ namespace Hecton8.Optimization
         
         private bool _registeredSlowTick;
         private bool _registeredService;
+        private bool _registeredHotSwapListener;
         private ProfilerRecorder _textureMemoryRecorder;
         private ProfilerRecorder _renderTextureMemoryRecorder;
         private ProfilerRecorder _gfxUsedMemoryRecorder;
+        private RenderTextureLifecycleTracker _cachedRenderTextureLifecycle;
         
         // COLD ALLOC: StringBuilder[1024] — zero-GC logging — owner: VRAMMonitor
         private readonly StringBuilder _reportBuilder = new StringBuilder(1024);
@@ -144,22 +146,37 @@ namespace Hecton8.Optimization
         private void OnEnable()
         {
             if (TryRegisterService())
+            {
+                CacheRegistryServicesCold();
+                TryRegisterHotSwapListener();
                 TryRegister();
+            }
         }
         
         private void OnDisable()
         {
             TryUnregister();
+            TryUnregisterHotSwapListener();
             TryUnregisterService();
         }
         
         private void OnDestroy()
         {
             TryUnregister();
+            TryUnregisterHotSwapListener();
             TryUnregisterService();
             _textureMemoryRecorder.Dispose();
             _renderTextureMemoryRecorder.Dispose();
             _gfxUsedMemoryRecorder.Dispose();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.RenderTextureLifecycleRuntime)
+                _cachedRenderTextureLifecycle = currentService as RenderTextureLifecycleTracker;
         }
         
         // ── ISLOWTICABLE ───────────────────────────────────────────────────────────
@@ -244,6 +261,28 @@ namespace Hecton8.Optimization
 
             GlobalRegistry.UnregisterVRAMMonitorRuntime(this);
             _registeredService = false;
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            _cachedRenderTextureLifecycle = GlobalRegistry.RenderTextureLifecycle;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwapListener || !Application.isPlaying)
+                return;
+
+            _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwapListener)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwapListener = false;
         }
         
         private void MeasureVRAM()
@@ -358,7 +397,7 @@ namespace Hecton8.Optimization
             if (recorderValue > 0L)
                 return recorderValue;
 
-            RenderTextureLifecycleTracker tracker = GlobalRegistry.RenderTextureLifecycle;
+            RenderTextureLifecycleTracker tracker = _cachedRenderTextureLifecycle;
             if (tracker != null)
                 return tracker.TrackedRenderTextureMemoryBytes;
 

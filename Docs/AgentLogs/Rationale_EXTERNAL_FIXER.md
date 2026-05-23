@@ -1,6 +1,6 @@
 # Rationale_EXTERNAL_FIXER
 Date: 2026-05-23
-Status: VERIFIED - FIRST HOT-PATH REGISTRY TRANCHE
+Status: VERIFIED - THIRD HOT-PATH REGISTRY TRANCHE
 
 ## Decision 1
 
@@ -57,3 +57,11 @@ Solution: Cache RenderTextureLifecycleTracker during cold lifecycle wiring, refr
 Rejected Alternatives: A shared RT-budget base class was rejected because the active dirty workspace makes wide manager refactors higher risk than the repeated local patch. Leaving registry reads in SlowTick was rejected by the GlobalRegistry cold-DI mandate.
 Scalability potential: Low tier keeps RT budget checks cheap and predictable; Middle tier keeps the same accounting; High and Ultra can spend saved cadence budget on higher RT counts or richer visor/camera/post FX without changing truth ownership.
 Hardware Impact: STATIC estimate only: removes 2 registry reads per manager slow tick, 8 reads per complete RT budget sweep across Camera/PostFX/UI/Visor managers. No profiler microsecond claim.
+
+## Decision 8
+
+Problem: VRAMMonitor.ReadRenderTextureMemoryBytes fell back to GlobalRegistry.RenderTextureLifecycle inside the slow-tick measurement path when the platform profiler counter did not expose RT memory.
+Solution: Cache RenderTextureLifecycleTracker during cold lifecycle wiring and refresh it through IGlobalRegistryHotSwapListener for RenderTextureLifecycleRuntime; keep the profiler counter as the first path and use cached tracker only as fallback.
+Rejected Alternatives: Removing the fallback was rejected because some platforms lack a usable RenderTexture profiler counter. Touching TetherManager first was rejected because that file already contained unrelated dirty HarpoonTension/Vault work from another agent.
+Scalability potential: Low tier keeps budget pressure checks predictable on devices with weak profiler coverage; Middle/High/Ultra keep identical accounting and can scale RT usage without changing the authority route.
+Hardware Impact: STATIC estimate only: removes 1 registry read per VRAM slow tick when the profiler RT counter is unavailable. No profiler microsecond claim.
