@@ -124,3 +124,30 @@ Verification:
 
 - `git diff --check` on touched files: no whitespace errors; Git reported LF->CRLF warnings only.
 - `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal`: succeeded, 0 warnings, 0 errors.
+
+## 2026-05-23 Cave AO Player Cache Tranche
+
+What was wrong:
+
+- `HectonCaveVoxelAmbientOcclusionController.SlowTick()` can call `TryResolveViewerReferences()`, which used `GlobalRegistry.Player` when `viewerCamera` was unresolved.
+- That made cave ambient-occlusion cadence depend on hot service-locator polling during viewer fallback.
+
+What was done:
+
+- Added cached `IPlayerRuntimeContext` storage.
+- Added `IGlobalRegistryHotSwapListener` handling for `GlobalRegistryServiceSlot.Player`.
+- Kept explicit `viewerCamera` ownership first and changed fallback resolution to cached player context only.
+
+Cinematic Cheats used:
+
+- None. This tranche is route hardening for cave AO viewer binding, not AO math or visual approximation.
+
+Exact microseconds saved:
+
+- No profiler claim. STATIC_SOURCE estimate only: removes 1 registry read per cave AO slow tick while viewer camera resolution is unresolved.
+
+Verification:
+
+- `git diff --check` on touched code file: no whitespace errors; Git reported LF->CRLF warning only.
+- Guarded build ran at CPU 48 percent with no active dotnet/csc/VBCSCompiler process.
+- `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal`: succeeded, 0 warnings, 0 errors.

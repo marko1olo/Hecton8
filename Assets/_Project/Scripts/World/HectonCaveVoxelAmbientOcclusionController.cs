@@ -11,7 +11,7 @@ namespace Hecton8.World
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-6750)]
-    public sealed class HectonCaveVoxelAmbientOcclusionController : MonoBehaviour, ITickable, IUpdatable, ISlowTickable
+    public sealed class HectonCaveVoxelAmbientOcclusionController : MonoBehaviour, ITickable, IUpdatable, ISlowTickable, IGlobalRegistryHotSwapListener
     {
         private const float BaselineEpsilon = 0.0005f;
         private const float ViewerFallbackRetryIntervalSeconds = 2f;
@@ -42,7 +42,9 @@ namespace Hecton8.World
 
         private bool _registeredUpdatable;
         private bool _registeredSlowTickable;
+        private bool _registeredHotSwapListener;
         private WorldCaveDirector _worldCaveDirector;
+        private IPlayerRuntimeContext _cachedPlayerContext;
         // COLD ALLOC: List<HectonVoxelVolume>[32] - active cave-volume cache pulled from WorldCaveDirector without scene scans - owner: HectonCaveVoxelAmbientOcclusionController
         private readonly List<HectonVoxelVolume> _volumeBuffer = new List<HectonVoxelVolume>(32);
         private float _targetOcclusion;
@@ -64,6 +66,8 @@ namespace Hecton8.World
         private void OnEnable()
         {
             RenderSettingsLifecycleGuard.Acquire(this);
+            CacheRegistryServicesCold();
+            TryRegisterHotSwapListener();
             TryRegister();
             TryResolveViewerReferences();
             RefreshVolumeCache();
@@ -75,6 +79,7 @@ namespace Hecton8.World
         private void OnDisable()
         {
             TryUnregister();
+            TryUnregisterHotSwapListener();
             RestoreBaselines();
             RenderSettingsLifecycleGuard.Release(this);
         }
@@ -82,8 +87,18 @@ namespace Hecton8.World
         private void OnDestroy()
         {
             TryUnregister();
+            TryUnregisterHotSwapListener();
             RestoreBaselines();
             RenderSettingsLifecycleGuard.Release(this);
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Player)
+                _cachedPlayerContext = currentService as IPlayerRuntimeContext;
         }
 
         /// <summary>
@@ -167,7 +182,7 @@ namespace Hecton8.World
 
             if (viewerCamera == null)
             {
-                IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+                IPlayerRuntimeContext playerContext = _cachedPlayerContext;
                 if (playerContext != null && playerContext.PlayerCamera != null)
                     viewerCamera = playerContext.PlayerCamera;
             }
@@ -179,6 +194,28 @@ namespace Hecton8.World
                 viewerTransform = viewerCamera.transform;
 
             _debugHasViewer = viewerTransform != null || viewerCamera != null;
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            _cachedPlayerContext = GlobalRegistry.Player;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwapListener || !Application.isPlaying)
+                return;
+
+            _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwapListener)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwapListener = false;
         }
 
         private void RefreshVolumeCache()

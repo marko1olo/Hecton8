@@ -1,6 +1,6 @@
 # Status EXTERNAL_FIXER
 Date: 2026-05-23
-Status: VERIFIED - FOURTH HOT-PATH REGISTRY TRANCHE
+Status: VERIFIED - FIFTH HOT-PATH REGISTRY TRANCHE
 
 - [x] Task 1 - Rule intake and mandate selection | Justification: read AGENTS.md, domain map, and mandates for Zero GC, GlobalRegistry/DI, execution phases, signal lanes, performance budgets, ARM64 DTO layout, crash telemetry, and evidence law before touching code. Alternative rejected: broad blind edits. Microseconds saved: 0 audit setup.
 - [x] Task 2 - Find high-confidence source defects | Justification: scoped hot-path scans found direct GlobalRegistry reads in ScavengePopulator.ProcessSpawnQueue/DespawnChunk, VoxelDeltaProcessor.EmitCaveInDustDecal, Atlas6DirectiveSystem.SlowTick/identity adoption, and AtlasSignalDecoder.SlowTick/pulse decode. False positives in editor-only and teardown code rejected. Microseconds saved: 0 measured, candidate selection only.
@@ -31,3 +31,11 @@ Status: VERIFIED - FOURTH HOT-PATH REGISTRY TRANCHE
 - [x] Task 18 - Verify sky follow tranche | Justification: `git diff --check` passed with LF->CRLF warning only; guarded `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal` succeeded with 0 errors and 0 warnings. Alternative rejected: claiming runtime camera behavior without playmode evidence. Microseconds saved: not measured.
 - [x] Task 19 - Append sky rationale/report | Justification: rationale and LOG entries record fallback semantics, explicit inspector ownership, and no-profiler performance limit. Alternative rejected: chat-only status. Microseconds saved: not measured.
 - [x] Task 20 - Commit/push sky tranche | Justification: commit/push limited to `SkySystemFollowCamera.cs` plus EXTERNAL_FIXER docs. Alternative rejected: staging unrelated dirty workspace edits. Microseconds saved: not measured.
+
+## Continuation Pass 2026-05-23 - Cave AO Player Cache Tranche
+
+- [x] Task 21 - Select clean cave AO defect | Justification: `HectonCaveVoxelAmbientOcclusionController.cs` was clean and had a slow-tick route through `TryResolveViewerReferences()` to `GlobalRegistry.Player` when no viewer camera was assigned. Alternative rejected: `TetherManager`, because it contains unrelated dirty HarpoonTension/Vault edits from another agent. Microseconds saved: 0 discovery only.
+- [x] Task 22 - Patch player context cache | Justification: added cached `IPlayerRuntimeContext` plus `IGlobalRegistryHotSwapListener` handling for `GlobalRegistryServiceSlot.Player`; viewer resolution now uses the cached context. Alternative rejected: searching scene camera hierarchy or mutating viewer ownership from the read path. Microseconds saved: STATIC estimate only: removes 1 registry read per cave AO slow tick while viewer camera resolution is unresolved.
+- [x] Task 23 - Verify cave AO tranche | Justification: `git diff --check` passed with LF->CRLF warning only; guarded `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal` ran at CPU 48 percent with no compiler process and succeeded with 0 errors and 0 warnings. Alternative rejected: profiler/runtime claims without playmode capture. Microseconds saved: not measured.
+- [x] Task 24 - Append cave AO rationale/report | Justification: rationale and LOG entries record owner route, rejected scene-search fallback, scalability tiers, and static-only performance evidence. Alternative rejected: chat-only record. Microseconds saved: not measured.
+- [x] Task 25 - Commit/push cave AO tranche | Justification: commit/push limited to `HectonCaveVoxelAmbientOcclusionController.cs` plus EXTERNAL_FIXER docs. Alternative rejected: staging unrelated dirty workspace edits. Microseconds saved: not measured.

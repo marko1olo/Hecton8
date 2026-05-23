@@ -1,6 +1,6 @@
 # Rationale_EXTERNAL_FIXER
 Date: 2026-05-23
-Status: VERIFIED - FOURTH HOT-PATH REGISTRY TRANCHE
+Status: VERIFIED - FIFTH HOT-PATH REGISTRY TRANCHE
 
 ## Decision 1
 
@@ -73,3 +73,11 @@ Solution: Preserve the explicit inspector atmosphere owner as first priority, ca
 Rejected Alternatives: Writing the fallback into the serialized atmosphereManager field was rejected because explicit scene ownership and runtime fallback should stay distinguishable. Reworking camera discovery was rejected as wider than the verified defect.
 Scalability potential: Low tier avoids registry fallback during sky follow; Middle/High/Ultra preserve identical sea-level truth while keeping the route ready for richer sky rigs.
 Hardware Impact: STATIC estimate only: removes 1 registry read from the sky follow tick path when sea-level lock needs atmosphere fallback. No profiler microsecond claim.
+
+## Decision 10
+
+Problem: HectonCaveVoxelAmbientOcclusionController.SlowTick could call TryResolveViewerReferences and poll GlobalRegistry.Player whenever viewerCamera was unresolved.
+Solution: Cache IPlayerRuntimeContext during cold lifecycle wiring and refresh it through IGlobalRegistryHotSwapListener for the Player slot; viewer resolution reads only the cached player context.
+Rejected Alternatives: Runtime scene searches and ownership mutation from the read path were rejected because they would allocate/search or blur owner responsibility. Editing dirty TetherManager first was rejected because it has unrelated active edits from another agent.
+Scalability potential: Low tier keeps cave AO cadence cheap when viewer binding is missing; Middle keeps the same AO gating; High and Ultra preserve richer cave AO headroom without changing viewer authority.
+Hardware Impact: STATIC estimate only: removes 1 registry read per cave AO slow tick while viewer camera resolution is unresolved. No profiler microsecond claim.
