@@ -1,6 +1,6 @@
 # Rationale_EXTERNAL_FIXER
 Date: 2026-05-23
-Status: VERIFIED - EIGHTEENTH HOT-PATH REGISTRY TRANCHE
+Status: VERIFIED - NINETEENTH HOT-PATH REGISTRY TRANCHE
 
 ## Decision 1
 
@@ -185,3 +185,11 @@ Solution: Add `IGlobalRegistryHotSwapListener`, cache `IPlayerRuntimeContext`, `
 Rejected Alternatives: Keeping runtime scene/registry fallback in `ResolveReferences()` was rejected because it is called by `SlowTick()`. Removing editor preview fallback was rejected because it would break editor-only matrix preview behavior. Adding a shared world reference refactor was rejected as too wide for a dirty workspace.
 Scalability potential: Low tier keeps biome cadence predictable; Middle keeps identical biome/depth/seismic behavior; High and Ultra preserve room for denser biome feedback and dust presentation without adding service-locator polling to slow tick.
 Hardware Impact: STATIC estimate only: removes player, fluid decal, fluid, MapMagic, and atmosphere registry reads from biome slow-tick helper paths. No profiler microsecond claim.
+
+## Decision 24
+
+Problem: `EcosystemHealthDirector` slow-tick infection pressure and zone-budget paths resolved PlayerExploration, FaunaGenetics, and EnvironmentalStrain through `GlobalRegistry`.
+Solution: Cache `PlayerExplorationTracker`, `FaunaGeneticsManager`, and `EnvironmentalStrainManager` during lifecycle wiring, refresh them through `IGlobalRegistryHotSwapListener`, and keep infection pressure plus explored-zone sampling on cached owner services.
+Rejected Alternatives: Polling registry inside `EnsureZoneBudget()` and `ResolveInfectionPressure01()` was rejected because both are slow-tick helper routes. Editing dirty `PDADataLogTab.cs` after the first failed build was rejected because the missing-method errors were resolved by concurrent file state and a repeat build passed.
+Scalability potential: Low tier keeps infection-zone cadence cheap; Middle keeps identical infection-zone behavior; High and Ultra preserve room for richer infected-fauna presentation without adding registry polling to ecosystem slow tick.
+Hardware Impact: STATIC estimate only: removes player-exploration, fauna-genetics, and environmental-strain registry reads from ecosystem slow tick. No profiler microsecond claim.

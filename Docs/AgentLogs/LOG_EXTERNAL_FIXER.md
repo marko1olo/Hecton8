@@ -527,3 +527,33 @@ Verification:
 - `git diff --check` on touched code file: no whitespace errors; Git reported LF->CRLF warning only.
 - Guarded build waited through active external `csc.exe`, `dotnet.exe`, and MSBuild node-reuse windows. Final gate had CPU 8 percent and no compiler/dotnet processes.
 - `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal /p:UseSharedCompilation=false /nr:false`: succeeded, 0 warnings, 0 errors.
+
+## 2026-05-23 Ecosystem Health Runtime Cache Tranche
+
+What was wrong:
+
+- `EcosystemHealthDirector.EnsureZoneBudget()` read `GlobalRegistry.PlayerExploration`.
+- The same zone-budget path read `GlobalRegistry.FaunaGenetics` for deterministic infection-zone seed variation.
+- `ResolveInfectionPressure01()` read `GlobalRegistry.EnvironmentalStrain`.
+
+What was done:
+
+- Added cached `PlayerExplorationTracker`, `FaunaGeneticsManager`, and `EnvironmentalStrainManager` fields.
+- Added `IGlobalRegistryHotSwapListener` handling for PlayerExploration, FaunaGenetics, and EnvironmentalStrain slots.
+- Changed infection pressure and zone-budget sampling to use cached owner services.
+- Left ecosystem-health runtime self-registration and SaveRuntime wiring unchanged.
+
+Cinematic Cheats used:
+
+- Existing gameplay/visual fake preserved: infection zones remain chunk-level pressure markers, not per-organism ecology simulation.
+
+Exact microseconds saved:
+
+- No profiler claim. STATIC_SOURCE estimate only: removes player-exploration, fauna-genetics, and environmental-strain registry reads from ecosystem slow tick.
+
+Verification:
+
+- `git diff --check` on touched code file: no whitespace errors; Git reported LF->CRLF warning only.
+- First guarded build failed on unrelated dirty `PDADataLogTab.cs` missing-method race; the methods were present when inspected, so no UI edit was made.
+- Repeat guarded build ran at CPU 33 percent with no `dotnet/csc` process active. Idle `VBCSCompiler` remained, so shared compilation was disabled and MSBuild node reuse was disabled.
+- `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal /p:UseSharedCompilation=false /nr:false`: succeeded, 0 warnings, 0 errors.

@@ -14,7 +14,7 @@ namespace Hecton8.Ecosystem
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-6230)]
     [AddComponentMenu("Hecton8/Ecosystem/Ecosystem Health Director")]
-    public sealed class EcosystemHealthDirector : MonoBehaviour, ISlowTickable, ISaveable
+    public sealed class EcosystemHealthDirector : MonoBehaviour, ISlowTickable, ISaveable, IGlobalRegistryHotSwapListener
     {
         private const float InfectionActivationDebt = 20f;
         private const float InfectionFullDebt = 140f;
@@ -27,7 +27,11 @@ namespace Hecton8.Ecosystem
         private readonly long[] _exploredChunkBuffer = new long[ExplorationMapDTO.MaxExploredChunks];
         private bool _registeredToTick;
         private bool _serviceRegistered;
+        private bool _hotSwapRegistered;
         private bool _duplicateServiceSuppressed;
+        private PlayerExplorationTracker _playerExploration;
+        private FaunaGeneticsManager _faunaGenetics;
+        private EnvironmentalStrainManager _environmentalStrain;
 
         /// <summary>Active runtime owner while the gameplay scene is loaded.</summary>
         public static EcosystemHealthDirector Instance => GlobalRegistry.EcosystemHealth;
@@ -56,6 +60,8 @@ namespace Hecton8.Ecosystem
             if (_duplicateServiceSuppressed)
                 return;
 
+            CacheRuntimeDependencies();
+            TryRegisterHotSwapListener();
             TryRegisterToTickManager();
             Hecton8.Core.GlobalRegistry.SaveRuntime?.Register(this);
         }
@@ -65,12 +71,16 @@ namespace Hecton8.Ecosystem
             if (_duplicateServiceSuppressed)
                 return;
 
+            CacheRuntimeDependencies();
+            TryRegisterHotSwapListener();
             TryRegisterToTickManager();
         }
 
         private void OnDisable()
         {
             UnregisterFromTickManager();
+            TryUnregisterHotSwapListener();
+            ClearRuntimeDependencies();
             Hecton8.Core.GlobalRegistry.SaveRuntime?.Unregister(this);
             TryUnregisterService();
         }
@@ -78,6 +88,8 @@ namespace Hecton8.Ecosystem
         private void OnDestroy()
         {
             UnregisterFromTickManager();
+            TryUnregisterHotSwapListener();
+            ClearRuntimeDependencies();
             Hecton8.Core.GlobalRegistry.SaveRuntime?.Unregister(this);
             TryUnregisterService();
         }
@@ -175,7 +187,7 @@ namespace Hecton8.Ecosystem
 
         private void EnsureZoneBudget(int targetZoneCount, float infectionPressure)
         {
-            PlayerExplorationTracker tracker = GlobalRegistry.PlayerExploration;
+            PlayerExplorationTracker tracker = _playerExploration;
             if (tracker == null)
                 return;
 
@@ -183,7 +195,7 @@ namespace Hecton8.Ecosystem
             if (exploredCount <= 0)
                 return;
 
-            FaunaGeneticsManager geneticsManager = GlobalRegistry.FaunaGenetics;
+            FaunaGeneticsManager geneticsManager = _faunaGenetics;
             int seed = geneticsManager != null ? geneticsManager.WorldSeed : 0;
             int dayIndex;
             float dayTimeHours;
@@ -239,7 +251,7 @@ namespace Hecton8.Ecosystem
 
         private float ResolveInfectionPressure01()
         {
-            EnvironmentalStrainManager environmentalStrainManager = GlobalRegistry.EnvironmentalStrain;
+            EnvironmentalStrainManager environmentalStrainManager = _environmentalStrain;
             if (environmentalStrainManager == null)
                 return 0f;
 
@@ -266,6 +278,56 @@ namespace Hecton8.Ecosystem
 
             GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
             _registeredToTick = false;
+        }
+
+        private void CacheRuntimeDependencies()
+        {
+            _playerExploration = GlobalRegistry.PlayerExploration;
+            _faunaGenetics = GlobalRegistry.FaunaGenetics;
+            _environmentalStrain = GlobalRegistry.EnvironmentalStrain;
+        }
+
+        private void ClearRuntimeDependencies()
+        {
+            _playerExploration = null;
+            _faunaGenetics = null;
+            _environmentalStrain = null;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.PlayerExplorationRuntime:
+                    _playerExploration = currentService as PlayerExplorationTracker;
+                    break;
+                case GlobalRegistryServiceSlot.FaunaGeneticsRuntime:
+                    _faunaGenetics = currentService as FaunaGeneticsManager;
+                    break;
+                case GlobalRegistryServiceSlot.EnvironmentalStrainRuntime:
+                    _environmentalStrain = currentService as EnvironmentalStrainManager;
+                    break;
+            }
         }
 
         private void TryRegisterService()
