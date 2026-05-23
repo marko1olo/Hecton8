@@ -646,3 +646,25 @@ Exact microseconds saved:
 Verification:
 - `git diff --check -- Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRuntime.cs` passed with LF->CRLF warning only.
 - `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal /p:UseSharedCompilation=false /nr:false` succeeded with 0 warnings and 0 errors.
+
+## 2026-05-23 - Runtime Profiler VRAM Cache And Compile Surface Tranche
+
+What was wrong:
+- `RuntimePerformanceProfiler.UpdateVRAMDiagnostics()` polled `GlobalRegistry.VRAMMonitor` repeatedly during slow-tick diagnostics.
+- The local compile surface had a tracked-project contract gap around `KinematicStateDTO` metadata and dirty physics/fauna namespace breaks from concurrent edits.
+
+What was done:
+- Cached `VRAMMonitor` in `RuntimePerformanceProfiler` and refreshed it through `IGlobalRegistryHotSwapListener`.
+- Added stable Unity `.meta` files for `Assets/_Project/Scripts/Core/Contracts/Physics/KinematicStateContract.cs`.
+- Locally restored/qualified dirty physics/fauna namespace aliases needed for compile verification.
+
+Cinematic cheats used:
+- None. This tranche is diagnostics/service-route hardening and compile-surface hygiene.
+
+Exact microseconds saved:
+- Not measured. STATIC estimate only: removes up to four registry reads per profiler VRAM diagnostic update.
+
+Verification:
+- `git diff --check` on touched paths passed with LF->CRLF warnings only.
+- Guarded build waited through external `Hecton8.Editor.csproj` compiler activity.
+- `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal /p:UseSharedCompilation=false /nr:false` succeeded with 0 warnings and 0 errors.

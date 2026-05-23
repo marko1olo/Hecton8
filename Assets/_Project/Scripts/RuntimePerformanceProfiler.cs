@@ -31,7 +31,7 @@ namespace Hecton8.Dev
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Dev/Runtime Performance Profiler")]
-    public sealed class RuntimePerformanceProfiler : MonoBehaviour, ITickable, IUpdatable, ISlowTickable
+    public sealed class RuntimePerformanceProfiler : MonoBehaviour, ITickable, IUpdatable, ISlowTickable, IGlobalRegistryHotSwapListener
     {
         private const int RecorderCapacity = 1;
         private const int RendererOwnershipAuditRootCapacity = 512;
@@ -200,8 +200,10 @@ namespace Hecton8.Dev
         private ProfilerRecorder _scatterBackendShadowScheduleRecorder;
         private ProfilerRecorder _scatterBackendShadowPumpRecorder;
 
+        private VRAMMonitor _cachedVramMonitor;
         private bool _registeredTick;
         private bool _registeredSlowTick;
+        private bool _registeredHotSwapListener;
         private float _sampleElapsed;
         private float _peakFrameTimeMs;
         private float _peakMainThreadMs;
@@ -434,6 +436,8 @@ namespace Hecton8.Dev
                 return;
 
             SceneManager.sceneLoaded += HandleSceneLoaded;
+            CacheRegistryServicesCold();
+            TryRegisterHotSwapListener();
             RegisterWithTickManager();
 #if UNITY_EDITOR
             RegisterEditorDiagnosticsHooks();
@@ -479,6 +483,7 @@ namespace Hecton8.Dev
 #endif
             StopProfiling();
             SceneManager.sceneLoaded -= HandleSceneLoaded;
+            TryUnregisterHotSwapListener();
 #if UNITY_EDITOR
             if (!_dirtyPlayRetryPending)
                 UnregisterEditorDiagnosticsHooks();
@@ -498,6 +503,7 @@ namespace Hecton8.Dev
 
             StopProfiling();
             SceneManager.sceneLoaded -= HandleSceneLoaded;
+            TryUnregisterHotSwapListener();
 #if UNITY_EDITOR
             UnregisterEditorDiagnosticsHooks();
 #endif
@@ -750,6 +756,39 @@ namespace Hecton8.Dev
                 GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Core);
                 _registeredSlowTick = GlobalRegistry.SlowTickables.Contains(this);
             }
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.VRAMMonitorRuntime)
+                return;
+
+            _cachedVramMonitor = currentService as VRAMMonitor;
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            _cachedVramMonitor = GlobalRegistry.VRAMMonitor;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwapListener || !Application.isPlaying)
+                return;
+
+            _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwapListener)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwapListener = false;
         }
 
         private void UnregisterFromTickManager()
@@ -1262,7 +1301,8 @@ namespace Hecton8.Dev
         /// </summary>
         private void UpdateVRAMDiagnostics()
         {
-            if (Hecton8.Core.GlobalRegistry.VRAMMonitor == null)
+            VRAMMonitor monitor = _cachedVramMonitor;
+            if (monitor == null)
             {
                 _debugLastTextureMB = 0f;
                 _debugLastRenderTextureMB = 0f;
@@ -1272,7 +1312,6 @@ namespace Hecton8.Dev
             }
 
             // Query VRAM breakdown (zero-GC)
-            VRAMMonitor monitor = Hecton8.Core.GlobalRegistry.VRAMMonitor;
             long textureBytes = monitor.TextureMemoryBytes;
             long renderTextureBytes = monitor.RenderTextureMemoryBytes;
             long totalBytes = monitor.TotalVRAMBytes;
@@ -1282,9 +1321,9 @@ namespace Hecton8.Dev
             _debugLastTotalVRAMMB = totalBytes / BytesPerMegabyte;
 
             // Check thresholds
-            bool textureOverBudget = Hecton8.Core.GlobalRegistry.VRAMMonitor.IsTextureMemoryOverBudget;
-            bool rtOverBudget = Hecton8.Core.GlobalRegistry.VRAMMonitor.IsRenderTextureMemoryOverBudget;
-            bool totalOverBudget = Hecton8.Core.GlobalRegistry.VRAMMonitor.IsTotalVRAMOverBudget;
+            bool textureOverBudget = monitor.IsTextureMemoryOverBudget;
+            bool rtOverBudget = monitor.IsRenderTextureMemoryOverBudget;
+            bool totalOverBudget = monitor.IsTotalVRAMOverBudget;
 
             if (textureOverBudget || rtOverBudget || totalOverBudget)
             {

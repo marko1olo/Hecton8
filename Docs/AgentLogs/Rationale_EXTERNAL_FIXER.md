@@ -225,3 +225,19 @@ Solution: Cache `IPlayerRuntimeContext` during cold lifecycle, refresh Player th
 Rejected Alternatives: Keeping the retry-loop registry read was rejected because contextual IK is a fast-tick system. Editing dirty `PlayerKinematicsRuntime.cs`, `TerminalOsRuntime.cs`, or `PersistentWorldRegistry.cs` in the same tranche was rejected to avoid mixing unrelated agent/user edits.
 Scalability potential: Low tier keeps IK viewer resolution cheap; Middle keeps identical contextual IK behavior; High and Ultra preserve headroom for denser contextual hand/foot targets without changing KCC/player truth ownership or job DTO layout.
 Hardware Impact: STATIC estimate only: removes player registry reads from contextual IK viewer-camera retry windows. No profiler microsecond claim.
+
+## Decision 29
+
+Problem: `RuntimePerformanceProfiler.UpdateVRAMDiagnostics()` read `GlobalRegistry.VRAMMonitor` repeatedly inside the slow-tick diagnostics path.
+Solution: Cache `VRAMMonitor` during cold lifecycle wiring and refresh it through `IGlobalRegistryHotSwapListener` for `VRAMMonitorRuntime`; diagnostics read the cached monitor once.
+Rejected Alternatives: Keeping repeated registry reads was rejected by the cold-DI rule. Moving VRAM diagnostics to a new signal lane was rejected because the profiler needs immediate owner counter reads and this local cache removes the hot service-locator dependency without route churn.
+Scalability potential: Low tier keeps diagnostics predictable when profiler tools are enabled on weak hardware; Middle keeps the same budget warnings; High and Ultra preserve richer diagnostics without turning registry lookup into cadence cost.
+Hardware Impact: STATIC estimate only: removes up to four registry reads per profiler VRAM diagnostic update. No profiler microsecond claim.
+
+## Decision 30
+
+Problem: Verification builds hit compile-surface holes from concurrent dirty physics/fauna edits: `KinematicStateDTO` contract existed on disk without stable Unity metadata, generated project visibility missed the SDF squeeze job until local project regeneration/update, and namespace aliases were missing/ambiguous in dirty files.
+Solution: Added stable Unity `.meta` companions for the `Physics/KinematicStateContract` asset, preserved the explicit 64-byte DTO layout, and locally restored/qualified physics/fauna namespaces needed to prove the build.
+Rejected Alternatives: Reverting other agents' dirty files was rejected. Staging whole dirty files was rejected because it would capture unrelated work. Ignoring compile errors was rejected because the user requested real fixing, not audit-only output.
+Scalability potential: Low/Middle/High/Ultra runtime behavior unchanged; this is compile determinism and integration hygiene. The DTO route remains a fixed-layout contract suitable for Burst/vault consumers.
+Hardware Impact: 0 us runtime gain; build unblocked and avoids Unity GUID churn on other machines.
