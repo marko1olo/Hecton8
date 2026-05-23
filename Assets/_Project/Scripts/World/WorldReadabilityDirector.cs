@@ -12,7 +12,7 @@ namespace Hecton8.World
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-4025)]
     [AddComponentMenu("Hecton8/World/World Readability Director")]
-    public sealed class WorldReadabilityDirector : MonoBehaviour, ISlowTickable
+    public sealed class WorldReadabilityDirector : MonoBehaviour, ISlowTickable, IGlobalRegistryHotSwapListener
     {
         internal static WorldReadabilityDirector ActiveRuntimeInstance { get; private set; }
         private const int SeverityInfo = 0;
@@ -76,6 +76,9 @@ namespace Hecton8.World
         private string _pendingMessage;
         private int _pendingSeverity;
         private bool _hasPendingMessage;
+        private bool _hotSwapRegistered;
+        private FirstHourDirector _firstHourDirector;
+        private DepthZoneDirector _cachedDepthZoneDirector;
         private float _nextAutoResolveAttemptTime = float.NegativeInfinity;
         private float _nextNotificationTime;
 
@@ -94,6 +97,8 @@ namespace Hecton8.World
             if (Application.isPlaying)
                 ActiveRuntimeInstance = this;
 
+            CacheRegistryServicesCold();
+            TryRegisterHotSwapListener();
             TryRegister();
 
             ResolveReferences(force: true);
@@ -103,6 +108,7 @@ namespace Hecton8.World
 
         private void Start()
         {
+            CacheRegistryServicesCold();
             TryRegister();
 
             ResolveReferences(force: true);
@@ -114,6 +120,7 @@ namespace Hecton8.World
             if (ReferenceEquals(ActiveRuntimeInstance, this))
                 ActiveRuntimeInstance = null;
 
+            TryUnregisterHotSwapListener();
             TryUnregister();
 
             _hasPendingMessage = false;
@@ -140,9 +147,51 @@ namespace Hecton8.World
             if (!_registeredToTickManager)
                 return;
 
-                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
 
             _registeredToTickManager = false;
+        }
+
+        /// <inheritdoc />
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.FirstHourRuntime:
+                    _firstHourDirector = currentService as FirstHourDirector;
+                    break;
+                case GlobalRegistryServiceSlot.DepthZoneRuntime:
+                    _cachedDepthZoneDirector = currentService as DepthZoneDirector;
+                    if (depthZoneDirector == null)
+                        depthZoneDirector = _cachedDepthZoneDirector;
+                    break;
+            }
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            _firstHourDirector = GlobalRegistry.FirstHour;
+            _cachedDepthZoneDirector = GlobalRegistry.DepthZone;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
 
         internal void ApplyRuntimeDependencies(
@@ -214,7 +263,7 @@ namespace Hecton8.World
 
         private bool CanPublishReadability()
         {
-            FirstHourDirector firstHourDirector = Hecton8.Core.GlobalRegistry.FirstHour;
+            FirstHourDirector firstHourDirector = _firstHourDirector;
             if (firstHourDirector == null)
                 return true;
 
@@ -235,7 +284,7 @@ namespace Hecton8.World
             WorldRuntimeReferenceUtility.TryResolveBiomeMatrixDirector(ref biomeMatrixDirector);
             WorldRuntimeReferenceUtility.TryResolveWorldZoneDirector(ref worldZoneDirector);
             if (depthZoneDirector == null)
-                depthZoneDirector = GlobalRegistry.DepthZone;
+                depthZoneDirector = _cachedDepthZoneDirector;
         }
 
         private void ResetObservedState()

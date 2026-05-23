@@ -265,3 +265,32 @@ Verification:
 - `git diff --check` on touched code file: no whitespace errors; Git reported LF->CRLF warning only.
 - Guarded build ran at CPU 5 percent with no active dotnet/csc/VBCSCompiler process.
 - `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal`: succeeded, 0 warnings, 0 errors.
+
+## 2026-05-23 World Readability Director Cache Tranche
+
+What was wrong:
+
+- `WorldReadabilityDirector.CanPublishReadability()` pulled `GlobalRegistry.FirstHour` from the slow-tick readability gate.
+- `ResolveReferences()` pulled `GlobalRegistry.DepthZone` as a fallback from a helper called by `SlowTick()`.
+- `TryUnregister()` also had a misleading over-indented unregister call in the same file.
+
+What was done:
+
+- Added cached `FirstHourDirector` and cached `DepthZoneDirector` fallback references.
+- Added `IGlobalRegistryHotSwapListener` handling for `FirstHourRuntime` and `DepthZoneRuntime`.
+- Changed the readability gate and depth-zone fallback binding to use cached services.
+- Corrected the unregister indentation while keeping behavior unchanged.
+
+Cinematic Cheats used:
+
+- None. This tranche is global-authority route hardening for a slow-tick world-readability director, not simulation or visual math.
+
+Exact microseconds saved:
+
+- No profiler claim. STATIC_SOURCE estimate only: removes 1 registry read per readability gate check and 1 registry read per depth-zone auto-resolve fallback attempt.
+
+Verification:
+
+- `git diff --check` on touched code file: no whitespace errors; Git reported LF->CRLF warning only.
+- Guarded build ran at CPU 28 percent with no active dotnet/csc/VBCSCompiler process.
+- `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal`: succeeded, 0 warnings, 0 errors.

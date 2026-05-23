@@ -1,6 +1,6 @@
 # Rationale_EXTERNAL_FIXER
 Date: 2026-05-23
-Status: VERIFIED - NINTH HOT-PATH REGISTRY TRANCHE
+Status: VERIFIED - TENTH HOT-PATH REGISTRY TRANCHE
 
 ## Decision 1
 
@@ -113,3 +113,11 @@ Solution: Cache `QuestManager`, `SuitUpgradeManager`, `FirstHourDirector`, and `
 Rejected Alternatives: Leaving `ResolveUnknownZoneLabel` and `ResolveZoneEnterFallback` as static registry helpers was rejected because helper names imply pure reads. A new event lane for quest depth context was rejected for this tranche because the existing immediate owner interface already owns the context update and the narrower fix avoids route-contract expansion.
 Scalability potential: Low tier keeps depth SlowTick predictable on weak CPUs; Middle keeps identical zone/hull behavior; High and Ultra preserve richer localized route cues without turning registry polling into depth-cadence cost.
 Hardware Impact: STATIC estimate only: removes 1 registry read per depth slow tick, 1 registry read per hull-warning check, 1 registry read per first-hour notification gate, and localization registry reads during cache rebuild/fallback. No profiler microsecond claim.
+
+## Decision 15
+
+Problem: WorldReadabilityDirector called `GlobalRegistry.FirstHour` from its readability gate and `GlobalRegistry.DepthZone` from `ResolveReferences()`, a helper called by `SlowTick()`.
+Solution: Cache `FirstHourDirector` and the depth-zone fallback during lifecycle wiring, refresh them through `IGlobalRegistryHotSwapListener`, and preserve explicit inspector references as first priority.
+Rejected Alternatives: Repeated registry fallback inside `ResolveReferences()` was rejected because the method is called from slow tick. Adding a new signal lane was rejected because this is private immediate read of owner state, not a broadcast.
+Scalability potential: Low tier keeps world-readability cadence cheap; Middle keeps the same authored guidance; High and Ultra preserve richer contextual notifications without turning service lookup into cadence cost.
+Hardware Impact: STATIC estimate only: removes 1 registry read per readability gate check and 1 registry read per depth-zone auto-resolve fallback attempt. No profiler microsecond claim.

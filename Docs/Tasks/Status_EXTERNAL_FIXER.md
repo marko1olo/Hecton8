@@ -1,6 +1,6 @@
 # Status EXTERNAL_FIXER
 Date: 2026-05-23
-Status: VERIFIED - NINTH HOT-PATH REGISTRY TRANCHE
+Status: VERIFIED - TENTH HOT-PATH REGISTRY TRANCHE
 
 - [x] Task 1 - Rule intake and mandate selection | Justification: read AGENTS.md, domain map, and mandates for Zero GC, GlobalRegistry/DI, execution phases, signal lanes, performance budgets, ARM64 DTO layout, crash telemetry, and evidence law before touching code. Alternative rejected: broad blind edits. Microseconds saved: 0 audit setup.
 - [x] Task 2 - Find high-confidence source defects | Justification: scoped hot-path scans found direct GlobalRegistry reads in ScavengePopulator.ProcessSpawnQueue/DespawnChunk, VoxelDeltaProcessor.EmitCaveInDustDecal, Atlas6DirectiveSystem.SlowTick/identity adoption, and AtlasSignalDecoder.SlowTick/pulse decode. False positives in editor-only and teardown code rejected. Microseconds saved: 0 measured, candidate selection only.
@@ -71,3 +71,11 @@ Status: VERIFIED - NINTH HOT-PATH REGISTRY TRANCHE
 - [x] Task 43 - Verify depth-zone tranche | Justification: `git diff --check` passed with LF->CRLF warning only; guarded `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal` ran at CPU 5 percent with no compiler process and succeeded with 0 errors and 0 warnings. Alternative rejected: Unity runtime/GC claims without Play Mode and profiler artifacts. Microseconds saved: not measured.
 - [x] Task 44 - Append depth-zone rationale/report | Justification: rationale and LOG entries record slow-tick owner reads, localization-cache rebuild route, rejected polling alternative, scalability tiers, and static-only evidence. Alternative rejected: chat-only record. Microseconds saved: not measured.
 - [x] Task 45 - Commit/push depth-zone tranche | Justification: commit/push limited to `DepthZoneDirector.cs` plus EXTERNAL_FIXER docs. Alternative rejected: staging unrelated dirty workspace edits. Microseconds saved: not measured.
+
+## Continuation Pass 2026-05-23 - World Readability Director Cache Tranche
+
+- [x] Task 46 - Select readability slow-tick defect | Justification: `WorldReadabilityDirector.cs` was clean and had direct runtime reads of `GlobalRegistry.FirstHour` and `GlobalRegistry.DepthZone` from `SlowTick()` helper paths. Alternative rejected: render-feature files with ScriptableRendererFeature lifecycle risk before a smaller runtime-manager patch. Microseconds saved: 0 discovery only.
+- [x] Task 47 - Patch readability service cache | Justification: added cached `FirstHourDirector` and cached depth-zone fallback references plus `IGlobalRegistryHotSwapListener` handling; readability publication gate and depth-zone fallback binding now use cached services. Alternative rejected: live registry polling inside `ResolveReferences()` because the helper is called from `SlowTick()`. Microseconds saved: STATIC estimate only: removes 1 registry read per readability gate check and 1 registry read per depth-zone auto-resolve fallback attempt.
+- [x] Task 48 - Verify readability tranche | Justification: `git diff --check` passed with LF->CRLF warning only; guarded `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal` ran at CPU 28 percent with no compiler process and succeeded with 0 errors and 0 warnings. Alternative rejected: Unity runtime/GC claims without Play Mode and profiler artifacts. Microseconds saved: not measured.
+- [x] Task 49 - Append readability rationale/report | Justification: rationale and LOG entries record slow-tick route, rejected registry polling alternative, scalability tiers, and static-only evidence. Alternative rejected: chat-only record. Microseconds saved: not measured.
+- [x] Task 50 - Commit/push readability tranche | Justification: commit/push limited to `WorldReadabilityDirector.cs` plus EXTERNAL_FIXER docs. Alternative rejected: staging unrelated dirty workspace edits. Microseconds saved: not measured.
