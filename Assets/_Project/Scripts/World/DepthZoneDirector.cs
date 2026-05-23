@@ -288,7 +288,7 @@ namespace Hecton8.World
 
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-105)]
-    public sealed class DepthZoneDirector : MonoBehaviour, ISlowTickable, ILocalizationLanguageChangedListener
+    public sealed class DepthZoneDirector : MonoBehaviour, ISlowTickable, ILocalizationLanguageChangedListener, IGlobalRegistryHotSwapListener
     {
         private const string DepthZoneDataRoot = "Assets/_Project/Data/Lore/DepthZones";
 
@@ -321,8 +321,13 @@ namespace Hecton8.World
         private DepthZoneProfile _currentZone;
         private bool _registered;
         private bool _serviceRegistered;
+        private bool _hotSwapRegistered;
         private bool _hullWarningShown;
         private float _nextZoneNotificationTime;
+        private QuestManager _questManager;
+        private SuitUpgradeManager _suitUpgradeManager;
+        private FirstHourDirector _firstHourDirector;
+        private LocalizationManager _localizationManager;
         // COLD ALLOC: small per-zone message caches avoid string formatting in SlowTick transition path.
         private readonly DepthZoneProfile[] _cachedMessageZones = new DepthZoneProfile[32];
         private readonly string[] _cachedZoneEnterMessages = new string[32];
@@ -354,8 +359,11 @@ namespace Hecton8.World
 
         private void OnEnable()
         {
+            CacheRegistryServicesCold();
             TryRegisterService();
             TryRegister();
+            TryRegisterHotSwapListener();
+            RebuildZoneMessageCache();
 
             LocalizationEvents.RegisterLanguageListener(this);
             ResolveSurvivalSystem();
@@ -363,6 +371,7 @@ namespace Hecton8.World
 
         private void OnDisable()
         {
+            TryUnregisterHotSwapListener();
             TryUnregister();
             TryUnregisterService();
 
@@ -372,6 +381,7 @@ namespace Hecton8.World
 
         private void OnDestroy()
         {
+            TryUnregisterHotSwapListener();
             TryUnregister();
             TryUnregisterService();
         }
@@ -394,7 +404,7 @@ namespace Hecton8.World
             DepthZoneProfile newZone = FindZoneForDepth(depth);
 
             // Obnovlyaem QuestManager posle razresheniya tekuschey authored zone context.
-            QuestManager questManager = GlobalRegistry.Quest;
+            QuestManager questManager = _questManager;
             if (questManager != null)
             {
                 questManager.UpdateDepthContext(
@@ -467,7 +477,7 @@ namespace Hecton8.World
         {
             if (zone == null || _hullWarningShown) return;
 
-            SuitUpgradeManager upgradeManager = Hecton8.Core.GlobalRegistry.SuitUpgrades;
+            SuitUpgradeManager upgradeManager = _suitUpgradeManager;
             if (upgradeManager == null) return;
 
             if (upgradeManager.CurrentHullTier < zone.requiredHullTier)
@@ -482,7 +492,7 @@ namespace Hecton8.World
             if (Time.unscaledTime < _nextZoneNotificationTime)
                 return false;
 
-            FirstHourDirector firstHourDirector = Hecton8.Core.GlobalRegistry.FirstHour;
+            FirstHourDirector firstHourDirector = _firstHourDirector;
             if (firstHourDirector == null)
                 return true;
 
@@ -511,7 +521,7 @@ namespace Hecton8.World
                 return;
 
             int maxCacheCount = Mathf.Min(zones.Length, _cachedMessageZones.Length);
-            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
+            LocalizationManager manager = _localizationManager;
             for (int i = 0; i < maxCacheCount; i++)
             {
                 DepthZoneProfile zone = zones[i];
@@ -563,7 +573,7 @@ namespace Hecton8.World
                     return _cachedHullWarningMessages[i];
             }
 
-            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
+            LocalizationManager manager = _localizationManager;
             return manager != null
                 ? manager.GetFormatted(LocalizationKeys.DEPTH_ZONE_HULL_WARNING, zone != null ? zone.requiredHullTier : 0)
                 : "WARNING: SUIT HULL IS NOT RATED FOR THIS DEPTH.";
@@ -589,17 +599,17 @@ namespace Hecton8.World
             RebuildZoneMessageCache();
         }
 
-        private static string ResolveUnknownZoneLabel()
+        private string ResolveUnknownZoneLabel()
         {
-            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
+            LocalizationManager manager = _localizationManager;
             return manager != null
                 ? manager.GetOrFallback(manager.CurrentLanguage, LocalizationKeys.DEPTH_ZONE_UNKNOWN, "UNKNOWN ZONE")
                 : "UNKNOWN ZONE";
         }
 
-        private static string ResolveZoneEnterFallback(string zoneLabel)
+        private string ResolveZoneEnterFallback(string zoneLabel)
         {
-            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
+            LocalizationManager manager = _localizationManager;
             return manager != null
                 ? manager.GetFormatted(LocalizationKeys.DEPTH_ZONE_ENTER, zoneLabel)
                 : "ZONE: " + zoneLabel;
@@ -672,6 +682,55 @@ namespace Hecton8.World
                 GlobalRegistry.UnregisterDepthZoneRuntime(this);
 
             _serviceRegistered = false;
+        }
+
+        /// <inheritdoc />
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.QuestRuntime:
+                    _questManager = currentService as QuestManager;
+                    break;
+                case GlobalRegistryServiceSlot.SuitUpgradeRuntime:
+                    _suitUpgradeManager = currentService as SuitUpgradeManager;
+                    break;
+                case GlobalRegistryServiceSlot.FirstHourRuntime:
+                    _firstHourDirector = currentService as FirstHourDirector;
+                    break;
+                case GlobalRegistryServiceSlot.LocalizationRuntime:
+                    _localizationManager = currentService as LocalizationManager;
+                    RebuildZoneMessageCache();
+                    break;
+            }
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            _questManager = GlobalRegistry.Quest;
+            _suitUpgradeManager = GlobalRegistry.SuitUpgrades;
+            _firstHourDirector = GlobalRegistry.FirstHour;
+            _localizationManager = GlobalRegistry.Localization;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
 
 #if UNITY_EDITOR

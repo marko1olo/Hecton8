@@ -1,6 +1,6 @@
 # Rationale_EXTERNAL_FIXER
 Date: 2026-05-23
-Status: VERIFIED - EIGHTH HOT-PATH REGISTRY TRANCHE
+Status: VERIFIED - NINTH HOT-PATH REGISTRY TRANCHE
 
 ## Decision 1
 
@@ -105,3 +105,11 @@ Solution: Cache `FirstHourDirector`, `AtlasSignalSystem`, and `LocalizationManag
 Rejected Alternatives: A new event/signal lane for private breadcrumb gating was rejected because the director needs immediate owner-interface queries, not a broadcast. Leaving fallback localization as a static registry helper was rejected because read-looking helpers must not hide registry polling.
 Scalability potential: Low tier keeps route guidance checks cheap and predictable; Middle keeps the same first-hour relay flow; High and Ultra preserve richer relay/Atlas/localized presentation without adding service-locator reads to route decisions.
 Hardware Impact: STATIC estimate only: removes 1 registry read per route contact registration, up to 2 registry reads per breadcrumb gate check, and 1 registry read per fallback localization. No profiler microsecond claim.
+
+## Decision 14
+
+Problem: DepthZoneDirector used `GlobalRegistry` from `SlowTick()` and read-looking localization helpers for quest depth context, suit hull warnings, first-hour notification gating, and localized depth-zone messages.
+Solution: Cache `QuestManager`, `SuitUpgradeManager`, `FirstHourDirector`, and `LocalizationManager` during lifecycle wiring, refresh them through `IGlobalRegistryHotSwapListener`, and rebuild localized message caches when localization runtime changes.
+Rejected Alternatives: Leaving `ResolveUnknownZoneLabel` and `ResolveZoneEnterFallback` as static registry helpers was rejected because helper names imply pure reads. A new event lane for quest depth context was rejected for this tranche because the existing immediate owner interface already owns the context update and the narrower fix avoids route-contract expansion.
+Scalability potential: Low tier keeps depth SlowTick predictable on weak CPUs; Middle keeps identical zone/hull behavior; High and Ultra preserve richer localized route cues without turning registry polling into depth-cadence cost.
+Hardware Impact: STATIC estimate only: removes 1 registry read per depth slow tick, 1 registry read per hull-warning check, 1 registry read per first-hour notification gate, and localization registry reads during cache rebuild/fallback. No profiler microsecond claim.

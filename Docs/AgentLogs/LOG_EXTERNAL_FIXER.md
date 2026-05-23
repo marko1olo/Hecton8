@@ -236,3 +236,32 @@ Verification:
 - `git diff --check` on touched code file: no whitespace errors; Git reported LF->CRLF warning only.
 - Guarded build ran at CPU 19.5 percent with no active dotnet/csc/VBCSCompiler process.
 - `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal`: succeeded, 0 warnings, 0 errors.
+
+## 2026-05-23 Depth Zone Director Cache Tranche
+
+What was wrong:
+
+- `DepthZoneDirector.SlowTick()` pulled `GlobalRegistry.Quest` before every depth-context update.
+- `CheckHullWarning()` pulled `GlobalRegistry.SuitUpgrades` while checking the current zone.
+- `ShouldPublishZoneEnterNotification()` pulled `GlobalRegistry.FirstHour` while gating depth-zone notifications.
+- Depth-zone localization helpers pulled `GlobalRegistry.Localization` from cache rebuild/fallback paths.
+
+What was done:
+
+- Added cached `QuestManager`, `SuitUpgradeManager`, `FirstHourDirector`, and `LocalizationManager` fields.
+- Added `IGlobalRegistryHotSwapListener` handling for `QuestRuntime`, `SuitUpgradeRuntime`, `FirstHourRuntime`, and `LocalizationRuntime`.
+- Changed quest depth context, hull warning, first-hour notification gate, and localized message cache to use cached services.
+
+Cinematic Cheats used:
+
+- None. This tranche is global-authority route hardening for a slow-tick depth-zone director, not simulation or visual math.
+
+Exact microseconds saved:
+
+- No profiler claim. STATIC_SOURCE estimate only: removes 1 registry read per depth slow tick, 1 registry read per hull-warning check, 1 registry read per first-hour notification gate, and localization registry reads during cache rebuild/fallback.
+
+Verification:
+
+- `git diff --check` on touched code file: no whitespace errors; Git reported LF->CRLF warning only.
+- Guarded build ran at CPU 5 percent with no active dotnet/csc/VBCSCompiler process.
+- `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal`: succeeded, 0 warnings, 0 errors.
