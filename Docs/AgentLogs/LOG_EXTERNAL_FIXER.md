@@ -606,3 +606,23 @@ Exact microseconds saved:
 Verification:
 - `git diff --check -- Assets/_Project/Scripts/HectonScanMarkerSystem.cs Assets/_Project/Scripts/WorldProceduralScatterDirectorSamplingPipeline.cs Docs/Tasks/Status_EXTERNAL_FIXER.md` passed with LF->CRLF warnings only.
 - `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal /p:UseSharedCompilation=false /nr:false` succeeded with 0 warnings and 0 errors.
+
+## 2026-05-23 - Item Highlight Player Cache Tranche
+
+What was wrong:
+- `ItemHighlight.Tick()` called `TryResolveHighlightDistanceSq()`, which reached static `TryResolvePlayerAup()` and polled `GlobalRegistry.Player`.
+
+What was done:
+- Added cached player context and movement fields to `ItemHighlight`.
+- Added Player-slot `IGlobalRegistryHotSwapListener` refresh.
+- Routed player AUP resolution through cached owner state.
+
+Cinematic cheats used:
+- No visual/math expansion. Existing squared-distance gating and pulse triangle wave remain unchanged.
+
+Exact microseconds saved:
+- Not measured. STATIC estimate only: removes one player registry read per item highlight tick distance evaluation.
+
+Verification:
+- `git diff --check -- Assets/_Project/Scripts/Gameplay/ItemHighlight.cs` passed with LF->CRLF warning only.
+- `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal /p:UseSharedCompilation=false /nr:false` succeeded with 0 warnings and 0 errors.

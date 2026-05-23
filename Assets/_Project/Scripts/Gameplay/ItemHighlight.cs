@@ -36,7 +36,7 @@ namespace Hecton8.Gameplay
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Renderer))]
-    public sealed class ItemHighlight : MonoBehaviour, ITickable, IUpdatable
+    public sealed class ItemHighlight : MonoBehaviour, ITickable, IUpdatable, IGlobalRegistryHotSwapListener
     {
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  INSPECTOR
@@ -82,7 +82,10 @@ namespace Hecton8.Gameplay
         private float _fullIntensitySqrDist;
         private float _inverseIntensitySqrRange;
         private float _pulsePhase;
+        private IPlayerRuntimeContext _cachedPlayerContext;
+        private HectonPlayerMovement _cachedPlayerMovement;
         private bool _tickRegistered;
+        private bool _hotSwapRegistered;
 
         // â”€â”€ Shader property IDs (cached once) â”€â”€
         private static readonly int HighlightColorId = Shader.PropertyToID("_HighlightColor");
@@ -118,17 +121,21 @@ namespace Hecton8.Gameplay
             // Initialize to no highlight
             _currentIntensity = 0f;
             _targetIntensity = 0f;
+            CachePlayerContextCold();
             ApplyHighlightProperties();
         }
 
         private void OnEnable()
         {
+            CachePlayerContextCold();
+            TryRegisterHotSwapListener();
             TryRegisterTick();
         }
 
         private void OnDisable()
         {
             TryUnregisterTick();
+            TryUnregisterHotSwapListener();
 
             // Reset highlight on disable
             if (targetRenderer != null && _mpb != null)
@@ -138,6 +145,26 @@ namespace Hecton8.Gameplay
                     _mpb.SetFloat(StencilRefId, StencilRefNormal);
                 targetRenderer.SetPropertyBlock(_mpb);
             }
+        }
+
+        private void OnDestroy()
+        {
+            TryUnregisterTick();
+            TryUnregisterHotSwapListener();
+            _cachedPlayerContext = null;
+            _cachedPlayerMovement = null;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Player)
+                return;
+
+            _cachedPlayerContext = currentService as IPlayerRuntimeContext;
+            _cachedPlayerMovement = _cachedPlayerContext != null ? _cachedPlayerContext.PlayerMovement : null;
         }
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -231,6 +258,29 @@ namespace Hecton8.Gameplay
             _tickRegistered = false;
         }
 
+        private void CachePlayerContextCold()
+        {
+            _cachedPlayerContext = GlobalRegistry.Player;
+            _cachedPlayerMovement = _cachedPlayerContext != null ? _cachedPlayerContext.PlayerMovement : null;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
+        }
+
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  PUBLIC API
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -293,9 +343,9 @@ namespace Hecton8.Gameplay
             return false;
         }
 
-        private static bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)
+        private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)
         {
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
             if (playerContext != null &&
                 playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot) &&
                 snapshot.Aup.IsFinite())
@@ -304,7 +354,10 @@ namespace Hecton8.Gameplay
                 return true;
             }
 
-            var playerMovement = playerContext != null ? playerContext.PlayerMovement : null;
+            if (_cachedPlayerMovement == null && playerContext != null)
+                _cachedPlayerMovement = playerContext.PlayerMovement;
+
+            HectonPlayerMovement playerMovement = _cachedPlayerMovement;
             if (playerMovement != null)
             {
                 AbsoluteUniversePosition currentAup = playerMovement.CurrentAup;

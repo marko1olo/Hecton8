@@ -209,3 +209,11 @@ Solution: Add `IGlobalRegistryHotSwapListener` handling to scanner markers and s
 Rejected Alternatives: Keeping a mixed cache/polling route was rejected because player pose resolution is runtime cadence work. Editing dirty `HazardZoneManager.cs` in the same tranche was rejected because its file state belongs to another agent/user and would widen attribution.
 Scalability potential: Low tier keeps scanner marker and scatter sampling routes cheap; Middle keeps identical marker/scatter behavior; High and Ultra preserve headroom for denser HUD markers and richer scatter windows without changing player truth ownership.
 Hardware Impact: STATIC estimate only: removes one player registry read per scanner marker matrix build and one player registry read per scatter sampling begin context. No profiler microsecond claim.
+
+## Decision 27
+
+Problem: `ItemHighlight.Tick()` reached a static `TryResolvePlayerAup()` helper that polled `GlobalRegistry.Player` every distance evaluation for resource highlight gating.
+Solution: Cache `IPlayerRuntimeContext` and `HectonPlayerMovement` during cold lifecycle, refresh the Player slot through `IGlobalRegistryHotSwapListener`, and make the player AUP helper an instance method reading cached owner state.
+Rejected Alternatives: Leaving a registry read behind a `TryResolve*` helper was rejected because read-looking helpers on tick call stacks must not hide service-locator polling. Editing dirty `VRSomaticProvider.cs` or `HazardZoneManager.cs` in the same tranche was rejected to avoid overwriting another agent/user work.
+Scalability potential: Low tier keeps many resource highlight ticks cheap; Middle keeps identical visibility behavior; High and Ultra preserve headroom for denser resource readability and richer shimmer without changing item/player truth ownership.
+Hardware Impact: STATIC estimate only: removes one player registry read per item highlight tick distance evaluation. No profiler microsecond claim.
