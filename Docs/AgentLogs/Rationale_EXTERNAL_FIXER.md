@@ -1,6 +1,6 @@
 # Rationale_EXTERNAL_FIXER
 Date: 2026-05-23
-Status: VERIFIED - SEVENTEENTH HOT-PATH REGISTRY TRANCHE
+Status: VERIFIED - EIGHTEENTH HOT-PATH REGISTRY TRANCHE
 
 ## Decision 1
 
@@ -177,3 +177,11 @@ Solution: Extend the existing cold dependency cache and `IGlobalRegistryHotSwapL
 Rejected Alternatives: Leaving the system half-cached was rejected because mixed cached and hot registry routes make later defects harder to prove. New signals were rejected because these are immediate owner-service reads, not broadcast events. SaveRuntime and runtime self-registration reads were left as lifecycle wiring.
 Scalability potential: Low tier keeps directive cadence and warning UI cheap; Middle keeps identical directive behavior; High and Ultra preserve richer Atlas-6 presentation without adding registry polling to runtime helpers.
 Hardware Impact: STATIC estimate only: removes quest, player, and localization registry reads from Atlas6 runtime helper paths. No profiler microsecond claim.
+
+## Decision 23
+
+Problem: `BiomeMatrixDirector.EvaluateMatrix()` slow-tick helper paths resolved player transform, fluid decals, fluid engine, MapMagic bridge, and atmosphere manager through `GlobalRegistry` or `WorldRuntimeReferenceUtility` runtime fallback.
+Solution: Add `IGlobalRegistryHotSwapListener`, cache `IPlayerRuntimeContext`, `AbyssalFluidDecalManager`, `HectonFluidEngine`, `MapMagicBridge`, and `HectonAtmosphereManager` during lifecycle wiring, and use cached services in depth, seismic dust, and player reference helpers. Runtime player fallback now waits for cached Player context; editor preview scene utility remains editor-only.
+Rejected Alternatives: Keeping runtime scene/registry fallback in `ResolveReferences()` was rejected because it is called by `SlowTick()`. Removing editor preview fallback was rejected because it would break editor-only matrix preview behavior. Adding a shared world reference refactor was rejected as too wide for a dirty workspace.
+Scalability potential: Low tier keeps biome cadence predictable; Middle keeps identical biome/depth/seismic behavior; High and Ultra preserve room for denser biome feedback and dust presentation without adding service-locator polling to slow tick.
+Hardware Impact: STATIC estimate only: removes player, fluid decal, fluid, MapMagic, and atmosphere registry reads from biome slow-tick helper paths. No profiler microsecond claim.

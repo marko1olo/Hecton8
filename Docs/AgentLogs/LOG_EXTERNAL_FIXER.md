@@ -498,3 +498,32 @@ Verification:
 - `git diff --check` on touched code file: no whitespace errors; Git reported LF->CRLF warning only.
 - Guarded build ran at CPU 21 percent with no `dotnet/csc` process active. Idle `VBCSCompiler` remained, so shared compilation was disabled and MSBuild node reuse was disabled.
 - `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal /p:UseSharedCompilation=false /nr:false`: succeeded, 0 warnings, 0 errors.
+
+## 2026-05-23 Biome Matrix Runtime Cache Tranche
+
+What was wrong:
+
+- `BiomeMatrixDirector.ResolveReferences()` could reach `WorldRuntimeReferenceUtility.TryResolvePlayerTransform()` from runtime slow tick when player transform was missing.
+- `TryEmitSeismicDustForBiome()` read `GlobalRegistry.AbyssalFluidDecals` and could refresh `GlobalRegistry.MapMagic`.
+- `ResolveSurfaceLevelY()` refreshed `GlobalRegistry.Fluid`, `GlobalRegistry.MapMagic`, and `GlobalRegistry.Atmosphere` from depth resolution.
+
+What was done:
+
+- Added cached `IPlayerRuntimeContext`, `AbyssalFluidDecalManager`, `HectonFluidEngine`, `MapMagicBridge`, and `HectonAtmosphereManager` fields.
+- Added `IGlobalRegistryHotSwapListener` handling for Player, AbyssalFluidDecal, Fluid, MapMagic, and Atmosphere slots.
+- Changed runtime player/depth/seismic-dust helpers to use cached services.
+- Kept scene-path player fallback only for editor preview under `UNITY_EDITOR`.
+
+Cinematic Cheats used:
+
+- Existing visual cheat preserved: biome entry seismic dust remains a decal event, not a physical sediment simulation.
+
+Exact microseconds saved:
+
+- No profiler claim. STATIC_SOURCE estimate only: removes player, fluid decal, fluid, MapMagic, and atmosphere registry reads from biome slow-tick helper paths.
+
+Verification:
+
+- `git diff --check` on touched code file: no whitespace errors; Git reported LF->CRLF warning only.
+- Guarded build waited through active external `csc.exe`, `dotnet.exe`, and MSBuild node-reuse windows. Final gate had CPU 8 percent and no compiler/dotnet processes.
+- `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal /p:UseSharedCompilation=false /nr:false`: succeeded, 0 warnings, 0 errors.

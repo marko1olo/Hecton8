@@ -611,7 +611,7 @@ namespace Hecton8.Environment
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-4035)]
     [ExecuteAlways]
-    public sealed class BiomeMatrixDirector : MonoBehaviour, ISlowTickable
+    public sealed class BiomeMatrixDirector : MonoBehaviour, ISlowTickable, IGlobalRegistryHotSwapListener
     {
         private const string MissingProfileLabel = "No biome profile";
         private const string NorthCardinalRegionLabel = "North";
@@ -737,10 +737,13 @@ namespace Hecton8.Environment
         [SerializeField] private int _debugLastSeismicDustBiomeId = -1;
 
         private bool _registeredToTickManager;
+        private bool _hotSwapRegistered;
         private HectonBiomeMatrixProfile _currentProfile;
         private int _currentDepthTier = 1;
         private float _currentDepthMeters;
+        private IPlayerRuntimeContext _playerRuntimeContext;
         private HectonPlayerMovement _playerMovement;
+        private AbyssalFluidDecalManager _resolvedFluidDecals;
         private HectonFluidEngine _resolvedFluidEngine;
         private MapMagicBridge _resolvedMapMagicBridge;
         private HectonAtmosphereManager _resolvedAtmosphereManager;
@@ -767,6 +770,8 @@ namespace Hecton8.Environment
             ActiveRuntimeInstance = this;
             if (Application.isPlaying)
                 GlobalRegistry.RegisterBiomeMatrixRuntime(this);
+            CacheRuntimeDependencies();
+            TryRegisterHotSwapListener();
             ResolveReferences();
             EvaluateMatrix(forcePublish: true);
         }
@@ -778,7 +783,9 @@ namespace Hecton8.Environment
                 return;
 #endif
 
+            CacheRuntimeDependencies();
             TryRegister();
+            TryRegisterHotSwapListener();
 #if UNITY_EDITOR
             _editorPreviewDirty = true;
             EditorApplication.update -= EditorUpdate;
@@ -788,6 +795,8 @@ namespace Hecton8.Environment
 
         private void Start()
         {
+            CacheRuntimeDependencies();
+            ResolveReferences();
             TryRegister();
 
             EvaluateMatrix(forcePublish: true);
@@ -796,6 +805,8 @@ namespace Hecton8.Environment
         private void OnDisable()
         {
             TryUnregister();
+            TryUnregisterHotSwapListener();
+            ClearRuntimeDependencies();
 #if UNITY_EDITOR
             EditorApplication.update -= EditorUpdate;
 #endif
@@ -804,6 +815,8 @@ namespace Hecton8.Environment
         private void OnDestroy()
         {
             TryUnregister();
+            TryUnregisterHotSwapListener();
+            ClearRuntimeDependencies();
 #if UNITY_EDITOR
             EditorApplication.update -= EditorUpdate;
 #endif
@@ -889,6 +902,69 @@ namespace Hecton8.Environment
 
             GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
             _registeredToTickManager = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.Player:
+                    _playerRuntimeContext = currentService as IPlayerRuntimeContext;
+                    ApplyPlayerRuntimeContext();
+                    break;
+                case GlobalRegistryServiceSlot.AbyssalFluidDecalRuntime:
+                    _resolvedFluidDecals = currentService as AbyssalFluidDecalManager;
+                    break;
+                case GlobalRegistryServiceSlot.FluidRuntime:
+                    _resolvedFluidEngine = currentService as HectonFluidEngine;
+                    break;
+                case GlobalRegistryServiceSlot.MapMagicRuntime:
+                    _resolvedMapMagicBridge = currentService as MapMagicBridge;
+                    break;
+                case GlobalRegistryServiceSlot.AtmosphereRuntime:
+                    _resolvedAtmosphereManager = currentService as HectonAtmosphereManager;
+                    break;
+            }
+        }
+
+        private void CacheRuntimeDependencies()
+        {
+            _playerRuntimeContext ??= GlobalRegistry.Player;
+            _resolvedFluidDecals ??= GlobalRegistry.AbyssalFluidDecals;
+            _resolvedFluidEngine ??= GlobalRegistry.Fluid;
+            _resolvedMapMagicBridge ??= GlobalRegistry.MapMagic;
+            _resolvedAtmosphereManager ??= Hecton8.Core.GlobalRegistry.Atmosphere;
+            ApplyPlayerRuntimeContext();
+        }
+
+        private void ClearRuntimeDependencies()
+        {
+            _playerRuntimeContext = null;
+            _playerMovement = null;
+            _resolvedFluidDecals = null;
+            _resolvedFluidEngine = null;
+            _resolvedMapMagicBridge = null;
+            _resolvedAtmosphereManager = null;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
 
         public void SlowTick()
@@ -1045,12 +1121,10 @@ namespace Hecton8.Environment
             if (now - _lastSeismicDustTime < Mathf.Max(1f, seismicDustCooldownSeconds))
                 return;
 
-            AbyssalFluidDecalManager fluidDecals = GlobalRegistry.AbyssalFluidDecals;
+            AbyssalFluidDecalManager fluidDecals = _resolvedFluidDecals;
             if (fluidDecals == null)
                 return;
 
-            if (_resolvedMapMagicBridge == null)
-                _resolvedMapMagicBridge = GlobalRegistry.MapMagic;
             if (_resolvedMapMagicBridge == null ||
                 !_resolvedMapMagicBridge.TryGetHeight(evaluationPosition.x, evaluationPosition.z, out float seafloorHeight))
             {
@@ -1093,10 +1167,28 @@ namespace Hecton8.Environment
         private void ResolveReferences()
         {
             if (playerTransform == null)
-                WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform);
+            {
+                ApplyPlayerRuntimeContext();
+#if UNITY_EDITOR
+                if (playerTransform == null && !Application.isPlaying)
+                    WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform);
+#endif
+            }
 
             if (playerTransform != null && _playerMovement == null)
                 playerTransform.TryGetComponent(out _playerMovement);
+        }
+
+        private void ApplyPlayerRuntimeContext()
+        {
+            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
+            if (playerContext == null)
+                return;
+
+            if (playerTransform == null)
+                playerTransform = playerContext.PlayerTransform;
+
+            _playerMovement = playerContext.PlayerMovement;
         }
 
         private Transform ResolveEvaluationTransform()
@@ -1181,33 +1273,16 @@ namespace Hecton8.Environment
                 return _playerMovement.CurrentWaterSurfaceY;
             }
 
-            if (_resolvedFluidEngine == null)
-            {
-                _resolvedFluidEngine = GlobalRegistry.Fluid;
-            }
-
             if (_resolvedFluidEngine != null)
             {
                 _debugDepthSource = "FluidEngine";
                 return _resolvedFluidEngine.WaterLevel;
             }
 
-            if (_resolvedMapMagicBridge == null)
-            {
-                _resolvedMapMagicBridge = GlobalRegistry.MapMagic;
-            }
-
             if (_resolvedMapMagicBridge != null)
             {
                 _debugDepthSource = "MapMagicBridge";
                 return _resolvedMapMagicBridge.WaterSurfaceLevel;
-            }
-
-            if (_resolvedAtmosphereManager == null)
-            {
-                _resolvedAtmosphereManager = Application.isPlaying
-                    ? Hecton8.Core.GlobalRegistry.Atmosphere
-                    : Hecton8.Core.GlobalRegistry.Atmosphere;
             }
 
             if (_resolvedAtmosphereManager != null)
