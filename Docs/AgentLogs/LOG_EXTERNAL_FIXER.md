@@ -668,3 +668,26 @@ Verification:
 - `git diff --check` on touched paths passed with LF->CRLF warnings only.
 - Guarded build waited through external `Hecton8.Editor.csproj` compiler activity.
 - `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal /p:UseSharedCompilation=false /nr:false` succeeded with 0 warnings and 0 errors.
+
+## 2026-05-23 - Scooter Noir RenderGraph Cache Tranche
+
+What was wrong:
+- `HectonScooterVolumetricShaftsFeature.RecordRenderGraph()` resolved underwater visuals and player runtime context through `GlobalRegistry` while building per-camera underwater noir state.
+- Verification also exposed ambiguous `IPhysicsImpactMaterialProvider` declarations in already-dirty item/base files.
+
+What was done:
+- Added cached `HectonUnderwaterVisuals` and `IPlayerRuntimeContext` to the scooter noir render feature lifecycle.
+- Refreshed both cached services through `IGlobalRegistryHotSwapListener`.
+- Passed cached services into the reusable RenderGraph pass and removed hot registry reads from underwater noir blend and thermal haze velocity helpers.
+- Qualified item/base impact-material provider declarations as `Hecton8.Physics.IPhysicsImpactMaterialProvider` to unblock compilation without staging unrelated dirty file changes.
+
+Cinematic cheats used:
+- No simulation expansion. Existing half-res shafts, fixed radial taps, contact-shadow caps, exposure histogram, and thermal haze motion cull stay unchanged.
+
+Exact microseconds saved:
+- Not measured. STATIC estimate only: removes one underwater-visuals registry read and up to two player registry reads per scooter noir RenderGraph state build.
+
+Verification:
+- `git diff --check` on touched paths passed with LF->CRLF warnings only.
+- Guarded build waited through repeated CPU >50% and external `dotnet/csc` windows.
+- `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal /p:UseSharedCompilation=false /nr:false` succeeded with 0 warnings and 0 errors.

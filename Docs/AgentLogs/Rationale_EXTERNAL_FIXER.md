@@ -241,3 +241,19 @@ Solution: Added stable Unity `.meta` companions for the `Physics/KinematicStateC
 Rejected Alternatives: Reverting other agents' dirty files was rejected. Staging whole dirty files was rejected because it would capture unrelated work. Ignoring compile errors was rejected because the user requested real fixing, not audit-only output.
 Scalability potential: Low/Middle/High/Ultra runtime behavior unchanged; this is compile determinism and integration hygiene. The DTO route remains a fixed-layout contract suitable for Burst/vault consumers.
 Hardware Impact: 0 us runtime gain; build unblocked and avoids Unity GUID churn on other machines.
+
+## Decision 31
+
+Problem: `HectonScooterVolumetricShaftsFeature.RecordRenderGraph()` and material-state helpers resolved `GlobalRegistry.UnderwaterVisuals` and `GlobalRegistry.Player` during per-camera underwater noir state build.
+Solution: Cache `HectonUnderwaterVisuals` and `IPlayerRuntimeContext` on the `ScriptableRendererFeature` lifecycle, refresh them through `IGlobalRegistryHotSwapListener`, and pass cached owner references into the reusable RenderGraph pass.
+Rejected Alternatives: Leaving static helper reads was rejected because RenderGraph recording is a VISUAL_SYNC route. A shared visor render-feature base class was rejected because the local patch is smaller and avoids broad churn in a dirty multi-agent workspace.
+Scalability potential: Low tier keeps scooter noir gating cheap on MX350-class hardware; Middle keeps identical underwater blend, depth haze, and exposure behavior; High and Ultra preserve headroom for richer volumetric shafts, contact shadows, and thermal haze without changing shader DTO layout or gameplay truth ownership.
+Hardware Impact: STATIC estimate only: removes one underwater-visuals registry read and up to two player registry reads per scooter noir RenderGraph state build. No profiler microsecond claim.
+
+## Decision 32
+
+Problem: Verification hit a compile wall from ambiguous `IPhysicsImpactMaterialProvider` declarations in already-dirty item/base files after both `Hecton8.Core.Contracts` and `Hecton8.Physics` exposed an interface with that name.
+Solution: Qualify the implementing interface as `Hecton8.Physics.IPhysicsImpactMaterialProvider` in `HectonItem`, `PickupItem`, and `BaseModule`, preserving the derived physics bridge that also satisfies the core contract.
+Rejected Alternatives: Removing either namespace import was rejected because the files use both namespaces. Staging the whole dirty files was rejected because they contain unrelated concurrent work. Switching to the core contract directly was rejected because physics consumers use the bridge interface.
+Scalability potential: Low/Middle/High/Ultra runtime behavior unchanged; this is compile determinism and interface ownership hygiene.
+Hardware Impact: 0 us runtime gain; build unblocked without runtime logic changes.

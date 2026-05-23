@@ -33,7 +33,7 @@ namespace Hecton8.Items
     [RequireComponent(typeof(Collider))]
     [RequireComponent(typeof(InteractionHighlighter))]
     [DisallowMultipleComponent]
-    public class HectonItem : MonoBehaviour, IInteractable, ITickable, IUpdatable, IInventoryPickupSource, IInventoryPickupPreviewSource, IInteractionVulnerabilitySource, IPhysicsImpactMaterialProvider, ILocalizationLanguageChangedListener
+    public class HectonItem : MonoBehaviour, IInteractable, ITickable, IUpdatable, IInventoryPickupSource, IInventoryPickupPreviewSource, IInteractionVulnerabilitySource, Hecton8.Physics.IPhysicsImpactMaterialProvider, ILocalizationLanguageChangedListener
     {
         private const float OverflowScatterImpulse = 2.5f;
         private const float OverflowScatterLiftImpulse = 1.2f;

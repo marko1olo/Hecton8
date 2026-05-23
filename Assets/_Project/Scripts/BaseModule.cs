@@ -96,7 +96,7 @@ namespace Hecton8.Gameplay
     }
 
     [DisallowMultipleComponent]
-    public sealed class BaseModule : MonoBehaviour, IPowerComponent, IContinuousPowerComponent, IPoolable, ISlowTickable, IFixedTickable, IUpdatable, ICuttable, IPhysicsImpactMaterialProvider, IElectromagneticPulseEventListener, Hecton8.Interaction.IKinematicRepairTarget, Hecton8.Interaction.IRepairableModuleTarget, IGlobalRegistryHotSwapListener
+    public sealed class BaseModule : MonoBehaviour, IPowerComponent, IContinuousPowerComponent, IPoolable, ISlowTickable, IFixedTickable, IUpdatable, ICuttable, Hecton8.Physics.IPhysicsImpactMaterialProvider, IElectromagneticPulseEventListener, Hecton8.Interaction.IKinematicRepairTarget, Hecton8.Interaction.IRepairableModuleTarget, IGlobalRegistryHotSwapListener
     {
         // COLD ALLOC: List<BaseModule>[64] - active runtime habitat module registry for cold-path environment scans - owner: BaseModule
         private static readonly List<BaseModule> s_activeModules = new List<BaseModule>(64);

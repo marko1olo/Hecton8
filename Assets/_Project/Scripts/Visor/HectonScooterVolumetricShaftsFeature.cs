@@ -2,6 +2,7 @@ using System;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
+using Hecton8.Environment;
 using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
@@ -21,7 +22,7 @@ namespace Hecton8.Visor
     /// <summary>
     /// Underwater noir post stack: half-res volumetric shafts, procedural lens ghosts, and GPU-side auto exposure.
     /// </summary>
-    public sealed class HectonScooterVolumetricShaftsFeature : ScriptableRendererFeature
+    public sealed class HectonScooterVolumetricShaftsFeature : ScriptableRendererFeature, IGlobalRegistryHotSwapListener
     {
 #if UNITY_EDITOR
         private const string ShaderAssetPath = "Assets/_Project/Art/Shaders/Hecton_ScooterVolumetricShafts.shader";
@@ -225,6 +226,8 @@ namespace Hecton8.Visor
             private int _resolveExposureKernel = -1;
             private uint _buildThreadGroupSizeX = 8;
             private uint _buildThreadGroupSizeY = 8;
+            private HectonUnderwaterVisuals _underwaterVisuals;
+            private IPlayerRuntimeContext _playerContext;
 
             public ShaftsPass()
             {
@@ -237,13 +240,17 @@ namespace Hecton8.Visor
                 Material raymarchMaterial,
                 Material blurHorizontalMaterial,
                 Material blurVerticalMaterial,
-                Material compositeMaterial)
+                Material compositeMaterial,
+                HectonUnderwaterVisuals underwaterVisuals,
+                IPlayerRuntimeContext playerContext)
             {
                 _settings = settings;
                 _raymarchMaterial = raymarchMaterial;
                 _blurHorizontalMaterial = blurHorizontalMaterial;
                 _blurVerticalMaterial = blurVerticalMaterial;
                 _compositeMaterial = compositeMaterial;
+                _underwaterVisuals = underwaterVisuals;
+                _playerContext = playerContext;
                 _autoExposureComputeShader = settings != null ? settings.autoExposureComputeShader : null;
                 renderPassEvent = settings != null ? settings.injectionPoint : RenderPassEvent.BeforeRenderingTransparents;
                 ConfigureInput(ScriptableRenderPassInput.Depth | ScriptableRenderPassInput.Color);
@@ -268,6 +275,8 @@ namespace Hecton8.Visor
                 _lastExposureStateBuffer = null;
                 _shaftGlobalsCache = default;
                 _hasShaftGlobalsCache = false;
+                _underwaterVisuals = null;
+                _playerContext = null;
                 _clearHistogramKernel = -1;
                 _buildHistogramKernel = -1;
                 _resolveExposureKernel = -1;
@@ -435,7 +444,8 @@ namespace Hecton8.Visor
                 MaterialParameterState materialParameters = MaterialParameterState.Resolve(
                     _settings,
                     exposureAvailable,
-                    underwaterNoirBlend);
+                    underwaterNoirBlend,
+                    ResolveThermalHazeIntensity(_settings.thermalHazeIntensity));
                 if (!UpdateShaftGlobals(in materialParameters))
                     return;
 
@@ -683,7 +693,7 @@ namespace Hecton8.Visor
                        left.HasExposureState == right.HasExposureState;
             }
 
-            private static float ResolveThermalHazeIntensity(float configuredIntensity)
+            private float ResolveThermalHazeIntensity(float configuredIntensity)
             {
                 float intensity = math.max(0f, configuredIntensity);
                 if (intensity <= 0f)
@@ -693,13 +703,13 @@ namespace Hecton8.Visor
                 return math.lengthsq(velocity) > ThermalHazeMotionCullSpeedMetersPerSecondSq ? 0f : intensity;
             }
 
-            private static float ResolveUnderwaterNoirBlend()
+            private float ResolveUnderwaterNoirBlend()
             {
-                var underwaterVisuals = GlobalRegistry.UnderwaterVisuals;
+                HectonUnderwaterVisuals underwaterVisuals = _underwaterVisuals;
                 if (underwaterVisuals != null && underwaterVisuals.IsUnderwater)
                     return 1f;
 
-                IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+                IPlayerRuntimeContext playerContext = _playerContext;
                 var playerMovement = playerContext != null ? playerContext.PlayerMovement : null;
                 if (playerMovement == null)
                     return 0f;
@@ -712,9 +722,9 @@ namespace Hecton8.Visor
                     math.max(0.0001f, UnderwaterNoirFullDepth - SurfaceNoirSuppressionDepth));
             }
 
-            private static float3 ResolvePlayerVelocity()
+            private float3 ResolvePlayerVelocity()
             {
-                IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+                IPlayerRuntimeContext playerContext = _playerContext;
                 if (playerContext == null)
                     return default;
 
@@ -876,7 +886,8 @@ namespace Hecton8.Visor
                 internal static MaterialParameterState Resolve(
                     FeatureSettings settings,
                     bool exposureAvailable,
-                    float underwaterNoirBlend)
+                    float underwaterNoirBlend,
+                    float thermalHazeIntensity)
                 {
                     MaterialParameterState state;
                     float underwaterBlend = math.saturate(underwaterNoirBlend);
@@ -911,7 +922,7 @@ namespace Hecton8.Visor
                     state.LensEdgeWeight = math.max(0f, settings.lensEdgeWeight);
                     state.LensDirtIntensity = math.saturate(settings.lensDirtIntensity);
                     state.CondensationIntensity = math.saturate(settings.condensationIntensity) * underwaterBlend;
-                    state.ThermalHazeIntensity = ResolveThermalHazeIntensity(settings.thermalHazeIntensity) * underwaterBlend;
+                    state.ThermalHazeIntensity = math.max(0f, thermalHazeIntensity) * underwaterBlend;
                     state.ThermalHazeScale = math.max(0.001f, settings.thermalHazeScale);
                     state.HasExposureState = exposureAvailable ? 1f : 0f;
                     state._pad0 = 0f;
@@ -944,6 +955,9 @@ namespace Hecton8.Visor
         private Material _blurHorizontalMaterial;
         private Material _blurVerticalMaterial;
         private Material _compositeMaterial;
+        private HectonUnderwaterVisuals _cachedUnderwaterVisuals;
+        private IPlayerRuntimeContext _cachedPlayerContext;
+        private bool _hotSwapRegistered;
 
         /// <inheritdoc />
         public override void Create()
@@ -966,6 +980,9 @@ namespace Hecton8.Visor
             RecreateMaterial(ref _blurHorizontalMaterial, shader);
             RecreateMaterial(ref _blurVerticalMaterial, shader);
             RecreateMaterial(ref _compositeMaterial, shader);
+            TryRegisterHotSwapListener();
+            _cachedUnderwaterVisuals = GlobalRegistry.UnderwaterVisuals;
+            _cachedPlayerContext = GlobalRegistry.Player;
         }
 
         /// <inheritdoc />
@@ -991,7 +1008,14 @@ namespace Hecton8.Visor
             if (HectonDrsRenderFeatureGate.ShouldCullForSurvivalScale())
                 return;
 
-            _pass.Setup(settings, _raymarchMaterial, _blurHorizontalMaterial, _blurVerticalMaterial, _compositeMaterial);
+            _pass.Setup(
+                settings,
+                _raymarchMaterial,
+                _blurHorizontalMaterial,
+                _blurVerticalMaterial,
+                _compositeMaterial,
+                _cachedUnderwaterVisuals,
+                _cachedPlayerContext);
             renderer.EnqueuePass(_pass);
         }
 
@@ -1007,6 +1031,47 @@ namespace Hecton8.Visor
             _blurHorizontalMaterial = null;
             _blurVerticalMaterial = null;
             _compositeMaterial = null;
+            _cachedUnderwaterVisuals = null;
+            _cachedPlayerContext = null;
+            TryUnregisterHotSwapListener();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.UnderwaterVisualsRuntime:
+                    _cachedUnderwaterVisuals = currentService as HectonUnderwaterVisuals;
+                    break;
+                case GlobalRegistryServiceSlot.Player:
+                    _cachedPlayerContext = currentService as IPlayerRuntimeContext;
+                    break;
+            }
+        }
+
+        private void OnDisable()
+        {
+            TryUnregisterHotSwapListener();
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
 
         private static void RecreateMaterial(ref Material material, Shader shader)

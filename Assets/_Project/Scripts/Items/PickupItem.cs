@@ -19,7 +19,7 @@ namespace Hecton8.Interaction
 
     [RequireComponent(typeof(InteractionHighlighter))]
     [RequireComponent(typeof(Collider))]
-    public class PickupItem : MonoBehaviour, IInteractable, ISlowTickable, IFixedTickable, IInventoryPickupSource, IInventoryPickupPreviewSource, IInteractionVulnerabilitySource, IPhysicsImpactMaterialProvider
+    public class PickupItem : MonoBehaviour, IInteractable, ISlowTickable, IFixedTickable, IInventoryPickupSource, IInventoryPickupPreviewSource, IInteractionVulnerabilitySource, Hecton8.Physics.IPhysicsImpactMaterialProvider
     {
         private const int WorldStateRegistryCapacity = 8192;
 
