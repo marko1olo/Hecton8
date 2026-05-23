@@ -31,3 +31,33 @@ Verification:
 - Duplicate records removed from token total: 94.
 - SQLite inspected for table presence/counts only; JSONL remained primary accounting source.
 - Unity compile/import/profiler not run because only documentation changed.
+
+## 2026-05-23 Token Usage Refresh 16:11 Europe/Samara
+
+What was wrong:
+
+- The 15:05 token ledger no longer included current 2026-05-23 Codex session growth and six pushed runtime-fix commits.
+
+What was done:
+
+- Re-scanned 2,624 Codex JSONL files across backup/current roots.
+- Counted 97,306,917,423 total Codex tokens from 2,599 sessions with token usage.
+- Counted first-party C# under `Assets/_Project`: 2,446 files and 1,707,768 physical lines.
+- Counted broader first-party source under `Assets/_Project` plus `Tools`, excluding JSON: 3,047 files and 1,866,086 physical lines.
+- Counted Git history: 744 commits on `HEAD`/`origin/main`, 756 commits across all refs.
+- Updated `Docs/TOKEN_USAGE_LEDGER.md`, `Docs/Reports/2026-05-23_TOKEN_USAGE_CODEBASE_AND_COMMIT_COUNTERS.md`, `Docs/DOC_GOVERNANCE.md`, and `Docs/HECTON8_GLOBAL_ARCHITECTURE_MAP.md`.
+
+Cinematic Cheats used:
+
+- None. Audit/documentation only.
+
+Exact microseconds saved:
+
+- 0 us measured. No runtime code changed.
+
+Verification:
+
+- JSON parse/read errors: 0.
+- Duplicate records removed from token total: 0.
+- `sqlite3` was unavailable in the shell; JSONL final per-session telemetry remained the accounting source.
+- Unity compile/import/profiler not run because only documentation changed.

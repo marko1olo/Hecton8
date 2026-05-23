@@ -1,6 +1,6 @@
 # Rationale_TOKEN_USAGE_AUDIT
-Date: 2026-05-23 15:05 Europe/Samara
-Status: COMPLETE - STATIC LOCAL TELEMETRY
+Date: 2026-05-23 16:11 Europe/Samara
+Status: COMPLETE - STATIC LOCAL TELEMETRY REFRESHED
 
 ## Decision 1
 
@@ -33,3 +33,11 @@ Solution: Report separate scopes and designate first-party C# under `Assets/_Pro
 Rejected Alternatives: Single broad count was rejected because it hides shader/tool/data inclusion. Comment-stripped SLOC was rejected because no project-local SLOC standard exists in current docs.
 Scalability potential: Scope separation prevents future counter drift from being misread as runtime quality.
 Hardware Impact: 0 us runtime gain.
+
+## Decision 5
+
+Problem: Runtime-fix work and active Codex sessions made the 15:05 token/LOC/commit snapshot stale on the same day.
+Solution: Refresh JSONL token totals with shared-read streaming, refresh source-line scopes, and refresh Git commit counters before answering.
+Rejected Alternatives: Reusing the 15:05 snapshot was rejected because current sessions and pushed commits changed. Querying billing/provider data was unavailable, so the evidence boundary remains local filesystem telemetry.
+Scalability potential: Low/Middle/High/Ultra runtime tiers unaffected; this is workflow accounting.
+Hardware Impact: 0 us runtime gain; offline filesystem/Git scan only.

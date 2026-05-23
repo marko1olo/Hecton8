@@ -1,6 +1,6 @@
 # 2026-05-23 Token Usage, Codebase, And Commit Counters
 
-Date: 2026-05-23 15:05 Europe/Samara
+Date: 2026-05-23 16:11 Europe/Samara
 Status: STATIC LOCAL SNAPSHOT
 
 Evidence boundary: filesystem JSONL, filesystem source scan, and local Git metadata only. No Unity import, compile, profiler, player build, or billing-provider API was run.
@@ -11,43 +11,43 @@ Method: parsed backup and current Codex session JSONL files, used final per-sess
 
 | Counter | Value |
 |---|---:|
-| JSONL files scanned | 2,616 |
-| Unique session/path keys | 2,522 |
-| Sessions with token usage | 2,497 |
-| Duplicate records removed | 94 |
-| Total tokens | 87,322,244,824 |
-| Input tokens | 87,014,515,378 |
-| Cached input tokens | 83,515,560,960 |
-| Output tokens | 307,212,646 |
-| Reasoning output tokens | 99,043,826 |
+| JSONL files scanned | 2,624 |
+| Unique session/path keys | 2,624 |
+| Sessions with token usage | 2,599 |
+| Duplicate records removed | 0 |
+| Total tokens | 97,306,917,423 |
+| Input tokens | 96,964,451,083 |
+| Cached input tokens | 93,059,472,512 |
+| Output tokens | 341,949,540 |
+| Reasoning output tokens | 108,625,471 |
 
 Selected-root totals after dedupe:
 
 | Root | Selected sessions with usage | Total tokens |
 |---|---:|---:|
-| `C:\Users\danat\Documents\CodexBackups\codex_cleanup_20260521_194850\old_sessions` | 1,002 | 57,856,335,910 |
-| `C:\Users\danat\.codex\sessions` | 1,494 | 29,465,751,811 |
+| `C:\Users\danat\Documents\CodexBackups\codex_cleanup_20260521_194850\old_sessions` | 1,030 | 58,206,516,468 |
+| `C:\Users\danat\.codex\sessions` | 1,568 | 39,100,243,852 |
 | `C:\Users\danat\.codex\archived_sessions` | 1 | 157,103 |
 
 ## Code Lines
 
 Line count type: physical lines, including blank and comment lines. Generated/Unity transient folders such as `.git`, `Library`, `Temp`, `obj`, `bin`, and build folders were excluded.
 
-Primary answer for "lines of code" in first-party project C#: `1,701,001`.
+Primary answer for "lines of code" in first-party project C#: `1,707,768`.
 
 | Scope | Files | Physical lines |
 |---|---:|---:|
-| C# under `Assets/_Project` | 2,422 | 1,701,001 |
-| C# under `Assets/_Project/Scripts` | 2,345 | 1,676,299 |
-| Non-test C# under `Assets/_Project` | 2,315 | 1,665,540 |
-| First-party source under `Assets/_Project` plus `Tools`, excluding JSON | 3,015 | 1,859,225 |
-| First-party source under `Assets/_Project` plus `Tools`, including JSON | 3,041 | 1,887,259 |
+| C# under `Assets/_Project` | 2,446 | 1,707,768 |
+| C# under `Assets/_Project/Scripts` | 2,369 | 1,683,066 |
+| Non-test C# under `Assets/_Project` | 2,411 | 1,697,582 |
+| First-party source under `Assets/_Project` plus `Tools`, excluding JSON | 3,047 | 1,866,086 |
+| First-party source under `Assets/_Project` plus `Tools`, including JSON | 3,082 | 1,894,639 |
 
 Broad first-party source excluding JSON breaks down as:
 
 | Extension | Files | Physical lines |
 |---|---:|---:|
-| `.cs` | 2,424 | 1,702,895 |
+| `.cs` | 2,456 | 1,709,756 |
 | `.shader` | 148 | 40,377 |
 | `.compute` | 46 | 13,561 |
 | `.hlsl` | 12 | 5,831 |
@@ -62,9 +62,9 @@ These counters were captured before publishing this documentation report. Use li
 | Counter | Value |
 |---|---:|
 | Current branch | `main` |
-| Commits reachable from `HEAD` | 735 |
-| Commits reachable from `origin/main` | 735 |
-| Commits reachable from all refs | 747 |
+| Commits reachable from `HEAD` | 744 |
+| Commits reachable from `origin/main` | 744 |
+| Commits reachable from all refs | 756 |
 
 The all-refs count includes commits outside the current `main` history.
 
