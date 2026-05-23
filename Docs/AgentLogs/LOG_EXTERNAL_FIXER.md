@@ -382,3 +382,31 @@ Verification:
 - `git diff --check` on touched code file: no whitespace errors; Git reported LF->CRLF warning only.
 - Guarded build waited through active compiler and CPU windows; final CPU samples were below 50 percent and no `dotnet/csc` process was active. Idle `VBCSCompiler` remained, so shared compilation was disabled.
 - `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal /p:UseSharedCompilation=false`: succeeded, 0 warnings, 0 errors.
+
+## 2026-05-23 Ending System Cache Tranche
+
+What was wrong:
+
+- `EndingSystem` runtime condition and execution paths still read `GlobalRegistry.AtlasSignal`, `GlobalRegistry.Quest`, `GlobalRegistry.Atlas6Directive`, and `GlobalRegistry.Localization`.
+- The file already had an uncommitted partial cache patch for Quest/Atlas signal; leaving it half-complete would keep mixed registry routes in ending execution.
+
+What was done:
+
+- Completed cached service fields for `AtlasSignalSystem`, `Atlas6DirectiveSystem`, `QuestManager`, and `LocalizationManager`.
+- Added hot-swap handling for Atlas signal, Atlas-6 directive, Quest, and Localization runtime slots.
+- Changed ending condition checks, quest activation/completion, shutdown/amplify execution, and fallback localization to use cached services.
+- Left lifecycle self-registration and save runtime routes unchanged.
+
+Cinematic Cheats used:
+
+- None. This tranche is route hardening for ending authority and presentation text, not physical simulation.
+
+Exact microseconds saved:
+
+- No profiler claim. STATIC_SOURCE estimate only: removes registry reads from ending condition checks, quest activation/completion, Atlas shutdown/amplify execution, and fallback localization.
+
+Verification:
+
+- `git diff --check` on touched code file: no whitespace errors; Git reported LF->CRLF warning only.
+- Guarded build waited while CPU was 98-100 percent with active dotnet/compiler processes, then ran after CPU dropped below 50 percent and no `dotnet/csc` process was active. Idle `VBCSCompiler` remained, so shared compilation was disabled.
+- `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal /p:UseSharedCompilation=false`: succeeded, 0 warnings, 0 errors.

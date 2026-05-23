@@ -1,6 +1,6 @@
 # Status EXTERNAL_FIXER
 Date: 2026-05-23
-Status: VERIFIED - THIRTEENTH HOT-PATH REGISTRY TRANCHE
+Status: VERIFIED - FOURTEENTH HOT-PATH REGISTRY TRANCHE
 
 - [x] Task 1 - Rule intake and mandate selection | Justification: read AGENTS.md, domain map, and mandates for Zero GC, GlobalRegistry/DI, execution phases, signal lanes, performance budgets, ARM64 DTO layout, crash telemetry, and evidence law before touching code. Alternative rejected: broad blind edits. Microseconds saved: 0 audit setup.
 - [x] Task 2 - Find high-confidence source defects | Justification: scoped hot-path scans found direct GlobalRegistry reads in ScavengePopulator.ProcessSpawnQueue/DespawnChunk, VoxelDeltaProcessor.EmitCaveInDustDecal, Atlas6DirectiveSystem.SlowTick/identity adoption, and AtlasSignalDecoder.SlowTick/pulse decode. False positives in editor-only and teardown code rejected. Microseconds saved: 0 measured, candidate selection only.
@@ -103,3 +103,11 @@ Status: VERIFIED - THIRTEENTH HOT-PATH REGISTRY TRANCHE
 - [x] Task 63 - Verify base-pollution tranche | Justification: `git diff --check` passed with LF->CRLF warning only; build waited through active compiler/CPU windows, then `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal /p:UseSharedCompilation=false` succeeded with 0 errors and 0 warnings. Alternative rejected: launching build while CPU was above 50 percent or dotnet/csc were active. Microseconds saved: not measured.
 - [x] Task 64 - Append base-pollution rationale/report | Justification: rationale and LOG entries record slow-tick owner read, rejected signal alternative, scalability tiers, and static-only estimate. Alternative rejected: chat-only record. Microseconds saved: not measured.
 - [x] Task 65 - Commit/push base-pollution tranche | Justification: commit/push limited to `BasePollutionManager.cs` plus EXTERNAL_FIXER docs after exact-file checks. Alternative rejected: staging unrelated dirty workspace edits. Microseconds saved: not measured.
+
+## Continuation Pass 2026-05-23 - Ending System Cache Tranche
+
+- [x] Task 66 - Select ending runtime defect | Justification: `EndingSystem.cs` had a pre-existing dirty partial cache patch and still routed ending checks/execution/localization through `GlobalRegistry.AtlasSignal`, `GlobalRegistry.Quest`, `GlobalRegistry.Atlas6Directive`, and `GlobalRegistry.Localization`. Alternative rejected: reverting the partial patch or mixing it with render-feature work. Microseconds saved: 0 discovery only.
+- [x] Task 67 - Complete ending service cache | Justification: completed cached runtime dependencies for Atlas signal, Atlas-6 directive, quest runtime, and localization; hot-swap handling now refreshes all four services. Alternative rejected: leaving execution helpers as static registry readers. Microseconds saved: STATIC estimate only: removes ending-condition, quest activation/completion, Atlas shutdown/amplify, and localization registry reads from runtime ending paths.
+- [x] Task 68 - Verify ending tranche | Justification: `git diff --check` passed with LF->CRLF warning only; guarded build waited while CPU was 98-100 percent with active dotnet/compiler processes, then `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal /p:UseSharedCompilation=false` succeeded with 0 errors and 0 warnings. Alternative rejected: launching build during active compiler/CPU window. Microseconds saved: not measured.
+- [x] Task 69 - Append ending rationale/report | Justification: rationale and LOG entries record the pre-existing dirty partial patch, completed service cache, rejected revert, scalability tiers, and static-only estimate. Alternative rejected: chat-only record. Microseconds saved: not measured.
+- [x] Task 70 - Commit/push ending tranche | Justification: commit/push limited to `EndingSystem.cs` plus EXTERNAL_FIXER docs after exact-file checks. Alternative rejected: staging unrelated dirty workspace edits. Microseconds saved: not measured.

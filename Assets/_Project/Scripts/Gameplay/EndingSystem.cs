@@ -681,7 +681,7 @@ namespace Hecton8.Gameplay
 
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-50)]
-    public sealed class EndingSystem : MonoBehaviour, ISaveable, ISlowTickable, IAtlasSignalEventListener
+    public sealed class EndingSystem : MonoBehaviour, ISaveable, ISlowTickable, IAtlasSignalEventListener, IGlobalRegistryHotSwapListener
     {
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
@@ -723,7 +723,12 @@ namespace Hecton8.Gameplay
         private bool _endingComplete;
         private bool _registered;
         private bool _serviceRegistered;
+        private bool _hotSwapRegistered;
         private HectonSurvivalSystem _survivalSystem;
+        private AtlasSignalSystem _atlasSignal;
+        private Atlas6DirectiveSystem _atlas6Directive;
+        private QuestManager _questRuntime;
+        private LocalizationManager _localization;
         private uint _endingQuestHash;
 
         // ══════════════════════════════════════════════════════════
@@ -760,10 +765,13 @@ namespace Hecton8.Gameplay
             AtlasSignalEvents.Register(this);
 
             ResolveSurvivalSystem();
+            CacheRuntimeDependencies();
+            TryRegisterHotSwapListener();
         }
 
         private void OnDisable()
         {
+            TryUnregisterHotSwapListener();
             TryUnregister();
             TryUnregisterService();
 
@@ -771,10 +779,12 @@ namespace Hecton8.Gameplay
                 Hecton8.Core.GlobalRegistry.SaveRuntime.Unregister(this);
 
             AtlasSignalEvents.Unregister(this);
+            ClearRuntimeDependencies();
         }
 
         private void OnDestroy()
         {
+            TryUnregisterHotSwapListener();
             TryUnregister();
             TryUnregisterService();
         }
@@ -790,7 +800,7 @@ namespace Hecton8.Gameplay
             float depth = _survivalSystem != null ? _survivalSystem.Depth : 0f;
             if (depth < requiredDepth) return;
 
-            AtlasSignalSystem signal = Hecton8.Core.GlobalRegistry.AtlasSignal;
+            AtlasSignalSystem signal = _atlasSignal;
             if (signal == null) return;
             if (signal.CurrentStrength < requiredSignalStrength) return;
 
@@ -799,7 +809,7 @@ namespace Hecton8.Gameplay
             EndingEvents.RaiseConditionMet();
 
             // Aktiviruem kvest
-            QuestManager qm = GlobalRegistry.Quest;
+            QuestManager qm = _questRuntime;
             if (qm != null && _endingQuestHash != 0u)
                 qm.ActivateQuest(_endingQuestHash);
 
@@ -847,6 +857,61 @@ namespace Hecton8.Gameplay
             Hecton8.Core.GlobalRegistry.RegisterEndingRuntime(this);
             _serviceRegistered = ReferenceEquals(Hecton8.Core.GlobalRegistry.Ending, this);
             return _serviceRegistered;
+        }
+
+        private void CacheRuntimeDependencies()
+        {
+            _atlasSignal = Hecton8.Core.GlobalRegistry.AtlasSignal;
+            _atlas6Directive = Hecton8.Core.GlobalRegistry.Atlas6Directive;
+            _questRuntime = GlobalRegistry.Quest;
+            _localization = Hecton8.Core.GlobalRegistry.Localization;
+        }
+
+        private void ClearRuntimeDependencies()
+        {
+            _atlasSignal = null;
+            _atlas6Directive = null;
+            _questRuntime = null;
+            _localization = null;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.AtlasSignalRuntime:
+                    _atlasSignal = currentService as AtlasSignalSystem;
+                    break;
+                case GlobalRegistryServiceSlot.Atlas6DirectiveRuntime:
+                    _atlas6Directive = currentService as Atlas6DirectiveSystem;
+                    break;
+                case GlobalRegistryServiceSlot.QuestRuntime:
+                    _questRuntime = currentService as QuestManager;
+                    break;
+                case GlobalRegistryServiceSlot.LocalizationRuntime:
+                    _localization = currentService as LocalizationManager;
+                    break;
+            }
         }
 
         private void TryUnregisterService()
@@ -913,7 +978,7 @@ namespace Hecton8.Gameplay
             }
 
             // Zavershaem kvest
-            QuestManager qm = GlobalRegistry.Quest;
+            QuestManager qm = _questRuntime;
             if (qm != null && _endingQuestHash != 0u)
                 qm.CompleteQuest(_endingQuestHash);
 
@@ -926,11 +991,11 @@ namespace Hecton8.Gameplay
         private void ExecuteShutDown()
         {
             // Atlas-6 vyklyuchen. Signal prekraschaetsya.
-            AtlasSignalSystem signal = Hecton8.Core.GlobalRegistry.AtlasSignal;
+            AtlasSignalSystem signal = _atlasSignal;
             if (signal != null)
                 signal.DecodeSignal(_atlasShutdownMessageHash);
 
-            Atlas6DirectiveSystem directive = Hecton8.Core.GlobalRegistry.Atlas6Directive;
+            Atlas6DirectiveSystem directive = _atlas6Directive;
             if (directive != null)
                 directive.RegisterBarterTransaction(); // Korporatsiya poluchila chto hotela
 
@@ -954,7 +1019,7 @@ namespace Hecton8.Gameplay
         private void ExecuteAmplify()
         {
             // Signal usilen — publichnyy. Atlas-6 vyklyuchaetsya sam.
-            AtlasSignalSystem signal = Hecton8.Core.GlobalRegistry.AtlasSignal;
+            AtlasSignalSystem signal = _atlasSignal;
             if (signal != null)
                 signal.DecodeSignal(_atlasAmplifiedPublicMessageHash);
 
@@ -1024,9 +1089,9 @@ namespace Hecton8.Gameplay
             // SlowTick proverit glubinu na sleduyuschem tike
         }
 
-        private static string ResolveLocalized(string key, string fallback)
+        private string ResolveLocalized(string key, string fallback)
         {
-            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
+            LocalizationManager manager = _localization;
             return manager != null ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback) : fallback;
         }
 

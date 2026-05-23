@@ -1,6 +1,6 @@
 # Rationale_EXTERNAL_FIXER
 Date: 2026-05-23
-Status: VERIFIED - THIRTEENTH HOT-PATH REGISTRY TRANCHE
+Status: VERIFIED - FOURTEENTH HOT-PATH REGISTRY TRANCHE
 
 ## Decision 1
 
@@ -145,3 +145,11 @@ Solution: Cache `EnvironmentalStrainManager` during lifecycle wiring, refresh it
 Rejected Alternatives: A new signal lane was rejected because this is immediate owner-service accumulation, not broadcast state. Patching `EndingSystem` in the same commit was rejected to keep compile attribution narrow.
 Scalability potential: Low tier keeps base-pollution cadence cheap; Middle keeps identical strain math; High and Ultra preserve more industrial/ambient presentation headroom without changing pollution truth ownership.
 Hardware Impact: STATIC estimate only: removes 1 registry read per base-pollution slow tick. No profiler microsecond claim.
+
+## Decision 19
+
+Problem: `EndingSystem` ending-condition, execution, quest, Atlas directive, and localization paths still used `GlobalRegistry` at runtime; the file also contained a pre-existing dirty partial cache patch for Quest and Atlas signal.
+Solution: Work with the dirty partial patch and complete the cache route for `AtlasSignalSystem`, `Atlas6DirectiveSystem`, `QuestManager`, and `LocalizationManager`, with `IGlobalRegistryHotSwapListener` updates for all four slots.
+Rejected Alternatives: Reverting the pre-existing dirty partial patch was rejected because it was relevant and would destroy another agent/user edit. A new signal lane was rejected because ending execution needs immediate owner-service commands, not broadcast state. Staging unrelated dirty files was rejected.
+Scalability potential: Low tier keeps ending slow checks cheap; Middle keeps identical quest/Atlas behavior; High and Ultra preserve richer ending presentation without adding service-locator reads to ending execution.
+Hardware Impact: STATIC estimate only: removes registry reads from ending condition checks, quest activation/completion, Atlas shutdown/amplify execution, and fallback localization. No profiler microsecond claim.
