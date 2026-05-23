@@ -11,7 +11,7 @@ namespace Hecton8.Optimization
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-7994)]
-    public sealed class UIRTManager : MonoBehaviour, ISlowTickable
+    public sealed class UIRTManager : MonoBehaviour, ISlowTickable, IGlobalRegistryHotSwapListener
     {
         // ── REGISTRY SLOT ──────────────────────────────────────────────────────────
         
@@ -25,6 +25,8 @@ namespace Hecton8.Optimization
         
         private bool _registeredSlowTick;
         private bool _serviceRegistered;
+        private bool _registeredHotSwapListener;
+        private RenderTextureLifecycleTracker _cachedRenderTextureLifecycle;
         
         // COLD ALLOC: StringBuilder[1024] — zero-GC logging — owner: UIRTManager
         private readonly StringBuilder _reportBuilder = new StringBuilder(1024);
@@ -53,19 +55,34 @@ namespace Hecton8.Optimization
         private void OnEnable()
         {
             if (TryRegisterService())
+            {
+                CacheRegistryServicesCold();
+                TryRegisterHotSwapListener();
                 TryRegister();
+            }
         }
         
         private void OnDisable()
         {
             TryUnregister();
+            TryUnregisterHotSwapListener();
             TryUnregisterService();
         }
         
         private void OnDestroy()
         {
             TryUnregister();
+            TryUnregisterHotSwapListener();
             TryUnregisterService();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.RenderTextureLifecycleRuntime)
+                _cachedRenderTextureLifecycle = currentService as RenderTextureLifecycleTracker;
         }
         
         // ── ISLOWTICABLE ───────────────────────────────────────────────────────────
@@ -84,7 +101,8 @@ namespace Hecton8.Optimization
         
         private void MeasureUIRTMemory()
         {
-            if (Hecton8.Core.GlobalRegistry.RenderTextureLifecycle == null)
+            RenderTextureLifecycleTracker lifecycle = _cachedRenderTextureLifecycle;
+            if (lifecycle == null)
             {
                 UIRTMemoryBytes = 0L;
                 return;
@@ -92,7 +110,7 @@ namespace Hecton8.Optimization
             
             // Query all UI-owned RTs (zero-GC)
             _uiRTs.Clear();
-            Hecton8.Core.GlobalRegistry.RenderTextureLifecycle.GetAllocationsByCategory(RenderTextureOwnerCategory.UI, _uiRTs);
+            lifecycle.GetAllocationsByCategory(RenderTextureOwnerCategory.UI, _uiRTs);
             
             // Calculate total UI RT memory (zero-GC loop)
             long totalBytes = 0L;
@@ -168,6 +186,28 @@ namespace Hecton8.Optimization
 
             GlobalRegistry.UnregisterUIRTRuntime(this);
             _serviceRegistered = false;
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            _cachedRenderTextureLifecycle = GlobalRegistry.RenderTextureLifecycle;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwapListener || !Application.isPlaying)
+                return;
+
+            _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwapListener)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwapListener = false;
         }
         
 #if UNITY_EDITOR || DEVELOPMENT_BUILD

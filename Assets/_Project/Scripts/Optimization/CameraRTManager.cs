@@ -11,7 +11,7 @@ namespace Hecton8.Optimization
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-7996)]
-    public sealed class CameraRTManager : MonoBehaviour, ISlowTickable
+    public sealed class CameraRTManager : MonoBehaviour, ISlowTickable, IGlobalRegistryHotSwapListener
     {
         // ── REGISTRY SLOT ──────────────────────────────────────────────────────────
         
@@ -25,6 +25,8 @@ namespace Hecton8.Optimization
         
         private bool _registeredSlowTick;
         private bool _serviceRegistered;
+        private bool _registeredHotSwapListener;
+        private RenderTextureLifecycleTracker _cachedRenderTextureLifecycle;
         
         // COLD ALLOC: StringBuilder[1024] — zero-GC logging — owner: CameraRTManager
         private readonly StringBuilder _reportBuilder = new StringBuilder(1024);
@@ -53,19 +55,34 @@ namespace Hecton8.Optimization
         private void OnEnable()
         {
             if (TryRegisterService())
+            {
+                CacheRegistryServicesCold();
+                TryRegisterHotSwapListener();
                 TryRegister();
+            }
         }
         
         private void OnDisable()
         {
             TryUnregister();
+            TryUnregisterHotSwapListener();
             TryUnregisterService();
         }
         
         private void OnDestroy()
         {
             TryUnregister();
+            TryUnregisterHotSwapListener();
             TryUnregisterService();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.RenderTextureLifecycleRuntime)
+                _cachedRenderTextureLifecycle = currentService as RenderTextureLifecycleTracker;
         }
         
         // ── ISLOWTICABLE ───────────────────────────────────────────────────────────
@@ -84,7 +101,8 @@ namespace Hecton8.Optimization
         
         private void MeasureCameraRTMemory()
         {
-            if (Hecton8.Core.GlobalRegistry.RenderTextureLifecycle == null)
+            RenderTextureLifecycleTracker lifecycle = _cachedRenderTextureLifecycle;
+            if (lifecycle == null)
             {
                 CameraRTMemoryBytes = 0L;
                 return;
@@ -92,7 +110,7 @@ namespace Hecton8.Optimization
             
             // Query all Camera-owned RTs (zero-GC)
             _cameraRTs.Clear();
-            Hecton8.Core.GlobalRegistry.RenderTextureLifecycle.GetAllocationsByCategory(RenderTextureOwnerCategory.Camera, _cameraRTs);
+            lifecycle.GetAllocationsByCategory(RenderTextureOwnerCategory.Camera, _cameraRTs);
             
             // Calculate total Camera RT memory (zero-GC loop)
             long totalBytes = 0L;
@@ -167,6 +185,28 @@ namespace Hecton8.Optimization
 
             GlobalRegistry.UnregisterCameraRTRuntime(this);
             _serviceRegistered = false;
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            _cachedRenderTextureLifecycle = GlobalRegistry.RenderTextureLifecycle;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwapListener || !Application.isPlaying)
+                return;
+
+            _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwapListener)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwapListener = false;
         }
         
 #if UNITY_EDITOR || DEVELOPMENT_BUILD

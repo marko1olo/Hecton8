@@ -49,3 +49,11 @@ Solution: Verify only touched compile surface with Hecton8.Core.csproj and avoid
 Rejected Alternatives: Full repo cleanup or broad commit staging was rejected because it would capture other agents' changes and violate shared-worktree ownership.
 Scalability potential: Keeps the repair tranche local and mergeable while preserving other domain work in progress.
 Hardware Impact: 0 us runtime gain; process-risk reduction only.
+
+## Decision 7
+
+Problem: CameraRTManager, PostFXRTManager, UIRTManager, and VisorRTManager resolved RenderTextureLifecycle through GlobalRegistry inside SlowTick measurement.
+Solution: Cache RenderTextureLifecycleTracker during cold lifecycle wiring, refresh it through IGlobalRegistryHotSwapListener for RenderTextureLifecycleRuntime, and use the cached reference inside memory measurement.
+Rejected Alternatives: A shared RT-budget base class was rejected because the active dirty workspace makes wide manager refactors higher risk than the repeated local patch. Leaving registry reads in SlowTick was rejected by the GlobalRegistry cold-DI mandate.
+Scalability potential: Low tier keeps RT budget checks cheap and predictable; Middle tier keeps the same accounting; High and Ultra can spend saved cadence budget on higher RT counts or richer visor/camera/post FX without changing truth ownership.
+Hardware Impact: STATIC estimate only: removes 2 registry reads per manager slow tick, 8 reads per complete RT budget sweep across Camera/PostFX/UI/Visor managers. No profiler microsecond claim.

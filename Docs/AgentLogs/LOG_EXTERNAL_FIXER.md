@@ -45,3 +45,30 @@ Verification:
 
 - `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal`: succeeded, 0 warnings, 0 errors.
 - `git diff --check` on touched code files: no whitespace errors; Git reported LF->CRLF warnings only.
+
+## 2026-05-23 RT Budget Registry Cache Tranche
+
+What was wrong:
+
+- `CameraRTManager`, `PostFXRTManager`, `UIRTManager`, and `VisorRTManager` each resolved `GlobalRegistry.RenderTextureLifecycle` twice in `SlowTick()` memory measurement.
+- That violates the cold DI/hot-path mandate: RT budget accounting is a recurring runtime cadence, not bootstrap wiring.
+
+What was done:
+
+- Added cached `RenderTextureLifecycleTracker` fields to all four RT budget managers.
+- Added `IGlobalRegistryHotSwapListener` handling for `GlobalRegistryServiceSlot.RenderTextureLifecycleRuntime`.
+- Moved measurement calls to the cached tracker while preserving existing preallocated `List<RenderTextureAllocationRecord>` buffers and budget behavior.
+
+Cinematic Cheats used:
+
+- None. This tranche is service-route hardening, not physical or visual simulation.
+
+Exact microseconds saved:
+
+- No profiler claim. STATIC_SOURCE estimate only: removed 2 registry reads per RT manager slow tick, 8 registry reads per full Camera/PostFX/UI/Visor budget sweep.
+
+Verification:
+
+- `git diff --check` on touched files: no whitespace errors; Git reported LF->CRLF warnings only.
+- Guarded build: CPU/process gate waited until CPU was 5 percent and no dotnet/csc/VBCSCompiler process was present.
+- `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal`: succeeded, 0 warnings, 0 errors.
