@@ -99,3 +99,28 @@ Verification:
 - `git diff --check` on touched files: no whitespace errors; Git reported LF->CRLF warnings only.
 - Guarded build waited while CPU was 100 percent with active `dotnet`, `csc`, and `VBCSCompiler`, then ran after the compiler window cleared.
 - `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal`: succeeded, 0 warnings, 0 errors.
+
+## 2026-05-23 Sky Follow Atmosphere Cache Tranche
+
+What was wrong:
+
+- `SkySystemFollowCamera.Tick()` can call `ResolveSeaLevelY()`, which could call `ResolveAtmosphereManager()` and use `GlobalRegistry.Atmosphere` as fallback from the per-frame follow path.
+
+What was done:
+
+- Added a cached fallback `HectonAtmosphereManager`.
+- Added `IGlobalRegistryHotSwapListener` handling for `GlobalRegistryServiceSlot.AtmosphereRuntime`.
+- Preserved explicit inspector `atmosphereManager` ownership ahead of the cached fallback.
+
+Cinematic Cheats used:
+
+- None. This tranche is route hardening for a sky-follow helper.
+
+Exact microseconds saved:
+
+- No profiler claim. STATIC_SOURCE estimate only: removes 1 registry read from the sky follow tick path when sea-level lock needs atmosphere fallback.
+
+Verification:
+
+- `git diff --check` on touched files: no whitespace errors; Git reported LF->CRLF warnings only.
+- `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal`: succeeded, 0 warnings, 0 errors.

@@ -11,7 +11,7 @@ using UnityEditor;
 [ExecuteAlways]
 [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Environment/Sky System Follow Camera")]
-public sealed class SkySystemFollowCamera : MonoBehaviour, IUpdatable
+public sealed class SkySystemFollowCamera : MonoBehaviour, IUpdatable, IGlobalRegistryHotSwapListener
 {
     [Tooltip("Explicit runtime camera override. Falls back to the current player camera when empty.")]
     [SerializeField] private Camera runtimeCamera;
@@ -42,6 +42,8 @@ public sealed class SkySystemFollowCamera : MonoBehaviour, IUpdatable
     private Vector3 _editorLastAppliedPosition;
     private bool _editorPositionCached;
     private bool _registeredForTick;
+    private bool _registeredHotSwapListener;
+    private HectonAtmosphereManager _cachedAtmosphereManager;
 
     private void OnEnable()
     {
@@ -51,6 +53,8 @@ public sealed class SkySystemFollowCamera : MonoBehaviour, IUpdatable
 #endif
 
         CaptureFixedYPosition();
+        CacheRegistryServicesCold();
+        TryRegisterHotSwapListener();
         ResolveSeaLevelOwners();
         ApplyFollowImmediately();
         TryRegisterForTick();
@@ -70,9 +74,19 @@ public sealed class SkySystemFollowCamera : MonoBehaviour, IUpdatable
     private void OnDisable()
     {
         TryUnregisterFromTick();
+        TryUnregisterHotSwapListener();
 #if UNITY_EDITOR
         EditorApplication.update -= EditorTick;
 #endif
+    }
+
+    public void OnGlobalRegistryServiceReplaced(
+        GlobalRegistryServiceSlot serviceSlot,
+        object previousService,
+        object currentService)
+    {
+        if (serviceSlot == GlobalRegistryServiceSlot.AtmosphereRuntime)
+            _cachedAtmosphereManager = currentService as HectonAtmosphereManager;
     }
 
     /// <inheritdoc />
@@ -334,8 +348,29 @@ public sealed class SkySystemFollowCamera : MonoBehaviour, IUpdatable
         if (atmosphereManager != null)
             return atmosphereManager;
 
-        atmosphereManager = Hecton8.Core.GlobalRegistry.Atmosphere;
-        return atmosphereManager;
+        return _cachedAtmosphereManager;
+    }
+
+    private void CacheRegistryServicesCold()
+    {
+        _cachedAtmosphereManager = GlobalRegistry.Atmosphere;
+    }
+
+    private void TryRegisterHotSwapListener()
+    {
+        if (_registeredHotSwapListener || !Application.isPlaying)
+            return;
+
+        _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+    }
+
+    private void TryUnregisterHotSwapListener()
+    {
+        if (!_registeredHotSwapListener)
+            return;
+
+        GlobalRegistry.TryUnregisterHotSwapListener(this);
+        _registeredHotSwapListener = false;
     }
 
     private float ResolveSeaLevelY()

@@ -1,6 +1,6 @@
 # Rationale_EXTERNAL_FIXER
 Date: 2026-05-23
-Status: VERIFIED - THIRD HOT-PATH REGISTRY TRANCHE
+Status: VERIFIED - FOURTH HOT-PATH REGISTRY TRANCHE
 
 ## Decision 1
 
@@ -65,3 +65,11 @@ Solution: Cache RenderTextureLifecycleTracker during cold lifecycle wiring and r
 Rejected Alternatives: Removing the fallback was rejected because some platforms lack a usable RenderTexture profiler counter. Touching TetherManager first was rejected because that file already contained unrelated dirty HarpoonTension/Vault work from another agent.
 Scalability potential: Low tier keeps budget pressure checks predictable on devices with weak profiler coverage; Middle/High/Ultra keep identical accounting and can scale RT usage without changing the authority route.
 Hardware Impact: STATIC estimate only: removes 1 registry read per VRAM slow tick when the profiler RT counter is unavailable. No profiler microsecond claim.
+
+## Decision 9
+
+Problem: SkySystemFollowCamera could reach GlobalRegistry.Atmosphere through ResolveSeaLevelY during its per-frame Tick path when no explicit atmosphere owner was assigned.
+Solution: Preserve the explicit inspector atmosphere owner as first priority, cache the registry atmosphere fallback during cold lifecycle wiring, and refresh the fallback through IGlobalRegistryHotSwapListener for AtmosphereRuntime.
+Rejected Alternatives: Writing the fallback into the serialized atmosphereManager field was rejected because explicit scene ownership and runtime fallback should stay distinguishable. Reworking camera discovery was rejected as wider than the verified defect.
+Scalability potential: Low tier avoids registry fallback during sky follow; Middle/High/Ultra preserve identical sea-level truth while keeping the route ready for richer sky rigs.
+Hardware Impact: STATIC estimate only: removes 1 registry read from the sky follow tick path when sea-level lock needs atmosphere fallback. No profiler microsecond claim.

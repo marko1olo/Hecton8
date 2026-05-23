@@ -1,6 +1,6 @@
 # Status EXTERNAL_FIXER
 Date: 2026-05-23
-Status: VERIFIED - THIRD HOT-PATH REGISTRY TRANCHE
+Status: VERIFIED - FOURTH HOT-PATH REGISTRY TRANCHE
 
 - [x] Task 1 - Rule intake and mandate selection | Justification: read AGENTS.md, domain map, and mandates for Zero GC, GlobalRegistry/DI, execution phases, signal lanes, performance budgets, ARM64 DTO layout, crash telemetry, and evidence law before touching code. Alternative rejected: broad blind edits. Microseconds saved: 0 audit setup.
 - [x] Task 2 - Find high-confidence source defects | Justification: scoped hot-path scans found direct GlobalRegistry reads in ScavengePopulator.ProcessSpawnQueue/DespawnChunk, VoxelDeltaProcessor.EmitCaveInDustDecal, Atlas6DirectiveSystem.SlowTick/identity adoption, and AtlasSignalDecoder.SlowTick/pulse decode. False positives in editor-only and teardown code rejected. Microseconds saved: 0 measured, candidate selection only.
@@ -23,3 +23,11 @@ Status: VERIFIED - THIRD HOT-PATH REGISTRY TRANCHE
 - [x] Task 13 - Verify VRAM fallback tranche | Justification: `git diff --check` passed with LF->CRLF warning only; guarded `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal` waited through active `dotnet/csc/VBCSCompiler` work and then succeeded with 0 errors and 0 warnings. Alternative rejected: launching compile while CPU was 100 percent. Microseconds saved: not measured.
 - [x] Task 14 - Append VRAM rationale/report | Justification: rationale and LOG entries record evidence class, rejected alternatives, scalability tiers, and no-profiler performance limits. Alternative rejected: chat-only update. Microseconds saved: not measured.
 - [x] Task 15 - Commit/push VRAM tranche | Justification: commit/push limited to `VRAMMonitor.cs` plus EXTERNAL_FIXER docs. Alternative rejected: staging unrelated dirty workspace edits. Microseconds saved: not measured.
+
+## Continuation Pass 2026-05-23 - Sky Follow Atmosphere Cache Tranche
+
+- [x] Task 16 - Select clean per-frame sky defect | Justification: `SkySystemFollowCamera.cs` was clean and had a `Tick()` route through `ResolveSeaLevelY()` to a `GlobalRegistry.Atmosphere` fallback. Alternative rejected: TetherManager hot polling, because that file contains unrelated dirty edits owned by another agent. Microseconds saved: 0 discovery only.
+- [x] Task 17 - Patch atmosphere fallback cache | Justification: kept explicit inspector `atmosphereManager` authoritative, added a separate cached fallback atmosphere owner, and refreshes it through `IGlobalRegistryHotSwapListener` on `AtmosphereRuntime`. Alternative rejected: writing the fallback into the serialized field from the hot path. Microseconds saved: STATIC estimate only: removes 1 registry read from the sky follow tick path when sea-level lock needs atmosphere fallback.
+- [x] Task 18 - Verify sky follow tranche | Justification: `git diff --check` passed with LF->CRLF warning only; guarded `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal` succeeded with 0 errors and 0 warnings. Alternative rejected: claiming runtime camera behavior without playmode evidence. Microseconds saved: not measured.
+- [x] Task 19 - Append sky rationale/report | Justification: rationale and LOG entries record fallback semantics, explicit inspector ownership, and no-profiler performance limit. Alternative rejected: chat-only status. Microseconds saved: not measured.
+- [x] Task 20 - Commit/push sky tranche | Justification: commit/push limited to `SkySystemFollowCamera.cs` plus EXTERNAL_FIXER docs. Alternative rejected: staging unrelated dirty workspace edits. Microseconds saved: not measured.
