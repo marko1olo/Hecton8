@@ -722,3 +722,17 @@ Cinematic Cheats used: Beacon status remains cached owner reads; no physics simu
 Exact Microseconds saved: STATIC estimate only. Runtime registry-read savings are not claimed for beacon deployment because the defect was stale-service rebinding, not a measured per-frame poll. Compile-surface fixes save 0 us runtime.
 
 Verification: `git diff --check` passed on tracked touched files with LF->CRLF warnings only. Guarded `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal /p:UseSharedCompilation=false /nr:false` exposed unrelated dirty compile-surface errors, then final verification was blocked by persistent external MSBuild node-reuse `dotnet` processes. No Unity Play Mode or profiler proof claimed.
+
+## 2026-05-23 - Split Signal Metadata And Fauna Interface Compile Gate
+
+What was wrong: split `GlobalSignalPayloads.*.cs` source files and `PowerGridSolarContracts.cs` were present as untracked compile-surface assets with missing/incomplete Unity metadata. Guarded Core build then exposed `FaunaBrain` declaring `IFaunaNoiseSignalReceiver` while its `ReceivePlayerNoiseSignal` implementation was `internal`.
+
+What was done: added stable `.meta` companions for the four split signal payload files; normalized the solar contracts `.meta`; changed only `FaunaBrain.ReceivePlayerNoiseSignal(NoiseSystem.PlayerNoiseSignal)` from `internal` to `public`.
+
+Cinematic Cheats used: none. This is compile/import determinism, not simulation or visual work.
+
+Exact Microseconds saved: 0 us runtime. Compile-surface repair only.
+
+Verification: `git diff --check -- Assets/_Project/Scripts/Fauna/FaunaBrain.cs` passed with LF->CRLF warning only. Static scans found no remaining unqualified sanitizer calls except local private helper definitions. Guarded `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal /p:UseSharedCompilation=false /nr:false` succeeded with 0 errors and 4 pre-existing CS0649 warnings in `HectonCombatRuntime_ArmorPenetration.cs`.
+
+Commit boundary: staged subset is limited to the exact `FaunaBrain.ReceivePlayerNoiseSignal` accessibility hunk and EXTERNAL_FIXER docs. Untracked split-signal and solar source surfaces remain unstaged because they belong to concurrent agent work.

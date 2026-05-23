@@ -289,3 +289,35 @@ Solution: Add a local generated-project compile include for verification and tre
 Rejected Alternatives: Duplicating approximation functions into power files was rejected because one math owner is correct. Committing generated `Hecton8.Core.csproj` was rejected because it is local/generated and not tracked.
 Scalability potential: Preserves continuous `GlobalQualityWeight` math path from minimum survival to visual overkill; avoids binary quality tiers.
 Hardware Impact: 0 us direct runtime gain from visibility; compile route enables existing Math LOD approximations.
+
+## Decision 37
+
+Problem: Split signal payload source files and solar power contracts existed as untracked compile-surface assets with incomplete or missing Unity metadata, making reproducible import and generated project membership unstable.
+Solution: Add stable `.meta` files for the four split signal payload sources and normalize the solar contracts `.meta` to a full MonoImporter block before staging candidates.
+Rejected Alternatives: Letting Unity regenerate GUIDs later was rejected because it makes cross-agent references nondeterministic. Staging generated `Hecton8.Core.csproj` was rejected because the file is local/generated.
+Scalability potential: Low/Middle/High/Ultra runtime behavior unchanged; this is source ownership and import determinism.
+Hardware Impact: 0 us runtime gain; prevents import churn and missing-source compile failures.
+
+## Decision 38
+
+Problem: `FaunaBrain` implemented `IFaunaNoiseSignalReceiver`, but `ReceivePlayerNoiseSignal(NoiseSystem.PlayerNoiseSignal)` was `internal`, so the public interface contract could not compile.
+Solution: Change only the method accessibility to `public`, leaving the noise handling logic, DTO route, and dirty surrounding fauna edits unchanged.
+Rejected Alternatives: Removing the interface was rejected because other dirty fauna work clearly moved toward decoupled signal receiver contracts. Staging the whole dirty `FaunaBrain.cs` file was rejected because it contains unrelated concurrent work.
+Scalability potential: Low/Middle/High/Ultra runtime behavior unchanged; receiver contract becomes visible to the decoupled fauna noise route.
+Hardware Impact: 0 us runtime gain; compile gate repair only.
+
+## Decision 39
+
+Problem: Verification was blocked for repeated windows by sustained CPU pressure and external compiler/editor processes; a guarded build would have violated the documented CPU/process gate.
+Solution: Wait for CPU <=50% and no active `dotnet/csc/MSBuild`, then run `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal /p:UseSharedCompilation=false /nr:false`; build succeeded with 0 errors and 4 pre-existing CS0649 armor-penetration warnings.
+Rejected Alternatives: Killing other agents' processes was rejected. Running the build during CPU >50% was rejected by local protocol. Reporting success before the build was rejected.
+Scalability potential: Process integrity only; avoids starving concurrent agents and corrupting compile attribution.
+Hardware Impact: 0 us runtime gain; protects verification fidelity.
+
+## Decision 40
+
+Problem: The working tree contains thousands of concurrent-agent changes, including untracked split-signal and solar source files; broad staging would capture work outside this agent's ownership.
+Solution: Stage only the exact `FaunaBrain.ReceivePlayerNoiseSignal` accessibility hunk plus EXTERNAL_FIXER documentation for commit/push, leaving broad untracked agent source surfaces unstaged.
+Rejected Alternatives: `git add .` was rejected. Staging the whole dirty `FaunaBrain.cs` file was rejected. Committing untracked solar/signal systems without ownership was rejected despite local build visibility.
+Scalability potential: Process integrity only; keeps compile fix mergeable without stealing ownership from active agents.
+Hardware Impact: 0 us runtime gain; source-control risk reduction only.

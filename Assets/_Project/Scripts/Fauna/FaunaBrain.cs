@@ -5033,7 +5033,7 @@ namespace Hecton8.AI
         // ══════════════════════════════════════════════════════════
         //  PUBLIC API
         // ══════════════════════════════════════════════════════════
-        internal void ReceivePlayerNoiseSignal(NoiseSystem.PlayerNoiseSignal signal)
+        public void ReceivePlayerNoiseSignal(NoiseSystem.PlayerNoiseSignal signal)
         {
             if (_isDead || !isActiveAndEnabled)
                 return;
