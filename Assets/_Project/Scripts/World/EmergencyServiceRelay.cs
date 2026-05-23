@@ -21,7 +21,7 @@ namespace Hecton8.World
     [RequireComponent(typeof(Collider))]
     [RequireComponent(typeof(FieldTargetDescriptor))]
     [AddComponentMenu("Hecton8/World/Emergency Service Relay")]
-    public sealed class EmergencyServiceRelay : MonoBehaviour, IInteractable
+    public sealed class EmergencyServiceRelay : MonoBehaviour, IInteractable, IGlobalRegistryHotSwapListener
     {
         [Serializable]
         public struct RewardEntry
@@ -118,6 +118,11 @@ namespace Hecton8.World
         private uint _chainHash;
         private AbsoluteUniversePosition _cachedRelayAup;
         private bool _hasCachedRelayAup;
+        private HectonNarrativeDirector _cachedNarrativeDirector;
+        private AudioLogSystem _cachedAudioLogSystem;
+        private IPlayerRuntimeContext _cachedPlayerContext;
+        private LocalizationManager _cachedLocalization;
+        private bool _registeredHotSwapListener;
 
         /// <summary>Unique discovery ID for this relay.</summary>
         public string RelayId => relayId;
@@ -173,7 +178,7 @@ namespace Hecton8.World
             get
             {
                 EnsureCachedRuntimeIdentity();
-                HectonNarrativeDirector narrativeDirector = GlobalRegistry.NarrativeDirector;
+                HectonNarrativeDirector narrativeDirector = _cachedNarrativeDirector;
                 return narrativeDirector != null && _relayHash != 0u && narrativeDirector.HasDiscovery(_relayHash);
             }
         }
@@ -196,6 +201,8 @@ namespace Hecton8.World
             if (_cachedTransform == null)
                 _cachedTransform = transform;
 
+            CacheRegistryServicesCold();
+            TryRegisterHotSwapListener();
             RefreshCachedRuntimeIdentity();
             TryResolveComponents();
             ApplyDescriptorSemantics();
@@ -211,6 +218,8 @@ namespace Hecton8.World
 
         private void OnDisable()
         {
+            TryUnregisterHotSwapListener();
+
             if (s_ActiveRelays.Remove(this))
                 MarkRegistryDirty();
 
@@ -222,6 +231,8 @@ namespace Hecton8.World
 
         private void OnDestroy()
         {
+            TryUnregisterHotSwapListener();
+
             if (s_ActiveRelays.Remove(this))
                 MarkRegistryDirty();
         }
@@ -266,8 +277,9 @@ namespace Hecton8.World
             if (!string.IsNullOrWhiteSpace(resolvedLoreMessage))
                 NotificationEvents.PushInfo(resolvedLoreMessage);
 
-            if (linkedAudioLog != null && Hecton8.Core.GlobalRegistry.AudioLogs != null)
-                Hecton8.Core.GlobalRegistry.AudioLogs.PlayLog(linkedAudioLog);
+            AudioLogSystem audioLogSystem = _cachedAudioLogSystem;
+            if (linkedAudioLog != null && audioLogSystem != null)
+                audioLogSystem.PlayLog(linkedAudioLog);
 
             TryGrantRewards(interactor);
             EmergencyServiceRelayEvents.RaiseRelayActivated(this, firstActivation);
@@ -378,6 +390,57 @@ namespace Hecton8.World
             }
         }
 
+        /// <inheritdoc />
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.NarrativeDirectorRuntime:
+                    _cachedNarrativeDirector = currentService as HectonNarrativeDirector;
+                    RebuildInteractText();
+                    break;
+                case GlobalRegistryServiceSlot.AudioLogRuntime:
+                    _cachedAudioLogSystem = currentService as AudioLogSystem;
+                    break;
+                case GlobalRegistryServiceSlot.Player:
+                    _cachedPlayerContext = currentService as IPlayerRuntimeContext;
+                    break;
+                case GlobalRegistryServiceSlot.LocalizationRuntime:
+                    _cachedLocalization = currentService as LocalizationManager;
+                    ApplyDescriptorSemantics();
+                    RebuildInteractText();
+                    break;
+            }
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            _cachedNarrativeDirector = GlobalRegistry.NarrativeDirector;
+            _cachedAudioLogSystem = GlobalRegistry.AudioLogs;
+            _cachedPlayerContext = GlobalRegistry.Player;
+            _cachedLocalization = GlobalRegistry.Localization;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwapListener || !Application.isPlaying)
+                return;
+
+            _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwapListener)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwapListener = false;
+        }
+
         private void TryResolveComponents()
         {
             if (_descriptor == null)
@@ -453,10 +516,10 @@ namespace Hecton8.World
             return ResolveLocalized(LocalizationKeys.RELAY_REWARD_EMPTY, RewardEmptyFallback);
         }
 
-        private static bool TryResolveInventory(Transform interactor, out PlayerInventory inventory)
+        private bool TryResolveInventory(Transform interactor, out PlayerInventory inventory)
         {
             inventory = null;
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
 
             if (interactor != null)
                 inventory = interactor.GetComponent<PlayerInventory>();
@@ -477,16 +540,16 @@ namespace Hecton8.World
             return inventory != null;
         }
 
-        private static string FallbackOrLocalized(string value, string key, string fallback)
+        private string FallbackOrLocalized(string value, string key, string fallback)
         {
             return string.IsNullOrWhiteSpace(value)
                 ? ResolveLocalized(key, fallback)
                 : value;
         }
 
-        private static string ResolveLocalized(string key, string fallback)
+        private string ResolveLocalized(string key, string fallback)
         {
-            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
+            LocalizationManager manager = _cachedLocalization;
             return manager != null
                 ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback)
                 : fallback;
@@ -539,6 +602,7 @@ namespace Hecton8.World
             }
 
             TryResolveComponents();
+            CacheRegistryServicesCold();
             ApplyDescriptorSemantics();
             RefreshCachedRuntimeIdentity();
             RebuildInteractText();

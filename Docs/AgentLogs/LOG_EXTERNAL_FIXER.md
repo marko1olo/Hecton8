@@ -179,3 +179,32 @@ Verification:
 - `git diff --check` on touched code file: no whitespace errors; Git reported LF->CRLF warning only.
 - Guarded build waited while CPU was 100 percent with active dotnet/csc/VBCSCompiler processes, then ran after the compiler window cleared.
 - `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal`: succeeded, 0 warnings, 0 errors.
+
+## 2026-05-23 Emergency Relay Runtime Cache Tranche
+
+What was wrong:
+
+- `EmergencyServiceRelay.IsDiscovered` pulled `GlobalRegistry.NarrativeDirector` from a read property.
+- `EmergencyServiceRelay.Interact()` checked `GlobalRegistry.AudioLogs` twice before linked-log playback.
+- `TryResolveInventory()` pulled `GlobalRegistry.Player` while granting relay rewards.
+- `ResolveLocalized()` pulled `GlobalRegistry.Localization` from a read-looking helper used by relay labels, descriptors, interaction text, and reward warnings.
+
+What was done:
+
+- Added cached `HectonNarrativeDirector`, `AudioLogSystem`, `IPlayerRuntimeContext`, and `LocalizationManager` fields.
+- Added `IGlobalRegistryHotSwapListener` handling for `NarrativeDirectorRuntime`, `AudioLogRuntime`, `Player`, and `LocalizationRuntime`.
+- Converted relay discovery, linked-log playback, reward inventory fallback, and localization fallback to cached service references.
+
+Cinematic Cheats used:
+
+- None. This tranche is global-authority route hardening for interaction/read helpers, not physical simulation or presentation math.
+
+Exact microseconds saved:
+
+- No profiler claim. STATIC_SOURCE estimate only: removes up to 1 registry read per discovery read, 2 registry reads per linked-log relay activation, 1 registry read per reward inventory fallback, and 1 registry read per localized fallback call.
+
+Verification:
+
+- `git diff --check` on touched code file: no whitespace errors; Git reported LF->CRLF warning only.
+- Guarded build ran at CPU 3 percent with no active dotnet/csc/VBCSCompiler process.
+- `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal`: succeeded, 0 warnings, 0 errors.

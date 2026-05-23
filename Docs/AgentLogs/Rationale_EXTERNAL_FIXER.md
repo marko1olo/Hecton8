@@ -1,6 +1,6 @@
 # Rationale_EXTERNAL_FIXER
 Date: 2026-05-23
-Status: VERIFIED - SIXTH HOT-PATH REGISTRY TRANCHE
+Status: VERIFIED - SEVENTH HOT-PATH REGISTRY TRANCHE
 
 ## Decision 1
 
@@ -89,3 +89,11 @@ Solution: Cache IAudioService, SpatialAudioManager, and IPlayerRuntimeContext du
 Rejected Alternatives: A new SignalBus lane for private immediate audio playback was rejected because the caller needs direct command/query behavior, not a broadcast. Static AudioLogs self-registration checks were left as lifecycle authority checks, not playback cadence work.
 Scalability potential: Low tier keeps encrypted preview and interference routing cheap; Middle keeps current audio behavior; High and Ultra can preserve richer spatial/bitcrush narration without registry polling in the route.
 Hardware Impact: STATIC estimate only: removes up to 3 registry reads per encrypted preview playback and up to 2 registry reads per full log playback with interference. No profiler microsecond claim.
+
+## Decision 12
+
+Problem: EmergencyServiceRelay hid `GlobalRegistry` reads inside discovery, localization, audio-log playback, and inventory resolution helpers used by interaction/UI routes.
+Solution: Cache `HectonNarrativeDirector`, `AudioLogSystem`, `IPlayerRuntimeContext`, and `LocalizationManager` during cold lifecycle wiring, refresh them through `IGlobalRegistryHotSwapListener`, and keep relay interaction queries on cached owner interfaces.
+Rejected Alternatives: A new `SignalBus<T>` lane for linked-log playback and reward inventory resolution was rejected because these are private immediate owner-interface queries, not broadcast state changes. Leaving `ResolveLocalized` and `TryResolveInventory` as static registry readers was rejected because read-looking helpers should not hide service-locator polling.
+Scalability potential: Low tier keeps relay hover/interaction and reward fallback predictable; Middle keeps the same authored relay behavior; High and Ultra preserve richer linked-log/localized relay presentation without adding registry polling to the interaction route.
+Hardware Impact: STATIC estimate only: removes up to 1 registry read per discovery read, 2 registry reads per linked-log relay activation, 1 registry read per reward inventory fallback, and 1 registry read per localized fallback call. No profiler microsecond claim.
