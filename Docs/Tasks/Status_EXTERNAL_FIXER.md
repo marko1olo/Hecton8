@@ -1,6 +1,6 @@
 # Status EXTERNAL_FIXER
 Date: 2026-05-23
-Status: VERIFIED - SIXTEENTH HOT-PATH REGISTRY TRANCHE
+Status: VERIFIED - SEVENTEENTH HOT-PATH REGISTRY TRANCHE
 
 - [x] Task 1 - Rule intake and mandate selection | Justification: read AGENTS.md, domain map, and mandates for Zero GC, GlobalRegistry/DI, execution phases, signal lanes, performance budgets, ARM64 DTO layout, crash telemetry, and evidence law before touching code. Alternative rejected: broad blind edits. Microseconds saved: 0 audit setup.
 - [x] Task 2 - Find high-confidence source defects | Justification: scoped hot-path scans found direct GlobalRegistry reads in ScavengePopulator.ProcessSpawnQueue/DespawnChunk, VoxelDeltaProcessor.EmitCaveInDustDecal, Atlas6DirectiveSystem.SlowTick/identity adoption, and AtlasSignalDecoder.SlowTick/pulse decode. False positives in editor-only and teardown code rejected. Microseconds saved: 0 measured, candidate selection only.
@@ -127,3 +127,11 @@ Status: VERIFIED - SIXTEENTH HOT-PATH REGISTRY TRANCHE
 - [x] Task 78 - Verify Atlas signal tranche | Justification: `git diff --check` passed with LF->CRLF warning only; guarded build waited for active `csc/dotnet` and idle MSBuild node-reuse workers, then `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal /p:UseSharedCompilation=false /nr:false` succeeded with 0 errors and 0 warnings. Alternative rejected: launching build while csc/dotnet workers were active. Microseconds saved: not measured.
 - [x] Task 79 - Append Atlas signal rationale/report | Justification: rationale and LOG entries record slow-tick owner reads, rejected polling helper route, scalability tiers, and static-only evidence. Alternative rejected: chat-only record. Microseconds saved: not measured.
 - [x] Task 80 - Commit/push Atlas signal tranche | Justification: commit/push limited to `AtlasSignalSystem.cs` plus EXTERNAL_FIXER docs after exact-file checks. Alternative rejected: staging unrelated dirty workspace edits. Microseconds saved: not measured.
+
+## Continuation Pass 2026-05-23 - Atlas6 Directive Runtime Cache Tranche
+
+- [x] Task 81 - Select Atlas6 directive cache defect | Justification: `Atlas6DirectiveSystem.cs` was clean and already had hot-swap for Atlas/FirstHour, but scarcity directives, player AUP resolution, and localization still read Quest, Player, and Localization from `GlobalRegistry`. Alternative rejected: lifecycle self-registration reads. Microseconds saved: 0 discovery only.
+- [x] Task 82 - Patch Atlas6 directive service caches | Justification: extended existing cold dependency cache and hot-swap handling with cached `QuestManager`, `IPlayerRuntimeContext`, and `LocalizationManager`; scarcity notifications, player resolution, and localized status messages now use cached services. Alternative rejected: leaving mixed cache/registry routes in the same system. Microseconds saved: STATIC estimate only: removes quest, player, and localization registry reads from Atlas6 runtime helper paths.
+- [x] Task 83 - Verify Atlas6 directive tranche | Justification: `git diff --check` passed with LF->CRLF warning only; guarded `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal /p:UseSharedCompilation=false /nr:false` ran at CPU 21 percent with no dotnet/csc processes and succeeded with 0 errors and 0 warnings. Alternative rejected: Unity/profiler claims without runtime capture. Microseconds saved: not measured.
+- [x] Task 84 - Append Atlas6 directive rationale/report | Justification: rationale and LOG entries record the extended cache route, rejected mixed polling route, scalability tiers, and static-only estimate. Alternative rejected: chat-only record. Microseconds saved: not measured.
+- [x] Task 85 - Commit/push Atlas6 directive tranche | Justification: commit/push limited to `Atlas6DirectiveSystem.cs` plus EXTERNAL_FIXER docs after exact-file checks. Alternative rejected: staging unrelated dirty workspace edits. Microseconds saved: not measured.

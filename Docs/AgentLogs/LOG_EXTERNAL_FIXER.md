@@ -469,3 +469,32 @@ Verification:
 - `git diff --check` on touched code file: no whitespace errors; Git reported LF->CRLF warning only.
 - Guarded build waited through CPU 100 percent with active `csc.exe` and multiple `dotnet.exe` workers, then through idle MSBuild node-reuse workers. Final gate had CPU 10 percent, no `dotnet/csc`, and only idle `VBCSCompiler`.
 - `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal /p:UseSharedCompilation=false /nr:false`: succeeded, 0 warnings, 0 errors.
+
+## 2026-05-23 Atlas6 Directive Runtime Cache Tranche
+
+What was wrong:
+
+- `Atlas6DirectiveSystem.HandleScarcityDirective()` read `GlobalRegistry.Quest`.
+- `Atlas6DirectiveSystem.ResolvePlayer()` read `GlobalRegistry.Player`.
+- `Atlas6DirectiveSystem.ResolveLocalized()` read `GlobalRegistry.Localization`.
+
+What was done:
+
+- Added cached `QuestManager`, `IPlayerRuntimeContext`, and `LocalizationManager` fields.
+- Extended existing `IGlobalRegistryHotSwapListener` handling for Quest, Player, and Localization slots.
+- Extended cold dependency seeding and teardown to cover these services.
+- Changed scarcity directive notifications, player AUP resolution, and localized status messages to use cached services.
+
+Cinematic Cheats used:
+
+- None. This tranche is Atlas-6 route hardening, not simulation or visual math.
+
+Exact microseconds saved:
+
+- No profiler claim. STATIC_SOURCE estimate only: removes quest, player, and localization registry reads from Atlas6 runtime helper paths.
+
+Verification:
+
+- `git diff --check` on touched code file: no whitespace errors; Git reported LF->CRLF warning only.
+- Guarded build ran at CPU 21 percent with no `dotnet/csc` process active. Idle `VBCSCompiler` remained, so shared compilation was disabled and MSBuild node reuse was disabled.
+- `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal /p:UseSharedCompilation=false /nr:false`: succeeded, 0 warnings, 0 errors.

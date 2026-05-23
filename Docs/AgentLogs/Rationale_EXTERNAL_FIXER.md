@@ -1,6 +1,6 @@
 # Rationale_EXTERNAL_FIXER
 Date: 2026-05-23
-Status: VERIFIED - SIXTEENTH HOT-PATH REGISTRY TRANCHE
+Status: VERIFIED - SEVENTEENTH HOT-PATH REGISTRY TRANCHE
 
 ## Decision 1
 
@@ -169,3 +169,11 @@ Solution: Cache `IPlayerRuntimeContext`, `FirstHourDirector`, `HectonNarrativeDi
 Rejected Alternatives: Leaving `ResolvePlayer`, `CanManifest*`, discovery sync, encrypted log fallback, and `ResolveLocalized` as registry readers was rejected because those helpers are reached from slow-tick/reveal runtime routes. Lifecycle self-registration and SaveRuntime reads were left unchanged because they are owner wiring, not hot polling.
 Scalability potential: Low tier keeps Atlas signal cadence cheap and predictable; Middle keeps identical reveal behavior; High and Ultra preserve headroom for richer signal presentation, encrypted logs, and notifications without changing signal truth ownership.
 Hardware Impact: STATIC estimate only: removes player, first-hour, narrative, audio-log, and localization registry reads from Atlas signal runtime paths. No profiler microsecond claim.
+
+## Decision 22
+
+Problem: `Atlas6DirectiveSystem` had an existing cached Atlas/FirstHour route but still resolved Quest, Player, and Localization from `GlobalRegistry` in scarcity directive, player AUP, and localized status helpers.
+Solution: Extend the existing cold dependency cache and `IGlobalRegistryHotSwapListener` switch with `QuestManager`, `IPlayerRuntimeContext`, and `LocalizationManager`, then route scarcity notifications, player movement resolution, and localized status text through cached services.
+Rejected Alternatives: Leaving the system half-cached was rejected because mixed cached and hot registry routes make later defects harder to prove. New signals were rejected because these are immediate owner-service reads, not broadcast events. SaveRuntime and runtime self-registration reads were left as lifecycle wiring.
+Scalability potential: Low tier keeps directive cadence and warning UI cheap; Middle keeps identical directive behavior; High and Ultra preserve richer Atlas-6 presentation without adding registry polling to runtime helpers.
+Hardware Impact: STATIC estimate only: removes quest, player, and localization registry reads from Atlas6 runtime helper paths. No profiler microsecond claim.

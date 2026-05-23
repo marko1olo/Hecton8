@@ -726,6 +726,9 @@ namespace Hecton8.AtlasSignal
         private HectonPlayerMovement _playerMovement;
         private AtlasSignalSystem _atlasSignal;
         private FirstHourDirector _firstHourDirector;
+        private Quest.QuestManager _questManager;
+        private IPlayerRuntimeContext _playerRuntimeContext;
+        private LocalizationManager _localization;
         private uint _latestScarcityDirectiveQuestHash;
         private uint _latestScarcityDirectiveResourceHash;
 
@@ -902,6 +905,16 @@ namespace Hecton8.AtlasSignal
                 case GlobalRegistryServiceSlot.FirstHourRuntime:
                     _firstHourDirector = currentService as FirstHourDirector;
                     break;
+                case GlobalRegistryServiceSlot.QuestRuntime:
+                    _questManager = currentService as Quest.QuestManager;
+                    break;
+                case GlobalRegistryServiceSlot.Player:
+                    _playerRuntimeContext = currentService as IPlayerRuntimeContext;
+                    ResolvePlayer();
+                    break;
+                case GlobalRegistryServiceSlot.LocalizationRuntime:
+                    _localization = currentService as LocalizationManager;
+                    break;
             }
         }
 
@@ -912,12 +925,25 @@ namespace Hecton8.AtlasSignal
 
             if (_firstHourDirector == null)
                 _firstHourDirector = Hecton8.Core.GlobalRegistry.FirstHour;
+
+            if (_questManager == null)
+                _questManager = GlobalRegistry.Quest;
+
+            if (_playerRuntimeContext == null)
+                _playerRuntimeContext = Hecton8.Core.GlobalRegistry.Player;
+
+            if (_localization == null)
+                _localization = Hecton8.Core.GlobalRegistry.Localization;
         }
 
         private void ClearAtlasDependencies()
         {
             _atlasSignal = null;
             _firstHourDirector = null;
+            _questManager = null;
+            _playerRuntimeContext = null;
+            _playerMovement = null;
+            _localization = null;
         }
 
         private void TryRegisterHotSwapListener()
@@ -1007,7 +1033,7 @@ namespace Hecton8.AtlasSignal
             _latestScarcityDirectiveQuestHash = directiveQuestHash;
             _latestScarcityDirectiveResourceHash = resourceHash;
 
-            Quest.QuestManager questManager = GlobalRegistry.Quest;
+            Quest.QuestManager questManager = _questManager;
             if (questManager != null &&
                 directiveQuestHash != 0u &&
                 questManager.TryGetQuestPresentation(
@@ -1058,7 +1084,7 @@ namespace Hecton8.AtlasSignal
         {
             _playerMovement = null;
 
-            IPlayerRuntimeContext playerContext = Hecton8.Core.GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
             if (playerContext != null)
                 _playerMovement = playerContext.PlayerMovement;
         }
@@ -1095,9 +1121,9 @@ namespace Hecton8.AtlasSignal
 #endif
         }
 
-        private static string ResolveLocalized(string key, string fallback)
+        private string ResolveLocalized(string key, string fallback)
         {
-            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
+            LocalizationManager manager = _localization;
             return manager != null ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback) : fallback;
         }
 
