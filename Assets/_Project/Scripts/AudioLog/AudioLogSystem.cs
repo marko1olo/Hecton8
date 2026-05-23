@@ -43,7 +43,7 @@ namespace Hecton8.Narrative
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-140)]
-    public sealed class AudioLogSystem : MonoBehaviour, ISaveable, ISlowTickable
+    public sealed class AudioLogSystem : MonoBehaviour, ISaveable, ISlowTickable, IGlobalRegistryHotSwapListener
     {
         //  INSPECTOR
 
@@ -106,10 +106,14 @@ namespace Hecton8.Narrative
         private bool _atmosphericWarningActive;
         private bool _registered;
         private bool _serviceRegistered;
+        private bool _registeredHotSwapListener;
         private bool _queueRegistered;
         private bool _currentPlaybackBitCrushed;
         private bool _resolvedLogCatalogFullTelemetryArmed = true;
         private bool _encryptedVoiceRouteMissingTelemetryArmed = true;
+        private IAudioService _cachedAudioService;
+        private SpatialAudioManager _cachedSpatialAudioManager;
+        private IPlayerRuntimeContext _cachedPlayerContext;
 
         //  ISaveable
 
@@ -143,6 +147,8 @@ namespace Hecton8.Narrative
 
         private void OnEnable()
         {
+            CacheRegistryServicesCold();
+            TryRegisterHotSwapListener();
             TryRegisterService();
             TryRegister();
 
@@ -153,6 +159,7 @@ namespace Hecton8.Narrative
         private void OnDisable()
         {
             TryUnregister();
+            TryUnregisterHotSwapListener();
             TryUnregisterService();
 
             if (Hecton8.Core.GlobalRegistry.SaveRuntime != null)
@@ -170,9 +177,26 @@ namespace Hecton8.Narrative
         private void OnDestroy()
         {
             TryUnregister();
+            TryUnregisterHotSwapListener();
             TryUnregisterService();
             DisposePlaybackQueue();
             DisposeEncryptedFragmentState();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.Audio:
+                    CacheAudioService(currentService as IAudioService);
+                    break;
+                case GlobalRegistryServiceSlot.Player:
+                    _cachedPlayerContext = currentService as IPlayerRuntimeContext;
+                    break;
+            }
         }
 
         //  ISlowTickable playback completion polling.
@@ -357,7 +381,8 @@ namespace Hecton8.Narrative
             if (playbackClip != null)
             {
                 ApplyNarrativeRadioInterference();
-                if (Hecton8.Core.GlobalRegistry.Audio is Hecton8.Core.IAudioService audioManager)
+                IAudioService audioManager = _cachedAudioService;
+                if (audioManager != null)
                 {
                     audioManager.PlayStatic2D(playbackClip, playbackVolume);
                 }
@@ -395,13 +420,16 @@ namespace Hecton8.Narrative
 
             ApplyNarrativeRadioInterference();
             bool bitCrushRouteActive = false;
-            if (Hecton8.Core.GlobalRegistry.Audio is SpatialAudioManager spatialAudioManager)
+            SpatialAudioManager spatialAudioManager = _cachedSpatialAudioManager;
+            if (spatialAudioManager != null)
             {
                 bitCrushRouteActive = spatialAudioManager.TryPlayStatic2DBitCrushed(playbackClip, playbackVolume);
             }
-            else if (Hecton8.Core.GlobalRegistry.Audio is Hecton8.Core.IAudioService audioManager)
+            else
             {
-                audioManager.PlayStatic2D(playbackClip, playbackVolume);
+                IAudioService audioManager = _cachedAudioService;
+                if (audioManager != null)
+                    audioManager.PlayStatic2D(playbackClip, playbackVolume);
             }
 
             if (!bitCrushRouteActive && _encryptedVoiceRouteMissingTelemetryArmed)
@@ -425,15 +453,16 @@ namespace Hecton8.Narrative
 
         private void ApplyNarrativeRadioInterference()
         {
-            if (!(Hecton8.Core.GlobalRegistry.Audio is SpatialAudioManager spatialAudioManager))
+            SpatialAudioManager spatialAudioManager = _cachedSpatialAudioManager;
+            if (spatialAudioManager == null)
                 return;
 
             spatialAudioManager.SetNarrativeRadioInterference(ResolveNarrativeRadioInterference01());
         }
 
-        private static float ResolveNarrativeRadioInterference01()
+        private float ResolveNarrativeRadioInterference01()
         {
-            IPlayerRuntimeContext playerContext = Hecton8.Core.GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
             HectonSurvivalSystem survivalSystem = playerContext != null ? playerContext.SurvivalSystem : null;
             float depthMeters = survivalSystem != null ? math.max(0f, survivalSystem.Depth) : 0f;
             float depth01 = math.saturate(
@@ -999,6 +1028,35 @@ namespace Hecton8.Narrative
 
             GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Core);
             _registered = false;
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            CacheAudioService(GlobalRegistry.Audio);
+            _cachedPlayerContext = GlobalRegistry.Player;
+        }
+
+        private void CacheAudioService(IAudioService audioService)
+        {
+            _cachedAudioService = audioService;
+            _cachedSpatialAudioManager = audioService as SpatialAudioManager;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwapListener || !Application.isPlaying)
+                return;
+
+            _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwapListener)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwapListener = false;
         }
 
         private void TryRegisterService()

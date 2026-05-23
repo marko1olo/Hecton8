@@ -151,3 +151,31 @@ Verification:
 - `git diff --check` on touched code file: no whitespace errors; Git reported LF->CRLF warning only.
 - Guarded build ran at CPU 48 percent with no active dotnet/csc/VBCSCompiler process.
 - `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal`: succeeded, 0 warnings, 0 errors.
+
+## 2026-05-23 Audio Log Runtime Cache Tranche
+
+What was wrong:
+
+- `AudioLogSystem.PlayLogByHash()` used `GlobalRegistry.Audio` during playback.
+- `AudioLogSystem.PlayEncryptedPartialPreview()` used `GlobalRegistry.Audio` twice during preview route selection.
+- `AudioLogSystem.ResolveNarrativeRadioInterference01()` used `GlobalRegistry.Player` while calculating depth/radiation interference for playback.
+
+What was done:
+
+- Added cached `IAudioService`, cached `SpatialAudioManager`, and cached `IPlayerRuntimeContext`.
+- Added `IGlobalRegistryHotSwapListener` handling for `GlobalRegistryServiceSlot.Audio` and `GlobalRegistryServiceSlot.Player`.
+- Changed log playback, encrypted preview playback, and interference calculation to use cached services only.
+
+Cinematic Cheats used:
+
+- None. This tranche is route hardening for narrative audio playback, not DSP/math simulation.
+
+Exact microseconds saved:
+
+- No profiler claim. STATIC_SOURCE estimate only: removes up to 3 registry reads per encrypted preview playback and up to 2 registry reads per full log playback with interference.
+
+Verification:
+
+- `git diff --check` on touched code file: no whitespace errors; Git reported LF->CRLF warning only.
+- Guarded build waited while CPU was 100 percent with active dotnet/csc/VBCSCompiler processes, then ran after the compiler window cleared.
+- `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal`: succeeded, 0 warnings, 0 errors.

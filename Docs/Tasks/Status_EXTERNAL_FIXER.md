@@ -1,6 +1,6 @@
 # Status EXTERNAL_FIXER
 Date: 2026-05-23
-Status: VERIFIED - FIFTH HOT-PATH REGISTRY TRANCHE
+Status: VERIFIED - SIXTH HOT-PATH REGISTRY TRANCHE
 
 - [x] Task 1 - Rule intake and mandate selection | Justification: read AGENTS.md, domain map, and mandates for Zero GC, GlobalRegistry/DI, execution phases, signal lanes, performance budgets, ARM64 DTO layout, crash telemetry, and evidence law before touching code. Alternative rejected: broad blind edits. Microseconds saved: 0 audit setup.
 - [x] Task 2 - Find high-confidence source defects | Justification: scoped hot-path scans found direct GlobalRegistry reads in ScavengePopulator.ProcessSpawnQueue/DespawnChunk, VoxelDeltaProcessor.EmitCaveInDustDecal, Atlas6DirectiveSystem.SlowTick/identity adoption, and AtlasSignalDecoder.SlowTick/pulse decode. False positives in editor-only and teardown code rejected. Microseconds saved: 0 measured, candidate selection only.
@@ -39,3 +39,11 @@ Status: VERIFIED - FIFTH HOT-PATH REGISTRY TRANCHE
 - [x] Task 23 - Verify cave AO tranche | Justification: `git diff --check` passed with LF->CRLF warning only; guarded `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal` ran at CPU 48 percent with no compiler process and succeeded with 0 errors and 0 warnings. Alternative rejected: profiler/runtime claims without playmode capture. Microseconds saved: not measured.
 - [x] Task 24 - Append cave AO rationale/report | Justification: rationale and LOG entries record owner route, rejected scene-search fallback, scalability tiers, and static-only performance evidence. Alternative rejected: chat-only record. Microseconds saved: not measured.
 - [x] Task 25 - Commit/push cave AO tranche | Justification: commit/push limited to `HectonCaveVoxelAmbientOcclusionController.cs` plus EXTERNAL_FIXER docs. Alternative rejected: staging unrelated dirty workspace edits. Microseconds saved: not measured.
+
+## Continuation Pass 2026-05-23 - Audio Log Runtime Cache Tranche
+
+- [x] Task 26 - Re-read rules and select clean audio defect | Justification: re-read AGENTS.md plus Zero-GC, GlobalRegistry/DI, and QA Evidence mandates; `AudioLogSystem.cs` was clean and had runtime playback/interference routes reading `GlobalRegistry.Audio` and `GlobalRegistry.Player`. Alternative rejected: static registration/self-service `AudioLogs` reads, because they are lifecycle authority checks rather than playback hot-path polling. Microseconds saved: 0 discovery only.
+- [x] Task 27 - Patch audio/player dependency cache | Justification: added cached `IAudioService`, cached `SpatialAudioManager`, cached `IPlayerRuntimeContext`, and `IGlobalRegistryHotSwapListener` handling for `Audio` and `Player`; playback and interference routes now use cached services. Alternative rejected: new signal/event route for private immediate playback because this is an owner-interface query, not a broadcast. Microseconds saved: STATIC estimate only: removes up to 3 registry reads per encrypted preview playback and up to 2 registry reads per full log playback with interference.
+- [x] Task 28 - Verify audio log tranche | Justification: `git diff --check` passed with LF->CRLF warning only; guarded `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal` waited through active `dotnet/csc/VBCSCompiler` work, then succeeded with 0 errors and 0 warnings. Alternative rejected: launching compile while CPU was 100 percent and compiler processes were active. Microseconds saved: not measured.
+- [x] Task 29 - Append audio rationale/report | Justification: rationale and LOG entries record playback route, interference route, rejected broadcast alternative, and static-only evidence. Alternative rejected: chat-only record. Microseconds saved: not measured.
+- [x] Task 30 - Commit/push audio tranche | Justification: commit/push limited to `AudioLogSystem.cs` plus EXTERNAL_FIXER docs. Alternative rejected: staging unrelated dirty workspace edits. Microseconds saved: not measured.

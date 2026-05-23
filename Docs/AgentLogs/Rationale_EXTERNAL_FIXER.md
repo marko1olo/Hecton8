@@ -1,6 +1,6 @@
 # Rationale_EXTERNAL_FIXER
 Date: 2026-05-23
-Status: VERIFIED - FIFTH HOT-PATH REGISTRY TRANCHE
+Status: VERIFIED - SIXTH HOT-PATH REGISTRY TRANCHE
 
 ## Decision 1
 
@@ -81,3 +81,11 @@ Solution: Cache IPlayerRuntimeContext during cold lifecycle wiring and refresh i
 Rejected Alternatives: Runtime scene searches and ownership mutation from the read path were rejected because they would allocate/search or blur owner responsibility. Editing dirty TetherManager first was rejected because it has unrelated active edits from another agent.
 Scalability potential: Low tier keeps cave AO cadence cheap when viewer binding is missing; Middle keeps the same AO gating; High and Ultra preserve richer cave AO headroom without changing viewer authority.
 Hardware Impact: STATIC estimate only: removes 1 registry read per cave AO slow tick while viewer camera resolution is unresolved. No profiler microsecond claim.
+
+## Decision 11
+
+Problem: AudioLogSystem playback and narrative radio interference paths pulled Audio and Player services from GlobalRegistry during runtime playback/preview routing.
+Solution: Cache IAudioService, SpatialAudioManager, and IPlayerRuntimeContext during cold lifecycle wiring, refresh them through IGlobalRegistryHotSwapListener for Audio and Player slots, and keep playback/interference routes on cached owner interfaces.
+Rejected Alternatives: A new SignalBus lane for private immediate audio playback was rejected because the caller needs direct command/query behavior, not a broadcast. Static AudioLogs self-registration checks were left as lifecycle authority checks, not playback cadence work.
+Scalability potential: Low tier keeps encrypted preview and interference routing cheap; Middle keeps current audio behavior; High and Ultra can preserve richer spatial/bitcrush narration without registry polling in the route.
+Hardware Impact: STATIC estimate only: removes up to 3 registry reads per encrypted preview playback and up to 2 registry reads per full log playback with interference. No profiler microsecond claim.
