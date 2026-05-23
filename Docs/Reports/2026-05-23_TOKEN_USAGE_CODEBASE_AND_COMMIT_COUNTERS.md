@@ -55,7 +55,9 @@ Broad first-party source excluding JSON breaks down as:
 | `.py` | 194 | 85,002 |
 | `.ps1` | 13 | 7,629 |
 
-## Git Commits
+## Git Commits At Audit Capture
+
+These counters were captured before publishing this documentation report. Use live `git rev-list` output for the post-commit count.
 
 | Counter | Value |
 |---|---:|
