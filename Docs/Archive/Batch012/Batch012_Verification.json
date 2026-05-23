@@ -1,0 +1,71 @@
+{
+    "batch":  "Batch012",
+    "generatedAtUtc":  "2026-05-23T10:47:47.6201985Z",
+    "movedCount":  336,
+    "baseMoveCount":  330,
+    "lateMoveCount":  6,
+    "lateMoveManifests":  [
+                              {
+                                  "Name":  "Batch012_LateMoveManifest_001.json",
+                                  "Length":  1398
+                              },
+                              {
+                                  "Name":  "Batch012_LateMoveManifest_002.json",
+                                  "Length":  1410
+                              }
+                          ],
+    "moveErrors":  [
+
+                   ],
+    "recoveredAfterPartialRun":  true,
+    "recoveryNote":  "First run moved files, then failed before manifest/summaries. Manifest reconstructed from archived file state; source paths reflect original active buckets. Additional late-catch passes archived files recreated by concurrent agents. EXTERNAL_CODEX recreated active files after final wait; listed as concurrent residue instead of infinite chasing.",
+    "stableAfterTwoSecondWindow":  false,
+    "tasksRemainingExceptCurrentBatch":  [
+                                             {
+                                                 "Name":  "Status_EXTERNAL_CODEX.md",
+                                                 "Length":  12368,
+                                                 "LastWriteTimeUtc":  "\/Date(1779530932389)\/"
+                                             }
+                                         ],
+    "agentLogsRemaining":  [
+                               {
+                                   "Name":  "LOG_EXTERNAL_CODEX.md",
+                                   "Length":  32288,
+                                   "LastWriteTimeUtc":  "\/Date(1779530956464)\/"
+                               },
+                               {
+                                   "Name":  "Rationale_EXTERNAL_CODEX.md",
+                                   "Length":  26478,
+                                   "LastWriteTimeUtc":  "\/Date(1779530944594)\/"
+                               }
+                           ],
+    "currentBatchPreserved":  true,
+    "summaryInputCounts":  {
+                               "tasksMdTxt":  72,
+                               "logMdTxt":  79,
+                               "rationaleMdTxt":  72
+                           },
+    "summaryChunks":  [
+                          {
+                              "name":  "TASKS_001.md",
+                              "bytes":  1470936
+                          },
+                          {
+                              "name":  "LOG_001.md",
+                              "bytes":  1945774
+                          },
+                          {
+                              "name":  "RATIONALE_001.md",
+                              "bytes":  2265305
+                          }
+                      ],
+    "largeOriginalFilesMovedIntact":  [
+                                          {
+                                              "FullName":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012\\AgentLogs\\Unity_BUILD_MEDIC_20260522_155956_BatchmodeCompile_AfterFix13.log",
+                                              "Length":  11766941
+                                          }
+                                      ],
+    "summaryPolicy":  "extractive md/txt only; raw .log/.json/.bin moved intact; blank/repeated evidence table lines/articles/intro phrases removed; critical status/problem/solution/rejected/verification/error/path/route lines retained with overflow counts; chunk cap about 3500000 bytes",
+    "buildLaunched":  false,
+    "evidenceClass":  "STATIC_FILESYSTEM"
+}

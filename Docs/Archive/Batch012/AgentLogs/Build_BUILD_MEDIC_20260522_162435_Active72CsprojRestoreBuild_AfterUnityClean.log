@@ -1,0 +1,1355 @@
+﻿START 2026-05-22T16:24:37.2695268+04:00
+PROJECT_COUNT=72
+
+===== RESTORE AIToASE.csproj =====
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+RESTORE_EXIT=0
+===== BUILD AIToASE.csproj =====
+  AmplifyImpostors.Runtime -> C:\hades\Hecton8\Temp\bin\Debug\AmplifyImpostors.Runtime.dll
+  AmplifyImpostors.Editor -> C:\hades\Hecton8\Temp\bin\Debug\AmplifyImpostors.Editor.dll
+  AIToASE -> C:\hades\Hecton8\Temp\bin\Debug\AIToASE.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:00.97
+BUILD_EXIT=0
+
+===== RESTORE AmplifyImpostors.Editor.csproj =====
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+RESTORE_EXIT=0
+===== BUILD AmplifyImpostors.Editor.csproj =====
+  AmplifyImpostors.Runtime -> C:\hades\Hecton8\Temp\bin\Debug\AmplifyImpostors.Runtime.dll
+  AmplifyImpostors.Editor -> C:\hades\Hecton8\Temp\bin\Debug\AmplifyImpostors.Editor.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:00.80
+BUILD_EXIT=0
+
+===== RESTORE AmplifyImpostors.Runtime.csproj =====
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+RESTORE_EXIT=0
+===== BUILD AmplifyImpostors.Runtime.csproj =====
+  AmplifyImpostors.Runtime -> C:\hades\Hecton8\Temp\bin\Debug\AmplifyImpostors.Runtime.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:00.58
+BUILD_EXIT=0
+
+===== RESTORE AmplifyShaderEditor.csproj =====
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+RESTORE_EXIT=0
+===== BUILD AmplifyShaderEditor.csproj =====
+  AmplifyShaderEditor -> C:\hades\Hecton8\Temp\bin\Debug\AmplifyShaderEditor.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:00.62
+BUILD_EXIT=0
+
+===== RESTORE Assembly-CSharp.csproj =====
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+RESTORE_EXIT=0
+===== BUILD Assembly-CSharp.csproj =====
+  Lofelt.NiceVibrations -> C:\hades\Hecton8\Temp\bin\Debug\Lofelt.NiceVibrations.dll
+  Unity.RenderPipelines.Universal.Runtime -> C:\hades\Hecton8\Temp\bin\Debug\Unity.RenderPipelines.Universal.Runtime.dll
+  GPUInstancer -> C:\hades\Hecton8\Temp\bin\Debug\GPUInstancer.dll
+  GPUInstancer.Editor -> C:\hades\Hecton8\Temp\bin\Debug\GPUInstancer.Editor.dll
+  Den.Tools -> C:\hades\Hecton8\Temp\bin\Debug\Den.Tools.dll
+  MapMagic -> C:\hades\Hecton8\Temp\bin\Debug\MapMagic.dll
+  Den.Tools.Editor -> C:\hades\Hecton8\Temp\bin\Debug\Den.Tools.Editor.dll
+  MapMagic.Editor -> C:\hades\Hecton8\Temp\bin\Debug\MapMagic.Editor.dll
+  MoreMountains.Tools -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Tools.dll
+  MoreMountains.Feedbacks -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.dll
+  MoreMountains.Feedbacks.URP -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.URP.dll
+  VolumetricLightBeam -> C:\hades\Hecton8\Temp\bin\Debug\VolumetricLightBeam.dll
+  MeshBakerCore -> C:\hades\Hecton8\Temp\bin\Debug\MeshBakerCore.dll
+  MoreMountains.Feedbacks.PostProcessing -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.PostProcessing.dll
+  JBooth.MicroSplat.Core -> C:\hades\Hecton8\Temp\bin\Debug\JBooth.MicroSplat.Core.dll
+  MapMagic.MicroSplat -> C:\hades\Hecton8\Temp\bin\Debug\MapMagic.MicroSplat.dll
+  JBooth.MicroSplat.Core.Editor -> C:\hades\Hecton8\Temp\bin\Debug\JBooth.MicroSplat.Core.Editor.dll
+  MapMagic.MicroSplat.Editor -> C:\hades\Hecton8\Temp\bin\Debug\MapMagic.MicroSplat.Editor.dll
+  Hecton8.World.Contracts -> C:\hades\Hecton8\Temp\bin\Debug\Hecton8.World.Contracts.dll
+  Tayx.Graphy -> C:\hades\Hecton8\Temp\bin\Debug\Tayx.Graphy.dll
+  AstarPathfindingProject -> C:\hades\Hecton8\Temp\bin\Debug\AstarPathfindingProject.dll
+  PackageToolsEditor -> C:\hades\Hecton8\Temp\bin\Debug\PackageToolsEditor.dll
+  MoreMountains.Feedbacks.Cinemachine -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.Cinemachine.dll
+  MoreMountains.Feedbacks.HDRP -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.HDRP.dll
+  MoreMountains.Feedbacks.MMTools -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.MMTools.dll
+  MoreMountains.Feedbacks.NiceVibrations -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.NiceVibrations.dll
+  MoreMountains.Feedbacks.TextMeshPro -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.TextMeshPro.dll
+  MoreMountains.Feedbacks.Authorizations -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.Authorizations.dll
+  Lofelt.NiceVibrations.Demo -> C:\hades\Hecton8\Temp\bin\Debug\Lofelt.NiceVibrations.Demo.dll
+  TechniePhysicsCreator -> C:\hades\Hecton8\Temp\bin\Debug\TechniePhysicsCreator.dll
+  Hecton8.Bootstrap.Contracts -> C:\hades\Hecton8\Temp\bin\Debug\Hecton8.Bootstrap.Contracts.dll
+  Hecton8.Input.Generated -> C:\hades\Hecton8\Temp\bin\Debug\Hecton8.Input.Generated.dll
+  Hecton8.Input -> C:\hades\Hecton8\Temp\bin\Debug\Hecton8.Input.dll
+  AstarPathfindingProjectEditor -> C:\hades\Hecton8\Temp\bin\Debug\AstarPathfindingProjectEditor.dll
+  MoreMountains.Feedbacks.Editor -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.Editor.dll
+  BakeryRuntimeAssembly -> C:\hades\Hecton8\Temp\bin\Debug\BakeryRuntimeAssembly.dll
+  BakeryEditorAssembly -> C:\hades\Hecton8\Temp\bin\Debug\BakeryEditorAssembly.dll
+  ShapesRuntime -> C:\hades\Hecton8\Temp\bin\Debug\ShapesRuntime.dll
+  Unity.RenderPipelines.Core.Editor -> C:\hades\Hecton8\Temp\bin\Debug\Unity.RenderPipelines.Core.Editor.dll
+  Unity.ShaderGraph.Editor -> C:\hades\Hecton8\Temp\bin\Debug\Unity.ShaderGraph.Editor.dll
+  Unity.RenderPipelines.Universal.Editor -> C:\hades\Hecton8\Temp\bin\Debug\Unity.RenderPipelines.Universal.Editor.dll
+  ShapesEditor -> C:\hades\Hecton8\Temp\bin\Debug\ShapesEditor.dll
+  EasySave3 -> C:\hades\Hecton8\Temp\bin\Debug\EasySave3.dll
+  EasySave3Editor -> C:\hades\Hecton8\Temp\bin\Debug\EasySave3Editor.dll
+  Sirenix.OdinInspector.Modules.UnityMathematics -> C:\hades\Hecton8\Temp\bin\Debug\Sirenix.OdinInspector.Modules.UnityMathematics.dll
+  MeshBakerEditor -> C:\hades\Hecton8\Temp\bin\Debug\MeshBakerEditor.dll
+  AmplifyImpostors.Runtime -> C:\hades\Hecton8\Temp\bin\Debug\AmplifyImpostors.Runtime.dll
+  AmplifyImpostors.Editor -> C:\hades\Hecton8\Temp\bin\Debug\AmplifyImpostors.Editor.dll
+  MoreMountains.Tools.Editor -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Tools.Editor.dll
+  Tayx.Graphy.Editor -> C:\hades\Hecton8\Temp\bin\Debug\Tayx.Graphy.Editor.dll
+  Hecton8.Core -> C:\hades\Hecton8\Temp\bin\Debug\Hecton8.Core.dll
+  Hecton8.Editor -> C:\hades\Hecton8\Temp\bin\Debug\Hecton8.Editor.dll
+  Hecton8.World.Dots -> C:\hades\Hecton8\Temp\bin\Debug\Hecton8.World.Dots.dll
+  Lofelt.NiceVibrations.Editor -> C:\hades\Hecton8\Temp\bin\Debug\Lofelt.NiceVibrations.Editor.dll
+  VolumetricLightBeam.Editor -> C:\hades\Hecton8\Temp\bin\Debug\VolumetricLightBeam.Editor.dll
+  Assembly-CSharp-firstpass -> C:\hades\Hecton8\Temp\bin\Debug\Assembly-CSharp-firstpass.dll
+  Assembly-CSharp -> C:\hades\Hecton8\Temp\bin\Debug\Assembly-CSharp.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:14.07
+BUILD_EXIT=0
+
+===== RESTORE Assembly-CSharp-Editor.csproj =====
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+RESTORE_EXIT=0
+===== BUILD Assembly-CSharp-Editor.csproj =====
+  Lofelt.NiceVibrations -> C:\hades\Hecton8\Temp\bin\Debug\Lofelt.NiceVibrations.dll
+  Unity.RenderPipelines.Universal.Runtime -> C:\hades\Hecton8\Temp\bin\Debug\Unity.RenderPipelines.Universal.Runtime.dll
+  GPUInstancer -> C:\hades\Hecton8\Temp\bin\Debug\GPUInstancer.dll
+  GPUInstancer.Editor -> C:\hades\Hecton8\Temp\bin\Debug\GPUInstancer.Editor.dll
+  Den.Tools -> C:\hades\Hecton8\Temp\bin\Debug\Den.Tools.dll
+  MapMagic -> C:\hades\Hecton8\Temp\bin\Debug\MapMagic.dll
+  Den.Tools.Editor -> C:\hades\Hecton8\Temp\bin\Debug\Den.Tools.Editor.dll
+  MapMagic.Editor -> C:\hades\Hecton8\Temp\bin\Debug\MapMagic.Editor.dll
+  MoreMountains.Tools -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Tools.dll
+  MoreMountains.Feedbacks -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.dll
+  MoreMountains.Feedbacks.URP -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.URP.dll
+  VolumetricLightBeam -> C:\hades\Hecton8\Temp\bin\Debug\VolumetricLightBeam.dll
+  MeshBakerCore -> C:\hades\Hecton8\Temp\bin\Debug\MeshBakerCore.dll
+  MoreMountains.Feedbacks.PostProcessing -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.PostProcessing.dll
+  JBooth.MicroSplat.Core -> C:\hades\Hecton8\Temp\bin\Debug\JBooth.MicroSplat.Core.dll
+  MapMagic.MicroSplat -> C:\hades\Hecton8\Temp\bin\Debug\MapMagic.MicroSplat.dll
+  JBooth.MicroSplat.Core.Editor -> C:\hades\Hecton8\Temp\bin\Debug\JBooth.MicroSplat.Core.Editor.dll
+  MapMagic.MicroSplat.Editor -> C:\hades\Hecton8\Temp\bin\Debug\MapMagic.MicroSplat.Editor.dll
+  Hecton8.World.Contracts -> C:\hades\Hecton8\Temp\bin\Debug\Hecton8.World.Contracts.dll
+  Tayx.Graphy -> C:\hades\Hecton8\Temp\bin\Debug\Tayx.Graphy.dll
+  AstarPathfindingProject -> C:\hades\Hecton8\Temp\bin\Debug\AstarPathfindingProject.dll
+  PackageToolsEditor -> C:\hades\Hecton8\Temp\bin\Debug\PackageToolsEditor.dll
+  MoreMountains.Feedbacks.Cinemachine -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.Cinemachine.dll
+  MoreMountains.Feedbacks.HDRP -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.HDRP.dll
+  MoreMountains.Feedbacks.MMTools -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.MMTools.dll
+  MoreMountains.Feedbacks.NiceVibrations -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.NiceVibrations.dll
+  MoreMountains.Feedbacks.TextMeshPro -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.TextMeshPro.dll
+  MoreMountains.Feedbacks.Authorizations -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.Authorizations.dll
+  Lofelt.NiceVibrations.Demo -> C:\hades\Hecton8\Temp\bin\Debug\Lofelt.NiceVibrations.Demo.dll
+  TechniePhysicsCreator -> C:\hades\Hecton8\Temp\bin\Debug\TechniePhysicsCreator.dll
+  Hecton8.Bootstrap.Contracts -> C:\hades\Hecton8\Temp\bin\Debug\Hecton8.Bootstrap.Contracts.dll
+  Hecton8.Input.Generated -> C:\hades\Hecton8\Temp\bin\Debug\Hecton8.Input.Generated.dll
+  Hecton8.Input -> C:\hades\Hecton8\Temp\bin\Debug\Hecton8.Input.dll
+  AstarPathfindingProjectEditor -> C:\hades\Hecton8\Temp\bin\Debug\AstarPathfindingProjectEditor.dll
+  MoreMountains.Feedbacks.Editor -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.Editor.dll
+  BakeryRuntimeAssembly -> C:\hades\Hecton8\Temp\bin\Debug\BakeryRuntimeAssembly.dll
+  BakeryEditorAssembly -> C:\hades\Hecton8\Temp\bin\Debug\BakeryEditorAssembly.dll
+  ShapesRuntime -> C:\hades\Hecton8\Temp\bin\Debug\ShapesRuntime.dll
+  Unity.RenderPipelines.Core.Editor -> C:\hades\Hecton8\Temp\bin\Debug\Unity.RenderPipelines.Core.Editor.dll
+  Unity.ShaderGraph.Editor -> C:\hades\Hecton8\Temp\bin\Debug\Unity.ShaderGraph.Editor.dll
+  Unity.RenderPipelines.Universal.Editor -> C:\hades\Hecton8\Temp\bin\Debug\Unity.RenderPipelines.Universal.Editor.dll
+  ShapesEditor -> C:\hades\Hecton8\Temp\bin\Debug\ShapesEditor.dll
+  EasySave3 -> C:\hades\Hecton8\Temp\bin\Debug\EasySave3.dll
+  EasySave3Editor -> C:\hades\Hecton8\Temp\bin\Debug\EasySave3Editor.dll
+  Sirenix.OdinInspector.Modules.UnityMathematics -> C:\hades\Hecton8\Temp\bin\Debug\Sirenix.OdinInspector.Modules.UnityMathematics.dll
+  MeshBakerEditor -> C:\hades\Hecton8\Temp\bin\Debug\MeshBakerEditor.dll
+  AmplifyImpostors.Runtime -> C:\hades\Hecton8\Temp\bin\Debug\AmplifyImpostors.Runtime.dll
+  AmplifyImpostors.Editor -> C:\hades\Hecton8\Temp\bin\Debug\AmplifyImpostors.Editor.dll
+  MoreMountains.Tools.Editor -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Tools.Editor.dll
+  Tayx.Graphy.Editor -> C:\hades\Hecton8\Temp\bin\Debug\Tayx.Graphy.Editor.dll
+  Hecton8.Core -> C:\hades\Hecton8\Temp\bin\Debug\Hecton8.Core.dll
+  Hecton8.Editor -> C:\hades\Hecton8\Temp\bin\Debug\Hecton8.Editor.dll
+  Hecton8.World.Dots -> C:\hades\Hecton8\Temp\bin\Debug\Hecton8.World.Dots.dll
+  Lofelt.NiceVibrations.Editor -> C:\hades\Hecton8\Temp\bin\Debug\Lofelt.NiceVibrations.Editor.dll
+  VolumetricLightBeam.Editor -> C:\hades\Hecton8\Temp\bin\Debug\VolumetricLightBeam.Editor.dll
+  Assembly-CSharp-firstpass -> C:\hades\Hecton8\Temp\bin\Debug\Assembly-CSharp-firstpass.dll
+  Assembly-CSharp -> C:\hades\Hecton8\Temp\bin\Debug\Assembly-CSharp.dll
+  Assembly-CSharp-Editor-firstpass -> C:\hades\Hecton8\Temp\bin\Debug\Assembly-CSharp-Editor-firstpass.dll
+  Assembly-CSharp-Editor -> C:\hades\Hecton8\Temp\bin\Debug\Assembly-CSharp-Editor.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:17.59
+BUILD_EXIT=0
+
+===== RESTORE Assembly-CSharp-Editor-firstpass.csproj =====
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+RESTORE_EXIT=0
+===== BUILD Assembly-CSharp-Editor-firstpass.csproj =====
+  Lofelt.NiceVibrations -> C:\hades\Hecton8\Temp\bin\Debug\Lofelt.NiceVibrations.dll
+  Unity.RenderPipelines.Universal.Runtime -> C:\hades\Hecton8\Temp\bin\Debug\Unity.RenderPipelines.Universal.Runtime.dll
+  GPUInstancer -> C:\hades\Hecton8\Temp\bin\Debug\GPUInstancer.dll
+  GPUInstancer.Editor -> C:\hades\Hecton8\Temp\bin\Debug\GPUInstancer.Editor.dll
+  Den.Tools -> C:\hades\Hecton8\Temp\bin\Debug\Den.Tools.dll
+  MapMagic -> C:\hades\Hecton8\Temp\bin\Debug\MapMagic.dll
+  Den.Tools.Editor -> C:\hades\Hecton8\Temp\bin\Debug\Den.Tools.Editor.dll
+  MapMagic.Editor -> C:\hades\Hecton8\Temp\bin\Debug\MapMagic.Editor.dll
+  MoreMountains.Tools -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Tools.dll
+  MoreMountains.Feedbacks -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.dll
+  MoreMountains.Feedbacks.URP -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.URP.dll
+  VolumetricLightBeam -> C:\hades\Hecton8\Temp\bin\Debug\VolumetricLightBeam.dll
+  MeshBakerCore -> C:\hades\Hecton8\Temp\bin\Debug\MeshBakerCore.dll
+  MoreMountains.Feedbacks.PostProcessing -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.PostProcessing.dll
+  JBooth.MicroSplat.Core -> C:\hades\Hecton8\Temp\bin\Debug\JBooth.MicroSplat.Core.dll
+  MapMagic.MicroSplat -> C:\hades\Hecton8\Temp\bin\Debug\MapMagic.MicroSplat.dll
+  JBooth.MicroSplat.Core.Editor -> C:\hades\Hecton8\Temp\bin\Debug\JBooth.MicroSplat.Core.Editor.dll
+  MapMagic.MicroSplat.Editor -> C:\hades\Hecton8\Temp\bin\Debug\MapMagic.MicroSplat.Editor.dll
+  Hecton8.World.Contracts -> C:\hades\Hecton8\Temp\bin\Debug\Hecton8.World.Contracts.dll
+  Tayx.Graphy -> C:\hades\Hecton8\Temp\bin\Debug\Tayx.Graphy.dll
+  AstarPathfindingProject -> C:\hades\Hecton8\Temp\bin\Debug\AstarPathfindingProject.dll
+  PackageToolsEditor -> C:\hades\Hecton8\Temp\bin\Debug\PackageToolsEditor.dll
+  MoreMountains.Feedbacks.Cinemachine -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.Cinemachine.dll
+  MoreMountains.Feedbacks.HDRP -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.HDRP.dll
+  MoreMountains.Feedbacks.MMTools -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.MMTools.dll
+  MoreMountains.Feedbacks.NiceVibrations -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.NiceVibrations.dll
+  MoreMountains.Feedbacks.TextMeshPro -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.TextMeshPro.dll
+  MoreMountains.Feedbacks.Authorizations -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.Authorizations.dll
+  Lofelt.NiceVibrations.Demo -> C:\hades\Hecton8\Temp\bin\Debug\Lofelt.NiceVibrations.Demo.dll
+  TechniePhysicsCreator -> C:\hades\Hecton8\Temp\bin\Debug\TechniePhysicsCreator.dll
+  Hecton8.Bootstrap.Contracts -> C:\hades\Hecton8\Temp\bin\Debug\Hecton8.Bootstrap.Contracts.dll
+  Hecton8.Input.Generated -> C:\hades\Hecton8\Temp\bin\Debug\Hecton8.Input.Generated.dll
+  Hecton8.Input -> C:\hades\Hecton8\Temp\bin\Debug\Hecton8.Input.dll
+  AstarPathfindingProjectEditor -> C:\hades\Hecton8\Temp\bin\Debug\AstarPathfindingProjectEditor.dll
+  MoreMountains.Feedbacks.Editor -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.Editor.dll
+  BakeryRuntimeAssembly -> C:\hades\Hecton8\Temp\bin\Debug\BakeryRuntimeAssembly.dll
+  BakeryEditorAssembly -> C:\hades\Hecton8\Temp\bin\Debug\BakeryEditorAssembly.dll
+  ShapesRuntime -> C:\hades\Hecton8\Temp\bin\Debug\ShapesRuntime.dll
+  Unity.RenderPipelines.Core.Editor -> C:\hades\Hecton8\Temp\bin\Debug\Unity.RenderPipelines.Core.Editor.dll
+  Unity.ShaderGraph.Editor -> C:\hades\Hecton8\Temp\bin\Debug\Unity.ShaderGraph.Editor.dll
+  Unity.RenderPipelines.Universal.Editor -> C:\hades\Hecton8\Temp\bin\Debug\Unity.RenderPipelines.Universal.Editor.dll
+  ShapesEditor -> C:\hades\Hecton8\Temp\bin\Debug\ShapesEditor.dll
+  EasySave3 -> C:\hades\Hecton8\Temp\bin\Debug\EasySave3.dll
+  EasySave3Editor -> C:\hades\Hecton8\Temp\bin\Debug\EasySave3Editor.dll
+  Sirenix.OdinInspector.Modules.UnityMathematics -> C:\hades\Hecton8\Temp\bin\Debug\Sirenix.OdinInspector.Modules.UnityMathematics.dll
+  MeshBakerEditor -> C:\hades\Hecton8\Temp\bin\Debug\MeshBakerEditor.dll
+  AmplifyImpostors.Runtime -> C:\hades\Hecton8\Temp\bin\Debug\AmplifyImpostors.Runtime.dll
+  AmplifyImpostors.Editor -> C:\hades\Hecton8\Temp\bin\Debug\AmplifyImpostors.Editor.dll
+  MoreMountains.Tools.Editor -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Tools.Editor.dll
+  Tayx.Graphy.Editor -> C:\hades\Hecton8\Temp\bin\Debug\Tayx.Graphy.Editor.dll
+  Hecton8.Core -> C:\hades\Hecton8\Temp\bin\Debug\Hecton8.Core.dll
+  Hecton8.Editor -> C:\hades\Hecton8\Temp\bin\Debug\Hecton8.Editor.dll
+  Hecton8.World.Dots -> C:\hades\Hecton8\Temp\bin\Debug\Hecton8.World.Dots.dll
+  Lofelt.NiceVibrations.Editor -> C:\hades\Hecton8\Temp\bin\Debug\Lofelt.NiceVibrations.Editor.dll
+  VolumetricLightBeam.Editor -> C:\hades\Hecton8\Temp\bin\Debug\VolumetricLightBeam.Editor.dll
+  Assembly-CSharp-firstpass -> C:\hades\Hecton8\Temp\bin\Debug\Assembly-CSharp-firstpass.dll
+  Assembly-CSharp-Editor-firstpass -> C:\hades\Hecton8\Temp\bin\Debug\Assembly-CSharp-Editor-firstpass.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:15.20
+BUILD_EXIT=0
+
+===== RESTORE Assembly-CSharp-firstpass.csproj =====
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+RESTORE_EXIT=0
+===== BUILD Assembly-CSharp-firstpass.csproj =====
+  Lofelt.NiceVibrations -> C:\hades\Hecton8\Temp\bin\Debug\Lofelt.NiceVibrations.dll
+  Unity.RenderPipelines.Universal.Runtime -> C:\hades\Hecton8\Temp\bin\Debug\Unity.RenderPipelines.Universal.Runtime.dll
+  GPUInstancer -> C:\hades\Hecton8\Temp\bin\Debug\GPUInstancer.dll
+  GPUInstancer.Editor -> C:\hades\Hecton8\Temp\bin\Debug\GPUInstancer.Editor.dll
+  Den.Tools -> C:\hades\Hecton8\Temp\bin\Debug\Den.Tools.dll
+  MapMagic -> C:\hades\Hecton8\Temp\bin\Debug\MapMagic.dll
+  Den.Tools.Editor -> C:\hades\Hecton8\Temp\bin\Debug\Den.Tools.Editor.dll
+  MapMagic.Editor -> C:\hades\Hecton8\Temp\bin\Debug\MapMagic.Editor.dll
+  MoreMountains.Tools -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Tools.dll
+  MoreMountains.Feedbacks -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.dll
+  MoreMountains.Feedbacks.URP -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.URP.dll
+  VolumetricLightBeam -> C:\hades\Hecton8\Temp\bin\Debug\VolumetricLightBeam.dll
+  MeshBakerCore -> C:\hades\Hecton8\Temp\bin\Debug\MeshBakerCore.dll
+  MoreMountains.Feedbacks.PostProcessing -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.PostProcessing.dll
+  JBooth.MicroSplat.Core -> C:\hades\Hecton8\Temp\bin\Debug\JBooth.MicroSplat.Core.dll
+  MapMagic.MicroSplat -> C:\hades\Hecton8\Temp\bin\Debug\MapMagic.MicroSplat.dll
+  JBooth.MicroSplat.Core.Editor -> C:\hades\Hecton8\Temp\bin\Debug\JBooth.MicroSplat.Core.Editor.dll
+  MapMagic.MicroSplat.Editor -> C:\hades\Hecton8\Temp\bin\Debug\MapMagic.MicroSplat.Editor.dll
+  Hecton8.World.Contracts -> C:\hades\Hecton8\Temp\bin\Debug\Hecton8.World.Contracts.dll
+  Tayx.Graphy -> C:\hades\Hecton8\Temp\bin\Debug\Tayx.Graphy.dll
+  AstarPathfindingProject -> C:\hades\Hecton8\Temp\bin\Debug\AstarPathfindingProject.dll
+  PackageToolsEditor -> C:\hades\Hecton8\Temp\bin\Debug\PackageToolsEditor.dll
+  MoreMountains.Feedbacks.Cinemachine -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.Cinemachine.dll
+  MoreMountains.Feedbacks.HDRP -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.HDRP.dll
+  MoreMountains.Feedbacks.MMTools -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.MMTools.dll
+  MoreMountains.Feedbacks.NiceVibrations -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.NiceVibrations.dll
+  MoreMountains.Feedbacks.TextMeshPro -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.TextMeshPro.dll
+  MoreMountains.Feedbacks.Authorizations -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.Authorizations.dll
+  Lofelt.NiceVibrations.Demo -> C:\hades\Hecton8\Temp\bin\Debug\Lofelt.NiceVibrations.Demo.dll
+  TechniePhysicsCreator -> C:\hades\Hecton8\Temp\bin\Debug\TechniePhysicsCreator.dll
+  Hecton8.Bootstrap.Contracts -> C:\hades\Hecton8\Temp\bin\Debug\Hecton8.Bootstrap.Contracts.dll
+  Hecton8.Input.Generated -> C:\hades\Hecton8\Temp\bin\Debug\Hecton8.Input.Generated.dll
+  Hecton8.Input -> C:\hades\Hecton8\Temp\bin\Debug\Hecton8.Input.dll
+  AstarPathfindingProjectEditor -> C:\hades\Hecton8\Temp\bin\Debug\AstarPathfindingProjectEditor.dll
+  MoreMountains.Feedbacks.Editor -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.Editor.dll
+  BakeryRuntimeAssembly -> C:\hades\Hecton8\Temp\bin\Debug\BakeryRuntimeAssembly.dll
+  BakeryEditorAssembly -> C:\hades\Hecton8\Temp\bin\Debug\BakeryEditorAssembly.dll
+  ShapesRuntime -> C:\hades\Hecton8\Temp\bin\Debug\ShapesRuntime.dll
+  Unity.RenderPipelines.Core.Editor -> C:\hades\Hecton8\Temp\bin\Debug\Unity.RenderPipelines.Core.Editor.dll
+  Unity.ShaderGraph.Editor -> C:\hades\Hecton8\Temp\bin\Debug\Unity.ShaderGraph.Editor.dll
+  Unity.RenderPipelines.Universal.Editor -> C:\hades\Hecton8\Temp\bin\Debug\Unity.RenderPipelines.Universal.Editor.dll
+  ShapesEditor -> C:\hades\Hecton8\Temp\bin\Debug\ShapesEditor.dll
+  EasySave3 -> C:\hades\Hecton8\Temp\bin\Debug\EasySave3.dll
+  EasySave3Editor -> C:\hades\Hecton8\Temp\bin\Debug\EasySave3Editor.dll
+  Sirenix.OdinInspector.Modules.UnityMathematics -> C:\hades\Hecton8\Temp\bin\Debug\Sirenix.OdinInspector.Modules.UnityMathematics.dll
+  MeshBakerEditor -> C:\hades\Hecton8\Temp\bin\Debug\MeshBakerEditor.dll
+  AmplifyImpostors.Runtime -> C:\hades\Hecton8\Temp\bin\Debug\AmplifyImpostors.Runtime.dll
+  AmplifyImpostors.Editor -> C:\hades\Hecton8\Temp\bin\Debug\AmplifyImpostors.Editor.dll
+  MoreMountains.Tools.Editor -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Tools.Editor.dll
+  Tayx.Graphy.Editor -> C:\hades\Hecton8\Temp\bin\Debug\Tayx.Graphy.Editor.dll
+  Hecton8.Core -> C:\hades\Hecton8\Temp\bin\Debug\Hecton8.Core.dll
+  Hecton8.Editor -> C:\hades\Hecton8\Temp\bin\Debug\Hecton8.Editor.dll
+  Hecton8.World.Dots -> C:\hades\Hecton8\Temp\bin\Debug\Hecton8.World.Dots.dll
+  Lofelt.NiceVibrations.Editor -> C:\hades\Hecton8\Temp\bin\Debug\Lofelt.NiceVibrations.Editor.dll
+  VolumetricLightBeam.Editor -> C:\hades\Hecton8\Temp\bin\Debug\VolumetricLightBeam.Editor.dll
+  Assembly-CSharp-firstpass -> C:\hades\Hecton8\Temp\bin\Debug\Assembly-CSharp-firstpass.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:13.62
+BUILD_EXIT=0
+
+===== RESTORE AstarPathfindingProject.csproj =====
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+RESTORE_EXIT=0
+===== BUILD AstarPathfindingProject.csproj =====
+  AstarPathfindingProject -> C:\hades\Hecton8\Temp\bin\Debug\AstarPathfindingProject.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:00.74
+BUILD_EXIT=0
+
+===== RESTORE AstarPathfindingProjectEditor.csproj =====
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+RESTORE_EXIT=0
+===== BUILD AstarPathfindingProjectEditor.csproj =====
+  AstarPathfindingProject -> C:\hades\Hecton8\Temp\bin\Debug\AstarPathfindingProject.dll
+  PackageToolsEditor -> C:\hades\Hecton8\Temp\bin\Debug\PackageToolsEditor.dll
+  AstarPathfindingProjectEditor -> C:\hades\Hecton8\Temp\bin\Debug\AstarPathfindingProjectEditor.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:01.22
+BUILD_EXIT=0
+
+===== RESTORE BakeryEditorAssembly.csproj =====
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+RESTORE_EXIT=0
+===== BUILD BakeryEditorAssembly.csproj =====
+  BakeryRuntimeAssembly -> C:\hades\Hecton8\Temp\bin\Debug\BakeryRuntimeAssembly.dll
+  BakeryEditorAssembly -> C:\hades\Hecton8\Temp\bin\Debug\BakeryEditorAssembly.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:00.93
+BUILD_EXIT=0
+
+===== RESTORE BakeryRuntimeAssembly.csproj =====
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+RESTORE_EXIT=0
+===== BUILD BakeryRuntimeAssembly.csproj =====
+  BakeryRuntimeAssembly -> C:\hades\Hecton8\Temp\bin\Debug\BakeryRuntimeAssembly.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:00.75
+BUILD_EXIT=0
+
+===== RESTORE Crest.csproj =====
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+RESTORE_EXIT=0
+===== BUILD Crest.csproj =====
+  Unity.RenderPipelines.Universal.Runtime -> C:\hades\Hecton8\Temp\bin\Debug\Unity.RenderPipelines.Universal.Runtime.dll
+  Crest -> C:\hades\Hecton8\Temp\bin\Debug\Crest.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:00.99
+BUILD_EXIT=0
+
+===== RESTORE Crest.Helpers.Editor.csproj =====
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+RESTORE_EXIT=0
+===== BUILD Crest.Helpers.Editor.csproj =====
+  Unity.RenderPipelines.Universal.Runtime -> C:\hades\Hecton8\Temp\bin\Debug\Unity.RenderPipelines.Universal.Runtime.dll
+  Crest -> C:\hades\Hecton8\Temp\bin\Debug\Crest.dll
+  Crest.Helpers.Editor -> C:\hades\Hecton8\Temp\bin\Debug\Crest.Helpers.Editor.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:01.30
+BUILD_EXIT=0
+
+===== RESTORE Den.Tools.csproj =====
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+RESTORE_EXIT=0
+===== BUILD Den.Tools.csproj =====
+  Den.Tools -> C:\hades\Hecton8\Temp\bin\Debug\Den.Tools.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:00.75
+BUILD_EXIT=0
+
+===== RESTORE Den.Tools.Editor.csproj =====
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+RESTORE_EXIT=0
+===== BUILD Den.Tools.Editor.csproj =====
+  Den.Tools -> C:\hades\Hecton8\Temp\bin\Debug\Den.Tools.dll
+  Den.Tools.Editor -> C:\hades\Hecton8\Temp\bin\Debug\Den.Tools.Editor.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:01.02
+BUILD_EXIT=0
+
+===== RESTORE Docs\DEPRECATED\Documentation_Bundles_2026-05-21_SANITIZED\SPACE_ENGINE_RESEARCH\HectonSandboxAbyssalShelfStandaloneSmoke\HectonSandboxAbyssalShelfStandaloneSmoke.csproj =====
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+RESTORE_EXIT=0
+===== BUILD Docs\DEPRECATED\Documentation_Bundles_2026-05-21_SANITIZED\SPACE_ENGINE_RESEARCH\HectonSandboxAbyssalShelfStandaloneSmoke\HectonSandboxAbyssalShelfStandaloneSmoke.csproj =====
+  HectonSandboxAbyssalShelfStandaloneSmoke -> C:\hades\Hecton8\Docs\DEPRECATED\Documentation_Bundles_2026-05-21_SANITIZED\SPACE_ENGINE_RESEARCH\HectonSandboxAbyssalShelfStandaloneSmoke\bin\Debug\net10.0\HectonSandboxAbyssalShelfStandaloneSmoke.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:00.63
+BUILD_EXIT=0
+
+===== RESTORE Docs\DEPRECATED\Documentation_Bundles_2026-05-21_SANITIZED\SPACE_ENGINE_RESEARCH\SpaceEngineResearchSmokeTester.csproj =====
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+RESTORE_EXIT=0
+===== BUILD Docs\DEPRECATED\Documentation_Bundles_2026-05-21_SANITIZED\SPACE_ENGINE_RESEARCH\SpaceEngineResearchSmokeTester.csproj =====
+  SpaceEngineResearchSmokeTester -> C:\hades\Hecton8\Docs\DEPRECATED\Documentation_Bundles_2026-05-21_SANITIZED\SPACE_ENGINE_RESEARCH\bin\Debug\net10.0\SpaceEngineResearchSmokeTester.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:00.65
+BUILD_EXIT=0
+
+===== RESTORE EasySave3.csproj =====
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+RESTORE_EXIT=0
+===== BUILD EasySave3.csproj =====
+  EasySave3 -> C:\hades\Hecton8\Temp\bin\Debug\EasySave3.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:00.73
+BUILD_EXIT=0
+
+===== RESTORE EasySave3Editor.csproj =====
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+RESTORE_EXIT=0
+===== BUILD EasySave3Editor.csproj =====
+  EasySave3 -> C:\hades\Hecton8\Temp\bin\Debug\EasySave3.dll
+  EasySave3Editor -> C:\hades\Hecton8\Temp\bin\Debug\EasySave3Editor.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:01.05
+BUILD_EXIT=0
+
+===== RESTORE GPUInstancer.csproj =====
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+RESTORE_EXIT=0
+===== BUILD GPUInstancer.csproj =====
+  Unity.RenderPipelines.Universal.Runtime -> C:\hades\Hecton8\Temp\bin\Debug\Unity.RenderPipelines.Universal.Runtime.dll
+  GPUInstancer -> C:\hades\Hecton8\Temp\bin\Debug\GPUInstancer.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:01.11
+BUILD_EXIT=0
+
+===== RESTORE GPUInstancer.Editor.csproj =====
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+RESTORE_EXIT=0
+===== BUILD GPUInstancer.Editor.csproj =====
+  Unity.RenderPipelines.Universal.Runtime -> C:\hades\Hecton8\Temp\bin\Debug\Unity.RenderPipelines.Universal.Runtime.dll
+  GPUInstancer -> C:\hades\Hecton8\Temp\bin\Debug\GPUInstancer.dll
+  GPUInstancer.Editor -> C:\hades\Hecton8\Temp\bin\Debug\GPUInstancer.Editor.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:01.29
+BUILD_EXIT=0
+
+===== RESTORE Hecton8.Bootstrap.Contracts.csproj =====
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+RESTORE_EXIT=0
+===== BUILD Hecton8.Bootstrap.Contracts.csproj =====
+  Hecton8.Bootstrap.Contracts -> C:\hades\Hecton8\Temp\bin\Debug\Hecton8.Bootstrap.Contracts.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:00.73
+BUILD_EXIT=0
+
+===== RESTORE Hecton8.Core.csproj =====
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+RESTORE_EXIT=0
+===== BUILD Hecton8.Core.csproj =====
+  Hecton8.Core -> C:\hades\Hecton8\Temp\bin\Debug\Hecton8.Core.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:00.89
+BUILD_EXIT=0
+
+===== RESTORE Hecton8.Editor.csproj =====
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+RESTORE_EXIT=0
+===== BUILD Hecton8.Editor.csproj =====
+  Hecton8.Core -> C:\hades\Hecton8\Temp\bin\Debug\Hecton8.Core.dll
+  Unity.RenderPipelines.Universal.Runtime -> C:\hades\Hecton8\Temp\bin\Debug\Unity.RenderPipelines.Universal.Runtime.dll
+  GPUInstancer -> C:\hades\Hecton8\Temp\bin\Debug\GPUInstancer.dll
+  Den.Tools -> C:\hades\Hecton8\Temp\bin\Debug\Den.Tools.dll
+  MapMagic -> C:\hades\Hecton8\Temp\bin\Debug\MapMagic.dll
+  ShapesRuntime -> C:\hades\Hecton8\Temp\bin\Debug\ShapesRuntime.dll
+  EasySave3 -> C:\hades\Hecton8\Temp\bin\Debug\EasySave3.dll
+  VolumetricLightBeam -> C:\hades\Hecton8\Temp\bin\Debug\VolumetricLightBeam.dll
+  Hecton8.Editor -> C:\hades\Hecton8\Temp\bin\Debug\Hecton8.Editor.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:02.66
+BUILD_EXIT=0
+
+===== RESTORE Hecton8.Input.csproj =====
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+RESTORE_EXIT=0
+===== BUILD Hecton8.Input.csproj =====
+  Hecton8.Bootstrap.Contracts -> C:\hades\Hecton8\Temp\bin\Debug\Hecton8.Bootstrap.Contracts.dll
+  Hecton8.Input.Generated -> C:\hades\Hecton8\Temp\bin\Debug\Hecton8.Input.Generated.dll
+  Hecton8.Input -> C:\hades\Hecton8\Temp\bin\Debug\Hecton8.Input.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:01.12
+BUILD_EXIT=0
+
+===== RESTORE Hecton8.Input.Generated.csproj =====
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+RESTORE_EXIT=0
+===== BUILD Hecton8.Input.Generated.csproj =====
+  Hecton8.Input.Generated -> C:\hades\Hecton8\Temp\bin\Debug\Hecton8.Input.Generated.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:00.74
+BUILD_EXIT=0
+
+===== RESTORE Hecton8.PlayModeTests.csproj =====
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+RESTORE_EXIT=0
+===== BUILD Hecton8.PlayModeTests.csproj =====
+  Hecton8.Core -> C:\hades\Hecton8\Temp\bin\Debug\Hecton8.Core.dll
+  Hecton8.PlayModeTests -> C:\hades\Hecton8\Temp\bin\Debug\Hecton8.PlayModeTests.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:01.33
+BUILD_EXIT=0
+
+===== RESTORE Hecton8.World.Contracts.csproj =====
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+RESTORE_EXIT=0
+===== BUILD Hecton8.World.Contracts.csproj =====
+  Hecton8.World.Contracts -> C:\hades\Hecton8\Temp\bin\Debug\Hecton8.World.Contracts.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:00.81
+BUILD_EXIT=0
+
+===== RESTORE Hecton8.World.Dots.csproj =====
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+RESTORE_EXIT=0
+===== BUILD Hecton8.World.Dots.csproj =====
+  Hecton8.World.Contracts -> C:\hades\Hecton8\Temp\bin\Debug\Hecton8.World.Contracts.dll
+  Hecton8.World.Dots -> C:\hades\Hecton8\Temp\bin\Debug\Hecton8.World.Dots.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:01.02
+BUILD_EXIT=0
+
+===== RESTORE JBooth.MicroSplat.Core.csproj =====
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+RESTORE_EXIT=0
+===== BUILD JBooth.MicroSplat.Core.csproj =====
+  Unity.RenderPipelines.Universal.Runtime -> C:\hades\Hecton8\Temp\bin\Debug\Unity.RenderPipelines.Universal.Runtime.dll
+  JBooth.MicroSplat.Core -> C:\hades\Hecton8\Temp\bin\Debug\JBooth.MicroSplat.Core.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:01.02
+BUILD_EXIT=0
+
+===== RESTORE JBooth.MicroSplat.Core.Editor.csproj =====
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+RESTORE_EXIT=0
+===== BUILD JBooth.MicroSplat.Core.Editor.csproj =====
+  Unity.RenderPipelines.Universal.Runtime -> C:\hades\Hecton8\Temp\bin\Debug\Unity.RenderPipelines.Universal.Runtime.dll
+  JBooth.MicroSplat.Core -> C:\hades\Hecton8\Temp\bin\Debug\JBooth.MicroSplat.Core.dll
+  JBooth.MicroSplat.Core.Editor -> C:\hades\Hecton8\Temp\bin\Debug\JBooth.MicroSplat.Core.Editor.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:01.11
+BUILD_EXIT=0
+
+===== RESTORE Lofelt.NiceVibrations.csproj =====
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+RESTORE_EXIT=0
+===== BUILD Lofelt.NiceVibrations.csproj =====
+  Lofelt.NiceVibrations -> C:\hades\Hecton8\Temp\bin\Debug\Lofelt.NiceVibrations.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:00.73
+BUILD_EXIT=0
+
+===== RESTORE Lofelt.NiceVibrations.Demo.csproj =====
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+RESTORE_EXIT=0
+===== BUILD Lofelt.NiceVibrations.Demo.csproj =====
+  Lofelt.NiceVibrations -> C:\hades\Hecton8\Temp\bin\Debug\Lofelt.NiceVibrations.dll
+  Lofelt.NiceVibrations.Demo -> C:\hades\Hecton8\Temp\bin\Debug\Lofelt.NiceVibrations.Demo.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:00.92
+BUILD_EXIT=0
+
+===== RESTORE Lofelt.NiceVibrations.Editor.csproj =====
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+RESTORE_EXIT=0
+===== BUILD Lofelt.NiceVibrations.Editor.csproj =====
+  Lofelt.NiceVibrations -> C:\hades\Hecton8\Temp\bin\Debug\Lofelt.NiceVibrations.dll
+  Lofelt.NiceVibrations.Editor -> C:\hades\Hecton8\Temp\bin\Debug\Lofelt.NiceVibrations.Editor.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:00.91
+BUILD_EXIT=0
+
+===== RESTORE MapMagic.csproj =====
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+RESTORE_EXIT=0
+===== BUILD MapMagic.csproj =====
+  Den.Tools -> C:\hades\Hecton8\Temp\bin\Debug\Den.Tools.dll
+  MapMagic -> C:\hades\Hecton8\Temp\bin\Debug\MapMagic.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:00.98
+BUILD_EXIT=0
+
+===== RESTORE MapMagic.Editor.csproj =====
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+RESTORE_EXIT=0
+===== BUILD MapMagic.Editor.csproj =====
+  Den.Tools -> C:\hades\Hecton8\Temp\bin\Debug\Den.Tools.dll
+  MapMagic -> C:\hades\Hecton8\Temp\bin\Debug\MapMagic.dll
+  Den.Tools.Editor -> C:\hades\Hecton8\Temp\bin\Debug\Den.Tools.Editor.dll
+  MapMagic.Editor -> C:\hades\Hecton8\Temp\bin\Debug\MapMagic.Editor.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:01.45
+BUILD_EXIT=0
+
+===== RESTORE MapMagic.MicroSplat.csproj =====
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+RESTORE_EXIT=0
+===== BUILD MapMagic.MicroSplat.csproj =====
+  Den.Tools -> C:\hades\Hecton8\Temp\bin\Debug\Den.Tools.dll
+  MapMagic -> C:\hades\Hecton8\Temp\bin\Debug\MapMagic.dll
+  Unity.RenderPipelines.Universal.Runtime -> C:\hades\Hecton8\Temp\bin\Debug\Unity.RenderPipelines.Universal.Runtime.dll
+  JBooth.MicroSplat.Core -> C:\hades\Hecton8\Temp\bin\Debug\JBooth.MicroSplat.Core.dll
+  MapMagic.MicroSplat -> C:\hades\Hecton8\Temp\bin\Debug\MapMagic.MicroSplat.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:01.44
+BUILD_EXIT=0
+
+===== RESTORE MapMagic.MicroSplat.Editor.csproj =====
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+RESTORE_EXIT=0
+===== BUILD MapMagic.MicroSplat.Editor.csproj =====
+  Den.Tools -> C:\hades\Hecton8\Temp\bin\Debug\Den.Tools.dll
+  Den.Tools.Editor -> C:\hades\Hecton8\Temp\bin\Debug\Den.Tools.Editor.dll
+  MapMagic -> C:\hades\Hecton8\Temp\bin\Debug\MapMagic.dll
+  MapMagic.Editor -> C:\hades\Hecton8\Temp\bin\Debug\MapMagic.Editor.dll
+  Unity.RenderPipelines.Universal.Runtime -> C:\hades\Hecton8\Temp\bin\Debug\Unity.RenderPipelines.Universal.Runtime.dll
+  JBooth.MicroSplat.Core -> C:\hades\Hecton8\Temp\bin\Debug\JBooth.MicroSplat.Core.dll
+  MapMagic.MicroSplat -> C:\hades\Hecton8\Temp\bin\Debug\MapMagic.MicroSplat.dll
+  JBooth.MicroSplat.Core.Editor -> C:\hades\Hecton8\Temp\bin\Debug\JBooth.MicroSplat.Core.Editor.dll
+  MapMagic.MicroSplat.Editor -> C:\hades\Hecton8\Temp\bin\Debug\MapMagic.MicroSplat.Editor.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:02.43
+BUILD_EXIT=0
+
+===== RESTORE MapMagic.Settings.csproj =====
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+RESTORE_EXIT=0
+===== BUILD MapMagic.Settings.csproj =====
+  MapMagic.Settings -> C:\hades\Hecton8\Temp\bin\Debug\MapMagic.Settings.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:00.70
+BUILD_EXIT=0
+
+===== RESTORE MeshBakerCore.csproj =====
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+RESTORE_EXIT=0
+===== BUILD MeshBakerCore.csproj =====
+  MeshBakerCore -> C:\hades\Hecton8\Temp\bin\Debug\MeshBakerCore.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:00.69
+BUILD_EXIT=0
+
+===== RESTORE MeshBakerEditor.csproj =====
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+RESTORE_EXIT=0
+===== BUILD MeshBakerEditor.csproj =====
+  MeshBakerCore -> C:\hades\Hecton8\Temp\bin\Debug\MeshBakerCore.dll
+  MeshBakerEditor -> C:\hades\Hecton8\Temp\bin\Debug\MeshBakerEditor.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:01.00
+BUILD_EXIT=0
+
+===== RESTORE MoreMountains.Feedbacks.Authorizations.csproj =====
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+RESTORE_EXIT=0
+===== BUILD MoreMountains.Feedbacks.Authorizations.csproj =====
+  Unity.RenderPipelines.Universal.Runtime -> C:\hades\Hecton8\Temp\bin\Debug\Unity.RenderPipelines.Universal.Runtime.dll
+  Lofelt.NiceVibrations -> C:\hades\Hecton8\Temp\bin\Debug\Lofelt.NiceVibrations.dll
+  MoreMountains.Tools -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Tools.dll
+  MoreMountains.Feedbacks -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.dll
+  MoreMountains.Feedbacks.Cinemachine -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.Cinemachine.dll
+  MoreMountains.Feedbacks.HDRP -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.HDRP.dll
+  MoreMountains.Feedbacks.MMTools -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.MMTools.dll
+  MoreMountains.Feedbacks.NiceVibrations -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.NiceVibrations.dll
+  MoreMountains.Feedbacks.PostProcessing -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.PostProcessing.dll
+  MoreMountains.Feedbacks.TextMeshPro -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.TextMeshPro.dll
+  MoreMountains.Feedbacks.URP -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.URP.dll
+  MoreMountains.Feedbacks.Authorizations -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.Authorizations.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:03.20
+BUILD_EXIT=0
+
+===== RESTORE MoreMountains.Feedbacks.Cinemachine.csproj =====
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+RESTORE_EXIT=0
+===== BUILD MoreMountains.Feedbacks.Cinemachine.csproj =====
+  Unity.RenderPipelines.Universal.Runtime -> C:\hades\Hecton8\Temp\bin\Debug\Unity.RenderPipelines.Universal.Runtime.dll
+  Lofelt.NiceVibrations -> C:\hades\Hecton8\Temp\bin\Debug\Lofelt.NiceVibrations.dll
+  MoreMountains.Tools -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Tools.dll
+  MoreMountains.Feedbacks -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.dll
+  MoreMountains.Feedbacks.Cinemachine -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.Cinemachine.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:01.70
+BUILD_EXIT=0
+
+===== RESTORE MoreMountains.Feedbacks.csproj =====
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+RESTORE_EXIT=0
+===== BUILD MoreMountains.Feedbacks.csproj =====
+  Unity.RenderPipelines.Universal.Runtime -> C:\hades\Hecton8\Temp\bin\Debug\Unity.RenderPipelines.Universal.Runtime.dll
+  Lofelt.NiceVibrations -> C:\hades\Hecton8\Temp\bin\Debug\Lofelt.NiceVibrations.dll
+  MoreMountains.Tools -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Tools.dll
+  MoreMountains.Feedbacks -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:01.43
+BUILD_EXIT=0
+
+===== RESTORE MoreMountains.Feedbacks.Editor.csproj =====
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+RESTORE_EXIT=0
+===== BUILD MoreMountains.Feedbacks.Editor.csproj =====
+  Unity.RenderPipelines.Universal.Runtime -> C:\hades\Hecton8\Temp\bin\Debug\Unity.RenderPipelines.Universal.Runtime.dll
+  Lofelt.NiceVibrations -> C:\hades\Hecton8\Temp\bin\Debug\Lofelt.NiceVibrations.dll
+  MoreMountains.Tools -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Tools.dll
+  MoreMountains.Feedbacks -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.dll
+  MoreMountains.Feedbacks.Editor -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.Editor.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:01.68
+BUILD_EXIT=0
+
+===== RESTORE MoreMountains.Feedbacks.HDRP.csproj =====
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+RESTORE_EXIT=0
+===== BUILD MoreMountains.Feedbacks.HDRP.csproj =====
+  Unity.RenderPipelines.Universal.Runtime -> C:\hades\Hecton8\Temp\bin\Debug\Unity.RenderPipelines.Universal.Runtime.dll
+  Lofelt.NiceVibrations -> C:\hades\Hecton8\Temp\bin\Debug\Lofelt.NiceVibrations.dll
+  MoreMountains.Tools -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Tools.dll
+  MoreMountains.Feedbacks -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.dll
+  MoreMountains.Feedbacks.HDRP -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.HDRP.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:01.75
+BUILD_EXIT=0
+
+===== RESTORE MoreMountains.Feedbacks.MMTools.csproj =====
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+RESTORE_EXIT=0
+===== BUILD MoreMountains.Feedbacks.MMTools.csproj =====
+  Unity.RenderPipelines.Universal.Runtime -> C:\hades\Hecton8\Temp\bin\Debug\Unity.RenderPipelines.Universal.Runtime.dll
+  Lofelt.NiceVibrations -> C:\hades\Hecton8\Temp\bin\Debug\Lofelt.NiceVibrations.dll
+  MoreMountains.Tools -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Tools.dll
+  MoreMountains.Feedbacks -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.dll
+  MoreMountains.Feedbacks.MMTools -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.MMTools.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:01.82
+BUILD_EXIT=0
+
+===== RESTORE MoreMountains.Feedbacks.NiceVibrations.csproj =====
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+RESTORE_EXIT=0
+===== BUILD MoreMountains.Feedbacks.NiceVibrations.csproj =====
+  Lofelt.NiceVibrations -> C:\hades\Hecton8\Temp\bin\Debug\Lofelt.NiceVibrations.dll
+  Unity.RenderPipelines.Universal.Runtime -> C:\hades\Hecton8\Temp\bin\Debug\Unity.RenderPipelines.Universal.Runtime.dll
+  MoreMountains.Tools -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Tools.dll
+  MoreMountains.Feedbacks -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.dll
+  MoreMountains.Feedbacks.NiceVibrations -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.NiceVibrations.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:01.69
+BUILD_EXIT=0
+
+===== RESTORE MoreMountains.Feedbacks.PostProcessing.csproj =====
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+RESTORE_EXIT=0
+===== BUILD MoreMountains.Feedbacks.PostProcessing.csproj =====
+  Unity.RenderPipelines.Universal.Runtime -> C:\hades\Hecton8\Temp\bin\Debug\Unity.RenderPipelines.Universal.Runtime.dll
+  Lofelt.NiceVibrations -> C:\hades\Hecton8\Temp\bin\Debug\Lofelt.NiceVibrations.dll
+  MoreMountains.Tools -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Tools.dll
+  MoreMountains.Feedbacks -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.dll
+  MoreMountains.Feedbacks.PostProcessing -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.PostProcessing.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:01.53
+BUILD_EXIT=0
+
+===== RESTORE MoreMountains.Feedbacks.TextMeshPro.csproj =====
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+RESTORE_EXIT=0
+===== BUILD MoreMountains.Feedbacks.TextMeshPro.csproj =====
+  Unity.RenderPipelines.Universal.Runtime -> C:\hades\Hecton8\Temp\bin\Debug\Unity.RenderPipelines.Universal.Runtime.dll
+  Lofelt.NiceVibrations -> C:\hades\Hecton8\Temp\bin\Debug\Lofelt.NiceVibrations.dll
+  MoreMountains.Tools -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Tools.dll
+  MoreMountains.Feedbacks -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.dll
+  MoreMountains.Feedbacks.MMTools -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.MMTools.dll
+  MoreMountains.Feedbacks.TextMeshPro -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.TextMeshPro.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:02.03
+BUILD_EXIT=0
+
+===== RESTORE MoreMountains.Feedbacks.URP.csproj =====
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+RESTORE_EXIT=0
+===== BUILD MoreMountains.Feedbacks.URP.csproj =====
+  Unity.RenderPipelines.Universal.Runtime -> C:\hades\Hecton8\Temp\bin\Debug\Unity.RenderPipelines.Universal.Runtime.dll
+  Lofelt.NiceVibrations -> C:\hades\Hecton8\Temp\bin\Debug\Lofelt.NiceVibrations.dll
+  MoreMountains.Tools -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Tools.dll
+  MoreMountains.Feedbacks -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.dll
+  MoreMountains.Feedbacks.URP -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.URP.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:01.70
+BUILD_EXIT=0
+
+===== RESTORE MoreMountains.Tools.csproj =====
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+RESTORE_EXIT=0
+===== BUILD MoreMountains.Tools.csproj =====
+  Unity.RenderPipelines.Universal.Runtime -> C:\hades\Hecton8\Temp\bin\Debug\Unity.RenderPipelines.Universal.Runtime.dll
+  Lofelt.NiceVibrations -> C:\hades\Hecton8\Temp\bin\Debug\Lofelt.NiceVibrations.dll
+  MoreMountains.Tools -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Tools.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:01.26
+BUILD_EXIT=0
+
+===== RESTORE MoreMountains.Tools.Editor.csproj =====
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+RESTORE_EXIT=0
+===== BUILD MoreMountains.Tools.Editor.csproj =====
+  Unity.RenderPipelines.Universal.Runtime -> C:\hades\Hecton8\Temp\bin\Debug\Unity.RenderPipelines.Universal.Runtime.dll
+  Lofelt.NiceVibrations -> C:\hades\Hecton8\Temp\bin\Debug\Lofelt.NiceVibrations.dll
+  MoreMountains.Tools -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Tools.dll
+  MoreMountains.Tools.Editor -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Tools.Editor.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:01.41
+BUILD_EXIT=0
+
+===== RESTORE PackageToolsEditor.csproj =====
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+RESTORE_EXIT=0
+===== BUILD PackageToolsEditor.csproj =====
+  AstarPathfindingProject -> C:\hades\Hecton8\Temp\bin\Debug\AstarPathfindingProject.dll
+  PackageToolsEditor -> C:\hades\Hecton8\Temp\bin\Debug\PackageToolsEditor.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:00.96
+BUILD_EXIT=0
+
+===== RESTORE RealtimeCSG.csproj =====
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+RESTORE_EXIT=0
+===== BUILD RealtimeCSG.csproj =====
+  RealtimeCSG -> C:\hades\Hecton8\Temp\bin\Debug\RealtimeCSG.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:00.61
+BUILD_EXIT=0
+
+===== RESTORE ShapesEditor.csproj =====
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+RESTORE_EXIT=0
+===== BUILD ShapesEditor.csproj =====
+  Unity.RenderPipelines.Universal.Runtime -> C:\hades\Hecton8\Temp\bin\Debug\Unity.RenderPipelines.Universal.Runtime.dll
+  ShapesRuntime -> C:\hades\Hecton8\Temp\bin\Debug\ShapesRuntime.dll
+  Unity.RenderPipelines.Core.Editor -> C:\hades\Hecton8\Temp\bin\Debug\Unity.RenderPipelines.Core.Editor.dll
+  Unity.ShaderGraph.Editor -> C:\hades\Hecton8\Temp\bin\Debug\Unity.ShaderGraph.Editor.dll
+  Unity.RenderPipelines.Universal.Editor -> C:\hades\Hecton8\Temp\bin\Debug\Unity.RenderPipelines.Universal.Editor.dll
+  ShapesEditor -> C:\hades\Hecton8\Temp\bin\Debug\ShapesEditor.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:02.07
+BUILD_EXIT=0
+
+===== RESTORE ShapesRuntime.csproj =====
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+RESTORE_EXIT=0
+===== BUILD ShapesRuntime.csproj =====
+  Unity.RenderPipelines.Universal.Runtime -> C:\hades\Hecton8\Temp\bin\Debug\Unity.RenderPipelines.Universal.Runtime.dll
+  ShapesRuntime -> C:\hades\Hecton8\Temp\bin\Debug\ShapesRuntime.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:00.95
+BUILD_EXIT=0
+
+===== RESTORE Sirenix.OdinInspector.Modules.UnityMathematics.csproj =====
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+RESTORE_EXIT=0
+===== BUILD Sirenix.OdinInspector.Modules.UnityMathematics.csproj =====
+  Sirenix.OdinInspector.Modules.UnityMathematics -> C:\hades\Hecton8\Temp\bin\Debug\Sirenix.OdinInspector.Modules.UnityMathematics.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:00.71
+BUILD_EXIT=0
+
+===== RESTORE Tayx.Graphy.csproj =====
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+RESTORE_EXIT=0
+===== BUILD Tayx.Graphy.csproj =====
+  Tayx.Graphy -> C:\hades\Hecton8\Temp\bin\Debug\Tayx.Graphy.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:00.73
+BUILD_EXIT=0
+
+===== RESTORE Tayx.Graphy.Editor.csproj =====
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+RESTORE_EXIT=0
+===== BUILD Tayx.Graphy.Editor.csproj =====
+  Tayx.Graphy -> C:\hades\Hecton8\Temp\bin\Debug\Tayx.Graphy.dll
+  Tayx.Graphy.Editor -> C:\hades\Hecton8\Temp\bin\Debug\Tayx.Graphy.Editor.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:01.00
+BUILD_EXIT=0
+
+===== RESTORE Technie.PhysicsCreator.Updater.csproj =====
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+RESTORE_EXIT=0
+===== BUILD Technie.PhysicsCreator.Updater.csproj =====
+  Technie.PhysicsCreator.Updater -> C:\hades\Hecton8\Temp\bin\Debug\Technie.PhysicsCreator.Updater.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:00.71
+BUILD_EXIT=0
+
+===== RESTORE TechniePhysicsCreator.csproj =====
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+RESTORE_EXIT=0
+===== BUILD TechniePhysicsCreator.csproj =====
+  TechniePhysicsCreator -> C:\hades\Hecton8\Temp\bin\Debug\TechniePhysicsCreator.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:00.70
+BUILD_EXIT=0
+
+===== RESTORE TechniePhysicsCreatorEditor.csproj =====
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+RESTORE_EXIT=0
+===== BUILD TechniePhysicsCreatorEditor.csproj =====
+  TechniePhysicsCreator -> C:\hades\Hecton8\Temp\bin\Debug\TechniePhysicsCreator.dll
+  TechniePhysicsCreatorEditor -> C:\hades\Hecton8\Temp\bin\Debug\TechniePhysicsCreatorEditor.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:00.94
+BUILD_EXIT=0
+
+===== RESTORE Tools\RoslynAnalyzers\Hecton8.PlatformNeutralityAnalyzer\Hecton8.PlatformNeutralityAnalyzer.csproj =====
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+RESTORE_EXIT=0
+===== BUILD Tools\RoslynAnalyzers\Hecton8.PlatformNeutralityAnalyzer\Hecton8.PlatformNeutralityAnalyzer.csproj =====
+  Hecton8.PlatformNeutralityAnalyzer -> C:\hades\Hecton8\Tools\RoslynAnalyzers\Hecton8.PlatformNeutralityAnalyzer\bin\Debug\netstandard2.0\Hecton8.PlatformNeutralityAnalyzer.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:00.63
+BUILD_EXIT=0
+
+===== RESTORE Tools\SignalBusContractAuditCli\SignalBusContractAuditCli.csproj =====
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+RESTORE_EXIT=0
+===== BUILD Tools\SignalBusContractAuditCli\SignalBusContractAuditCli.csproj =====
+  SignalBusContractAuditCli -> C:\hades\Hecton8\Tools\SignalBusContractAuditCli\bin\Debug\net8.0\SignalBusContractAuditCli.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:00.69
+BUILD_EXIT=0
+
+===== RESTORE Unity.RenderPipelines.Core.Editor.csproj =====
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+RESTORE_EXIT=0
+===== BUILD Unity.RenderPipelines.Core.Editor.csproj =====
+  Unity.RenderPipelines.Core.Editor -> C:\hades\Hecton8\Temp\bin\Debug\Unity.RenderPipelines.Core.Editor.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:00.73
+BUILD_EXIT=0
+
+===== RESTORE Unity.RenderPipelines.Universal.Editor.csproj =====
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+RESTORE_EXIT=0
+===== BUILD Unity.RenderPipelines.Universal.Editor.csproj =====
+  Unity.RenderPipelines.Universal.Runtime -> C:\hades\Hecton8\Temp\bin\Debug\Unity.RenderPipelines.Universal.Runtime.dll
+  Unity.RenderPipelines.Core.Editor -> C:\hades\Hecton8\Temp\bin\Debug\Unity.RenderPipelines.Core.Editor.dll
+  Unity.ShaderGraph.Editor -> C:\hades\Hecton8\Temp\bin\Debug\Unity.ShaderGraph.Editor.dll
+  Unity.RenderPipelines.Universal.Editor -> C:\hades\Hecton8\Temp\bin\Debug\Unity.RenderPipelines.Universal.Editor.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:01.74
+BUILD_EXIT=0
+
+===== RESTORE Unity.RenderPipelines.Universal.Runtime.csproj =====
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+RESTORE_EXIT=0
+===== BUILD Unity.RenderPipelines.Universal.Runtime.csproj =====
+  Unity.RenderPipelines.Universal.Runtime -> C:\hades\Hecton8\Temp\bin\Debug\Unity.RenderPipelines.Universal.Runtime.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:00.74
+BUILD_EXIT=0
+
+===== RESTORE Unity.ShaderGraph.Editor.csproj =====
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+RESTORE_EXIT=0
+===== BUILD Unity.ShaderGraph.Editor.csproj =====
+  Unity.RenderPipelines.Core.Editor -> C:\hades\Hecton8\Temp\bin\Debug\Unity.RenderPipelines.Core.Editor.dll
+  Unity.ShaderGraph.Editor -> C:\hades\Hecton8\Temp\bin\Debug\Unity.ShaderGraph.Editor.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:01.14
+BUILD_EXIT=0
+
+===== RESTORE VolumetricLightBeam.csproj =====
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+RESTORE_EXIT=0
+===== BUILD VolumetricLightBeam.csproj =====
+  Unity.RenderPipelines.Universal.Runtime -> C:\hades\Hecton8\Temp\bin\Debug\Unity.RenderPipelines.Universal.Runtime.dll
+  VolumetricLightBeam -> C:\hades\Hecton8\Temp\bin\Debug\VolumetricLightBeam.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:01.00
+BUILD_EXIT=0
+
+===== RESTORE VolumetricLightBeam.Editor.csproj =====
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+RESTORE_EXIT=0
+===== BUILD VolumetricLightBeam.Editor.csproj =====
+  Unity.RenderPipelines.Universal.Runtime -> C:\hades\Hecton8\Temp\bin\Debug\Unity.RenderPipelines.Universal.Runtime.dll
+  VolumetricLightBeam -> C:\hades\Hecton8\Temp\bin\Debug\VolumetricLightBeam.dll
+  VolumetricLightBeam.Editor -> C:\hades\Hecton8\Temp\bin\Debug\VolumetricLightBeam.Editor.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:01.24
+BUILD_EXIT=0
+
+END 2026-05-22T16:28:35.2692029+04:00
+CSV=C:\hades\Hecton8\Docs\AgentLogs\Build_BUILD_MEDIC_20260522_162435_Active72CsprojRestoreBuild_AfterUnityClean.csv
+NONCLEAN=0

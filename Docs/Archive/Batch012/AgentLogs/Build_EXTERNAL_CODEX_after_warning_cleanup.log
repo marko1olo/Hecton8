@@ -1,0 +1,15 @@
+  EasySave3 -> C:\hades\Hecton8\Temp\bin\Debug\EasySave3.dll
+  Den.Tools -> C:\hades\Hecton8\Temp\bin\Debug\Den.Tools.dll
+  Unity.RenderPipelines.Universal.Runtime -> C:\hades\Hecton8\Temp\bin\Debug\Unity.RenderPipelines.Universal.Runtime.dll
+CSC : warning CS2002: Source file 'C:\hades\Hecton8\Assets\_Project\Scripts\Core\BulkheadContainmentIntentBus.cs' specified multiple times [C:\hades\Hecton8\Hecton8.Core.csproj]
+CSC : warning CS2002: Source file 'C:\hades\Hecton8\Assets\_Project\Scripts\Core\Contracts\BulkheadContainmentContracts.cs' specified multiple times [C:\hades\Hecton8\Hecton8.Core.csproj]
+CSC : warning CS2002: Source file 'C:\hades\Hecton8\Assets\_Project\Scripts\Atmosphere\BaseAtmosphereLogisticsTypes.cs' specified multiple times [C:\hades\Hecton8\Hecton8.Core.csproj]
+  GPUInstancer -> C:\hades\Hecton8\Temp\bin\Debug\GPUInstancer.dll
+  VolumetricLightBeam -> C:\hades\Hecton8\Temp\bin\Debug\VolumetricLightBeam.dll
+  ShapesRuntime -> C:\hades\Hecton8\Temp\bin\Debug\ShapesRuntime.dll
+  MapMagic -> C:\hades\Hecton8\Temp\bin\Debug\MapMagic.dll
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerFlashlight.cs(1063,18): warning CS0219: The variable 'batteryOrHeatFlicker' is assigned but its value is never used [C:\hades\Hecton8\Hecton8.Core.csproj]
+C:\hades\Hecton8\Assets\_Project\Scripts\HectonSurvivalSystem.cs(468,36): warning CS0067: The event 'HectonSurvivalSystem.OnDeath' is never used [C:\hades\Hecton8\Hecton8.Core.csproj]
+C:\hades\Hecton8\Assets\_Project\Scripts\Gameplay\HectonPlayerHealth.cs(103,36): warning CS0067: The event 'HectonPlayerHealth.OnDeath' is never used [C:\hades\Hecton8\Hecton8.Core.csproj]
+  Hecton8.Core -> C:\hades\Hecton8\Temp\bin\Debug\Hecton8.Core.dll
+  Hecton8.Editor -> C:\hades\Hecton8\Temp\bin\Debug\Hecton8.Editor.dll

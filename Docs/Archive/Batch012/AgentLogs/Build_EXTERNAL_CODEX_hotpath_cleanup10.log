@@ -1,0 +1,9 @@
+  Unity.RenderPipelines.Universal.Runtime -> C:\hades\Hecton8\Temp\bin\Debug\Unity.RenderPipelines.Universal.Runtime.dll
+  EasySave3 -> C:\hades\Hecton8\Temp\bin\Debug\EasySave3.dll
+  Den.Tools -> C:\hades\Hecton8\Temp\bin\Debug\Den.Tools.dll
+  GPUInstancer -> C:\hades\Hecton8\Temp\bin\Debug\GPUInstancer.dll
+  ShapesRuntime -> C:\hades\Hecton8\Temp\bin\Debug\ShapesRuntime.dll
+  MapMagic -> C:\hades\Hecton8\Temp\bin\Debug\MapMagic.dll
+  VolumetricLightBeam -> C:\hades\Hecton8\Temp\bin\Debug\VolumetricLightBeam.dll
+C:\hades\Hecton8\Assets\_Project\Scripts\HectonVoxelEngine.cs(4977,22): error CS0103: The name 'player' does not exist in the current context [C:\hades\Hecton8\Hecton8.Core.csproj]
+C:\hades\Hecton8\Assets\_Project\Scripts\HectonVoxelEngine.cs(4977,39): error CS0103: The name 'player' does not exist in the current context [C:\hades\Hecton8\Hecton8.Core.csproj]

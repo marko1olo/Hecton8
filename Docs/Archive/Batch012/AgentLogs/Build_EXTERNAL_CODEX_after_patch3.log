@@ -1,0 +1,19 @@
+  EasySave3 -> C:\hades\Hecton8\Temp\bin\Debug\EasySave3.dll
+  Den.Tools -> C:\hades\Hecton8\Temp\bin\Debug\Den.Tools.dll
+  Unity.RenderPipelines.Universal.Runtime -> C:\hades\Hecton8\Temp\bin\Debug\Unity.RenderPipelines.Universal.Runtime.dll
+CSC : warning CS2002: Source file 'C:\hades\Hecton8\Assets\_Project\Scripts\Core\BulkheadContainmentIntentBus.cs' specified multiple times [C:\hades\Hecton8\Hecton8.Core.csproj]
+CSC : warning CS2002: Source file 'C:\hades\Hecton8\Assets\_Project\Scripts\Core\Contracts\BulkheadContainmentContracts.cs' specified multiple times [C:\hades\Hecton8\Hecton8.Core.csproj]
+CSC : warning CS2002: Source file 'C:\hades\Hecton8\Assets\_Project\Scripts\Atmosphere\BaseAtmosphereLogisticsTypes.cs' specified multiple times [C:\hades\Hecton8\Hecton8.Core.csproj]
+  MapMagic -> C:\hades\Hecton8\Temp\bin\Debug\MapMagic.dll
+  ShapesRuntime -> C:\hades\Hecton8\Temp\bin\Debug\ShapesRuntime.dll
+  VolumetricLightBeam -> C:\hades\Hecton8\Temp\bin\Debug\VolumetricLightBeam.dll
+  GPUInstancer -> C:\hades\Hecton8\Temp\bin\Debug\GPUInstancer.dll
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerFlashlight.cs(1063,18): warning CS0219: The variable 'batteryOrHeatFlicker' is assigned but its value is never used [C:\hades\Hecton8\Hecton8.Core.csproj]
+C:\hades\Hecton8\Assets\_Project\Scripts\VFX\CameraJuiceSystem_CameraJuiceBurst.cs(241,57): error CS0165: Use of unassigned local variable 'impulse' [C:\hades\Hecton8\Hecton8.Core.csproj]
+C:\hades\Hecton8\Assets\_Project\Scripts\VFX\CameraJuiceSystem_CameraJuiceBurst.cs(241,66): error CS0165: Use of unassigned local variable 'projection' [C:\hades\Hecton8\Hecton8.Core.csproj]
+C:\hades\Hecton8\Assets\_Project\Scripts\VFX\CameraJuiceSystem_CameraJuiceBurst.cs(241,78): error CS0165: Use of unassigned local variable 'tuning' [C:\hades\Hecton8\Hecton8.Core.csproj]
+C:\hades\Hecton8\Assets\_Project\Scripts\VFX\CameraJuiceSystem_CameraJuiceBurst.cs(241,86): error CS0165: Use of unassigned local variable 'profiles' [C:\hades\Hecton8\Hecton8.Core.csproj]
+C:\hades\Hecton8\Assets\_Project\Scripts\VFX\CameraJuiceSystem_CameraJuiceBurst.cs(241,96): error CS0165: Use of unassigned local variable 'mockSignals' [C:\hades\Hecton8\Hecton8.Core.csproj]
+C:\hades\Hecton8\Assets\_Project\Scripts\VFX\CameraJuiceSystem_CameraJuiceBurst.cs(241,109): error CS0165: Use of unassigned local variable 'csvScratch' [C:\hades\Hecton8\Hecton8.Core.csproj]
+C:\hades\Hecton8\Assets\_Project\Scripts\Gameplay\HectonPlayerHealth.cs(103,36): warning CS0067: The event 'HectonPlayerHealth.OnDeath' is never used [C:\hades\Hecton8\Hecton8.Core.csproj]
+C:\hades\Hecton8\Assets\_Project\Scripts\HectonSurvivalSystem.cs(468,36): warning CS0067: The event 'HectonSurvivalSystem.OnDeath' is never used [C:\hades\Hecton8\Hecton8.Core.csproj]

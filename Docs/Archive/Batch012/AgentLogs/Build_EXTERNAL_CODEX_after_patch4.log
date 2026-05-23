@@ -1,0 +1,17 @@
+  Unity.RenderPipelines.Universal.Runtime -> C:\hades\Hecton8\Temp\bin\Debug\Unity.RenderPipelines.Universal.Runtime.dll
+  EasySave3 -> C:\hades\Hecton8\Temp\bin\Debug\EasySave3.dll
+  Den.Tools -> C:\hades\Hecton8\Temp\bin\Debug\Den.Tools.dll
+CSC : warning CS2002: Source file 'C:\hades\Hecton8\Assets\_Project\Scripts\Core\BulkheadContainmentIntentBus.cs' specified multiple times [C:\hades\Hecton8\Hecton8.Core.csproj]
+CSC : warning CS2002: Source file 'C:\hades\Hecton8\Assets\_Project\Scripts\Core\Contracts\BulkheadContainmentContracts.cs' specified multiple times [C:\hades\Hecton8\Hecton8.Core.csproj]
+CSC : warning CS2002: Source file 'C:\hades\Hecton8\Assets\_Project\Scripts\Atmosphere\BaseAtmosphereLogisticsTypes.cs' specified multiple times [C:\hades\Hecton8\Hecton8.Core.csproj]
+  ShapesRuntime -> C:\hades\Hecton8\Temp\bin\Debug\ShapesRuntime.dll
+  GPUInstancer -> C:\hades\Hecton8\Temp\bin\Debug\GPUInstancer.dll
+  VolumetricLightBeam -> C:\hades\Hecton8\Temp\bin\Debug\VolumetricLightBeam.dll
+  MapMagic -> C:\hades\Hecton8\Temp\bin\Debug\MapMagic.dll
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerFlashlight.cs(1063,18): warning CS0219: The variable 'batteryOrHeatFlicker' is assigned but its value is never used [C:\hades\Hecton8\Hecton8.Core.csproj]
+C:\hades\Hecton8\Assets\_Project\Scripts\Gameplay\HectonPlayerHealth.cs(103,36): warning CS0067: The event 'HectonPlayerHealth.OnDeath' is never used [C:\hades\Hecton8\Hecton8.Core.csproj]
+C:\hades\Hecton8\Assets\_Project\Scripts\HectonSurvivalSystem.cs(468,36): warning CS0067: The event 'HectonSurvivalSystem.OnDeath' is never used [C:\hades\Hecton8\Hecton8.Core.csproj]
+  Hecton8.Core -> C:\hades\Hecton8\Temp\bin\Debug\Hecton8.Core.dll
+C:\hades\Hecton8\Assets\_Project\Scripts\Editor\CraftingFastFailXRayWindow_SHINOBU317.cs(131,44): error CS0234: The type or namespace name 'TickCount' does not exist in the namespace 'Hecton8.Environment' (are you missing an assembly reference?) [C:\hades\Hecton8\Hecton8.Editor.csproj]
+C:\hades\Hecton8\Assets\_Project\Scripts\Editor\SubmarineDynoTunerWindow.cs(54,68): warning CS0618: 'SubmarineKinematicConfig.BallastLiftN' is obsolete: 'Deprecated ABI residue. SHINOBU_333 ballast force owns ballast truth; Submarine6DIntegratorJob ignores this scalar.' [C:\hades\Hecton8\Hecton8.Editor.csproj]
+C:\hades\Hecton8\Assets\_Project\Scripts\Editor\SubmarineDynoTunerWindow.cs(65,17): warning CS0618: 'SubmarineKinematicConfig.BallastLiftN' is obsolete: 'Deprecated ABI residue. SHINOBU_333 ballast force owns ballast truth; Submarine6DIntegratorJob ignores this scalar.' [C:\hades\Hecton8\Hecton8.Editor.csproj]

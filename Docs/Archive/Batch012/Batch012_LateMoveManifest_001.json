@@ -1,0 +1,32 @@
+[
+    {
+        "bucket":  "Tasks",
+        "pass":  "verification-late",
+        "name":  "Status_SHINOBU_315.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_SHINOBU_315.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012\\Tasks\\Status_SHINOBU_315.md.collision_20260523_144107_5271",
+        "isDirectory":  false,
+        "length":  17433,
+        "lastWriteTimeUtc":  "2026-05-23T10:32:44.5776495Z"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "pass":  "verification-late",
+        "name":  "LOG_SHINOBU_315.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\LOG_SHINOBU_315.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012\\AgentLogs\\LOG_SHINOBU_315.md.collision_20260523_144107_5421",
+        "isDirectory":  false,
+        "length":  31294,
+        "lastWriteTimeUtc":  "2026-05-23T10:31:02.1224342Z"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "pass":  "verification-late",
+        "name":  "Rationale_SHINOBU_315.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_SHINOBU_315.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012\\AgentLogs\\Rationale_SHINOBU_315.md.collision_20260523_144107_5461",
+        "isDirectory":  false,
+        "length":  20472,
+        "lastWriteTimeUtc":  "2026-05-23T10:30:49.8828615Z"
+    }
+]

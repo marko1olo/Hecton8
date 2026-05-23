@@ -1,0 +1,9 @@
+  EasySave3 -> C:\hades\Hecton8\Temp\bin\Debug\EasySave3.dll
+  Den.Tools -> C:\hades\Hecton8\Temp\bin\Debug\Den.Tools.dll
+  Unity.RenderPipelines.Universal.Runtime -> C:\hades\Hecton8\Temp\bin\Debug\Unity.RenderPipelines.Universal.Runtime.dll
+  GPUInstancer -> C:\hades\Hecton8\Temp\bin\Debug\GPUInstancer.dll
+  MapMagic -> C:\hades\Hecton8\Temp\bin\Debug\MapMagic.dll
+  ShapesRuntime -> C:\hades\Hecton8\Temp\bin\Debug\ShapesRuntime.dll
+  VolumetricLightBeam -> C:\hades\Hecton8\Temp\bin\Debug\VolumetricLightBeam.dll
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerToolManager.cs(165,64): error CS0029: Cannot implicitly convert type 'Hecton8.Core.PlayerRuntimeContext' to 'Hecton8.Core.IPlayerRuntimeContext' [C:\hades\Hecton8\Hecton8.Core.csproj]
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerToolManager.cs(1078,34): error CS8121: An expression of type 'IPlayerRuntimeContext' cannot be handled by a pattern of type 'PlayerRuntimeContext'. [C:\hades\Hecton8\Hecton8.Core.csproj]

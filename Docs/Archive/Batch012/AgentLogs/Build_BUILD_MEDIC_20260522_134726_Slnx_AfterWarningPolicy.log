@@ -1,0 +1,86 @@
+﻿TIMESTAMP: 2026-05-22T13:47:26.4688759+04:00
+  AmplifyImpostors.Runtime -> C:\hades\Hecton8\Temp\bin\Debug\AmplifyImpostors.Runtime.dll
+  AmplifyImpostors.Editor -> C:\hades\Hecton8\Temp\bin\Debug\AmplifyImpostors.Editor.dll
+  Lofelt.NiceVibrations -> C:\hades\Hecton8\Temp\bin\Debug\Lofelt.NiceVibrations.dll
+C:\hades\Hecton8\Assets\AstarPathfindingProject\RVO\RVOObstacle.cs(108,15): warning UNT0006: The Unity message 'OnDrawGizmos' has an incorrect signature. (https://github.com/microsoft/Microsoft.Unity.Analyzers/blob/main/doc/UNT0006.md) [C:\hades\Hecton8\AstarPathfindingProject.csproj]
+C:\hades\Hecton8\Assets\AstarPathfindingProject\Core\Misc\NodeLink3.cs(288,15): warning UNT0006: The Unity message 'OnDrawGizmos' has an incorrect signature. (https://github.com/microsoft/Microsoft.Unity.Analyzers/blob/main/doc/UNT0006.md) [C:\hades\Hecton8\AstarPathfindingProject.csproj]
+C:\hades\Hecton8\Assets\AstarPathfindingProject\Core\GraphUpdateScene.cs(315,8): warning UNT0006: The Unity message 'OnDrawGizmos' has an incorrect signature. (https://github.com/microsoft/Microsoft.Unity.Analyzers/blob/main/doc/UNT0006.md) [C:\hades\Hecton8\AstarPathfindingProject.csproj]
+C:\hades\Hecton8\Assets\AstarPathfindingProject\Core\Misc\NodeLink2.cs(232,15): warning UNT0006: The Unity message 'OnDrawGizmos' has an incorrect signature. (https://github.com/microsoft/Microsoft.Unity.Analyzers/blob/main/doc/UNT0006.md) [C:\hades\Hecton8\AstarPathfindingProject.csproj]
+  AstarPathfindingProject -> C:\hades\Hecton8\Temp\bin\Debug\AstarPathfindingProject.dll
+  Unity.RenderPipelines.Universal.Runtime -> C:\hades\Hecton8\Temp\bin\Debug\Unity.RenderPipelines.Universal.Runtime.dll
+  Den.Tools -> C:\hades\Hecton8\Temp\bin\Debug\Den.Tools.dll
+  GPUInstancer -> C:\hades\Hecton8\Temp\bin\Debug\GPUInstancer.dll
+  MoreMountains.Tools -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Tools.dll
+  Hecton8.Input.Generated -> C:\hades\Hecton8\Temp\bin\Debug\Hecton8.Input.Generated.dll
+  EasySave3 -> C:\hades\Hecton8\Temp\bin\Debug\EasySave3.dll
+  MoreMountains.Feedbacks -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.dll
+  EasySave3Editor -> C:\hades\Hecton8\Temp\bin\Debug\EasySave3Editor.dll
+  GPUInstancer.Editor -> C:\hades\Hecton8\Temp\bin\Debug\GPUInstancer.Editor.dll
+  Sirenix.OdinInspector.Modules.UnityMathematics -> C:\hades\Hecton8\Temp\bin\Debug\Sirenix.OdinInspector.Modules.UnityMathematics.dll
+  MoreMountains.Feedbacks.URP -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.URP.dll
+  MoreMountains.Feedbacks.Editor -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.Editor.dll
+  Hecton8.Bootstrap.Contracts -> C:\hades\Hecton8\Temp\bin\Debug\Hecton8.Bootstrap.Contracts.dll
+  VolumetricLightBeam -> C:\hades\Hecton8\Temp\bin\Debug\VolumetricLightBeam.dll
+  MoreMountains.Tools.Editor -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Tools.Editor.dll
+  MapMagic -> C:\hades\Hecton8\Temp\bin\Debug\MapMagic.dll
+  Den.Tools.Editor -> C:\hades\Hecton8\Temp\bin\Debug\Den.Tools.Editor.dll
+  MapMagic.Editor -> C:\hades\Hecton8\Temp\bin\Debug\MapMagic.Editor.dll
+  ShapesRuntime -> C:\hades\Hecton8\Temp\bin\Debug\ShapesRuntime.dll
+  JBooth.MicroSplat.Core -> C:\hades\Hecton8\Temp\bin\Debug\JBooth.MicroSplat.Core.dll
+  MoreMountains.Feedbacks.HDRP -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.HDRP.dll
+  Lofelt.NiceVibrations.Editor -> C:\hades\Hecton8\Temp\bin\Debug\Lofelt.NiceVibrations.Editor.dll
+  BakeryRuntimeAssembly -> C:\hades\Hecton8\Temp\bin\Debug\BakeryRuntimeAssembly.dll
+  Crest -> C:\hades\Hecton8\Temp\bin\Debug\Crest.dll
+  Crest.Helpers.Editor -> C:\hades\Hecton8\Temp\bin\Debug\Crest.Helpers.Editor.dll
+  MapMagic.Settings -> C:\hades\Hecton8\Temp\bin\Debug\MapMagic.Settings.dll
+  Technie.PhysicsCreator.Updater -> C:\hades\Hecton8\Temp\bin\Debug\Technie.PhysicsCreator.Updater.dll
+C:\hades\Hecton8\Assets\_Project\Scripts\Fauna\PredatorCognitionDomain.cs(5533,27): warning CS0649: Field 'PredatorCognitionDomain.PredatorCognitionJob.ChemicalGridOrigin' is never assigned to, and will always have its default value [C:\hades\Hecton8\Hecton8.Core.csproj]
+C:\hades\Hecton8\Assets\_Project\Scripts\Fauna\PredatorCognitionDomain.cs(5532,25): warning CS0649: Field 'PredatorCognitionDomain.PredatorCognitionJob.ChemicalGridDimensions' is never assigned to, and will always have its default value [C:\hades\Hecton8\Hecton8.Core.csproj]
+C:\hades\Hecton8\Assets\_Project\Scripts\Fauna\PredatorCognitionDomain.cs(5534,27): warning CS0649: Field 'PredatorCognitionDomain.PredatorCognitionJob.ChemicalGridCellSize' is never assigned to, and will always have its default value [C:\hades\Hecton8\Hecton8.Core.csproj]
+  Hecton8.Core -> C:\hades\Hecton8\Temp\bin\Debug\Hecton8.Core.dll
+  MeshBakerCore -> C:\hades\Hecton8\Temp\bin\Debug\MeshBakerCore.dll
+  VolumetricLightBeam.Editor -> C:\hades\Hecton8\Temp\bin\Debug\VolumetricLightBeam.Editor.dll
+  MoreMountains.Feedbacks.PostProcessing -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.PostProcessing.dll
+  Hecton8.World.Contracts -> C:\hades\Hecton8\Temp\bin\Debug\Hecton8.World.Contracts.dll
+  Tayx.Graphy -> C:\hades\Hecton8\Temp\bin\Debug\Tayx.Graphy.dll
+  MoreMountains.Feedbacks.Cinemachine -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.Cinemachine.dll
+  Hecton8.Editor -> C:\hades\Hecton8\Temp\bin\Debug\Hecton8.Editor.dll
+  MoreMountains.Feedbacks.MMTools -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.MMTools.dll
+  JBooth.MicroSplat.Core.Editor -> C:\hades\Hecton8\Temp\bin\Debug\JBooth.MicroSplat.Core.Editor.dll
+  PackageToolsEditor -> C:\hades\Hecton8\Temp\bin\Debug\PackageToolsEditor.dll
+  MapMagic.MicroSplat -> C:\hades\Hecton8\Temp\bin\Debug\MapMagic.MicroSplat.dll
+  MapMagic.MicroSplat.Editor -> C:\hades\Hecton8\Temp\bin\Debug\MapMagic.MicroSplat.Editor.dll
+  MoreMountains.Feedbacks.NiceVibrations -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.NiceVibrations.dll
+  AstarPathfindingProjectEditor -> C:\hades\Hecton8\Temp\bin\Debug\AstarPathfindingProjectEditor.dll
+  MoreMountains.Feedbacks.TextMeshPro -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.TextMeshPro.dll
+  MoreMountains.Feedbacks.Authorizations -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.Authorizations.dll
+  Lofelt.NiceVibrations.Demo -> C:\hades\Hecton8\Temp\bin\Debug\Lofelt.NiceVibrations.Demo.dll
+  TechniePhysicsCreator -> C:\hades\Hecton8\Temp\bin\Debug\TechniePhysicsCreator.dll
+  Hecton8.Input -> C:\hades\Hecton8\Temp\bin\Debug\Hecton8.Input.dll
+  BakeryEditorAssembly -> C:\hades\Hecton8\Temp\bin\Debug\BakeryEditorAssembly.dll
+  Unity.RenderPipelines.Core.Editor -> C:\hades\Hecton8\Temp\bin\Debug\Unity.RenderPipelines.Core.Editor.dll
+  Unity.ShaderGraph.Editor -> C:\hades\Hecton8\Temp\bin\Debug\Unity.ShaderGraph.Editor.dll
+  Unity.RenderPipelines.Universal.Editor -> C:\hades\Hecton8\Temp\bin\Debug\Unity.RenderPipelines.Universal.Editor.dll
+  ShapesEditor -> C:\hades\Hecton8\Temp\bin\Debug\ShapesEditor.dll
+  MeshBakerEditor -> C:\hades\Hecton8\Temp\bin\Debug\MeshBakerEditor.dll
+  Tayx.Graphy.Editor -> C:\hades\Hecton8\Temp\bin\Debug\Tayx.Graphy.Editor.dll
+  Hecton8.World.Dots -> C:\hades\Hecton8\Temp\bin\Debug\Hecton8.World.Dots.dll
+  Assembly-CSharp-firstpass -> C:\hades\Hecton8\Temp\bin\Debug\Assembly-CSharp-firstpass.dll
+  Assembly-CSharp -> C:\hades\Hecton8\Temp\bin\Debug\Assembly-CSharp.dll
+  Assembly-CSharp-Editor-firstpass -> C:\hades\Hecton8\Temp\bin\Debug\Assembly-CSharp-Editor-firstpass.dll
+  Assembly-CSharp-Editor -> C:\hades\Hecton8\Temp\bin\Debug\Assembly-CSharp-Editor.dll
+
+Build succeeded.
+
+C:\hades\Hecton8\Assets\AstarPathfindingProject\RVO\RVOObstacle.cs(108,15): warning UNT0006: The Unity message 'OnDrawGizmos' has an incorrect signature. (https://github.com/microsoft/Microsoft.Unity.Analyzers/blob/main/doc/UNT0006.md) [C:\hades\Hecton8\AstarPathfindingProject.csproj]
+C:\hades\Hecton8\Assets\AstarPathfindingProject\Core\Misc\NodeLink3.cs(288,15): warning UNT0006: The Unity message 'OnDrawGizmos' has an incorrect signature. (https://github.com/microsoft/Microsoft.Unity.Analyzers/blob/main/doc/UNT0006.md) [C:\hades\Hecton8\AstarPathfindingProject.csproj]
+C:\hades\Hecton8\Assets\AstarPathfindingProject\Core\GraphUpdateScene.cs(315,8): warning UNT0006: The Unity message 'OnDrawGizmos' has an incorrect signature. (https://github.com/microsoft/Microsoft.Unity.Analyzers/blob/main/doc/UNT0006.md) [C:\hades\Hecton8\AstarPathfindingProject.csproj]
+C:\hades\Hecton8\Assets\AstarPathfindingProject\Core\Misc\NodeLink2.cs(232,15): warning UNT0006: The Unity message 'OnDrawGizmos' has an incorrect signature. (https://github.com/microsoft/Microsoft.Unity.Analyzers/blob/main/doc/UNT0006.md) [C:\hades\Hecton8\AstarPathfindingProject.csproj]
+C:\hades\Hecton8\Assets\_Project\Scripts\Fauna\PredatorCognitionDomain.cs(5533,27): warning CS0649: Field 'PredatorCognitionDomain.PredatorCognitionJob.ChemicalGridOrigin' is never assigned to, and will always have its default value [C:\hades\Hecton8\Hecton8.Core.csproj]
+C:\hades\Hecton8\Assets\_Project\Scripts\Fauna\PredatorCognitionDomain.cs(5532,25): warning CS0649: Field 'PredatorCognitionDomain.PredatorCognitionJob.ChemicalGridDimensions' is never assigned to, and will always have its default value [C:\hades\Hecton8\Hecton8.Core.csproj]
+C:\hades\Hecton8\Assets\_Project\Scripts\Fauna\PredatorCognitionDomain.cs(5534,27): warning CS0649: Field 'PredatorCognitionDomain.PredatorCognitionJob.ChemicalGridCellSize' is never assigned to, and will always have its default value [C:\hades\Hecton8\Hecton8.Core.csproj]
+    7 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:01:59.86
+EXIT_CODE: 0

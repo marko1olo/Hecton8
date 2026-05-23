@@ -1,0 +1,160 @@
+﻿TIMESTAMP: 2026-05-22T13:52:42.4132492+04:00
+TARGET: Hecton8.slnx
+  AmplifyImpostors.Runtime -> C:\hades\Hecton8\Temp\bin\Debug\AmplifyImpostors.Runtime.dll
+  AmplifyImpostors.Editor -> C:\hades\Hecton8\Temp\bin\Debug\AmplifyImpostors.Editor.dll
+  Tayx.Graphy -> C:\hades\Hecton8\Temp\bin\Debug\Tayx.Graphy.dll
+  Lofelt.NiceVibrations -> C:\hades\Hecton8\Temp\bin\Debug\Lofelt.NiceVibrations.dll
+  Den.Tools -> C:\hades\Hecton8\Temp\bin\Debug\Den.Tools.dll
+  Unity.RenderPipelines.Universal.Runtime -> C:\hades\Hecton8\Temp\bin\Debug\Unity.RenderPipelines.Universal.Runtime.dll
+  MapMagic -> C:\hades\Hecton8\Temp\bin\Debug\MapMagic.dll
+  Den.Tools.Editor -> C:\hades\Hecton8\Temp\bin\Debug\Den.Tools.Editor.dll
+  MoreMountains.Tools -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Tools.dll
+  GPUInstancer -> C:\hades\Hecton8\Temp\bin\Debug\GPUInstancer.dll
+  VolumetricLightBeam -> C:\hades\Hecton8\Temp\bin\Debug\VolumetricLightBeam.dll
+  Hecton8.Input.Generated -> C:\hades\Hecton8\Temp\bin\Debug\Hecton8.Input.Generated.dll
+  MapMagic.Editor -> C:\hades\Hecton8\Temp\bin\Debug\MapMagic.Editor.dll
+  BakeryRuntimeAssembly -> C:\hades\Hecton8\Temp\bin\Debug\BakeryRuntimeAssembly.dll
+  Unity.RenderPipelines.Core.Editor -> C:\hades\Hecton8\Temp\bin\Debug\Unity.RenderPipelines.Core.Editor.dll
+  Hecton8.Bootstrap.Contracts -> C:\hades\Hecton8\Temp\bin\Debug\Hecton8.Bootstrap.Contracts.dll
+  AstarPathfindingProject -> C:\hades\Hecton8\Temp\bin\Debug\AstarPathfindingProject.dll
+  GPUInstancer.Editor -> C:\hades\Hecton8\Temp\bin\Debug\GPUInstancer.Editor.dll
+  ShapesRuntime -> C:\hades\Hecton8\Temp\bin\Debug\ShapesRuntime.dll
+  Hecton8.Core -> C:\hades\Hecton8\Temp\bin\Debug\Hecton8.Core.dll
+  EasySave3 -> C:\hades\Hecton8\Temp\bin\Debug\EasySave3.dll
+  Unity.ShaderGraph.Editor -> C:\hades\Hecton8\Temp\bin\Debug\Unity.ShaderGraph.Editor.dll
+  MeshBakerCore -> C:\hades\Hecton8\Temp\bin\Debug\MeshBakerCore.dll
+  Hecton8.Input -> C:\hades\Hecton8\Temp\bin\Debug\Hecton8.Input.dll
+  JBooth.MicroSplat.Core -> C:\hades\Hecton8\Temp\bin\Debug\JBooth.MicroSplat.Core.dll
+  MapMagic.MicroSplat -> C:\hades\Hecton8\Temp\bin\Debug\MapMagic.MicroSplat.dll
+  MoreMountains.Tools.Editor -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Tools.Editor.dll
+  JBooth.MicroSplat.Core.Editor -> C:\hades\Hecton8\Temp\bin\Debug\JBooth.MicroSplat.Core.Editor.dll
+  MoreMountains.Feedbacks -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.dll
+  MapMagic.MicroSplat.Editor -> C:\hades\Hecton8\Temp\bin\Debug\MapMagic.MicroSplat.Editor.dll
+  BakeryEditorAssembly -> C:\hades\Hecton8\Temp\bin\Debug\BakeryEditorAssembly.dll
+  Hecton8.World.Contracts -> C:\hades\Hecton8\Temp\bin\Debug\Hecton8.World.Contracts.dll
+  MoreMountains.Feedbacks.NiceVibrations -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.NiceVibrations.dll
+  MoreMountains.Feedbacks.PostProcessing -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.PostProcessing.dll
+  MoreMountains.Feedbacks.URP -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.URP.dll
+  MoreMountains.Feedbacks.Editor -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.Editor.dll
+  MoreMountains.Feedbacks.MMTools -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.MMTools.dll
+  Hecton8.Editor -> C:\hades\Hecton8\Temp\bin\Debug\Hecton8.Editor.dll
+  MoreMountains.Feedbacks.HDRP -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.HDRP.dll
+  MoreMountains.Feedbacks.Cinemachine -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.Cinemachine.dll
+  Crest -> C:\hades\Hecton8\Temp\bin\Debug\Crest.dll
+  MoreMountains.Feedbacks.TextMeshPro -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.TextMeshPro.dll
+  Crest.Helpers.Editor -> C:\hades\Hecton8\Temp\bin\Debug\Crest.Helpers.Editor.dll
+  Lofelt.NiceVibrations.Demo -> C:\hades\Hecton8\Temp\bin\Debug\Lofelt.NiceVibrations.Demo.dll
+  PackageToolsEditor -> C:\hades\Hecton8\Temp\bin\Debug\PackageToolsEditor.dll
+  MapMagic.Settings -> C:\hades\Hecton8\Temp\bin\Debug\MapMagic.Settings.dll
+  TechniePhysicsCreator -> C:\hades\Hecton8\Temp\bin\Debug\TechniePhysicsCreator.dll
+  MoreMountains.Feedbacks.Authorizations -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.Authorizations.dll
+  AstarPathfindingProjectEditor -> C:\hades\Hecton8\Temp\bin\Debug\AstarPathfindingProjectEditor.dll
+  Technie.PhysicsCreator.Updater -> C:\hades\Hecton8\Temp\bin\Debug\Technie.PhysicsCreator.Updater.dll
+  EasySave3Editor -> C:\hades\Hecton8\Temp\bin\Debug\EasySave3Editor.dll
+  Unity.RenderPipelines.Universal.Editor -> C:\hades\Hecton8\Temp\bin\Debug\Unity.RenderPipelines.Universal.Editor.dll
+  ShapesEditor -> C:\hades\Hecton8\Temp\bin\Debug\ShapesEditor.dll
+  Sirenix.OdinInspector.Modules.UnityMathematics -> C:\hades\Hecton8\Temp\bin\Debug\Sirenix.OdinInspector.Modules.UnityMathematics.dll
+  MeshBakerEditor -> C:\hades\Hecton8\Temp\bin\Debug\MeshBakerEditor.dll
+  Tayx.Graphy.Editor -> C:\hades\Hecton8\Temp\bin\Debug\Tayx.Graphy.Editor.dll
+  Hecton8.World.Dots -> C:\hades\Hecton8\Temp\bin\Debug\Hecton8.World.Dots.dll
+  Lofelt.NiceVibrations.Editor -> C:\hades\Hecton8\Temp\bin\Debug\Lofelt.NiceVibrations.Editor.dll
+  VolumetricLightBeam.Editor -> C:\hades\Hecton8\Temp\bin\Debug\VolumetricLightBeam.Editor.dll
+  Assembly-CSharp-firstpass -> C:\hades\Hecton8\Temp\bin\Debug\Assembly-CSharp-firstpass.dll
+  Assembly-CSharp-Editor-firstpass -> C:\hades\Hecton8\Temp\bin\Debug\Assembly-CSharp-Editor-firstpass.dll
+  Assembly-CSharp -> C:\hades\Hecton8\Temp\bin\Debug\Assembly-CSharp.dll
+  Assembly-CSharp-Editor -> C:\hades\Hecton8\Temp\bin\Debug\Assembly-CSharp-Editor.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:19.40
+EXIT_CODE: 0
+TARGET: AIToASE.csproj
+  AmplifyImpostors.Runtime -> C:\hades\Hecton8\Temp\bin\Debug\AmplifyImpostors.Runtime.dll
+  AmplifyImpostors.Editor -> C:\hades\Hecton8\Temp\bin\Debug\AmplifyImpostors.Editor.dll
+  AIToASE -> C:\hades\Hecton8\Temp\bin\Debug\AIToASE.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:02.57
+EXIT_CODE: 0
+TARGET: AmplifyShaderEditor.csproj
+  AmplifyShaderEditor -> C:\hades\Hecton8\Temp\bin\Debug\AmplifyShaderEditor.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:01.11
+EXIT_CODE: 0
+TARGET: Hecton8.PlayModeTests.csproj
+  Hecton8.Core -> C:\hades\Hecton8\Temp\bin\Debug\Hecton8.Core.dll
+  Hecton8.PlayModeTests -> C:\hades\Hecton8\Temp\bin\Debug\Hecton8.PlayModeTests.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:02.19
+EXIT_CODE: 0
+TARGET: RealtimeCSG.csproj
+CSC : warning CS2008: No source files specified. [C:\hades\Hecton8\RealtimeCSG.csproj]
+  RealtimeCSG -> C:\hades\Hecton8\Temp\bin\Debug\RealtimeCSG.dll
+
+Build succeeded.
+
+CSC : warning CS2008: No source files specified. [C:\hades\Hecton8\RealtimeCSG.csproj]
+    1 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:00.96
+EXIT_CODE: 0
+TARGET: TechniePhysicsCreatorEditor.csproj
+  TechniePhysicsCreator -> C:\hades\Hecton8\Temp\bin\Debug\TechniePhysicsCreator.dll
+  TechniePhysicsCreatorEditor -> C:\hades\Hecton8\Temp\bin\Debug\TechniePhysicsCreatorEditor.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:01.68
+EXIT_CODE: 0
+TARGET: Tools\RoslynAnalyzers\Hecton8.PlatformNeutralityAnalyzer\Hecton8.PlatformNeutralityAnalyzer.csproj
+  Hecton8.PlatformNeutralityAnalyzer -> C:\hades\Hecton8\Tools\RoslynAnalyzers\Hecton8.PlatformNeutralityAnalyzer\bin\Debug\netstandard2.0\Hecton8.PlatformNeutralityAnalyzer.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:01.21
+EXIT_CODE: 0
+TARGET: Tools\SignalBusContractAuditCli\SignalBusContractAuditCli.csproj
+  SignalBusContractAuditCli -> C:\hades\Hecton8\Tools\SignalBusContractAuditCli\bin\Debug\net8.0\SignalBusContractAuditCli.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:01.33
+EXIT_CODE: 0
+TARGET: Docs\DEPRECATED\Documentation_Bundles_2026-05-21_SANITIZED\SPACE_ENGINE_RESEARCH\SpaceEngineResearchSmokeTester.csproj
+  SpaceEngineResearchSmokeTester -> C:\hades\Hecton8\Docs\DEPRECATED\Documentation_Bundles_2026-05-21_SANITIZED\SPACE_ENGINE_RESEARCH\bin\Debug\net10.0\SpaceEngineResearchSmokeTester.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:01.38
+EXIT_CODE: 0
+TARGET: Docs\DEPRECATED\Documentation_Bundles_2026-05-21_SANITIZED\SPACE_ENGINE_RESEARCH\HectonSandboxAbyssalShelfStandaloneSmoke\HectonSandboxAbyssalShelfStandaloneSmoke.csproj
+  HectonSandboxAbyssalShelfStandaloneSmoke -> C:\hades\Hecton8\Docs\DEPRECATED\Documentation_Bundles_2026-05-21_SANITIZED\SPACE_ENGINE_RESEARCH\HectonSandboxAbyssalShelfStandaloneSmoke\bin\Debug\net10.0\HectonSandboxAbyssalShelfStandaloneSmoke.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:01.26
+EXIT_CODE: 0

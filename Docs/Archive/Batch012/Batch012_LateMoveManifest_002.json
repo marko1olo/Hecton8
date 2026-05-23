@@ -1,0 +1,32 @@
+[
+    {
+        "bucket":  "Tasks",
+        "pass":  "late-catch-2",
+        "name":  "Status_EXTERNAL_CODEX.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_EXTERNAL_CODEX.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012\\Tasks\\Status_EXTERNAL_CODEX.md.collision_20260523_144613_3997",
+        "isDirectory":  false,
+        "length":  13460,
+        "lastWriteTimeUtc":  "2026-05-23T10:44:36.0237949Z"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "pass":  "late-catch-2",
+        "name":  "LOG_EXTERNAL_CODEX.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\LOG_EXTERNAL_CODEX.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012\\AgentLogs\\LOG_EXTERNAL_CODEX.md.collision_20260523_144613_4188",
+        "isDirectory":  false,
+        "length":  34550,
+        "lastWriteTimeUtc":  "2026-05-23T10:45:04.8078469Z"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "pass":  "late-catch-2",
+        "name":  "Rationale_EXTERNAL_CODEX.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_EXTERNAL_CODEX.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012\\AgentLogs\\Rationale_EXTERNAL_CODEX.md.collision_20260523_144613_4238",
+        "isDirectory":  false,
+        "length":  27781,
+        "lastWriteTimeUtc":  "2026-05-23T10:44:50.1873947Z"
+    }
+]

@@ -1,0 +1,475 @@
+# LOG_EXTERNAL_CODEX
+
+## 2026-05-23 External Integration Pass
+What was wrong:
+- Generated project reference pruner removed missing `Library/ScriptAssemblies` references. This erased valid local asmdef dependencies before Unity produced DLLs and caused `Hecton8.Habitat.Deformation.Contracts` to disappear from `Hecton8.Core.csproj`.
+- `ShaderCompassRibbon` cached `GlobalRegistry.InertialNavigation` only during `OnEnable`/`Start`. If the navigation runtime registered after UI boot, the compass stayed hidden until component restart.
+
+What was done:
+- Updated `Assets/_Project/Scripts/Editor/HectonGeneratedProjectReferencePruner.cs` to prune missing package-cache references only, preserving local script assembly references.
+- Added `Assets/_Project/Tests/Editor/HectonGeneratedProjectReferencePrunerEditTests.cs` to lock the pruner behavior: keep local `Hecton8.Habitat.Deformation.Contracts` script assembly reference, remove stale `Unity.Entities` package-cache reference.
+- Updated `Assets/_Project/Scripts/UI/ShaderCompassRibbon.cs` to implement `IGlobalRegistryHotSwapListener`, refresh its cached navigation service on `InertialNavigationRuntime` replacement, and retry dispatcher registration on dispatcher replacement.
+- Patched ignored local `Hecton8.Core.csproj` generated artifact only to move verification past the stale Habitat contract wall before Unity regenerates project files.
+
+Cinematic Cheats used:
+- None. Both fixes are routing/cache fixes, not simulation or visual fakery.
+
+Exact Microseconds saved:
+- Pruner fix: runtime 0 us; editor compile triage avoids repeated failed Habitat namespace compiles, estimated 10,000,000 us per failed `dotnet build` attempt on this machine.
+- Compass hot-swap fix: runtime LateFrame remains 0 allocation and no GlobalRegistry polling; avoids a per-frame global read fallback. Estimated saved hot-path cost 0.1-0.3 us/frame when navigation service is absent or late-bound.
+- Build-server discipline: shut down compiler servers after verification; avoids parallel compiler contention, estimated 500,000+ us avoided on low-end i3/MX350-class hardware during subsequent build attempts.
+
+Verification:
+- `git diff --check` passed for touched tracked files; only CRLF normalization warnings were reported.
+- `dotnet build Hecton8.Editor.csproj --no-restore` attempt 1 failed on missing Habitat namespace from stale generated `Hecton8.Core.csproj`.
+- After local ignored generated graph repair, build attempt 2 passed the Habitat wall and failed later with 290 unrelated errors in other-agent partials: `WristHologramHudRuntime`, `VRSomaticProvider.Comfort`, `HectonNarrativeDirector_PoiTriggers`, `AirlockPressurization`, `BulkheadContainmentRuntime_HatchLocks`, `TetherManager`.
+- Current compile status: BLOCKED BY DEPENDENCY outside EXTERNAL_CODEX changes.
+
+## 2026-05-23 External Integration Compile Closure
+What was wrong:
+- After the generated project graph was forced past the Habitat contract wall, the project had real compile defects in source: illegal `NativeArray<T>.ReadOnly.AsReadOnly()` usage, `in` parameters used where buffers were mutated, unsafe field addresses taken directly, missing narrative imports, wrong metabolism fatigue constant name, inaccessible nested mock seismic job, ambiguous Burst math overload, unassigned camera-juice arrays, variable shadowing, and an editor `Environment` namespace collision.
+- Several files existed on disk but were absent from the ignored generated `Hecton8.Core.csproj`, so local dotnet verification could not see partial definitions and generated contracts until the generated graph was repaired for this checkout.
+
+What was done:
+- Fixed source compile faults with narrow edits in the owning files: `SubmarineAutoLevelBallastController`, `SignalWardenRuntime`, `PlayerCriticalProceduralAudioRenderer`, `HydrodynamicKccRuntime`, `AirlockPressurizationRuntime`, `AirlockPressurizationJobs`, `HectonNarrativeDirector_PoiTriggers`, `AlignmentTelemetryContracts`, `SystemDispatcher`, `HectonSeismicTideDirector`, `CombatDamageRuntime_StatusEffects`, `CameraJuiceSystem_CameraJuiceBurst`, `BulkheadContainmentRuntime`, and `CraftingFastFailXRayWindow_SHINOBU317`.
+- Added a mutable `SystemDispatcher.TryResolveDispatcherVaultBuffer<T>` overload while keeping read-only accessors read-only.
+- Patched ignored local `Hecton8.Core.csproj` only as a verification bridge for existing on-disk partial/generated sources; durable source fix remains the tracked project-reference pruner and its regression test.
+- Ran guarded iterative builds. Error-wall progression: Habitat graph wall -> 580 error lines -> 194 errors -> 7 errors -> 6 errors -> 1 error -> 0 errors.
+- Shut down MSBuild and C# compiler servers after final verification.
+
+Cinematic Cheats used:
+- None. This pass repaired compile/integration defects. No physical simulation or visual system was replaced with a fake.
+
+Exact Microseconds saved:
+- Runtime intended delta: 0 us for namespace/import/visibility/definite-assignment repairs.
+- `ShaderCompassRibbon` hot-swap route avoids per-frame GlobalRegistry polling fallback; estimated hot-path saving 0.1-0.3 us/frame in late-bound navigation scenarios.
+- Airlock unsafe pointer repair preserves native atomic routes instead of managed proxy work; estimated avoided allocation/dispatch pressure 0.5-2.0 us per contested flush on i3/MX350-class machines.
+- Build graph/pruner repair avoids repeated failed local compile passes; measured category is build-time, estimated 10,000,000+ us per avoided failed dotnet attempt on this machine.
+- Build-server shutdown avoids subsequent compiler contention; estimated 500,000+ us on low-end editor hardware.
+
+Verification:
+- Final guarded command: `dotnet build Hecton8.Editor.csproj --no-restore -v:minimal "/flp:logfile=Docs/AgentLogs/Build_EXTERNAL_CODEX_after_patch5.log;verbosity=minimal"`.
+- Final build output produced `Temp/bin/Debug/Hecton8.Core.dll` and `Temp/bin/Debug/Hecton8.Editor.dll`; log has 0 `: error ` entries.
+- Remaining warnings: two `CS0618` warnings in `Assets/_Project/Scripts/Editor/SubmarineDynoTunerWindow.cs` for obsolete `SubmarineKinematicConfig.BallastLiftN`.
+- `git diff --check` passed for touched files; only Git LF-to-CRLF normalization warnings were reported.
+- Post-build guard: CPU 34.3%, 0 `dotnet/csc/VBCSCompiler` processes.
+
+Residual:
+- `Hecton8.Core.csproj` is ignored/generated. Unity/project regeneration must carry the tracked pruner behavior forward; otherwise local dotnet verification can regress even though source files are present.
+
+## 2026-05-23 Zero-Warning Closure
+What was wrong:
+- The green build still had warnings. Two `CS0618` warnings came from `SubmarineDynoTunerWindow` editing `SubmarineKinematicConfig.BallastLiftN`, an obsolete ABI residue ignored by the integrator.
+- `PlayerFlashlight` carried dead flicker state: `batteryOrHeatFlicker`, `_flickerIntensityMod`, and `_flickerTimer` did not affect output.
+- `HectonPlayerHealth.OnDeath` and `HectonSurvivalSystem.OnDeath` were public events but were never invoked. That is not cosmetic; UI/audio/save observers could subscribe and never receive death.
+- `HectonSurvivalSystem.ApplyRespawnReconciliationSurvival()` erased the last death record during respawn, contradicting the last-loss marker API.
+- Local generated `Hecton8.Core.csproj` fed three source files to csc twice: `BulkheadContainmentIntentBus.cs`, `BulkheadContainmentContracts.cs`, and `BaseAtmosphereLogisticsTypes.cs`.
+
+What was done:
+- Removed the obsolete ballast slider/write from `Assets/_Project/Scripts/Editor/SubmarineDynoTunerWindow.cs`.
+- Removed dead flashlight flicker state from `Assets/_Project/Scripts/PlayerFlashlight.cs`.
+- Added death publication before respawn reconciliation in `Assets/_Project/Scripts/Gameplay/HectonPlayerHealth.cs`.
+- Added survival death record capture, telemetry logging, and `OnDeath` publication before respawn in `Assets/_Project/Scripts/HectonSurvivalSystem.cs`; stopped clearing the last death record during respawn.
+- Removed duplicate source includes from ignored local `Hecton8.Core.csproj`.
+
+Cinematic Cheats used:
+- None. This pass repaired source correctness and build hygiene, not physical simulation or visual approximation.
+
+Exact Microseconds saved:
+- Runtime frame impact: 0 us. Death publication runs only on death and is one nullable delegate route per owning system.
+- Flashlight cleanup: 0 us measurable; removed misleading dead state from the hot update path.
+- Ballast editor cleanup: runtime 0 us; prevents editor-side writes to ignored ABI residue.
+- Duplicate include cleanup: build-time only; removes three repeated csc warnings per local build, estimated 200,000-600,000 us saved in warning triage per pass.
+
+Verification:
+- `dotnet restore Hecton8.Editor.csproj -v:minimal "/flp:logfile=Docs/AgentLogs/Restore_EXTERNAL_CODEX_after_warning_cleanup.log;verbosity=minimal"` completed successfully after `project.assets.json` was missing.
+- Final guarded command: `dotnet build Hecton8.Editor.csproj --no-restore -v:minimal "/flp:logfile=Docs/AgentLogs/Build_EXTERNAL_CODEX_after_duplicate_include_cleanup.log;verbosity=minimal"`.
+- Console result: `Build succeeded. 0 Warning(s). 0 Error(s).`
+- `Docs/AgentLogs/Build_EXTERNAL_CODEX_after_duplicate_include_cleanup.log` contains 0 `: warning ` entries and 0 `: error ` entries.
+- `git diff --check` passed for touched files; only Git LF-to-CRLF normalization warnings were reported.
+- Post-build guard: CPU 4.6%, 0 `dotnet/csc/VBCSCompiler` processes.
+
+Residual:
+- `Hecton8.Core.csproj` remains ignored/generated. The local verification bridge is clean now, but Unity/project regeneration is still the durable owner of this file.
+
+## 2026-05-23 Runtime Hot-Path Cleanup 1
+What was wrong:
+- `DynamicMusicGranularSynthesizer.EnsureRuntimeInstanceForScene()` performed runtime scene search before creating its own fallback host. Active scene instances already publish `_activeInstance` through `OnEnable`, so this scan was redundant.
+- `DcsAscentProfileOverlay` used `FindAnyObjectByType<ShinobuPhysiologyRuntime>()` in a development runtime path.
+
+What was done:
+- Removed `FindAnyObjectByType/FindObjectOfType` from `DynamicMusicGranularSynthesizer` fallback creation. If no active instance exists, it now creates the deterministic `"H8 Dynamic Music Synth"` host directly.
+- Added `ShinobuPhysiologyRuntime.TryGetActive(out ShinobuPhysiologyRuntime runtime)` and active pointer publication in `OnEnable`/`OnDisable`.
+- Updated `DcsAscentProfileOverlay` to resolve physiology through `TryGetActive()` instead of scene search.
+
+Cinematic Cheats used:
+- None. This is dependency-route cleanup, not simulation or visual approximation.
+
+Exact Microseconds saved:
+- Dynamic music startup: avoids one scene scan, estimated 100-800 us depending on scene object count.
+- Development physiology overlay: avoids one scene scan on enable/rebind, estimated 50-400 us in dev builds.
+- Runtime frame impact: 0 us; no hot frame logic added.
+
+Verification:
+- `dotnet build Hecton8.Editor.csproj --no-restore -v:minimal "/flp:logfile=Docs/AgentLogs/Build_EXTERNAL_CODEX_hotpath_cleanup1.log;verbosity=minimal"` succeeded.
+- Build result: 0 warnings, 0 errors.
+- `git diff --check` passed for the touched runtime files; only Git LF-to-CRLF normalization warnings were reported.
+- Post-build guard: CPU 36.5%, 0 `dotnet/csc/VBCSCompiler` processes.
+
+Residual:
+- `VocalBankPlaybackRuntime` still uses a cold `AudioListener` scene lookup. It was not replaced because that path binds Unity's audio filter graph; removing it without an audio-graph proof risks silent vocal playback.
+
+## 2026-05-23 Runtime Hot-Path Cleanup 2
+What was wrong:
+- `WaterOpticsRuntime` used `Camera.main` in `Awake` and `OnEnable`. That is a scene-tag lookup and can bind stale/wrong camera state if the player runtime context registers later.
+
+What was done:
+- Added cached `IPlayerRuntimeContext` binding to `WaterOpticsRuntime`.
+- Added `GlobalRegistryServiceSlot.Player` hot-swap handling.
+- Replaced `Camera.main` fallback with player-context camera resolution.
+- Preserved inspector-assigned camera overrides and cleared only runtime-resolved camera references on shutdown.
+
+Cinematic Cheats used:
+- None. This was ownership-route cleanup for a visual system, not a physical simulation approximation.
+
+Exact Microseconds saved:
+- Runtime enable path: avoids one or two `Camera.main` scene-tag lookups, estimated 20-150 us depending on scene/tag state.
+- Runtime frame impact: no allocation; only a cached `IPlayerRuntimeContext.PlayerCamera` property read on water-optics surface-offset resolution.
+
+Verification:
+- `rg -n "Camera\\.main" Assets/_Project/Scripts/Rendering/WaterOptics/WaterOpticsRuntime.cs` returns no matches.
+- Guard before build: CPU 20%, 0 `dotnet/csc/VBCSCompiler` processes.
+- `dotnet build Hecton8.Editor.csproj --no-restore -v:minimal "/flp:logfile=Docs/AgentLogs/Build_EXTERNAL_CODEX_hotpath_cleanup2.log;verbosity=minimal"` succeeded.
+- Build result: 0 warnings, 0 errors.
+- `git diff --check` passed for `WaterOpticsRuntime.cs`; only Git LF-to-CRLF normalization warning was reported.
+
+Residual:
+- If no player runtime context and no inspector camera exist, water optics now uses deterministic surface offset 0 instead of searching the scene. This is intentional fallback, not gameplay truth.
+
+## 2026-05-23 Runtime Hot-Path Cleanup 3
+What was wrong:
+- `VocalBankPlaybackRuntime.EnsureRuntimeInstanceAfterSceneLoad()` scanned the scene for an existing runtime and for any `AudioListener`.
+- The listener fallback itself is intentional for this legacy vocal bridge, but the discovery route was not.
+
+What was done:
+- Removed `FindAnyObjectByType`/`FindObjectOfType` from `VocalBankPlaybackRuntime`.
+- Resolved the listener through `GlobalRegistry.Player.PlayerCamera` first and `GlobalRegistry.PlayerSensory.PlayerCamera` second.
+- Used local `TryGetComponent` on the owned camera object to preserve the existing listener-mix contract without scene scans.
+
+Cinematic Cheats used:
+- None. This preserves the existing vocal synthesis route and only changes cold dependency discovery.
+
+Exact Microseconds saved:
+- Vocal bootstrap: avoids up to two scene object scans, estimated 150-1000 us on content-heavy scenes.
+- Audio-thread impact: 0 us; `OnAudioFilterRead` path was not changed.
+
+Verification:
+- Runtime search scan outside editor/test/QA now returns only the `InstanceCullingContracts` comment mentioning `Camera.main`; no executable runtime `FindObjectOfType`, `FindAnyObjectByType`, `Camera.main`, or `GameObject.Find` matches remain in that scoped scan.
+- Guard before build: CPU 3%, 0 `dotnet/csc/VBCSCompiler` processes.
+- `dotnet build Hecton8.Editor.csproj --no-restore -v:minimal "/flp:logfile=Docs/AgentLogs/Build_EXTERNAL_CODEX_hotpath_cleanup3.log;verbosity=minimal"` succeeded.
+- Build result: 0 warnings, 0 errors.
+- `git diff --check` passed for the touched runtime files; only Git LF-to-CRLF normalization warnings were reported.
+
+Residual:
+- Current post-build CPU sample is 77%, so no further build should run until the guard is clear.
+
+## 2026-05-23 Runtime Hot-Path Cleanup 4
+What was wrong:
+- `ParasiteSwarmGpuRuntime` read `GlobalRegistry.Player` only in `OnEnable`. Late player context/camera registration could leave the GPU swarm without a camera route.
+- Completed target-selection jobs were finalized with a direct `JobHandle.Complete()` in the late-frame path.
+
+What was done:
+- Added `IGlobalRegistryHotSwapListener` to `ParasiteSwarmGpuRuntime`.
+- Cached player context/camera on cold enable and on `GlobalRegistryServiceSlot.Player` replacement.
+- Preserved inspector-assigned camera overrides and cleared only runtime-resolved camera references on shutdown.
+- Replaced direct hot-path completion with `DispatcherJobFence.TryFinalizeCompleted`; teardown uses `DispatcherJobFence.TryComplete(..., forceComplete: true)`.
+
+Cinematic Cheats used:
+- None. GPU particle budget, target selection math, and visual quality ladder were unchanged.
+
+Exact Microseconds saved:
+- Broken late-bind recovery: avoids a missing-camera VFX stall with no per-frame registry poll.
+- Direct microsecond saving is 0 us steady-state; value is deterministic ownership and centralized job-fence proof.
+
+Verification:
+- Guard before build: CPU 6%, 0 `dotnet/csc/VBCSCompiler` processes.
+- `dotnet build Hecton8.Editor.csproj --no-restore -v:minimal "/flp:logfile=Docs/AgentLogs/Build_EXTERNAL_CODEX_hotpath_cleanup4.log;verbosity=minimal"` succeeded.
+- Build result: 0 warnings, 0 errors.
+- `git diff --check` passed for `ParasiteSwarmGpuRuntime.cs` without whitespace errors.
+- Post-build guard: CPU 15%, 0 `dotnet/csc/VBCSCompiler` processes.
+
+## 2026-05-23 Runtime Hot-Path Cleanup 5
+What was wrong:
+- `HectonSurfaceWeatherDirector` resolved player context through `GlobalRegistry.Player` inside its dependency path, including slow-tick recovery.
+- Late Player registration relied on retry polling rather than the existing `GlobalRegistryServiceSlot.Player` hot-swap callback route.
+
+What was done:
+- Added `IGlobalRegistryHotSwapListener` to `HectonSurfaceWeatherDirector`.
+- Cached `IPlayerRuntimeContext` during awake/enable and on Player service replacement.
+- Routed movement, buoyancy, visor, and flashlight dependency refresh through the cached context.
+- Kept the existing `GameBootstrapper.TryGetCurrentPlayerTransform` fallback for degraded bootstrap cases.
+
+Cinematic Cheats used:
+- None. Weather simulation, rain exposure, lightning, ocean defaults, and quality math were unchanged.
+
+Exact Microseconds saved:
+- Slow dependency recovery avoids a player registry read and duplicated property chain, estimated 1-5 us per pass.
+- Frame hot path impact: 0 us; `Tick` logic was not changed.
+
+Verification:
+- Guard before build: CPU 20%, 0 `dotnet/csc/VBCSCompiler` processes.
+- `dotnet build Hecton8.Editor.csproj --no-restore -v:minimal "/flp:logfile=Docs/AgentLogs/Build_EXTERNAL_CODEX_hotpath_cleanup5.log;verbosity=minimal"` succeeded.
+- Build result: 0 warnings, 0 errors.
+- `git diff --check` passed for `HectonSurfaceWeatherDirector.cs`; only Git LF-to-CRLF normalization warning was reported.
+- Post-build guard: CPU 23%, 0 `dotnet/csc/VBCSCompiler` processes.
+
+## 2026-05-23 Runtime Hot-Path Cleanup 6
+What was wrong:
+- `HectonAtmosphereManager.PublishGiantAbyssLight()` read `GlobalRegistry.CelestialEngine` during visual light publication.
+- `CachePlayerMovement()` read `GlobalRegistry.Player` to locate the player camera instead of consuming a cached player context.
+
+What was done:
+- Added `IGlobalRegistryHotSwapListener` to `HectonAtmosphereManager`.
+- Cached player and celestial runtime references during lifecycle and service replacement callbacks.
+- Routed giant-abyss light through `_cachedCelestialEngine`.
+- Preserved explicit `_playerTransform` overrides and used player-context movement/camera only when it matches the active transform or fills an empty runtime binding.
+
+Cinematic Cheats used:
+- None. Existing Aegir cookie fallback and atmosphere math were preserved.
+
+Exact Microseconds saved:
+- Visual/slow-cycle path: removes direct celestial/player registry lookups, estimated 1-8 us per affected pass.
+- Frame hot path impact: 0 us; atmosphere timeline equations and quality behavior unchanged.
+
+Verification:
+- Guard before build: CPU 5%, 0 `dotnet/csc/VBCSCompiler` processes.
+- `dotnet build Hecton8.Editor.csproj --no-restore -v:minimal "/flp:logfile=Docs/AgentLogs/Build_EXTERNAL_CODEX_hotpath_cleanup6.log;verbosity=minimal"` succeeded.
+- Build result: 0 warnings, 0 errors.
+- `git diff --check` passed for `HectonAtmosphereManager.cs`; only Git LF-to-CRLF normalization warning was reported.
+- Post-build guard: CPU 23%, 0 `dotnet/csc/VBCSCompiler` processes.
+
+## 2026-05-23 Runtime Hot-Path Cleanup 7
+What was wrong:
+- `HostileFlora.UpdateTarget()` read `GlobalRegistry.Player` on every slow tick.
+- `HostileFlora.Shoot()` read `GlobalRegistry.Audio` on each shot.
+- `HectonCelestialEngine` cached DataVault/player/weather/underwater/GI/runtime owners only in lifecycle methods; late service replacement could leave stale celestial snapshot inputs.
+
+What was done:
+- Added `IGlobalRegistryHotSwapListener` to `HostileFlora` and cached player/audio services from cold enable and Player/Audio/Dispatcher rebinds.
+- Added `IGlobalRegistryHotSwapListener` to `HectonCelestialEngine`.
+- Routed celestial DataVault, biome, ocean kinematics, weather, GI relay, underwater visuals, random events, dynamic resolution, world seed, player, and dispatcher rebinding through service-slot callbacks.
+- DataVault rebinding now refreshes celestial generation handles and dirties atmosphere gradient samples without changing DTO layout.
+
+Cinematic Cheats used:
+- None. Ballistic spread, celestial orbit math, atmosphere gradients, blackbox buffer size, and continuous quality behavior were unchanged.
+
+Exact Microseconds saved:
+- Hostile flora removes one player registry read per active plant slow tick and one audio registry read per shot, estimated 1-4 us per dense flora pass.
+- Celestial runtime moves owner recovery to rare hot-swap events; frame and slow-tick math remain unchanged, steady-state saving is 0-2 us per recovery pass and correctness is the main gain.
+
+Verification:
+- Guard before build: CPU 20%, 0 `dotnet/csc/VBCSCompiler` processes.
+- `dotnet build Hecton8.Editor.csproj --no-restore -v:minimal "/flp:logfile=Docs/AgentLogs/Build_EXTERNAL_CODEX_hotpath_cleanup7.log;verbosity=minimal"` succeeded.
+- Build result: 0 warnings, 0 errors.
+- `git diff --check` passed for `HostileFlora.cs` and `HectonCelestialEngine.cs`; only Git LF-to-CRLF normalization warnings were reported.
+- Post-build guard: CPU 33%, 0 `dotnet/csc/VBCSCompiler` processes.
+
+## 2026-05-23 Runtime Hot-Path Cleanup 8
+What was wrong:
+- `DroneFleetManager` cached construction/player/submarine/fluid owners once in static state.
+- Headless drone simulation later used those caches for task scoring, player position, formation anchor, and flow sampling, but no service replacement route refreshed them.
+
+What was done:
+- Extended the existing `HeadlessFleetDriver` with `IGlobalRegistryHotSwapListener`.
+- Registered/unregistered the driver as a hot-swap listener together with its updatable, late-frame, and render lanes.
+- Routed `Logistics`, `Player`, `Submarine`, and `FluidRuntime` service replacements into the static owner caches.
+- Dispatcher replacement retries headless driver registration without polling during simulation.
+
+Cinematic Cheats used:
+- None. Drone pathfinding, blackbox, indirect rendering, quality tiers, and capacity rules were unchanged.
+
+Exact Microseconds saved:
+- Avoided alternative per-tick registry refresh in the headless simulation: estimated 2-8 us per active drone tick pass on low-end CPUs.
+- Actual implemented steady-state cost remains 0 us; callbacks run only on service replacement.
+
+Verification:
+- Guard before build: CPU 9%, 0 `dotnet/csc/VBCSCompiler` processes.
+- `dotnet build Hecton8.Editor.csproj --no-restore -v:minimal "/flp:logfile=Docs/AgentLogs/Build_EXTERNAL_CODEX_hotpath_cleanup8.log;verbosity=minimal"` succeeded.
+- Build result: 0 warnings, 0 errors.
+- `git diff --check` passed for `DroneFleetManager.cs`; only Git LF-to-CRLF normalization warning was reported.
+- Post-build guard: CPU 17%, 0 `dotnet/csc/VBCSCompiler` processes.
+
+## 2026-05-23 Runtime Hot-Path Cleanup 9
+What was wrong:
+- `ShinobuOceanSurfaceAtmosphereRuntime.ResolveCameraAupDouble()` read `GlobalRegistry.Player` while publishing wave shader state and dispatching wave-height readback.
+- `EnsureVaultBuffersCold()` retried `GlobalRegistry.DataVault` from slow tick when the vault was unavailable during enable.
+
+What was done:
+- Added `IGlobalRegistryHotSwapListener` to the ocean surface runtime.
+- Cached `IPlayerRuntimeContext` and `IDataVault` during enable and service replacement.
+- Converted camera AUP and camera transform recovery to use cached player context.
+- Reset DataVault generation handles only when the DataVault service actually changes.
+- Dispatcher replacement retries tick-lane registration without per-frame polling.
+
+Cinematic Cheats used:
+- Existing wave LOD cadence and quality-weight wave-count math were preserved. No new physical simulation was added.
+
+Exact Microseconds saved:
+- Removes a player registry lookup from wave shader publish/readback paths, estimated 2-6 us per active ocean update/slow pass on low-end CPUs.
+- Removes slow-tick DataVault registry retry while missing; hot-swap callback cost is rare.
+
+Verification:
+- Guard before build: CPU 6%, 0 `dotnet/csc/VBCSCompiler` processes.
+- `dotnet build Hecton8.Editor.csproj --no-restore -v:minimal "/flp:logfile=Docs/AgentLogs/Build_EXTERNAL_CODEX_hotpath_cleanup9.log;verbosity=minimal"` succeeded.
+- Build result: 0 warnings, 0 errors.
+- `git diff --check` passed for `ShinobuOceanSurfaceAtmosphereRuntime.cs`; only Git LF-to-CRLF normalization warning was reported.
+- Post-build guard: CPU 18%, 0 `dotnet/csc/VBCSCompiler` processes.
+
+## 2026-05-23 Runtime Hot-Path Cleanup 10
+What was wrong:
+- `HectonVoxelEngine` read `GlobalRegistry.Player` in predictive voxel proxy target resolution.
+- The same file read `GlobalRegistry.Player` in player-distance collider LOD logic.
+
+What was done:
+- Replaced both direct reads with `PlayerRuntimeContextService.TryGetActiveRuntimeContext`.
+- Preserved the existing bootstrap/player-transform fallback in `TryResolvePlayerAup`.
+- Fixed the first retry compile error caused by a leftover `player` variable after the route change.
+
+Cinematic Cheats used:
+- None. Predictive voxel proxy padding, collider distance thresholds, and voxel LOD behavior were unchanged.
+
+Exact Microseconds saved:
+- Removes two direct player registry reads from voxel helper paths, estimated 1-3 us when predictive proxy/collider LOD helpers run.
+
+Verification:
+- Guard before first build: CPU 1%, 0 `dotnet/csc/VBCSCompiler` processes.
+- First build `Docs/AgentLogs/Build_EXTERNAL_CODEX_hotpath_cleanup10.log` failed with 2 local `CS0103` errors from stale variable `player`.
+- Guard before retry: CPU 9%, 0 `dotnet/csc/VBCSCompiler` processes.
+- Retry `dotnet build Hecton8.Editor.csproj --no-restore -v:minimal "/flp:logfile=Docs/AgentLogs/Build_EXTERNAL_CODEX_hotpath_cleanup10_retry1.log;verbosity=minimal"` succeeded.
+- Retry build result: 0 warnings, 0 errors.
+- Post-build guard: CPU 37%, 0 `dotnet/csc/VBCSCompiler` processes.
+
+## 2026-05-23 Runtime Hot-Path Cleanup 11
+What was wrong:
+- `PlayerExpressionManager.AutoResolveReferences()` read `GlobalRegistry.Player` while resolving player tool and movement owners.
+- Save registration depended on `GlobalRegistry.SaveRuntime` already existing during `OnEnable`.
+
+What was done:
+- Added `IGlobalRegistryHotSwapListener` to `PlayerExpressionManager`.
+- Cached `IPlayerRuntimeContext` and used it for tool/movement owner resolution.
+- Preserved bootstrap transform fallback for degraded startup.
+- Added Save service replacement handling to register/unregister `ISaveable` ownership when SaveRuntime appears or changes.
+
+Cinematic Cheats used:
+- None. Expression profile selection, suit application, HUD override, and save DTO layout were unchanged.
+
+Exact Microseconds saved:
+- Removes repeated Player registry property-chain reads during expression reference resolution, estimated 1-3 us per resolve call.
+- Late-bind callback cost is rare and below 10 us.
+
+Verification:
+- Guard before build: CPU 36%, 0 `dotnet/csc/VBCSCompiler` processes.
+- `dotnet build Hecton8.Editor.csproj --no-restore -v:minimal "/flp:logfile=Docs/AgentLogs/Build_EXTERNAL_CODEX_hotpath_cleanup11.log;verbosity=minimal"` succeeded.
+- Build result: 0 warnings, 0 errors.
+- Post-build guard: CPU 23%, 0 `dotnet/csc/VBCSCompiler` processes.
+
+## 2026-05-23 Runtime Hot-Path Cleanup 12
+What was wrong:
+- `PDALoadoutTab` still used direct `GlobalRegistry.PlayerExpression` fallback in identity summary/action helpers.
+- Player-owned UI references (`PlayerInventory`, `PlayerToolManager`, `PlayerPDA`) could remain bound to the previous player context after Player service replacement.
+
+What was done:
+- Added `IGlobalRegistryHotSwapListener` to `PDALoadoutTab`.
+- Seeded Player, PlayerInventory, and PlayerExpression caches during cold lifecycle only.
+- Cleared only references that came from the previous player context before rebinding the current context.
+- Converted expression helper paths to use cached `PlayerExpressionManager` instead of registry fallback.
+- Dispatcher replacement retries tick registration without per-frame polling.
+
+Cinematic Cheats used:
+- None. PDA loadout summary, preset choice, field-advice query, and identity cycling behavior were unchanged.
+
+Exact Microseconds saved:
+- Removes repeated expression registry reads from loadout refresh/action paths, estimated 1-4 us per PDA loadout refresh on low-end CPUs.
+- Prevents stale player-owned UI references after hot-swap; callback cost is rare and below 10 us.
+
+Verification:
+- Guard before build: CPU 10.3%, 0 `dotnet/csc/VBCSCompiler` processes.
+- `dotnet build Hecton8.Editor.csproj --no-restore -v:minimal "/flp:logfile=Docs/AgentLogs/Build_EXTERNAL_CODEX_hotpath_cleanup12.log;verbosity=minimal"` succeeded.
+- Build result: 0 warnings, 0 errors.
+- Post-build guard after wait: CPU 5.4%, 0 `dotnet/csc/VBCSCompiler` processes.
+
+## 2026-05-23 Runtime Hot-Path Cleanup 13
+What was wrong:
+- `CullingManager.ResolveMainCamera()` read `GlobalRegistry.PlayerSensory` and `GlobalRegistry.Player` after enable while recovering the culling camera.
+- Player/PlayerSensory replacement could leave the manager using the old camera and layer cull distances until another manual cache reset happened.
+
+What was done:
+- Added `IGlobalRegistryHotSwapListener` to `CullingManager`.
+- Cached `IPlayerRuntimeContext` and `IPlayerSensoryService` during cold lifecycle.
+- Invalidated camera binding and layer cull distances when Player or PlayerSensory changes.
+- Dispatcher replacement retries slow-tick registration.
+- Left frustum, distance, hysteresis, and registered-object logic unchanged.
+
+Cinematic Cheats used:
+- Existing coarse slow-tick culling cadence was preserved. No new physical simulation or extra visibility math was added.
+
+Exact Microseconds saved:
+- Removes PlayerSensory/Player registry reads from culling camera recovery, estimated 1-3 us per camera re-resolve on low-end CPUs.
+- Prevents stale camera/layer-cull binding after hot-swap; callback cost is rare and below 10 us.
+
+Verification:
+- Guard before build: CPU 9.3%, 0 `dotnet/csc/VBCSCompiler` processes.
+- `dotnet build Hecton8.Editor.csproj --no-restore -v:minimal "/flp:logfile=Docs/AgentLogs/Build_EXTERNAL_CODEX_hotpath_cleanup13.log;verbosity=minimal"` succeeded.
+- Build result: 0 warnings, 0 errors.
+- Post-build guard after wait: CPU 4%, 0 `dotnet/csc/VBCSCompiler` processes.
+
+## 2026-05-23 Runtime Hot-Path Cleanup 14
+What was wrong:
+- `HectonItem` kept static caches for Player, PlayerInventory, Physics, and ObjectPool services, but only refreshed them from lifecycle calls.
+- Service replacement could leave pooled pickup interaction, AUP conversion, or object-pool return paths reading stale service pointers.
+
+What was done:
+- Added one class-level `StaticRegistryHotSwapListener` for all `HectonItem` instances.
+- The shared listener updates the static service caches on Player, PlayerInventory, Physics, and ObjectPool replacement.
+- Kept cold lifecycle seeding for bootstrap and avoided per-pickup listener registration.
+
+Cinematic Cheats used:
+- Existing pickup settle state machine and buoyancy approximation were preserved. No added simulation.
+
+Exact Microseconds saved:
+- Avoids registry polling in pickup interaction/preview paths, estimated 1-2 us per pickup interaction on low-end CPUs.
+- Avoids thousands of per-instance listener registrations; one rare static callback handles service replacement.
+
+Verification:
+- Guard before build: CPU 9.6%, 0 `dotnet/csc/VBCSCompiler` processes.
+- `dotnet build Hecton8.Editor.csproj --no-restore -v:minimal "/flp:logfile=Docs/AgentLogs/Build_EXTERNAL_CODEX_hotpath_cleanup14.log;verbosity=minimal"` succeeded.
+- Build result: 0 warnings, 0 errors.
+- Post-build guard after wait: CPU 7.7%, 0 `dotnet/csc/VBCSCompiler` processes.
+
+## 2026-05-23 Runtime Hot-Path Cleanup 15
+What was wrong:
+- `PlayerToolManager.PlayerRuntimeContext` was a read accessor that returned `GlobalRegistry.Player`.
+- `ToolHitUtility` uses that accessor from impact/body/AUP helper paths, so a nominal local accessor still performed a global lookup.
+- New VR interaction files referenced `VRInteractionBridgeContracts.cs`, but the local generated `Hecton8.Core.csproj` did not include that contract source yet.
+
+What was done:
+- Added cached `IPlayerRuntimeContext _playerRuntimeService` to `PlayerToolManager`.
+- Updated the cached service in cold lifecycle and Player hot-swap callbacks.
+- Kept concrete `PlayerRuntimeContext _runtimeContext` only for interaction-state publication.
+- Cleared player-owned references on Player replacement and rebound inventory, transport coordinator, and hand anchor from the current player service.
+- Added `Assets\_Project\Scripts\Core\Contracts\VRInteractionBridgeContracts.cs` to the local generated project for verification.
+
+Cinematic Cheats used:
+- None. Tool impact, VR hand solver, and hand IK math were unchanged.
+
+Exact Microseconds saved:
+- Removes one player registry lookup from tool impact helper paths, estimated 1-2 us per impact/AUP resolve on low-end CPUs.
+- Generated-project include repair has 0 runtime cost and avoids repeated compile-wall cycles.
+
+Verification:
+- Guard before first build: CPU 25%, 0 `dotnet/csc/VBCSCompiler` processes.
+- First build `Docs/AgentLogs/Build_EXTERNAL_CODEX_hotpath_cleanup15.log` failed with 2 local type-split errors; fixed by separating `IPlayerRuntimeContext` service cache from concrete `PlayerRuntimeContext`.
+- Retry `Docs/AgentLogs/Build_EXTERNAL_CODEX_hotpath_cleanup15_retry1.log` failed on missing VR contract source in local generated project; fixed by adding the existing contract file to `Hecton8.Core.csproj`.
+- Retry `dotnet build Hecton8.Editor.csproj --no-restore -v:minimal "/flp:logfile=Docs/AgentLogs/Build_EXTERNAL_CODEX_hotpath_cleanup15_retry2.log;verbosity=minimal"` succeeded.
+- Final retry result: 0 warnings, 0 errors.
+- Build-server shutdown left idle MSBuild/VBCSCompiler processes resident, so those idle compiler nodes were cleared. Final compiler guard: 0 `dotnet/csc/VBCSCompiler` processes.

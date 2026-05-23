@@ -1,0 +1,175 @@
+﻿TIMESTAMP: 2026-05-22T13:35:15.4006940+04:00
+TARGET: Hecton8.slnx
+CPU_PREFLIGHT: 4.7
+  AmplifyImpostors.Runtime -> C:\hades\Hecton8\Temp\bin\Debug\AmplifyImpostors.Runtime.dll
+  AmplifyImpostors.Editor -> C:\hades\Hecton8\Temp\bin\Debug\AmplifyImpostors.Editor.dll
+  Unity.RenderPipelines.Universal.Runtime -> C:\hades\Hecton8\Temp\bin\Debug\Unity.RenderPipelines.Universal.Runtime.dll
+  Lofelt.NiceVibrations -> C:\hades\Hecton8\Temp\bin\Debug\Lofelt.NiceVibrations.dll
+  Hecton8.Bootstrap.Contracts -> C:\hades\Hecton8\Temp\bin\Debug\Hecton8.Bootstrap.Contracts.dll
+  Den.Tools -> C:\hades\Hecton8\Temp\bin\Debug\Den.Tools.dll
+  GPUInstancer -> C:\hades\Hecton8\Temp\bin\Debug\GPUInstancer.dll
+  MoreMountains.Tools -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Tools.dll
+  Hecton8.Input.Generated -> C:\hades\Hecton8\Temp\bin\Debug\Hecton8.Input.Generated.dll
+  MoreMountains.Feedbacks -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.dll
+  MapMagic -> C:\hades\Hecton8\Temp\bin\Debug\MapMagic.dll
+  Hecton8.Input -> C:\hades\Hecton8\Temp\bin\Debug\Hecton8.Input.dll
+  Den.Tools.Editor -> C:\hades\Hecton8\Temp\bin\Debug\Den.Tools.Editor.dll
+  EasySave3 -> C:\hades\Hecton8\Temp\bin\Debug\EasySave3.dll
+  GPUInstancer.Editor -> C:\hades\Hecton8\Temp\bin\Debug\GPUInstancer.Editor.dll
+  EasySave3Editor -> C:\hades\Hecton8\Temp\bin\Debug\EasySave3Editor.dll
+  MapMagic.Editor -> C:\hades\Hecton8\Temp\bin\Debug\MapMagic.Editor.dll
+  Unity.RenderPipelines.Core.Editor -> C:\hades\Hecton8\Temp\bin\Debug\Unity.RenderPipelines.Core.Editor.dll
+  Sirenix.OdinInspector.Modules.UnityMathematics -> C:\hades\Hecton8\Temp\bin\Debug\Sirenix.OdinInspector.Modules.UnityMathematics.dll
+  ShapesRuntime -> C:\hades\Hecton8\Temp\bin\Debug\ShapesRuntime.dll
+  AstarPathfindingProject -> C:\hades\Hecton8\Temp\bin\Debug\AstarPathfindingProject.dll
+  MoreMountains.Feedbacks.MMTools -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.MMTools.dll
+  MoreMountains.Feedbacks.URP -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.URP.dll
+  MoreMountains.Feedbacks.HDRP -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.HDRP.dll
+  VolumetricLightBeam -> C:\hades\Hecton8\Temp\bin\Debug\VolumetricLightBeam.dll
+  Unity.ShaderGraph.Editor -> C:\hades\Hecton8\Temp\bin\Debug\Unity.ShaderGraph.Editor.dll
+  MeshBakerCore -> C:\hades\Hecton8\Temp\bin\Debug\MeshBakerCore.dll
+  MoreMountains.Feedbacks.TextMeshPro -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.TextMeshPro.dll
+  MoreMountains.Feedbacks.PostProcessing -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.PostProcessing.dll
+  MoreMountains.Feedbacks.NiceVibrations -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.NiceVibrations.dll
+  Hecton8.World.Contracts -> C:\hades\Hecton8\Temp\bin\Debug\Hecton8.World.Contracts.dll
+  JBooth.MicroSplat.Core -> C:\hades\Hecton8\Temp\bin\Debug\JBooth.MicroSplat.Core.dll
+  Tayx.Graphy -> C:\hades\Hecton8\Temp\bin\Debug\Tayx.Graphy.dll
+  Unity.RenderPipelines.Universal.Editor -> C:\hades\Hecton8\Temp\bin\Debug\Unity.RenderPipelines.Universal.Editor.dll
+  Lofelt.NiceVibrations.Demo -> C:\hades\Hecton8\Temp\bin\Debug\Lofelt.NiceVibrations.Demo.dll
+  JBooth.MicroSplat.Core.Editor -> C:\hades\Hecton8\Temp\bin\Debug\JBooth.MicroSplat.Core.Editor.dll
+  Lofelt.NiceVibrations.Editor -> C:\hades\Hecton8\Temp\bin\Debug\Lofelt.NiceVibrations.Editor.dll
+  PackageToolsEditor -> C:\hades\Hecton8\Temp\bin\Debug\PackageToolsEditor.dll
+  MapMagic.MicroSplat -> C:\hades\Hecton8\Temp\bin\Debug\MapMagic.MicroSplat.dll
+  Crest -> C:\hades\Hecton8\Temp\bin\Debug\Crest.dll
+  MapMagic.MicroSplat.Editor -> C:\hades\Hecton8\Temp\bin\Debug\MapMagic.MicroSplat.Editor.dll
+  Crest.Helpers.Editor -> C:\hades\Hecton8\Temp\bin\Debug\Crest.Helpers.Editor.dll
+  Hecton8.Core -> C:\hades\Hecton8\Temp\bin\Debug\Hecton8.Core.dll
+  MapMagic.Settings -> C:\hades\Hecton8\Temp\bin\Debug\MapMagic.Settings.dll
+  TechniePhysicsCreator -> C:\hades\Hecton8\Temp\bin\Debug\TechniePhysicsCreator.dll
+  AstarPathfindingProjectEditor -> C:\hades\Hecton8\Temp\bin\Debug\AstarPathfindingProjectEditor.dll
+  ShapesEditor -> C:\hades\Hecton8\Temp\bin\Debug\ShapesEditor.dll
+  MoreMountains.Feedbacks.Editor -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.Editor.dll
+  Technie.PhysicsCreator.Updater -> C:\hades\Hecton8\Temp\bin\Debug\Technie.PhysicsCreator.Updater.dll
+  BakeryRuntimeAssembly -> C:\hades\Hecton8\Temp\bin\Debug\BakeryRuntimeAssembly.dll
+  BakeryEditorAssembly -> C:\hades\Hecton8\Temp\bin\Debug\BakeryEditorAssembly.dll
+  Hecton8.Editor -> C:\hades\Hecton8\Temp\bin\Debug\Hecton8.Editor.dll
+  MeshBakerEditor -> C:\hades\Hecton8\Temp\bin\Debug\MeshBakerEditor.dll
+  MoreMountains.Feedbacks.Cinemachine -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.Cinemachine.dll
+  MoreMountains.Tools.Editor -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Tools.Editor.dll
+  Tayx.Graphy.Editor -> C:\hades\Hecton8\Temp\bin\Debug\Tayx.Graphy.Editor.dll
+  MoreMountains.Feedbacks.Authorizations -> C:\hades\Hecton8\Temp\bin\Debug\MoreMountains.Feedbacks.Authorizations.dll
+  Hecton8.World.Dots -> C:\hades\Hecton8\Temp\bin\Debug\Hecton8.World.Dots.dll
+  VolumetricLightBeam.Editor -> C:\hades\Hecton8\Temp\bin\Debug\VolumetricLightBeam.Editor.dll
+  Assembly-CSharp-firstpass -> C:\hades\Hecton8\Temp\bin\Debug\Assembly-CSharp-firstpass.dll
+  Assembly-CSharp-Editor-firstpass -> C:\hades\Hecton8\Temp\bin\Debug\Assembly-CSharp-Editor-firstpass.dll
+  Assembly-CSharp -> C:\hades\Hecton8\Temp\bin\Debug\Assembly-CSharp.dll
+  Assembly-CSharp-Editor -> C:\hades\Hecton8\Temp\bin\Debug\Assembly-CSharp-Editor.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:16.53
+EXIT_CODE: 0
+TARGET: AIToASE.csproj
+CPU_PREFLIGHT: 4.43
+  AmplifyImpostors.Runtime -> C:\hades\Hecton8\Temp\bin\Debug\AmplifyImpostors.Runtime.dll
+  AmplifyImpostors.Editor -> C:\hades\Hecton8\Temp\bin\Debug\AmplifyImpostors.Editor.dll
+  AIToASE -> C:\hades\Hecton8\Temp\bin\Debug\AIToASE.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:01.64
+EXIT_CODE: 0
+TARGET: AmplifyShaderEditor.csproj
+CPU_PREFLIGHT: 35.42
+  AmplifyShaderEditor -> C:\hades\Hecton8\Temp\bin\Debug\AmplifyShaderEditor.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:01.16
+EXIT_CODE: 0
+TARGET: Hecton8.PlayModeTests.csproj
+CPU_PREFLIGHT: 28.11
+  Hecton8.Core -> C:\hades\Hecton8\Temp\bin\Debug\Hecton8.Core.dll
+  Hecton8.PlayModeTests -> C:\hades\Hecton8\Temp\bin\Debug\Hecton8.PlayModeTests.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:01.32
+EXIT_CODE: 0
+TARGET: RealtimeCSG.csproj
+CPU_PREFLIGHT: 39.78
+  RealtimeCSG -> C:\hades\Hecton8\Temp\bin\Debug\RealtimeCSG.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:01.00
+EXIT_CODE: 0
+TARGET: TechniePhysicsCreatorEditor.csproj
+CPU_PREFLIGHT: 19.76
+  TechniePhysicsCreator -> C:\hades\Hecton8\Temp\bin\Debug\TechniePhysicsCreator.dll
+  TechniePhysicsCreatorEditor -> C:\hades\Hecton8\Temp\bin\Debug\TechniePhysicsCreatorEditor.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:01.65
+EXIT_CODE: 0
+TARGET: Tools\RoslynAnalyzers\Hecton8.PlatformNeutralityAnalyzer\Hecton8.PlatformNeutralityAnalyzer.csproj
+CPU_PREFLIGHT: 38.45
+C:\Program Files\dotnet\sdk\10.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.PackageDependencyResolution.targets(266,5): error NETSDK1004: Assets file 'C:\hades\Hecton8\Tools\RoslynAnalyzers\Hecton8.PlatformNeutralityAnalyzer\obj\project.assets.json' not found. Run a NuGet package restore to generate this file. [C:\hades\Hecton8\Tools\RoslynAnalyzers\Hecton8.PlatformNeutralityAnalyzer\Hecton8.PlatformNeutralityAnalyzer.csproj]
+
+Build FAILED.
+
+C:\Program Files\dotnet\sdk\10.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.PackageDependencyResolution.targets(266,5): error NETSDK1004: Assets file 'C:\hades\Hecton8\Tools\RoslynAnalyzers\Hecton8.PlatformNeutralityAnalyzer\obj\project.assets.json' not found. Run a NuGet package restore to generate this file. [C:\hades\Hecton8\Tools\RoslynAnalyzers\Hecton8.PlatformNeutralityAnalyzer\Hecton8.PlatformNeutralityAnalyzer.csproj]
+    0 Warning(s)
+    1 Error(s)
+
+Time Elapsed 00:00:00.75
+EXIT_CODE: 1
+RESTORE_RETRY: Tools\RoslynAnalyzers\Hecton8.PlatformNeutralityAnalyzer\Hecton8.PlatformNeutralityAnalyzer.csproj
+  Determining projects to restore...
+  Restored C:\hades\Hecton8\Tools\RoslynAnalyzers\Hecton8.PlatformNeutralityAnalyzer\Hecton8.PlatformNeutralityAnalyzer.csproj (in 407 ms).
+RESTORE_EXIT_CODE: 0
+  Hecton8.PlatformNeutralityAnalyzer -> C:\hades\Hecton8\Tools\RoslynAnalyzers\Hecton8.PlatformNeutralityAnalyzer\bin\Debug\netstandard2.0\Hecton8.PlatformNeutralityAnalyzer.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:02.20
+POST_RESTORE_BUILD_EXIT_CODE: 0
+TARGET: Tools\SignalBusContractAuditCli\SignalBusContractAuditCli.csproj
+CPU_PREFLIGHT: 15.59
+C:\Program Files\dotnet\sdk\10.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.PackageDependencyResolution.targets(266,5): error NETSDK1005: Assets file 'C:\hades\Hecton8\Tools\SignalBusContractAuditCli\obj\project.assets.json' doesn't have a target for 'net8.0'. Ensure that restore has run and that you have included 'net8.0' in the TargetFrameworks for your project. [C:\hades\Hecton8\Tools\SignalBusContractAuditCli\SignalBusContractAuditCli.csproj]
+
+Build FAILED.
+
+C:\Program Files\dotnet\sdk\10.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.PackageDependencyResolution.targets(266,5): error NETSDK1005: Assets file 'C:\hades\Hecton8\Tools\SignalBusContractAuditCli\obj\project.assets.json' doesn't have a target for 'net8.0'. Ensure that restore has run and that you have included 'net8.0' in the TargetFrameworks for your project. [C:\hades\Hecton8\Tools\SignalBusContractAuditCli\SignalBusContractAuditCli.csproj]
+    0 Warning(s)
+    1 Error(s)
+
+Time Elapsed 00:00:00.79
+EXIT_CODE: 1
+RESTORE_RETRY: Tools\SignalBusContractAuditCli\SignalBusContractAuditCli.csproj
+  Determining projects to restore...
+  Restored C:\hades\Hecton8\Tools\SignalBusContractAuditCli\SignalBusContractAuditCli.csproj (in 304 ms).
+RESTORE_EXIT_CODE: 0
+  SignalBusContractAuditCli -> C:\hades\Hecton8\Tools\SignalBusContractAuditCli\bin\Debug\net8.0\SignalBusContractAuditCli.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:04.17
+POST_RESTORE_BUILD_EXIT_CODE: 0
