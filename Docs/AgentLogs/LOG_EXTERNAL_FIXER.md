@@ -356,3 +356,29 @@ Verification:
 - `git diff --check` on touched code file: no whitespace errors; Git reported LF->CRLF warning only.
 - Guarded build waited while CPU was 100 percent with active dotnet/csc/VBCSCompiler processes, then ran after latest CPU samples dropped below 50 percent and compiler processes cleared.
 - `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal`: succeeded, 0 warnings, 0 errors.
+
+## 2026-05-23 Base Pollution Strain Cache Tranche
+
+What was wrong:
+
+- `BasePollutionManager.SlowTick()` polled `GlobalRegistry.EnvironmentalStrain` before industrial strain accumulation.
+
+What was done:
+
+- Added cached `EnvironmentalStrainManager` field.
+- Added `IGlobalRegistryHotSwapListener` handling for `EnvironmentalStrainRuntime`.
+- Changed slow-tick strain accumulation to use the cached owner service.
+
+Cinematic Cheats used:
+
+- None. This tranche preserves existing scalar pollution/strain math and only hardens the owner route.
+
+Exact microseconds saved:
+
+- No profiler claim. STATIC_SOURCE estimate only: removes 1 registry read per base-pollution slow tick.
+
+Verification:
+
+- `git diff --check` on touched code file: no whitespace errors; Git reported LF->CRLF warning only.
+- Guarded build waited through active compiler and CPU windows; final CPU samples were below 50 percent and no `dotnet/csc` process was active. Idle `VBCSCompiler` remained, so shared compilation was disabled.
+- `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal /p:UseSharedCompilation=false`: succeeded, 0 warnings, 0 errors.

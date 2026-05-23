@@ -1,6 +1,6 @@
 # Status EXTERNAL_FIXER
 Date: 2026-05-23
-Status: VERIFIED - TWELFTH HOT-PATH REGISTRY TRANCHE
+Status: VERIFIED - THIRTEENTH HOT-PATH REGISTRY TRANCHE
 
 - [x] Task 1 - Rule intake and mandate selection | Justification: read AGENTS.md, domain map, and mandates for Zero GC, GlobalRegistry/DI, execution phases, signal lanes, performance budgets, ARM64 DTO layout, crash telemetry, and evidence law before touching code. Alternative rejected: broad blind edits. Microseconds saved: 0 audit setup.
 - [x] Task 2 - Find high-confidence source defects | Justification: scoped hot-path scans found direct GlobalRegistry reads in ScavengePopulator.ProcessSpawnQueue/DespawnChunk, VoxelDeltaProcessor.EmitCaveInDustDecal, Atlas6DirectiveSystem.SlowTick/identity adoption, and AtlasSignalDecoder.SlowTick/pulse decode. False positives in editor-only and teardown code rejected. Microseconds saved: 0 measured, candidate selection only.
@@ -95,3 +95,11 @@ Status: VERIFIED - TWELFTH HOT-PATH REGISTRY TRANCHE
 - [x] Task 58 - Verify first-hour tranche | Justification: `git diff --check` passed with LF->CRLF warning only; compile waited while CPU and compiler processes were active, then `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal` succeeded with 0 errors and 0 warnings. Alternative rejected: launching build during active `dotnet/csc/VBCSCompiler` work. Microseconds saved: not measured.
 - [x] Task 59 - Append first-hour rationale/report | Justification: rationale and LOG entries record slow-tick owner reads, rejected polling alternative, scalability tiers, and static-only estimate. Alternative rejected: chat-only record. Microseconds saved: not measured.
 - [x] Task 60 - Commit/push first-hour tranche | Justification: commit/push limited to `FirstHourDirector.cs` plus EXTERNAL_FIXER docs after exact-file checks. Alternative rejected: staging unrelated dirty workspace edits. Microseconds saved: not measured.
+
+## Continuation Pass 2026-05-23 - Base Pollution Strain Cache Tranche
+
+- [x] Task 61 - Select base-pollution slow-tick defect | Justification: `BasePollutionManager.cs` was clean and `SlowTick()` pulled `GlobalRegistry.EnvironmentalStrain` before industrial strain accumulation. Alternative rejected: editing `EndingSystem` before verifying the base-pollution patch. Microseconds saved: 0 discovery only.
+- [x] Task 62 - Patch environmental-strain cache | Justification: added cached `EnvironmentalStrainManager` plus `IGlobalRegistryHotSwapListener` handling for `EnvironmentalStrainRuntime`; slow-tick accumulation now uses cached owner service. Alternative rejected: a new signal lane because base pollution performs immediate accumulation against the current owner service. Microseconds saved: STATIC estimate only: removes 1 registry read per base-pollution slow tick.
+- [x] Task 63 - Verify base-pollution tranche | Justification: `git diff --check` passed with LF->CRLF warning only; build waited through active compiler/CPU windows, then `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal /p:UseSharedCompilation=false` succeeded with 0 errors and 0 warnings. Alternative rejected: launching build while CPU was above 50 percent or dotnet/csc were active. Microseconds saved: not measured.
+- [x] Task 64 - Append base-pollution rationale/report | Justification: rationale and LOG entries record slow-tick owner read, rejected signal alternative, scalability tiers, and static-only estimate. Alternative rejected: chat-only record. Microseconds saved: not measured.
+- [x] Task 65 - Commit/push base-pollution tranche | Justification: commit/push limited to `BasePollutionManager.cs` plus EXTERNAL_FIXER docs after exact-file checks. Alternative rejected: staging unrelated dirty workspace edits. Microseconds saved: not measured.

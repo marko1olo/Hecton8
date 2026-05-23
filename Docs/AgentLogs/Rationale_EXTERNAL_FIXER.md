@@ -1,6 +1,6 @@
 # Rationale_EXTERNAL_FIXER
 Date: 2026-05-23
-Status: VERIFIED - TWELFTH HOT-PATH REGISTRY TRANCHE
+Status: VERIFIED - THIRTEENTH HOT-PATH REGISTRY TRANCHE
 
 ## Decision 1
 
@@ -137,3 +137,11 @@ Solution: Cache those owner services during lifecycle wiring, refresh them throu
 Rejected Alternatives: Leaving `TryGetRuntimeInventory()` and `ResolveLocalized()` as static registry helpers was rejected because they are called by first-hour guidance paths. Patching `EndingSystem` in the same commit was rejected to keep compile attribution narrow.
 Scalability potential: Low tier keeps first-hour guidance cadence cheap and predictable; Middle keeps identical quest/route behavior; High and Ultra preserve richer first-hour guidance, relay, and localization presentation without adding service-locator polling to cadence paths.
 Hardware Impact: STATIC estimate only: removes Quest/Atlas/Relay/AudioLogs/Player/Localization registry reads from first-hour slow-tick and guidance paths. No profiler microsecond claim.
+
+## Decision 18
+
+Problem: `BasePollutionManager.SlowTick()` resolved `GlobalRegistry.EnvironmentalStrain` every slow-tick before accumulating industrial strain.
+Solution: Cache `EnvironmentalStrainManager` during lifecycle wiring, refresh it through `IGlobalRegistryHotSwapListener` for `EnvironmentalStrainRuntime`, and use the cached owner service in the accumulation path.
+Rejected Alternatives: A new signal lane was rejected because this is immediate owner-service accumulation, not broadcast state. Patching `EndingSystem` in the same commit was rejected to keep compile attribution narrow.
+Scalability potential: Low tier keeps base-pollution cadence cheap; Middle keeps identical strain math; High and Ultra preserve more industrial/ambient presentation headroom without changing pollution truth ownership.
+Hardware Impact: STATIC estimate only: removes 1 registry read per base-pollution slow tick. No profiler microsecond claim.

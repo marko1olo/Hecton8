@@ -12,7 +12,7 @@ namespace Hecton8.World
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-6450)]
     [AddComponentMenu("Hecton8/World/Base Pollution Manager")]
-    public sealed class BasePollutionManager : MonoBehaviour, ISlowTickable, IServiceHeartbeat, IServiceShutdown
+    public sealed class BasePollutionManager : MonoBehaviour, ISlowTickable, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener
     {
         [Header("── Power Noise ─────────────────────────")]
         [Tooltip("Local acoustic noise emitted per watt of active base consumption during one slow-tick window.")]
@@ -76,6 +76,8 @@ namespace Hecton8.World
         private int _lastDroneLaunchTotal;
         private int _lastProcessedRecycleTotal;
         private int _lastCompletedDrillCycles;
+        private EnvironmentalStrainManager _cachedEnvironmentalStrain;
+        private bool _hotSwapRegistered;
 
         /// <summary>Current local acoustic signature emitted by the base cluster.</summary>
         public static float CurrentNoiseLevel
@@ -120,6 +122,8 @@ namespace Hecton8.World
                 return;
 
             TryRegister();
+            CacheEnvironmentalStrain(GlobalRegistry.EnvironmentalStrain);
+            TryRegisterHotSwapListener();
         }
 
         private void OnDisable()
@@ -136,6 +140,8 @@ namespace Hecton8.World
         public void OnServiceShutdown()
         {
             TryUnregister();
+            TryUnregisterHotSwapListener();
+            CacheEnvironmentalStrain(null);
             TryUnregisterService();
         }
 
@@ -214,7 +220,7 @@ namespace Hecton8.World
             _currentNoiseLevel = _currentNoiseLevel * noiseRetention + emittedNoise;
             _currentMicroplasticLevel = _currentMicroplasticLevel * microplasticRetention + emittedMicroplastic;
 
-            EnvironmentalStrainManager strainManager = GlobalRegistry.EnvironmentalStrain;
+            EnvironmentalStrainManager strainManager = _cachedEnvironmentalStrain;
             if (strainManager != null)
             {
                 strainManager.AccumulateIndustrialStrain(
@@ -232,6 +238,37 @@ namespace Hecton8.World
             _debugRecyclerBatchDelta = recyclerBatchDelta;
             _debugActiveDrillCount = activeDrillCount;
             _debugDrillCycleDelta = drillCycleDelta;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.EnvironmentalStrainRuntime)
+                CacheEnvironmentalStrain(currentService as EnvironmentalStrainManager);
+        }
+
+        private void CacheEnvironmentalStrain(EnvironmentalStrainManager strainManager)
+        {
+            _cachedEnvironmentalStrain = strainManager;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
 
         private void TryRegister()
