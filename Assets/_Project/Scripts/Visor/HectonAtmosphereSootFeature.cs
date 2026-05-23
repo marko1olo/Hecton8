@@ -19,7 +19,7 @@ namespace Hecton8.Visor
     /// <summary>
     /// Localized fullscreen soot overlay driven by fake room-atmosphere status bits.
     /// </summary>
-    public sealed class HectonAtmosphereSootFeature : ScriptableRendererFeature
+    public sealed class HectonAtmosphereSootFeature : ScriptableRendererFeature, IGlobalRegistryHotSwapListener
     {
         private const float MinimumSootRadius = 0.001f;
         private const float ActiveSootIntensityEpsilon = 0.001f;
@@ -230,6 +230,8 @@ namespace Hecton8.Visor
 
         private SootPass _pass;
         private Material _material;
+        private IPlayerRuntimeContext _cachedPlayerContext;
+        private bool _hotSwapRegistered;
 
         public static void PublishRuntimeState(bool active, in Vector4 sootParams, in Vector4 sootCenter)
         {
@@ -291,6 +293,8 @@ namespace Hecton8.Visor
             }
 
             RecreateMaterial(ref _material, shader);
+            TryRegisterHotSwapListener();
+            _cachedPlayerContext = GlobalRegistry.Player;
         }
 
         /// <inheritdoc />
@@ -316,9 +320,25 @@ namespace Hecton8.Visor
             _pass?.Dispose();
             CoreUtils.Destroy(_material);
             _material = null;
+            _cachedPlayerContext = null;
+            TryUnregisterHotSwapListener();
         }
 
-        private static bool TryBuildRuntimeState(Camera renderCamera, FeatureSettings settings, out RuntimeState runtimeState)
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Player)
+                _cachedPlayerContext = currentService as IPlayerRuntimeContext;
+        }
+
+        private void OnDisable()
+        {
+            TryUnregisterHotSwapListener();
+        }
+
+        private bool TryBuildRuntimeState(Camera renderCamera, FeatureSettings settings, out RuntimeState runtimeState)
         {
             runtimeState = default;
             if (renderCamera == null || settings == null)
@@ -327,7 +347,7 @@ namespace Hecton8.Visor
             if (!s_runtimeSootActive)
                 return false;
 
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
             Camera playerCamera = playerContext != null ? playerContext.PlayerCamera : null;
             if (playerCamera == null || !ReferenceEquals(renderCamera, playerCamera))
                 return false;
@@ -354,6 +374,23 @@ namespace Hecton8.Visor
                 new Vector2(sootCenter.x, sootCenter.y),
                 aspect);
             return true;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
 
         private static void ClearRuntimeState()

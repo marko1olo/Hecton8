@@ -19,7 +19,7 @@ namespace Hecton8.Visor
     /// <summary>
     /// Fullscreen 1-bit CRT-green diagnostic compositor with AUP-space loot emphasis.
     /// </summary>
-    public sealed class HectonBiosDiagnosticFeature : ScriptableRendererFeature
+    public sealed class HectonBiosDiagnosticFeature : ScriptableRendererFeature, IGlobalRegistryHotSwapListener
     {
         private const int LootRefreshCallMask = 0x07;
 
@@ -197,6 +197,7 @@ namespace Hecton8.Visor
         private bool _cachedHasLoot;
         private IPlayerRuntimeContext _cachedPlayerContext;
         private HectonPlayerMovement _cachedPlayerMovement;
+        private bool _hotSwapRegistered;
 
         public override void Create()
         {
@@ -208,6 +209,8 @@ namespace Hecton8.Visor
             _pass ??= new DiagnosticPass();
             Shader shader = settings != null ? settings.shader : null;
             RecreateMaterial(ref _material, shader);
+            TryRegisterHotSwapListener();
+            CachePlayerContext(GlobalRegistry.Player);
         }
 
         public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
@@ -265,13 +268,7 @@ namespace Hecton8.Visor
 
         private HectonPlayerMovement ResolvePlayerMovement()
         {
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
-            if (!ReferenceEquals(_cachedPlayerContext, playerContext))
-            {
-                _cachedPlayerContext = playerContext;
-                _cachedPlayerMovement = null;
-            }
-
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
             _cachedPlayerMovement = playerContext != null ? playerContext.PlayerMovement : null;
             return _cachedPlayerMovement;
         }
@@ -280,6 +277,48 @@ namespace Hecton8.Visor
         {
             CoreUtils.Destroy(_material);
             _material = null;
+            CachePlayerContext(null);
+            TryUnregisterHotSwapListener();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Player)
+                CachePlayerContext(currentService as IPlayerRuntimeContext);
+        }
+
+        private void OnDisable()
+        {
+            TryUnregisterHotSwapListener();
+        }
+
+        private void CachePlayerContext(IPlayerRuntimeContext playerContext)
+        {
+            if (ReferenceEquals(_cachedPlayerContext, playerContext))
+                return;
+
+            _cachedPlayerContext = playerContext;
+            _cachedPlayerMovement = null;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
 
         private static void RecreateMaterial(ref Material material, Shader shader)

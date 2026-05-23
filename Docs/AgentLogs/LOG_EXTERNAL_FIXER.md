@@ -294,3 +294,34 @@ Verification:
 - `git diff --check` on touched code file: no whitespace errors; Git reported LF->CRLF warning only.
 - Guarded build ran at CPU 28 percent with no active dotnet/csc/VBCSCompiler process.
 - `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal`: succeeded, 0 warnings, 0 errors.
+
+## 2026-05-23 Visor Render Feature Player Cache Tranche
+
+What was wrong:
+
+- `HectonBiosDiagnosticFeature.ResolvePlayerMovement()` polled `GlobalRegistry.Player` from a render-feature path used during per-camera pass setup and loot-cache refresh.
+- `HectonNoirDepthFogFeature.ShouldBypassForSurfaceReadability()` polled `GlobalRegistry.Player` during per-camera fog gating.
+- `HectonAtmosphereSootFeature.TryBuildRuntimeState()` polled `GlobalRegistry.Player` during per-camera soot overlay gating.
+- `HectonRetinaDistortionFeature.TryBuildRuntimeState()` polled `GlobalRegistry.Player` during per-camera health/narcosis gating.
+- `HectonVRBrownoutFeature.TryBuildRuntimeState()` polled `GlobalRegistry.Player` during per-camera XR comfort gating.
+
+What was done:
+
+- Added cached `IPlayerRuntimeContext` fields to the five render features.
+- Added `IGlobalRegistryHotSwapListener` handling for the `Player` slot.
+- Changed per-camera state builders to read cached player context.
+- Kept cold `Create()` registry reads as dependency-cache seeding only.
+
+Cinematic Cheats used:
+
+- Existing visual fakes preserved: BIOS 1-bit diagnostic overlay, depth-fog deception, soot overlay, retina distortion, and VR brownout remain shader/presentation gates, not physical simulation.
+
+Exact microseconds saved:
+
+- No profiler claim. STATIC_SOURCE estimate only: removes 1 registry read per BIOS loot cache refresh, 1 per noir surface-readability check, 1 per atmosphere soot state build, 1 per retina state build, and 1 per VR brownout state build.
+
+Verification:
+
+- `git diff --check` on touched code files: no whitespace errors; Git reported LF->CRLF warnings only.
+- Guarded build ran after CPU samples of 13.7, 5.0, and 0.8 percent and no active dotnet/csc/VBCSCompiler process.
+- `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal`: succeeded, 0 warnings, 0 errors.

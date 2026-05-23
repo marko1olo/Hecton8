@@ -20,7 +20,7 @@ namespace Hecton8.Visor
     /// <summary>
     /// Single fullscreen VR visor brownout and focus blur pass.
     /// </summary>
-    public sealed class HectonVRBrownoutFeature : ScriptableRendererFeature
+    public sealed class HectonVRBrownoutFeature : ScriptableRendererFeature, IGlobalRegistryHotSwapListener
     {
         private const int VRBrownoutGlobalsStrideBytes = 64;
 
@@ -272,6 +272,8 @@ namespace Hecton8.Visor
 
         private BrownoutPass _pass;
         private Material _material;
+        private IPlayerRuntimeContext _cachedPlayerContext;
+        private bool _hotSwapRegistered;
 
         /// <inheritdoc />
         public override void Create()
@@ -291,6 +293,8 @@ namespace Hecton8.Visor
             }
 
             RecreateMaterial(ref _material, shader);
+            TryRegisterHotSwapListener();
+            _cachedPlayerContext = GlobalRegistry.Player;
         }
 
         /// <inheritdoc />
@@ -313,15 +317,31 @@ namespace Hecton8.Visor
             _pass?.Dispose();
             CoreUtils.Destroy(_material);
             _material = null;
+            _cachedPlayerContext = null;
+            TryUnregisterHotSwapListener();
         }
 
-        private static bool TryBuildRuntimeState(Camera renderCamera, out RuntimeState runtimeState)
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Player)
+                _cachedPlayerContext = currentService as IPlayerRuntimeContext;
+        }
+
+        private void OnDisable()
+        {
+            TryUnregisterHotSwapListener();
+        }
+
+        private bool TryBuildRuntimeState(Camera renderCamera, out RuntimeState runtimeState)
         {
             runtimeState = default;
             if (renderCamera == null || !HectonXRRuntimeState.IsXRActive)
                 return false;
 
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
             Camera playerCamera = playerContext != null ? playerContext.PlayerCamera : null;
             if (playerCamera == null || !ReferenceEquals(renderCamera, playerCamera))
                 return false;
@@ -346,6 +366,23 @@ namespace Hecton8.Visor
                 vrComfortSignals,
                 vrComfortMotion);
             return true;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

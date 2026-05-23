@@ -1,6 +1,6 @@
 # Rationale_EXTERNAL_FIXER
 Date: 2026-05-23
-Status: VERIFIED - TENTH HOT-PATH REGISTRY TRANCHE
+Status: VERIFIED - ELEVENTH HOT-PATH REGISTRY TRANCHE
 
 ## Decision 1
 
@@ -121,3 +121,11 @@ Solution: Cache `FirstHourDirector` and the depth-zone fallback during lifecycle
 Rejected Alternatives: Repeated registry fallback inside `ResolveReferences()` was rejected because the method is called from slow tick. Adding a new signal lane was rejected because this is private immediate read of owner state, not a broadcast.
 Scalability potential: Low tier keeps world-readability cadence cheap; Middle keeps the same authored guidance; High and Ultra preserve richer contextual notifications without turning service lookup into cadence cost.
 Hardware Impact: STATIC estimate only: removes 1 registry read per readability gate check and 1 registry read per depth-zone auto-resolve fallback attempt. No profiler microsecond claim.
+
+## Decision 16
+
+Problem: Five visor `ScriptableRendererFeature` state-build helpers pulled `GlobalRegistry.Player` from per-camera render setup paths: BIOS diagnostic loot refresh, noir depth fog surface bypass, atmosphere soot camera gate, retina distortion camera gate, and VR brownout camera gate.
+Solution: Cache `IPlayerRuntimeContext` during feature `Create()`, refresh it through `IGlobalRegistryHotSwapListener` for the `Player` slot, and keep render-feature state-build helpers on cached owner context.
+Rejected Alternatives: Leaving static helpers to poll the registry was rejected because render feature state build runs per camera/frame. Rewriting the features into a shared base class was rejected because the five-file local patch is smaller and safer in a dirty multi-agent workspace.
+Scalability potential: Low tier avoids service-locator reads in VISUAL_SYNC gates; Middle keeps the same render gating; High and Ultra preserve richer visor/noir/VR presentation headroom without changing player truth ownership or shader DTO layout.
+Hardware Impact: STATIC estimate only: removes 1 registry read per BIOS loot cache refresh, 1 registry read per noir surface-readability check, 1 registry read per atmosphere soot state build, 1 registry read per retina state build, and 1 registry read per VR brownout state build. No profiler microsecond claim.

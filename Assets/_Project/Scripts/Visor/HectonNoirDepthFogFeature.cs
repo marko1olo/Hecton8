@@ -19,7 +19,7 @@ namespace Hecton8.Visor
     /// <summary>
     /// Single-pass depth fog deception. It reads depth, dithers fog coverage with deterministic IGN, and composites before transparents.
     /// </summary>
-    public sealed class HectonNoirDepthFogFeature : ScriptableRendererFeature
+    public sealed class HectonNoirDepthFogFeature : ScriptableRendererFeature, IGlobalRegistryHotSwapListener
     {
 #if UNITY_EDITOR
         private const string ShaderAssetPath = "Assets/_Project/Art/Shaders/Hecton_NoirDepthFog.shader";
@@ -242,6 +242,8 @@ namespace Hecton8.Visor
 
         private NoirDepthFogPass _pass;
         private Material _material;
+        private IPlayerRuntimeContext _cachedPlayerContext;
+        private bool _hotSwapRegistered;
 
         public override void Create()
         {
@@ -255,6 +257,8 @@ namespace Hecton8.Visor
                 : Shader.Find("Hidden/Hecton8/NoirDepthFog");
             RecreateMaterial(ref _material, shader);
             _pass ??= new NoirDepthFogPass();
+            TryRegisterHotSwapListener();
+            _cachedPlayerContext = GlobalRegistry.Player;
         }
 
         public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
@@ -278,12 +282,12 @@ namespace Hecton8.Visor
             renderer.EnqueuePass(_pass);
         }
 
-        private static bool ShouldBypassForSurfaceReadability(Camera renderCamera, float nearSurfaceBypassDepthMeters)
+        private bool ShouldBypassForSurfaceReadability(Camera renderCamera, float nearSurfaceBypassDepthMeters)
         {
             if (renderCamera == null)
                 return false;
 
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
             var playerMovement = playerContext != null ? playerContext.PlayerMovement : null;
 
             if (playerMovement != null)
@@ -299,6 +303,39 @@ namespace Hecton8.Visor
         {
             _pass?.Dispose();
             DisposeMaterial(ref _material);
+            _cachedPlayerContext = null;
+            TryUnregisterHotSwapListener();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Player)
+                _cachedPlayerContext = currentService as IPlayerRuntimeContext;
+        }
+
+        private void OnDisable()
+        {
+            TryUnregisterHotSwapListener();
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
 
         private static void RecreateMaterial(ref Material material, Shader shader)
