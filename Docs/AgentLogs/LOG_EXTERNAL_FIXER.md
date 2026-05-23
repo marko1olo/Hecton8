@@ -557,3 +557,32 @@ Verification:
 - First guarded build failed on unrelated dirty `PDADataLogTab.cs` missing-method race; the methods were present when inspected, so no UI edit was made.
 - Repeat guarded build ran at CPU 33 percent with no `dotnet/csc` process active. Idle `VBCSCompiler` remained, so shared compilation was disabled and MSBuild node reuse was disabled.
 - `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal /p:UseSharedCompilation=false /nr:false`: succeeded, 0 warnings, 0 errors.
+
+## 2026-05-23 World Interest Player Cache Tranche
+
+What was wrong:
+
+- `WorldInterestDirector.TryResolvePlayerAup()` read `GlobalRegistry.Player`.
+- `WorldInterestDirector.ResolveReferences()` read `GlobalRegistry.Player`.
+- Runtime slow tick could call `WorldRuntimeReferenceUtility.TryResolvePlayerTransform()` as player fallback.
+
+What was done:
+
+- Added cached `IPlayerRuntimeContext` field.
+- Added `IGlobalRegistryHotSwapListener` handling for the Player slot.
+- Changed player pose/transform resolution to use cached context.
+- Kept player scene utility fallback only for editor preview under `UNITY_EDITOR`.
+
+Cinematic Cheats used:
+
+- None. This tranche is world-interest owner-route hardening, not visual simulation.
+
+Exact microseconds saved:
+
+- No profiler claim. STATIC_SOURCE estimate only: removes player registry reads from world-interest slow tick and auto-resolve paths.
+
+Verification:
+
+- `git diff --check` on touched code file: no whitespace errors; Git reported LF->CRLF warning only.
+- Guarded build waited through repeated external `csc.exe`/`dotnet.exe` windows. Final gate had CPU 45 percent, no `dotnet/csc`, and only idle `VBCSCompiler`.
+- `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal /p:UseSharedCompilation=false /nr:false`: succeeded, 0 warnings, 0 errors.

@@ -1,6 +1,6 @@
 # Rationale_EXTERNAL_FIXER
 Date: 2026-05-23
-Status: VERIFIED - NINETEENTH HOT-PATH REGISTRY TRANCHE
+Status: VERIFIED - TWENTIETH HOT-PATH REGISTRY TRANCHE
 
 ## Decision 1
 
@@ -193,3 +193,11 @@ Solution: Cache `PlayerExplorationTracker`, `FaunaGeneticsManager`, and `Environ
 Rejected Alternatives: Polling registry inside `EnsureZoneBudget()` and `ResolveInfectionPressure01()` was rejected because both are slow-tick helper routes. Editing dirty `PDADataLogTab.cs` after the first failed build was rejected because the missing-method errors were resolved by concurrent file state and a repeat build passed.
 Scalability potential: Low tier keeps infection-zone cadence cheap; Middle keeps identical infection-zone behavior; High and Ultra preserve room for richer infected-fauna presentation without adding registry polling to ecosystem slow tick.
 Hardware Impact: STATIC estimate only: removes player-exploration, fauna-genetics, and environmental-strain registry reads from ecosystem slow tick. No profiler microsecond claim.
+
+## Decision 25
+
+Problem: `WorldInterestDirector` slow-tick interest scaling resolved player pose/transform through `GlobalRegistry.Player` and runtime `WorldRuntimeReferenceUtility.TryResolvePlayerTransform()` fallback.
+Solution: Cache `IPlayerRuntimeContext` during lifecycle wiring, refresh it through `IGlobalRegistryHotSwapListener`, and resolve player AUP/transform from cached context; keep player scene utility fallback editor-only for preview.
+Rejected Alternatives: Runtime scene/reference fallback from slow tick was rejected because player runtime context already owns the authoritative route. A larger scatter-pipeline patch was rejected because this local file had the narrower provable defect.
+Scalability potential: Low tier keeps world-interest cadence cheap; Middle keeps identical scatter/slice scaling; High and Ultra preserve richer interest-anchor density without adding player registry polling to slow tick.
+Hardware Impact: STATIC estimate only: removes player registry reads from world-interest slow tick and auto-resolve paths. No profiler microsecond claim.

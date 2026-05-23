@@ -8,7 +8,7 @@ namespace Hecton8.World
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-4075)]
-    public sealed class WorldInterestDirector : MonoBehaviour, ISlowTickable
+    public sealed class WorldInterestDirector : MonoBehaviour, ISlowTickable, IGlobalRegistryHotSwapListener
     {
         private const string NoneLabel = "None";
         private const string KindResourceFieldLabel = "ResourceField";
@@ -47,23 +47,29 @@ namespace Hecton8.World
 
         // COLD ALLOC: List<WorldInterestAnchor>[24] - slow-tick world-interest anchor scratch - owner: WorldInterestDirector
         private readonly List<WorldInterestAnchor> _anchors = new List<WorldInterestAnchor>(24);
+        private IPlayerRuntimeContext _playerRuntimeContext;
         private HectonPlayerMovement _playerMovement;
         private bool _registeredToTickManager;
+        private bool _hotSwapRegistered;
         private float _nextAutoResolveAttemptTime = float.NegativeInfinity;
 
         private void Awake()
         {
+            CacheRuntimeDependencies();
             ResolveReferences();
             RefreshAnchors();
         }
 
         private void OnEnable()
         {
+            CacheRuntimeDependencies();
+            TryRegisterHotSwapListener();
             TryRegister();
         }
 
         private void Start()
         {
+            CacheRuntimeDependencies();
             TryRegister();
 
             ApplyInterest(forceRefresh: true);
@@ -72,6 +78,8 @@ namespace Hecton8.World
         private void OnDisable()
         {
             TryUnregister();
+            TryUnregisterHotSwapListener();
+            ClearRuntimeDependencies();
         }
 
         private void TryRegister()
@@ -90,6 +98,47 @@ namespace Hecton8.World
             GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
 
             _registeredToTickManager = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Player)
+                return;
+
+            _playerRuntimeContext = currentService as IPlayerRuntimeContext;
+            ApplyPlayerRuntimeContext();
+        }
+
+        private void CacheRuntimeDependencies()
+        {
+            _playerRuntimeContext = GlobalRegistry.Player;
+            ApplyPlayerRuntimeContext();
+        }
+
+        private void ClearRuntimeDependencies()
+        {
+            _playerRuntimeContext = null;
+            _playerMovement = null;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
 
         public void SlowTick()
@@ -176,7 +225,7 @@ namespace Hecton8.World
         {
             if (_playerMovement == null)
             {
-                IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+                IPlayerRuntimeContext playerContext = _playerRuntimeContext;
                 if (playerContext != null && playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot))
                 {
                     playerAup = snapshot.Aup;
@@ -210,17 +259,29 @@ namespace Hecton8.World
 
             _nextAutoResolveAttemptTime = now + Mathf.Max(0f, autoResolveRetryInterval);
 
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
-            if (playerContext != null)
-            {
-                _playerMovement = playerContext.PlayerMovement;
-                if (playerTransform == null)
-                    playerTransform = playerContext.PlayerTransform;
-            }
+            ApplyPlayerRuntimeContext();
 
-            WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform);
+            if (playerTransform != null && _playerMovement == null)
+                playerTransform.TryGetComponent(out _playerMovement);
+
+#if UNITY_EDITOR
+            if (playerTransform == null && !Application.isPlaying)
+                WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform);
+#endif
             WorldRuntimeReferenceUtility.TryResolveScatterBudgetController(ref scatterBudgetController);
             WorldRuntimeReferenceUtility.TryResolveWorldSliceDirector(ref worldSliceDirector);
+        }
+
+        private void ApplyPlayerRuntimeContext()
+        {
+            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
+            if (playerContext == null)
+                return;
+
+            if (playerTransform == null)
+                playerTransform = playerContext.PlayerTransform;
+
+            _playerMovement = playerContext.PlayerMovement;
         }
 
         private static string ResolveInterestKindLabel(WorldInterestAnchor.InterestKind kind)
