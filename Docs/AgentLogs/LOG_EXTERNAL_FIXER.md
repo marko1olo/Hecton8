@@ -208,3 +208,31 @@ Verification:
 - `git diff --check` on touched code file: no whitespace errors; Git reported LF->CRLF warning only.
 - Guarded build ran at CPU 3 percent with no active dotnet/csc/VBCSCompiler process.
 - `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal`: succeeded, 0 warnings, 0 errors.
+
+## 2026-05-23 Emergency Relay Director Cache Tranche
+
+What was wrong:
+
+- `EmergencyServiceRelayDirector.HandleRelayActivated()` pulled `GlobalRegistry.FirstHour` when registering a relay-route contact.
+- `ShouldDriveBreadcrumbs()` pulled `GlobalRegistry.FirstHour` and `GlobalRegistry.AtlasSignal` during route gating.
+- `ResolveLocalized()` pulled `GlobalRegistry.Localization` from a fallback helper used by contextual guidance.
+
+What was done:
+
+- Added cached `FirstHourDirector`, `AtlasSignalSystem`, and `LocalizationManager` fields.
+- Added `IGlobalRegistryHotSwapListener` handling for `FirstHourRuntime`, `AtlasSignalRuntime`, and `LocalizationRuntime`.
+- Changed route-contact registration, breadcrumb gating, and fallback localization to use cached services.
+
+Cinematic Cheats used:
+
+- None. This tranche is route hardening for first-hour relay guidance, not simulation or presentation math.
+
+Exact microseconds saved:
+
+- No profiler claim. STATIC_SOURCE estimate only: removes 1 registry read per route contact registration, up to 2 registry reads per breadcrumb gate check, and 1 registry read per fallback localization.
+
+Verification:
+
+- `git diff --check` on touched code file: no whitespace errors; Git reported LF->CRLF warning only.
+- Guarded build ran at CPU 19.5 percent with no active dotnet/csc/VBCSCompiler process.
+- `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal`: succeeded, 0 warnings, 0 errors.

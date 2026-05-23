@@ -1,6 +1,6 @@
 # Rationale_EXTERNAL_FIXER
 Date: 2026-05-23
-Status: VERIFIED - SEVENTH HOT-PATH REGISTRY TRANCHE
+Status: VERIFIED - EIGHTH HOT-PATH REGISTRY TRANCHE
 
 ## Decision 1
 
@@ -97,3 +97,11 @@ Solution: Cache `HectonNarrativeDirector`, `AudioLogSystem`, `IPlayerRuntimeCont
 Rejected Alternatives: A new `SignalBus<T>` lane for linked-log playback and reward inventory resolution was rejected because these are private immediate owner-interface queries, not broadcast state changes. Leaving `ResolveLocalized` and `TryResolveInventory` as static registry readers was rejected because read-looking helpers should not hide service-locator polling.
 Scalability potential: Low tier keeps relay hover/interaction and reward fallback predictable; Middle keeps the same authored relay behavior; High and Ultra preserve richer linked-log/localized relay presentation without adding registry polling to the interaction route.
 Hardware Impact: STATIC estimate only: removes up to 1 registry read per discovery read, 2 registry reads per linked-log relay activation, 1 registry read per reward inventory fallback, and 1 registry read per localized fallback call. No profiler microsecond claim.
+
+## Decision 13
+
+Problem: EmergencyServiceRelayDirector route gating and fallback text helpers pulled FirstHour, AtlasSignal, and Localization services directly from `GlobalRegistry` during breadcrumb decisions and relay activation handling.
+Solution: Cache `FirstHourDirector`, `AtlasSignalSystem`, and `LocalizationManager` during cold lifecycle wiring, refresh them through `IGlobalRegistryHotSwapListener`, and keep breadcrumb decisions on cached owner interfaces.
+Rejected Alternatives: A new event/signal lane for private breadcrumb gating was rejected because the director needs immediate owner-interface queries, not a broadcast. Leaving fallback localization as a static registry helper was rejected because read-looking helpers must not hide registry polling.
+Scalability potential: Low tier keeps route guidance checks cheap and predictable; Middle keeps the same first-hour relay flow; High and Ultra preserve richer relay/Atlas/localized presentation without adding service-locator reads to route decisions.
+Hardware Impact: STATIC estimate only: removes 1 registry read per route contact registration, up to 2 registry reads per breadcrumb gate check, and 1 registry read per fallback localization. No profiler microsecond claim.

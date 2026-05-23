@@ -1,6 +1,6 @@
 # Status EXTERNAL_FIXER
 Date: 2026-05-23
-Status: VERIFIED - SEVENTH HOT-PATH REGISTRY TRANCHE
+Status: VERIFIED - EIGHTH HOT-PATH REGISTRY TRANCHE
 
 - [x] Task 1 - Rule intake and mandate selection | Justification: read AGENTS.md, domain map, and mandates for Zero GC, GlobalRegistry/DI, execution phases, signal lanes, performance budgets, ARM64 DTO layout, crash telemetry, and evidence law before touching code. Alternative rejected: broad blind edits. Microseconds saved: 0 audit setup.
 - [x] Task 2 - Find high-confidence source defects | Justification: scoped hot-path scans found direct GlobalRegistry reads in ScavengePopulator.ProcessSpawnQueue/DespawnChunk, VoxelDeltaProcessor.EmitCaveInDustDecal, Atlas6DirectiveSystem.SlowTick/identity adoption, and AtlasSignalDecoder.SlowTick/pulse decode. False positives in editor-only and teardown code rejected. Microseconds saved: 0 measured, candidate selection only.
@@ -55,3 +55,11 @@ Status: VERIFIED - SEVENTH HOT-PATH REGISTRY TRANCHE
 - [x] Task 33 - Verify relay tranche | Justification: `git diff --check` passed with LF->CRLF warning only; guarded `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal` ran at CPU 3 percent with no compiler process and succeeded with 0 errors and 0 warnings. Alternative rejected: Unity runtime/GC claims without Play Mode and profiler artifacts. Microseconds saved: not measured.
 - [x] Task 34 - Append relay rationale/report | Justification: rationale and LOG entries record interaction route, rejected broadcast alternative, scalability tiers, and static-only performance evidence. Alternative rejected: chat-only record. Microseconds saved: not measured.
 - [x] Task 35 - Commit/push relay tranche | Justification: commit/push limited to `EmergencyServiceRelay.cs` plus EXTERNAL_FIXER docs. Alternative rejected: staging unrelated dirty workspace edits. Microseconds saved: not measured.
+
+## Continuation Pass 2026-05-23 - Emergency Relay Director Cache Tranche
+
+- [x] Task 36 - Select adjacent relay-director defect | Justification: `EmergencyServiceRelayDirector.cs` was clean and had direct runtime reads of `GlobalRegistry.FirstHour`, `GlobalRegistry.AtlasSignal`, and `GlobalRegistry.Localization` in route gating, service-contact registration, and fallback localization. Alternative rejected: broader world/visor sweeps with mixed dirty ownership. Microseconds saved: 0 discovery only.
+- [x] Task 37 - Patch relay-director service cache | Justification: added cached `FirstHourDirector`, `AtlasSignalSystem`, and `LocalizationManager` references plus `IGlobalRegistryHotSwapListener` handling for their slots; breadcrumb gating and fallback localization now use cached services. Alternative rejected: new event lane for private route gating because cached owner interfaces are the accepted immediate-query route. Microseconds saved: STATIC estimate only: removes 1 registry read per route contact registration, up to 2 registry reads per breadcrumb gate check, and 1 registry read per fallback localization.
+- [x] Task 38 - Verify relay-director tranche | Justification: `git diff --check` passed with LF->CRLF warning only; guarded `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal` ran at CPU 19.5 percent with no compiler process and succeeded with 0 errors and 0 warnings. Alternative rejected: Unity runtime/GC claims without Play Mode and profiler artifacts. Microseconds saved: not measured.
+- [x] Task 39 - Append relay-director rationale/report | Justification: rationale and LOG entries record route-gating owner reads, rejected event-lane alternative, scalability tiers, and static-only evidence. Alternative rejected: chat-only record. Microseconds saved: not measured.
+- [x] Task 40 - Commit/push relay-director tranche | Justification: commit/push limited to `EmergencyServiceRelayDirector.cs` plus EXTERNAL_FIXER docs. Alternative rejected: staging unrelated dirty workspace edits. Microseconds saved: not measured.

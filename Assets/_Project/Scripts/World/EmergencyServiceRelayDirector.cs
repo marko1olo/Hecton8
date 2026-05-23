@@ -14,7 +14,7 @@ namespace Hecton8.World
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-4020)]
     [AddComponentMenu("Hecton8/World/Emergency Service Relay Director")]
-    public sealed class EmergencyServiceRelayDirector : MonoBehaviour, IEmergencyServiceRelayEventListener
+    public sealed class EmergencyServiceRelayDirector : MonoBehaviour, IEmergencyServiceRelayEventListener, IGlobalRegistryHotSwapListener
     {
         private const string DefaultIntroChainId = "intro_service_route";
         private const string DefaultRelayFallback =
@@ -44,6 +44,10 @@ namespace Hecton8.World
         private bool _hasAnyRelayDiscovery;
         private EmergencyServiceRelay _currentRouteTarget;
         private bool _serviceRegistered;
+        private bool _hotSwapRegistered;
+        private FirstHourDirector _firstHourDirector;
+        private AtlasSignalSystem _atlasSignalSystem;
+        private LocalizationManager _localizationManager;
         // COLD ALLOC: EmergencyServiceRelay[8] — driven relay chain cache — owner: EmergencyServiceRelayDirector
         private readonly List<EmergencyServiceRelay> _drivenChainRelays = new List<EmergencyServiceRelay>(8);
         // COLD ALLOC: Dictionary<uint, EmergencyServiceRelay>[8] - relay-hash lookup cache - owner: EmergencyServiceRelayDirector
@@ -63,9 +67,11 @@ namespace Hecton8.World
         private void OnEnable()
         {
             RefreshCachedHashes();
+            CacheRegistryServicesCold();
             if (!TryRegisterService())
                 return;
 
+            TryRegisterHotSwapListener();
             EmergencyServiceRelayEvents.Register(this);
             InvalidateRelayCache();
             RefreshRelayDiscoveryState();
@@ -73,6 +79,7 @@ namespace Hecton8.World
 
         private void OnDisable()
         {
+            TryUnregisterHotSwapListener();
             TryUnregisterService();
             EmergencyServiceRelayEvents.Unregister(this);
             InvalidateRelayCache();
@@ -82,6 +89,7 @@ namespace Hecton8.World
 
         private void OnDestroy()
         {
+            TryUnregisterHotSwapListener();
             TryUnregisterService();
         }
 
@@ -108,6 +116,50 @@ namespace Hecton8.World
                 GlobalRegistry.UnregisterEmergencyRelayRuntime(this);
 
             _serviceRegistered = false;
+        }
+
+        /// <inheritdoc />
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.FirstHourRuntime:
+                    _firstHourDirector = currentService as FirstHourDirector;
+                    break;
+                case GlobalRegistryServiceSlot.AtlasSignalRuntime:
+                    _atlasSignalSystem = currentService as AtlasSignalSystem;
+                    break;
+                case GlobalRegistryServiceSlot.LocalizationRuntime:
+                    _localizationManager = currentService as LocalizationManager;
+                    break;
+            }
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            _firstHourDirector = GlobalRegistry.FirstHour;
+            _atlasSignalSystem = GlobalRegistry.AtlasSignal;
+            _localizationManager = GlobalRegistry.Localization;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
 
 #if UNITY_EDITOR
@@ -217,7 +269,7 @@ namespace Hecton8.World
             _currentRouteTarget = nextRelay;
 
             if (firstActivation && relay.CountsAsLoreRouteContact)
-                Hecton8.Core.GlobalRegistry.FirstHour?.RegisterServiceRelayRouteContact();
+                _firstHourDirector?.RegisterServiceRelayRouteContact();
 
             if (!firstActivation || !ShouldDriveBreadcrumbs())
                 return;
@@ -262,7 +314,7 @@ namespace Hecton8.World
 
         private bool ShouldDriveBreadcrumbs()
         {
-            FirstHourDirector firstHourDirector = Hecton8.Core.GlobalRegistry.FirstHour;
+            FirstHourDirector firstHourDirector = _firstHourDirector;
             if (firstHourDirector != null)
             {
                 if (!firstHourDirector.IsMilestoneComplete(minimumMilestoneToDrive))
@@ -272,7 +324,7 @@ namespace Hecton8.World
                     return false;
             }
 
-            AtlasSignalSystem atlasSignalSystem = Hecton8.Core.GlobalRegistry.AtlasSignal;
+            AtlasSignalSystem atlasSignalSystem = _atlasSignalSystem;
             if (atlasSignalSystem != null && atlasSignalSystem.CurrentRevealStage > maximumAtlasRevealStageToDrive)
                 return false;
 
@@ -472,9 +524,9 @@ namespace Hecton8.World
             }
         }
 
-        private static string ResolveLocalized(string key, string fallback)
+        private string ResolveLocalized(string key, string fallback)
         {
-            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
+            LocalizationManager manager = _localizationManager;
             return manager != null
                 ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback)
                 : fallback;
