@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using Hecton8.AI;
 using Hecton8.Interaction;
 using Hecton8.SaveSystem;
 using Hecton8.Construction;

@@ -711,3 +711,14 @@ Exact microseconds saved:
 Verification:
 - `git diff --check -- Assets/_Project/Scripts/Construction/RepairDroneHub.cs Docs/Tasks/Status_EXTERNAL_FIXER.md Docs/AgentLogs/Rationale_EXTERNAL_FIXER.md` passed with LF->CRLF warnings only.
 - `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal /p:UseSharedCompilation=false /nr:false` succeeded with 0 warnings and 0 errors.
+## 2026-05-23 - Beacon Tool Hot-Swap And Compile-Surface Tranche
+
+What was wrong: `BeaconDeployerTool` cached beacon network/localization only on spawn/equip, while base `PlayerTool` already owned hot-swap registration through explicit interface handlers. A direct derived `IGlobalRegistryHotSwapListener` implementation would have hidden the base rebind route.
+
+What was done: Added protected post-rebind hooks in `PlayerTool`; refreshed beacon network/localization through those hooks; invalidated beacon assessment/operational caches on service replacement. During verification, fixed independent compile-surface issues: sanitizer qualification in an untracked signal payload file, public visibility/import for `FaunaLogicalLodTier`, and local generated csproj visibility for existing `MathLodApproximation.cs`.
+
+Cinematic Cheats used: Beacon status remains cached owner reads; no physics simulation added. Math LOD utility preserves continuous quality-weight approximation paths instead of binary quality switches.
+
+Exact Microseconds saved: STATIC estimate only. Runtime registry-read savings are not claimed for beacon deployment because the defect was stale-service rebinding, not a measured per-frame poll. Compile-surface fixes save 0 us runtime.
+
+Verification: `git diff --check` passed on tracked touched files with LF->CRLF warnings only. Guarded `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal /p:UseSharedCompilation=false /nr:false` exposed unrelated dirty compile-surface errors, then final verification was blocked by persistent external MSBuild node-reuse `dotnet` processes. No Unity Play Mode or profiler proof claimed.

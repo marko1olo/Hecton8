@@ -163,6 +163,16 @@ namespace Hecton8.Gameplay
             base.OnDespawn();
         }
 
+        protected override void OnToolRegistryServiceRebound(GlobalRegistryServiceSlot serviceSlot, ref object currentService)
+        {
+            ApplyBeaconRegistryServiceRebind(serviceSlot, currentService);
+        }
+
+        protected override void OnToolRegistryServiceReplaced(GlobalRegistryServiceSlot serviceSlot, object previousService, object currentService)
+        {
+            ApplyBeaconRegistryServiceRebind(serviceSlot, currentService);
+        }
+
         public override void UsePrimary(float deltaTime)
         {
             base.UsePrimary(deltaTime);
@@ -664,6 +674,21 @@ namespace Hecton8.Gameplay
             _localization = Hecton8.Core.GlobalRegistry.Localization;
             WorldRuntimeReferenceUtility.TryResolveBiomeMatrixDirector(ref _biomeMatrixDirector);
             WorldRuntimeReferenceUtility.TryResolveWorldZoneDirector(ref _worldZoneDirector);
+        }
+
+        private void ApplyBeaconRegistryServiceRebind(GlobalRegistryServiceSlot serviceSlot, object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.BeaconNetworkRuntime:
+                    _beaconNetwork = currentService as BeaconNetworkSystem;
+                    InvalidateNearestAssessmentCache();
+                    break;
+                case GlobalRegistryServiceSlot.LocalizationRuntime:
+                    _localization = currentService as LocalizationManager;
+                    InvalidateNearestAssessmentCache();
+                    break;
+            }
         }
 
         private bool TryGetBeaconNetwork(out BeaconNetworkSystem beaconNetwork)

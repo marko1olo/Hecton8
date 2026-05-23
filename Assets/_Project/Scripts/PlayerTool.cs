@@ -961,14 +961,20 @@ namespace Hecton8.Gameplay
             }
         }
 
+        protected virtual void OnToolRegistryServiceRebound(GlobalRegistryServiceSlot serviceSlot, ref object currentService) { }
+
+        protected virtual void OnToolRegistryServiceReplaced(GlobalRegistryServiceSlot serviceSlot, object previousService, object currentService) { }
+
         void IGlobalRegistryHotSwapRefListener.OnGlobalRegistryServiceRebound(GlobalRegistryServiceSlot serviceSlot, ref object currentService)
         {
             ApplyRegistryServiceRebind(serviceSlot, currentService);
+            OnToolRegistryServiceRebound(serviceSlot, ref currentService);
         }
 
         void IGlobalRegistryHotSwapListener.OnGlobalRegistryServiceReplaced(GlobalRegistryServiceSlot serviceSlot, object previousService, object currentService)
         {
             ApplyRegistryServiceRebind(serviceSlot, currentService);
+            OnToolRegistryServiceReplaced(serviceSlot, previousService, currentService);
         }
 
         internal ToolMetadata RuntimeMetadata => _toolMetadata;

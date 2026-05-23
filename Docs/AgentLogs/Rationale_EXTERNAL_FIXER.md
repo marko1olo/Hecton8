@@ -265,3 +265,27 @@ Solution: Cache `IPlayerInventoryService` during lifecycle setup, refresh it thr
 Rejected Alternatives: Keeping the registry read was rejected because supply fallback is reached from the hub slow tick until the item is resolved. Moving catalog lookup into a new signal lane was rejected because this is a local owner-service lookup, not a broadcast event.
 Scalability potential: Low tier keeps autonomous repair cadence cheap on weak CPUs; Middle keeps identical repair dispatch behavior; High and Ultra preserve headroom for more drone bays and richer repair swarm visuals without changing inventory truth ownership.
 Hardware Impact: STATIC estimate only: removes one player-inventory registry read from repair-drone supply fallback attempts. No profiler microsecond claim.
+
+## Decision 34
+
+Problem: `BeaconDeployerTool` needed runtime `BeaconNetwork` and `Localization` service refreshes, but deriving a new public `IGlobalRegistryHotSwapListener` implementation would bypass `PlayerTool`'s explicit interface handler and break base service rebinding.
+Solution: Add protected `PlayerTool` post-rebind hooks for normal/ref hot-swap callbacks, then override them in `BeaconDeployerTool` to refresh `_beaconNetwork` and `_localization` and invalidate assessment text caches.
+Rejected Alternatives: Direct listener registration inside `BeaconDeployerTool` was rejected because the object is already registered by `PlayerTool`. Polling `GlobalRegistry` from beacon read helpers was rejected because read accessors must stay cached and pure.
+Scalability potential: Low tier keeps tool status/deploy/retract checks deterministic with cached owners; Middle keeps identical beacon route behavior; High and Ultra preserve richer localized beacon presentation without service-locator polling.
+Hardware Impact: STATIC estimate only: no new allocation; removes stale-service risk and avoids adding hot-path registry reads. No profiler microsecond claim.
+
+## Decision 35
+
+Problem: Verification builds exposed independent dirty compile-surface defects: untracked signal payload constructors called an out-of-scope sanitizer, and the public ecosystem director service exposed an internal `FaunaLogicalLodTier`.
+Solution: Qualify the sanitizer calls against the existing `SignalPayloadSanitizer` owner; make `FaunaLogicalLodTier` public without changing byte values; import `Hecton8.AI` into the core contract file.
+Rejected Alternatives: Moving signal DTO layout, changing enum values, or staging whole dirty `GlobalRegistryContracts.cs` was rejected. The untracked signal payload file is not staged because it has no `.meta` and is not owned by this tranche.
+Scalability potential: Low/Middle/High/Ultra runtime behavior unchanged; this is contract visibility and compile determinism only.
+Hardware Impact: 0 us runtime gain; compile-surface repair only.
+
+## Decision 36
+
+Problem: Power thermal/solar code references `MathLodApproximation`, but the utility source is untracked and the local generated `Hecton8.Core.csproj` did not include it, producing missing-symbol errors during verification.
+Solution: Add a local generated-project compile include for verification and treat `MathLodApproximation.cs`/`.meta` as a source staging candidate only after exact diff review.
+Rejected Alternatives: Duplicating approximation functions into power files was rejected because one math owner is correct. Committing generated `Hecton8.Core.csproj` was rejected because it is local/generated and not tracked.
+Scalability potential: Preserves continuous `GlobalQualityWeight` math path from minimum survival to visual overkill; avoids binary quality tiers.
+Hardware Impact: 0 us direct runtime gain from visibility; compile route enables existing Math LOD approximations.
