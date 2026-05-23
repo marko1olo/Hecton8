@@ -691,3 +691,23 @@ Verification:
 - `git diff --check` on touched paths passed with LF->CRLF warnings only.
 - Guarded build waited through repeated CPU >50% and external `dotnet/csc` windows.
 - `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal /p:UseSharedCompilation=false /nr:false` succeeded with 0 warnings and 0 errors.
+
+## 2026-05-23 - Repair Drone Inventory Cache Tranche
+
+What was wrong:
+- `RepairDroneHub.SlowTick()` could call `ResolveRepairSupplyItem()`, which polled `GlobalRegistry.PlayerInventory` while resolving the repair supply item catalog fallback.
+
+What was done:
+- Added cached `IPlayerInventoryService` to `RepairDroneHub`.
+- Seeded the cached inventory service during lifecycle setup and refreshed it through `IGlobalRegistryHotSwapListener`.
+- Routed repair supply fallback resolution through the cached inventory owner service.
+
+Cinematic cheats used:
+- No simulation expansion. Existing repair dispatch scoring, storage scan cadence, and phantom drone visual path remain unchanged.
+
+Exact microseconds saved:
+- Not measured. STATIC estimate only: removes one player-inventory registry read from repair-drone supply fallback attempts.
+
+Verification:
+- `git diff --check -- Assets/_Project/Scripts/Construction/RepairDroneHub.cs Docs/Tasks/Status_EXTERNAL_FIXER.md Docs/AgentLogs/Rationale_EXTERNAL_FIXER.md` passed with LF->CRLF warnings only.
+- `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal /p:UseSharedCompilation=false /nr:false` succeeded with 0 warnings and 0 errors.

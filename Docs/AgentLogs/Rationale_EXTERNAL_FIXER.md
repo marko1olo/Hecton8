@@ -257,3 +257,11 @@ Solution: Qualify the implementing interface as `Hecton8.Physics.IPhysicsImpactM
 Rejected Alternatives: Removing either namespace import was rejected because the files use both namespaces. Staging the whole dirty files was rejected because they contain unrelated concurrent work. Switching to the core contract directly was rejected because physics consumers use the bridge interface.
 Scalability potential: Low/Middle/High/Ultra runtime behavior unchanged; this is compile determinism and interface ownership hygiene.
 Hardware Impact: 0 us runtime gain; build unblocked without runtime logic changes.
+
+## Decision 33
+
+Problem: `RepairDroneHub.SlowTick()` could reach `ResolveRepairSupplyItem()`, which read `GlobalRegistry.PlayerInventory` while looking up the repair supply item catalog.
+Solution: Cache `IPlayerInventoryService` during lifecycle setup, refresh it through `IGlobalRegistryHotSwapListener` for the `PlayerInventory` slot, and keep repair supply fallback resolution on the cached inventory owner service.
+Rejected Alternatives: Keeping the registry read was rejected because supply fallback is reached from the hub slow tick until the item is resolved. Moving catalog lookup into a new signal lane was rejected because this is a local owner-service lookup, not a broadcast event.
+Scalability potential: Low tier keeps autonomous repair cadence cheap on weak CPUs; Middle keeps identical repair dispatch behavior; High and Ultra preserve headroom for more drone bays and richer repair swarm visuals without changing inventory truth ownership.
+Hardware Impact: STATIC estimate only: removes one player-inventory registry read from repair-drone supply fallback attempts. No profiler microsecond claim.

@@ -17,7 +17,7 @@ namespace Hecton8.Construction
     [DisallowMultipleComponent]
     [RequireComponent(typeof(PowerNode))]
     [AddComponentMenu("Hecton8/Construction/Repair Drone Hub")]
-    public sealed class RepairDroneHub : MonoBehaviour, ISlowTickable, IPoolable, IPowerComponent
+    public sealed class RepairDroneHub : MonoBehaviour, ISlowTickable, IPoolable, IPowerComponent, IGlobalRegistryHotSwapListener
     {
         private const string DefaultRepairSupplyItemId = "Nanite_Solder";
         private const string LegacyRepairSupplyItemId = "Data_TitaniumScrap";
@@ -124,6 +124,8 @@ namespace Hecton8.Construction
         private int _supplyCrateLookupCount;
         private int _supplyCrateLookupWriteCursor;
         private int _launchCountTotal;
+        private IPlayerInventoryService _cachedPlayerInventoryService;
+        private bool _hotSwapRegistered;
 
         /// <summary>Hub power draw scales with the number of active sorties.</summary>
         public float PowerRating => -(standbyPowerDraw + ActiveDroneCountInternal * activeDronePowerDraw);
@@ -189,11 +191,13 @@ namespace Hecton8.Construction
             _activeTargetIds = new int[capacity]; // COLD ALLOC: int[capacity] - claimed target ids by slot - owner: RepairDroneHub
             DroneFleetManager.ConfigureHeadlessRenderSource(dronePrefab);
             DroneFleetManager.ConfigurePhantomSwarm(phantomDroneCompute, phantomDroneMaterial);
+            RefreshCachedRegistryServices();
             ResolveRepairSupplyItem();
         }
 
         private void OnEnable()
         {
+            CacheRegistryServices();
             RegisterHubInstance();
             TryRegister();
         }
@@ -201,7 +205,9 @@ namespace Hecton8.Construction
         private void OnDisable()
         {
             TryUnregister();
+            TryUnregisterHotSwapListener();
             ClearSupplyLookupCache();
+            _cachedPlayerInventoryService = null;
             UnregisterHubInstance();
         }
 
@@ -211,6 +217,7 @@ namespace Hecton8.Construction
             _debugHasPower = true;
             DroneFleetManager.ConfigureHeadlessRenderSource(dronePrefab);
             DroneFleetManager.ConfigurePhantomSwarm(phantomDroneCompute, phantomDroneMaterial);
+            CacheRegistryServices();
             ResolveRepairSupplyItem();
             ClearSupplyLookupCache();
             RefreshSupplyCrates(true);
@@ -223,11 +230,13 @@ namespace Hecton8.Construction
         {
             ReturnAllDronesToPool();
             TryUnregister();
+            TryUnregisterHotSwapListener();
             _hasPower = true;
             _debugHasPower = true;
             _debugCurrentTargetName = string.Empty;
             _debugActiveDroneCount = 0;
             ClearSupplyLookupCache();
+            _cachedPlayerInventoryService = null;
             UnregisterHubInstance();
             DroneFleetManager.NotifyFleetStateChanged();
         }
@@ -283,6 +292,7 @@ namespace Hecton8.Construction
 
             GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
             _registered = GlobalRegistry.SlowTickables.Contains(this);
+            CacheRegistryServices();
         }
 
         private void TryUnregister()
@@ -294,12 +304,21 @@ namespace Hecton8.Construction
             _registered = false;
         }
 
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.PlayerInventory)
+                _cachedPlayerInventoryService = currentService as IPlayerInventoryService;
+        }
+
         private void ResolveRepairSupplyItem()
         {
             if (repairSupplyItem != null)
                 return;
 
-            IPlayerInventoryService inventoryService = GlobalRegistry.PlayerInventory;
+            IPlayerInventoryService inventoryService = _cachedPlayerInventoryService;
             PlayerInventory inventory = inventoryService != null && inventoryService.IsInitialized
                 ? inventoryService.Inventory
                 : null;
@@ -310,6 +329,34 @@ namespace Hecton8.Construction
                 if (repairSupplyItem == null)
                     repairSupplyItem = catalog.FindById(LegacyRepairSupplyItemId);
             }
+        }
+
+        private void CacheRegistryServices()
+        {
+            RefreshCachedRegistryServices();
+            TryRegisterHotSwapListener();
+        }
+
+        private void RefreshCachedRegistryServices()
+        {
+            _cachedPlayerInventoryService = GlobalRegistry.PlayerInventory;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
 
         private void RefreshSupplyCrates(bool forceImmediate)
