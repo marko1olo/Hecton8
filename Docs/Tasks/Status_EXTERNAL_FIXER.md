@@ -1,6 +1,6 @@
 # Status EXTERNAL_FIXER
 Date: 2026-05-23
-Status: VERIFIED - FIFTEENTH HOT-PATH REGISTRY TRANCHE
+Status: VERIFIED - SIXTEENTH HOT-PATH REGISTRY TRANCHE
 
 - [x] Task 1 - Rule intake and mandate selection | Justification: read AGENTS.md, domain map, and mandates for Zero GC, GlobalRegistry/DI, execution phases, signal lanes, performance budgets, ARM64 DTO layout, crash telemetry, and evidence law before touching code. Alternative rejected: broad blind edits. Microseconds saved: 0 audit setup.
 - [x] Task 2 - Find high-confidence source defects | Justification: scoped hot-path scans found direct GlobalRegistry reads in ScavengePopulator.ProcessSpawnQueue/DespawnChunk, VoxelDeltaProcessor.EmitCaveInDustDecal, Atlas6DirectiveSystem.SlowTick/identity adoption, and AtlasSignalDecoder.SlowTick/pulse decode. False positives in editor-only and teardown code rejected. Microseconds saved: 0 measured, candidate selection only.
@@ -119,3 +119,11 @@ Status: VERIFIED - FIFTEENTH HOT-PATH REGISTRY TRANCHE
 - [x] Task 73 - Verify RenderGraph cache tranche | Justification: `git diff --check` passed with LF->CRLF warnings only; guarded `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal` ran at CPU 30 percent with no compiler processes and succeeded with 0 errors and 0 warnings. Alternative rejected: claiming RenderGraph runtime/profiler evidence without Editor capture. Microseconds saved: not measured.
 - [x] Task 74 - Append RenderGraph rationale/report | Justification: rationale and LOG entries record VISUAL_SYNC route, rejected hot registry polling, scalability tiers, and static-only estimates. Alternative rejected: chat-only record. Microseconds saved: not measured.
 - [x] Task 75 - Commit/push RenderGraph cache tranche | Justification: commit/push limited to two visor RenderGraph features plus EXTERNAL_FIXER docs after exact-file checks. Alternative rejected: staging unrelated dirty workspace edits. Microseconds saved: not measured.
+
+## Continuation Pass 2026-05-23 - Atlas Signal Runtime Cache Tranche
+
+- [x] Task 76 - Select Atlas signal slow-tick defect | Justification: `AtlasSignalSystem.cs` was clean and still used `GlobalRegistry.Player`, `FirstHour`, `NarrativeDirector`, `AudioLogs`, and `Localization` in slow-tick/reveal/decode helper routes. Alternative rejected: lifecycle self-registration hits and editor smoke-test text. Microseconds saved: 0 discovery only.
+- [x] Task 77 - Patch Atlas signal service caches | Justification: added cached player context, first-hour director, narrative director, audio-log system, and localization manager with `IGlobalRegistryHotSwapListener` refresh; slow-tick, reveal gating, discovery sync, encrypted log fallback, and localized notifications now use cached services. Alternative rejected: leaving read-looking helpers to poll `GlobalRegistry`. Microseconds saved: STATIC estimate only: removes player, first-hour, narrative, audio-log, and localization registry reads from Atlas signal runtime paths.
+- [x] Task 78 - Verify Atlas signal tranche | Justification: `git diff --check` passed with LF->CRLF warning only; guarded build waited for active `csc/dotnet` and idle MSBuild node-reuse workers, then `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal /p:UseSharedCompilation=false /nr:false` succeeded with 0 errors and 0 warnings. Alternative rejected: launching build while csc/dotnet workers were active. Microseconds saved: not measured.
+- [x] Task 79 - Append Atlas signal rationale/report | Justification: rationale and LOG entries record slow-tick owner reads, rejected polling helper route, scalability tiers, and static-only evidence. Alternative rejected: chat-only record. Microseconds saved: not measured.
+- [x] Task 80 - Commit/push Atlas signal tranche | Justification: commit/push limited to `AtlasSignalSystem.cs` plus EXTERNAL_FIXER docs after exact-file checks. Alternative rejected: staging unrelated dirty workspace edits. Microseconds saved: not measured.

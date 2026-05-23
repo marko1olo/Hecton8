@@ -1,6 +1,6 @@
 # Rationale_EXTERNAL_FIXER
 Date: 2026-05-23
-Status: VERIFIED - FIFTEENTH HOT-PATH REGISTRY TRANCHE
+Status: VERIFIED - SIXTEENTH HOT-PATH REGISTRY TRANCHE
 
 ## Decision 1
 
@@ -161,3 +161,11 @@ Solution: Cache `HectonFloatingOrigin` and `HectonFluidEngine` on the `Scriptabl
 Rejected Alternatives: Per-record registry lookup was rejected because RenderGraph recording is a VISUAL_SYNC hot route. A shared render-feature base class was rejected because the two-file patch is smaller in the dirty multi-agent workspace. A new signal lane was rejected because these are immediate owner snapshots/commands, not broadcast events.
 Scalability potential: Low tier keeps sonar history and fluid advection recording cheap; Middle keeps identical visual behavior; High and Ultra preserve headroom for denser sonar memory and richer GPU fluid visuals without changing shader DTO or gameplay truth ownership.
 Hardware Impact: STATIC estimate only: removes 1 floating-origin registry read per sonar point-cloud RenderGraph record and 1 fluid-engine registry read per fluid advection RenderGraph record. No profiler microsecond claim.
+
+## Decision 21
+
+Problem: `AtlasSignalSystem` slow-tick/reveal/decode routes resolved Player, FirstHour, NarrativeDirector, AudioLogs, and Localization through `GlobalRegistry` from runtime helpers.
+Solution: Cache `IPlayerRuntimeContext`, `FirstHourDirector`, `HectonNarrativeDirector`, `AudioLogSystem`, and `LocalizationManager` during lifecycle wiring, refresh them through `IGlobalRegistryHotSwapListener`, and keep signal strength, manifestation gates, discovery sync, encrypted log fallback, and notification text on cached owner services.
+Rejected Alternatives: Leaving `ResolvePlayer`, `CanManifest*`, discovery sync, encrypted log fallback, and `ResolveLocalized` as registry readers was rejected because those helpers are reached from slow-tick/reveal runtime routes. Lifecycle self-registration and SaveRuntime reads were left unchanged because they are owner wiring, not hot polling.
+Scalability potential: Low tier keeps Atlas signal cadence cheap and predictable; Middle keeps identical reveal behavior; High and Ultra preserve headroom for richer signal presentation, encrypted logs, and notifications without changing signal truth ownership.
+Hardware Impact: STATIC estimate only: removes player, first-hour, narrative, audio-log, and localization registry reads from Atlas signal runtime paths. No profiler microsecond claim.

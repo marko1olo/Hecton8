@@ -438,3 +438,34 @@ Verification:
 - `git diff --check` on touched code files: no whitespace errors; Git reported LF->CRLF warnings only.
 - Guarded build ran at CPU 30 percent with no `dotnet/csc/VBCSCompiler` processes active.
 - `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal`: succeeded, 0 warnings, 0 errors.
+
+## 2026-05-23 Atlas Signal Runtime Cache Tranche
+
+What was wrong:
+
+- `AtlasSignalSystem.ResolvePlayer()` read `GlobalRegistry.Player` from signal runtime resolution.
+- Manifestation gates read `GlobalRegistry.FirstHour`.
+- Discovery sync helpers read `GlobalRegistry.NarrativeDirector`.
+- Encrypted log fallback read `GlobalRegistry.AudioLogs`.
+- Notification fallback text read `GlobalRegistry.Localization`.
+
+What was done:
+
+- Added cached `IPlayerRuntimeContext`, `FirstHourDirector`, `HectonNarrativeDirector`, `AudioLogSystem`, and `LocalizationManager` fields.
+- Added `IGlobalRegistryHotSwapListener` handling for Player, FirstHour, NarrativeDirector, AudioLog, and Localization slots.
+- Changed signal slow tick, reveal gating, discovery sync, encrypted log fallback, and localized notification helpers to use cached owner services.
+- Left AtlasSignal self-registration and SaveRuntime lifecycle wiring unchanged.
+
+Cinematic Cheats used:
+
+- Existing signal presentation cheat preserved: scalar signal strength drives bioluminescent shader response and notification beats; no physical radio simulation was added.
+
+Exact microseconds saved:
+
+- No profiler claim. STATIC_SOURCE estimate only: removes player, first-hour, narrative, audio-log, and localization registry reads from Atlas signal runtime paths.
+
+Verification:
+
+- `git diff --check` on touched code file: no whitespace errors; Git reported LF->CRLF warning only.
+- Guarded build waited through CPU 100 percent with active `csc.exe` and multiple `dotnet.exe` workers, then through idle MSBuild node-reuse workers. Final gate had CPU 10 percent, no `dotnet/csc`, and only idle `VBCSCompiler`.
+- `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal /p:UseSharedCompilation=false /nr:false`: succeeded, 0 warnings, 0 errors.

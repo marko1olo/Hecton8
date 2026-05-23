@@ -40,7 +40,7 @@ namespace Hecton8.AtlasSignal
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-120)]
-    public sealed class AtlasSignalSystem : MonoBehaviour, ISaveable, ISlowTickable, IAtlasSignalReadModel
+    public sealed class AtlasSignalSystem : MonoBehaviour, ISaveable, ISlowTickable, IAtlasSignalReadModel, IGlobalRegistryHotSwapListener
     {
         // ----------------------------------------------------------
         //  INSPECTOR
@@ -106,6 +106,7 @@ namespace Hecton8.AtlasSignal
         private int _maxRevealStageUnlocked;
         private bool _registered;
         private bool _serviceRegistered;
+        private bool _hotSwapRegistered;
         private bool _ghostManifestationAnnounced;
         private bool _identityDiscoverySynchronized;
         private bool _fullDecodeDiscoverySynchronized;
@@ -119,6 +120,11 @@ namespace Hecton8.AtlasSignal
         private uint _stage2EncryptedLogDiscoveryHash;
         private uint _stage3EncryptedLogDiscoveryHash;
         private uint _stage4EncryptedLogDiscoveryHash;
+        private IPlayerRuntimeContext _playerRuntimeContext;
+        private FirstHourDirector _firstHourDirector;
+        private HectonNarrativeDirector _narrativeDirector;
+        private AudioLogSystem _audioLogs;
+        private LocalizationManager _localization;
 
         private const int FormalDetectionRevealStage = 2;
         private const int IdentityRevealStage = 3;
@@ -227,6 +233,8 @@ namespace Hecton8.AtlasSignal
         private void OnEnable()
         {
             CacheEncryptedLogHashes();
+            CacheRuntimeDependencies();
+            TryRegisterHotSwapListener();
             TryRegisterService();
             TryRegister();
 
@@ -243,12 +251,17 @@ namespace Hecton8.AtlasSignal
 
             if (Hecton8.Core.GlobalRegistry.SaveRuntime != null)
                 Hecton8.Core.GlobalRegistry.SaveRuntime.Unregister(this);
+
+            TryUnregisterHotSwapListener();
+            ClearRuntimeDependencies();
         }
 
         private void OnDestroy()
         {
             TryUnregister();
             TryUnregisterService();
+            TryUnregisterHotSwapListener();
+            ClearRuntimeDependencies();
 
         }
 
@@ -388,7 +401,7 @@ namespace Hecton8.AtlasSignal
         {
             _playerMovement = null;
 
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
             if (playerContext != null)
                 _playerMovement = playerContext.PlayerMovement;
         }
@@ -521,9 +534,71 @@ namespace Hecton8.AtlasSignal
             _serviceRegistered = false;
         }
 
+        private void CacheRuntimeDependencies()
+        {
+            _playerRuntimeContext = GlobalRegistry.Player;
+            _firstHourDirector = Hecton8.Core.GlobalRegistry.FirstHour;
+            _narrativeDirector = GlobalRegistry.NarrativeDirector;
+            _audioLogs = GlobalRegistry.AudioLogs;
+            _localization = Hecton8.Core.GlobalRegistry.Localization;
+        }
+
+        private void ClearRuntimeDependencies()
+        {
+            _playerRuntimeContext = null;
+            _playerMovement = null;
+            _firstHourDirector = null;
+            _narrativeDirector = null;
+            _audioLogs = null;
+            _localization = null;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.Player:
+                    _playerRuntimeContext = currentService as IPlayerRuntimeContext;
+                    ResolvePlayer();
+                    break;
+                case GlobalRegistryServiceSlot.FirstHourRuntime:
+                    _firstHourDirector = currentService as FirstHourDirector;
+                    break;
+                case GlobalRegistryServiceSlot.NarrativeDirectorRuntime:
+                    _narrativeDirector = currentService as HectonNarrativeDirector;
+                    break;
+                case GlobalRegistryServiceSlot.AudioLogRuntime:
+                    _audioLogs = currentService as AudioLogSystem;
+                    break;
+                case GlobalRegistryServiceSlot.LocalizationRuntime:
+                    _localization = currentService as LocalizationManager;
+                    break;
+            }
+        }
+
         private bool CanManifestAtlas()
         {
-            FirstHourDirector firstHourDirector = Hecton8.Core.GlobalRegistry.FirstHour;
+            FirstHourDirector firstHourDirector = _firstHourDirector;
             if (firstHourDirector == null)
                 return true;
 
@@ -532,7 +607,7 @@ namespace Hecton8.AtlasSignal
 
         private bool CanManifestGhostBeat()
         {
-            FirstHourDirector firstHourDirector = Hecton8.Core.GlobalRegistry.FirstHour;
+            FirstHourDirector firstHourDirector = _firstHourDirector;
             if (firstHourDirector == null)
                 return false;
 
@@ -604,7 +679,7 @@ namespace Hecton8.AtlasSignal
             if (_identityDiscoverySynchronized || _maxRevealStageUnlocked < IdentityRevealStage)
                 return;
 
-            HectonNarrativeDirector narrativeDirector = GlobalRegistry.NarrativeDirector;
+            HectonNarrativeDirector narrativeDirector = _narrativeDirector;
             if (narrativeDirector == null)
                 return;
 
@@ -619,7 +694,7 @@ namespace Hecton8.AtlasSignal
             if (_fullDecodeDiscoverySynchronized || _maxRevealStageUnlocked < FullDecodeRevealStage)
                 return;
 
-            HectonNarrativeDirector narrativeDirector = GlobalRegistry.NarrativeDirector;
+            HectonNarrativeDirector narrativeDirector = _narrativeDirector;
             if (narrativeDirector != null && narrativeDirector.HasDiscovery(_signalFullyDecodedDiscoveryHash))
             {
                 _fullDecodeDiscoverySynchronized = true;
@@ -667,7 +742,7 @@ namespace Hecton8.AtlasSignal
             if (logHash == 0u)
                 return;
 
-            AudioLogSystem audioLogs = GlobalRegistry.AudioLogs;
+            AudioLogSystem audioLogs = _audioLogs;
             if (audioLogs != null)
             {
                 if (audioLogs.TryPlayLogByHash(logHash))
@@ -730,9 +805,9 @@ namespace Hecton8.AtlasSignal
 #endif
         }
 
-        private static string ResolveLocalized(string key, string fallback)
+        private string ResolveLocalized(string key, string fallback)
         {
-            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
+            LocalizationManager manager = _localization;
             return manager != null ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback) : fallback;
         }
 
