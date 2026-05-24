@@ -518,19 +518,19 @@ namespace Hecton8.Modding
 
         private void TryRegisterWithSaveManager()
         {
-            if (_saveRegistered || Hecton8.Core.GlobalRegistry.SaveRuntime == null)
+            if (_saveRegistered || Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance == null)
                 return;
 
-            Hecton8.Core.GlobalRegistry.SaveRuntime.Register(this);
+            Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance.Register(this);
             _saveRegistered = true;
         }
 
         private void UnregisterFromSaveManager()
         {
-            if (!_saveRegistered || Hecton8.Core.GlobalRegistry.SaveRuntime == null)
+            if (!_saveRegistered || Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance == null)
                 return;
 
-            Hecton8.Core.GlobalRegistry.SaveRuntime.Unregister(this);
+            Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance.Unregister(this);
             _saveRegistered = false;
         }
 

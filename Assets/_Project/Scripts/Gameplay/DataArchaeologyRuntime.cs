@@ -848,7 +848,7 @@ namespace Hecton8.Gameplay
 
             if (_registeredSave)
             {
-                GlobalRegistry.SaveRuntime?.Unregister(this);
+                Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance?.Unregister(this);
                 _registeredSave = false;
             }
         }
@@ -911,9 +911,9 @@ namespace Hecton8.Gameplay
             if (!_registeredLateFrame)
                 _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
 
-            if (!_registeredSave && GlobalRegistry.SaveRuntime != null)
+            if (!_registeredSave && Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance != null)
             {
-                GlobalRegistry.SaveRuntime.Register(this);
+                Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance.Register(this);
                 _registeredSave = true;
             }
         }

@@ -2091,7 +2091,7 @@ namespace Hecton8.Construction
 
         private void TryRegisterSaveParticipant()
         {
-            TryRegisterSaveParticipant(GlobalRegistry.Save);
+            TryRegisterSaveParticipant(Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance);
         }
 
         private void TryRegisterSaveParticipant(ISaveService saveService)

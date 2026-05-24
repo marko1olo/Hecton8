@@ -316,7 +316,7 @@ namespace Hecton8.Narrative
 
         private void TryRegisterSaveParticipant()
         {
-            TryRegisterSaveParticipant(GlobalRegistry.Save);
+            TryRegisterSaveParticipant(Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance);
         }
 
         private void TryRegisterSaveParticipant(ISaveService saveService)

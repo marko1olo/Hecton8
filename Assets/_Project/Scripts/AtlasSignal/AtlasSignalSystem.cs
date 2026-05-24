@@ -238,8 +238,8 @@ namespace Hecton8.AtlasSignal
             TryRegisterService();
             TryRegister();
 
-            if (Hecton8.Core.GlobalRegistry.SaveRuntime != null)
-                Hecton8.Core.GlobalRegistry.SaveRuntime.Register(this);
+            if (Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance != null)
+                Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance.Register(this);
 
             ResolvePlayer();
         }
@@ -249,8 +249,8 @@ namespace Hecton8.AtlasSignal
             TryUnregister();
             TryUnregisterService();
 
-            if (Hecton8.Core.GlobalRegistry.SaveRuntime != null)
-                Hecton8.Core.GlobalRegistry.SaveRuntime.Unregister(this);
+            if (Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance != null)
+                Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance.Unregister(this);
 
             TryUnregisterHotSwapListener();
             ClearRuntimeDependencies();

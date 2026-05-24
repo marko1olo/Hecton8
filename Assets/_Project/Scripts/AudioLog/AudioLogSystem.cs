@@ -152,8 +152,8 @@ namespace Hecton8.Narrative
             TryRegisterService();
             TryRegister();
 
-            if (Hecton8.Core.GlobalRegistry.SaveRuntime != null)
-                Hecton8.Core.GlobalRegistry.SaveRuntime.Register(this);
+            if (Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance != null)
+                Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance.Register(this);
         }
 
         private void OnDisable()
@@ -162,8 +162,8 @@ namespace Hecton8.Narrative
             TryUnregisterHotSwapListener();
             TryUnregisterService();
 
-            if (Hecton8.Core.GlobalRegistry.SaveRuntime != null)
-                Hecton8.Core.GlobalRegistry.SaveRuntime.Unregister(this);
+            if (Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance != null)
+                Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance.Unregister(this);
 
             if (_isPlaying)
             {

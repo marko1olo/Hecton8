@@ -189,7 +189,7 @@ namespace Hecton8.Narrative
             if (_saveRegistered)
                 return;
 
-            ISaveService saveService = GlobalRegistry.SaveRuntime;
+            ISaveService saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
             if (saveService == null)
                 return;
 
@@ -202,7 +202,7 @@ namespace Hecton8.Narrative
             if (!_saveRegistered)
                 return;
 
-            ISaveService saveService = GlobalRegistry.SaveRuntime;
+            ISaveService saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
             if (saveService != null)
                 saveService.Unregister(this);
 

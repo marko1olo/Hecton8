@@ -665,7 +665,7 @@ namespace Hecton8.Gameplay
         private void RefreshColdRegistryReferences()
         {
             _atmosphereRuntime = GlobalRegistry.Atmosphere;
-            _saveService = GlobalRegistry.Save;
+            _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
             _survivalDataVault = GlobalRegistry.DataVault;
         }
 

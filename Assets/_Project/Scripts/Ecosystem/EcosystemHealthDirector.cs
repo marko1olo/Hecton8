@@ -63,7 +63,7 @@ namespace Hecton8.Ecosystem
             CacheRuntimeDependencies();
             TryRegisterHotSwapListener();
             TryRegisterToTickManager();
-            Hecton8.Core.GlobalRegistry.SaveRuntime?.Register(this);
+            Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance?.Register(this);
         }
 
         private void Start()
@@ -81,7 +81,7 @@ namespace Hecton8.Ecosystem
             UnregisterFromTickManager();
             TryUnregisterHotSwapListener();
             ClearRuntimeDependencies();
-            Hecton8.Core.GlobalRegistry.SaveRuntime?.Unregister(this);
+            Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance?.Unregister(this);
             TryUnregisterService();
         }
 
@@ -90,7 +90,7 @@ namespace Hecton8.Ecosystem
             UnregisterFromTickManager();
             TryUnregisterHotSwapListener();
             ClearRuntimeDependencies();
-            Hecton8.Core.GlobalRegistry.SaveRuntime?.Unregister(this);
+            Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance?.Unregister(this);
             TryUnregisterService();
         }
 

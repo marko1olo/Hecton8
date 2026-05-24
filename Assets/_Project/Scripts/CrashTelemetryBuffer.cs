@@ -2532,7 +2532,7 @@ namespace Hecton8.Core
         private void CacheRegistryPresenceCold()
         {
             Volatile.Write(ref _fluidRuntimePresent, GlobalRegistry.Fluid != null ? 1 : 0);
-            Volatile.Write(ref _saveRuntimePresent, GlobalRegistry.SaveRuntime != null ? 1 : 0);
+            Volatile.Write(ref _saveRuntimePresent, Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance != null ? 1 : 0);
             Volatile.Write(ref _thermodynamicsRuntimePresent, GlobalRegistry.Thermodynamics != null ? 1 : 0);
         }
 

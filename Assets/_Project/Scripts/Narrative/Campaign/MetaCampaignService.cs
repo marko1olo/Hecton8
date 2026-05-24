@@ -500,7 +500,7 @@ namespace Hecton8.Narrative.Campaign
             if (_saveRuntimeRegistered)
                 return;
 
-            SaveManager saveRuntime = GlobalRegistry.SaveRuntime;
+            SaveManager saveRuntime = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
             if (saveRuntime == null)
                 return;
 
@@ -515,7 +515,7 @@ namespace Hecton8.Narrative.Campaign
 
             if (_saveRuntimeRegistered)
             {
-                SaveManager saveRuntime = GlobalRegistry.SaveRuntime;
+                SaveManager saveRuntime = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
                 if (saveRuntime != null)
                     saveRuntime.Unregister(this);
                 _saveRuntimeRegistered = false;

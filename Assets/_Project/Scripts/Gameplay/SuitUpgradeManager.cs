@@ -233,8 +233,8 @@ namespace Hecton8.Gameplay
             TryRegisterLateFrame();
             EnsureSuitVaultBuffers();
 
-            if (Hecton8.Core.GlobalRegistry.SaveRuntime != null)
-                Hecton8.Core.GlobalRegistry.SaveRuntime.Register(this);
+            if (Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance != null)
+                Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance.Register(this);
 
             NarrativeEvents.Register(this);
             TryBindInventory();
@@ -248,8 +248,8 @@ namespace Hecton8.Gameplay
             UnbindInventory();
             TryUnregisterHotSwapListener();
 
-            if (Hecton8.Core.GlobalRegistry.SaveRuntime != null)
-                Hecton8.Core.GlobalRegistry.SaveRuntime.Unregister(this);
+            if (Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance != null)
+                Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance.Unregister(this);
 
             NarrativeEvents.Unregister(this);
             TryUnregisterService();

@@ -108,13 +108,13 @@ namespace Hecton8.Gameplay
         private void OnEnable()
         {
             TryRegisterService();
-            Hecton8.Core.GlobalRegistry.SaveRuntime?.Register(this);
+            Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance?.Register(this);
         }
 
         private void OnDisable()
         {
             TryUnregisterService();
-            Hecton8.Core.GlobalRegistry.SaveRuntime?.Unregister(this);
+            Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance?.Unregister(this);
         }
 
         private void TryRegisterService()

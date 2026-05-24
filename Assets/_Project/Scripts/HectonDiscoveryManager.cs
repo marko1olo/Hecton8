@@ -385,7 +385,7 @@ namespace Hecton8.Gameplay
             if (_registeredWithSaveManager)
                 return;
 
-            SaveManager saveManager = Hecton8.Core.GlobalRegistry.SaveRuntime;
+            SaveManager saveManager = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
             if (saveManager == null)
                 return;
 
@@ -425,7 +425,7 @@ namespace Hecton8.Gameplay
             if (!_registeredWithSaveManager)
                 return;
 
-            SaveManager saveManager = Hecton8.Core.GlobalRegistry.SaveRuntime;
+            SaveManager saveManager = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
             if (saveManager != null)
                 saveManager.Unregister(this);
 

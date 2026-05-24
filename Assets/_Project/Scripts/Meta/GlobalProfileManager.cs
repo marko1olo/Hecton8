@@ -831,7 +831,7 @@ namespace Hecton8.Meta
 
         private float ResolveCurrentRunElapsedSeconds()
         {
-            SaveManager saveManager = Hecton8.Core.GlobalRegistry.SaveRuntime;
+            SaveManager saveManager = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
             if (saveManager != null)
                 return Mathf.Max(0f, saveManager.CurrentPlayTimeSeconds);
 

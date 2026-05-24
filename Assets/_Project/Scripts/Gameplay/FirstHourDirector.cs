@@ -831,8 +831,8 @@ namespace Hecton8.Gameplay
             CacheRuntimeServices();
             TryRegisterHotSwapListener();
 
-            if (Hecton8.Core.GlobalRegistry.SaveRuntime != null)
-                Hecton8.Core.GlobalRegistry.SaveRuntime.Register(this);
+            if (Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance != null)
+                Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance.Register(this);
 
             ResolveSurvivalSystem();
             ResolveWorldContext(force: true);
@@ -851,8 +851,8 @@ namespace Hecton8.Gameplay
             TryUnregister();
             TryUnregisterService();
 
-            if (Hecton8.Core.GlobalRegistry.SaveRuntime != null)
-                Hecton8.Core.GlobalRegistry.SaveRuntime.Unregister(this);
+            if (Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance != null)
+                Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance.Unregister(this);
 
             CraftingEvents.Unregister(this);
             NarrativeEvents.Unregister(this);
@@ -885,7 +885,7 @@ namespace Hecton8.Gameplay
             TryRegister();
             CacheRuntimeServices();
             TryRegisterHotSwapListener();
-            Hecton8.Core.GlobalRegistry.SaveRuntime?.Register(this);
+            Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance?.Register(this);
             RefreshCachedHashes();
             ResolveSurvivalSystem();
             ResolveWorldContext(force: true);

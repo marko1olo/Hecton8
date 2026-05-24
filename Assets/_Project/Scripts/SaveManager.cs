@@ -105,6 +105,8 @@ namespace Hecton8.SaveSystem
         //  SERVICE STATE
         // ══════════════════════════════════════════════════════════
 
+        public static SaveManager ActiveRuntimeInstance { get; private set; }
+
         public bool IsInitialized => _serviceRegistered && ReferenceEquals(GlobalRegistry.Save, this);
         public ServiceHeartbeatState HeartbeatState => IsInitialized ? ServiceHeartbeatState.Ready : ServiceHeartbeatState.NotStarted;
         public bool IsServiceReady => IsInitialized;
@@ -564,6 +566,9 @@ namespace Hecton8.SaveSystem
             if (_serviceRegistered && ReferenceEquals(GlobalRegistry.Save, this))
                 GlobalRegistry.UnregisterSaveService(this);
 
+            if (ReferenceEquals(ActiveRuntimeInstance, this))
+                ActiveRuntimeInstance = null;
+
             _serviceRegistered = false;
             _isBusy = false;
             _compressionThrottleLateFrameArmed = false;
@@ -623,6 +628,9 @@ namespace Hecton8.SaveSystem
 
             if (_serviceRegistered)
             {
+                if (ReferenceEquals(GlobalRegistry.SaveRuntime, this))
+                    ActiveRuntimeInstance = this;
+
                 if (isActiveAndEnabled && Application.isPlaying && GlobalRegistry.Dispatcher != null)
                     TryRegisterDispatcherLanes();
 
@@ -631,6 +639,8 @@ namespace Hecton8.SaveSystem
 
             GlobalRegistry.RegisterAsyncPersistenceService(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.SaveRuntime, this);
+            if (_serviceRegistered)
+                ActiveRuntimeInstance = this;
 
             if (isActiveAndEnabled && Application.isPlaying && GlobalRegistry.Dispatcher != null)
                 TryRegisterDispatcherLanes();

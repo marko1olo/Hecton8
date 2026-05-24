@@ -632,7 +632,7 @@ namespace Hecton8.AI
 
             RefreshColdRegistryDependencies();
             TryRegisterHotSwapListener();
-            GlobalRegistry.Save?.Register(this);
+            Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance?.Register(this);
             TryRegisterFaunaSimulationService();
             RuntimeWatchdog.RegisterEmergencyResetTarget(RuntimeWatchdog.RuntimeWatchdogLane.FaunaDirector, this);
             SubscribeAcousticPingEvents();
@@ -685,7 +685,7 @@ namespace Hecton8.AI
         private void ShutdownServiceState(bool releaseNativeState)
         {
             if (Application.isPlaying)
-                GlobalRegistry.Save?.Unregister(this);
+                Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance?.Unregister(this);
 
             InvalidatePlayerRuntimeContextCache();
             RuntimeWatchdog.UnregisterEmergencyResetTarget(RuntimeWatchdog.RuntimeWatchdogLane.FaunaDirector, this);
