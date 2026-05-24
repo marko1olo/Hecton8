@@ -441,3 +441,11 @@ Solution: Stage exact `HEAD` blobs and replace only exact player-context reads w
 Rejected Alternatives: Broad UI/visor DI rewrite was rejected because the workspace is dirty and would cross ownership boundaries. VFX service-rebind and world files were deferred to keep this tranche coherent. Build execution was rejected because CPU was 85 percent and then active `dotnet`/`csc` processes appeared.
 Scalability potential: Low tier avoids repeated player-owner discovery in diegetic UI/visor routes; Middle keeps identical UI and camera behavior; High and Ultra preserve richer visor/PDA presentation without service-locator cadence cost.
 Hardware Impact: STATIC estimate only: 35 exact player registry reads removed from 30 staged source files. No profiler, GCMonitor, Unity Console, or player-build artifact; CLI_COMPILE proof is blocked by CPU/compiler gate.
+
+## Decision 56
+
+Problem: The final filtered runtime set still had exact `GlobalRegistry.Player` reads across VFX, visor, and world helper/cache paths. Leaving these would preserve hidden service-locator polling after six prior sweeps.
+Solution: Patch the remaining 34 tracked files from exact `HEAD` blobs, replacing only exact player-context reads with `Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext`; then verify the filtered `GlobalRegistry.Player` scan reaches zero.
+Rejected Alternatives: Broad world DI rewrite was rejected because it would cross many owners and conflict with dirty concurrent edits. Replacing non-player registry routes was rejected because dispatcher/submarine/data-vault/dynamic-resolution owners are outside this tranche. Restore/build retry was rejected after CPU rose to 79 percent.
+Scalability potential: Low tier avoids repeated player-owner discovery in world/visor/VFX helper paths; Middle keeps identical world and camera behavior; High and Ultra preserve richer world scatter, vegetation, visor, and VFX presentation without service-locator cadence cost.
+Hardware Impact: STATIC estimate only: 40 exact player registry reads removed from 34 staged source files; filtered tracked runtime scan now reports 0 remaining exact `GlobalRegistry.Player` reads outside excluded lifecycle/editor/non-player slots. No profiler or Unity runtime artifact; CLI_COMPILE reached only pre-C# NETSDK1004 because restore assets were missing.

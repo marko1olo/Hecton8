@@ -957,3 +957,28 @@ Evidence:
 - STATIC_GREP: tranche-local `git grep --cached` found no remaining exact `GlobalRegistry.Player` reads and no `ActiveRuntimeContextInventory/Critical/Movement/Motor/Sensory/Actions/Expression/Exploration` prefix damage.
 - CLI_COMPILE: blocked; CPU measured 85 percent before wait, then active `dotnet`/`csc` processes appeared and sandbox CPU probe returned access denied, so Core build was not launched.
 - GIT: committed and pushed `3f3ef8c9d perf(player): route visor ui readers` to `main`.
+
+## 2026-05-24 - Player Active Context Sweep 7
+
+What was wrong:
+- The remaining filtered runtime set had exact `GlobalRegistry.Player` reads across 34 VFX, visor, and world helper/cache files.
+- These reads hid player owner discovery in routes that should consume the owner-published active context.
+
+What was done:
+- Routed exact player-context reads through `Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext`.
+- Built staged blobs from exact `HEAD` content and left dirty working-copy edits untouched.
+- Preserved non-player registry routes such as dispatcher, submarine, dynamic resolution, and data vault.
+- Committed and pushed the source tranche as `135bce8a9 perf(player): route world context readers`.
+
+Cinematic Cheats used:
+- None. This tranche is runtime service-route hygiene.
+
+Exact Microseconds saved:
+- STATIC estimate only: 40 exact player service-locator reads removed from affected VFX/visor/world helper/cache routes. No profiler capture, no microsecond claim.
+
+Evidence:
+- STATIC_SOURCE: 34 staged source files.
+- CLI_DIFF: `git diff --cached --check` passed; staged stat was 34 files, 40 insertions, 40 deletions.
+- STATIC_GREP: filtered tracked runtime scan now reports 0 remaining exact `GlobalRegistry.Player` reads outside excluded lifecycle/editor/non-player slots; no `ActiveRuntimeContextInventory/Critical/Movement/Motor/Sensory/Actions/Expression/Exploration` prefix damage.
+- CLI_COMPILE: attempted under gate at CPU 49 percent/no compiler process; `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal /p:UseSharedCompilation=false /nr:false /m:1` failed before C# compile with NETSDK1004 missing `Temp\obj\Hecton8.Core\project.assets.json`. CPU then measured 79 percent, so restore/build retry was gated off.
+- GIT: committed and pushed `135bce8a9 perf(player): route world context readers` to `main`.
