@@ -832,3 +832,4 @@ Evidence:
 - STATIC_SOURCE: 21 staged source files.
 - CLI_DIFF: `git diff --cached --check` passed.
 - CLI_COMPILE: blocked; no compiler processes remained, but CPU stayed at 93-94 percent from unrelated user processes, so `dotnet build` was not launched under the local CPU gate.
+- GIT: committed and pushed `87e2a1238 perf(player): cache active runtime context` to `main`.
