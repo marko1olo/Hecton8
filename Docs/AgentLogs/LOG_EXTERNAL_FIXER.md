@@ -1032,3 +1032,28 @@ Evidence:
 - STATIC_GREP: no malformed `Hecton8.Core.Hecton8.Audio` or `SpatialAudioManager.ActiveRuntimeInstance*` suffix text was found in staged source.
 - CLI_COMPILE: not launched; `Temp\obj\Hecton8.Core\project.assets.json` is missing and CPU measured 91 percent, so restore/build retry was gated off.
 - GIT: committed and pushed `4eeea7c20 perf(audio): route active service readers` to `main`.
+
+## 2026-05-24 - Audio Active Runtime Sweep 2
+
+What was wrong:
+- 37 additional tracked runtime/gameplay/UI/visor/world files still had exact `GlobalRegistry.Audio` reads in helper, playback, feedback, and soundscape routes.
+- These reads bypassed the existing owner-published `SpatialAudioManager.ActiveRuntimeInstance` pointer after sweep 1.
+
+What was done:
+- Routed exact `GlobalRegistry.Audio` and `Hecton8.Core.GlobalRegistry.Audio` reads through `Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance`.
+- Built staged blobs from exact `HEAD` content and left dirty working-copy edits untouched.
+- Kept audio owner internals, editor smoke assertions, bootstrap dependency checks, tooltip/comment references, and cutter audit tooling out of the slice.
+- Committed and pushed the source tranche as `ebfe12fa6 perf(audio): route remaining readers`.
+
+Cinematic Cheats used:
+- None. This tranche is runtime service-route hygiene.
+
+Exact Microseconds saved:
+- STATIC estimate only: 43 exact audio service-locator reads removed from affected helper/playback/UI/world routes. No profiler capture, no microsecond claim.
+
+Evidence:
+- STATIC_SOURCE: 37 staged source files.
+- CLI_DIFF: `git diff --cached --check` passed; staged stat was 37 files, 43 insertions, 43 deletions.
+- STATIC_GREP: no malformed `Hecton8.Core.Hecton8.Audio` or `SpatialAudioManager.ActiveRuntimeInstance*` suffix text was found in staged source; raw remaining audio grep contains only excluded editor/bootstrap/owner/comment/tooling references.
+- CLI_COMPILE: not launched; CPU measured 100 percent, an active `dotnet` process was present, and `Temp\obj\Hecton8.Core\project.assets.json` remains missing.
+- GIT: committed and pushed `ebfe12fa6 perf(audio): route remaining readers` to `main`.

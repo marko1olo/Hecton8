@@ -465,3 +465,11 @@ Solution: Route exact audio registry reads to `Hecton8.Audio.SpatialAudioManager
 Rejected Alternatives: Broad audio DI rewrite was rejected because active owner pointer already exists and the workspace is dirty. Replacing non-audio registry routes was rejected. Restore/build retry was rejected because `project.assets.json` is missing and CPU measured 91 percent.
 Scalability potential: Low tier avoids repeated audio-owner discovery in playback/cache routes; Middle keeps identical audio behavior; High and Ultra preserve richer spatial audio, UI feedback, and scene transition sound without service-locator cadence cost.
 Hardware Impact: STATIC estimate only: 43 exact audio registry reads removed from 30 staged source files. No profiler or Unity runtime artifact; CLI_COMPILE not rerun because restore assets were absent and CPU gate was closed.
+
+## Decision 59
+
+Problem: A second audio tranche still had exact `GlobalRegistry.Audio` reads across runtime/gameplay/UI/visor/world helper and playback paths after sweep 1. These reads kept service locator access in routes that should consume the audio owner's active runtime pointer.
+Solution: Route exact audio registry reads to `Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance` from exact `HEAD` staged blobs for 37 tracked files. Verify diff whitespace, line-level stat, and malformed namespace/suffix guards before commit.
+Rejected Alternatives: Broad audio DI rewrite was rejected because it would cross active ownership boundaries in a dirty multi-agent tree. Scene search fallback was rejected because it hides owner discovery and can allocate/search. Editing editor smoke assertions, bootstrap checks, owner comments, or cutter audit tooling was rejected because those are not hot runtime consumers. Build/restore was rejected because CPU measured 100 percent and `dotnet` was active.
+Scalability potential: Low tier avoids repeated audio-owner discovery in helper/playback/UI routes; Middle keeps identical sound behavior; High and Ultra preserve richer spatial/UI/world soundscape feedback without adding service-locator cadence cost.
+Hardware Impact: STATIC estimate only: 43 exact audio registry reads removed from 37 staged source files. No profiler, GCMonitor, Unity Console, or player-build artifact; CLI_COMPILE not run because restore assets remain absent and CPU/compiler gate was closed.
