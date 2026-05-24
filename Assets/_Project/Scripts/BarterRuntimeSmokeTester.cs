@@ -296,7 +296,7 @@ namespace Hecton8.Dev
             if (exchangeSystem == null)
                 exchangeSystem = Hecton8.Core.GlobalRegistry.PDAExchange;
             if (playerInventory == null)
-                playerInventory = (Hecton8.Core.GlobalRegistry.Player != null ? Hecton8.Core.GlobalRegistry.Player.Inventory : null);
+                playerInventory = (Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext != null ? Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext.Inventory : null);
             if (scanLogSystem == null)
                 scanLogSystem = Hecton8.Core.GlobalRegistry.ScanLog;
         }

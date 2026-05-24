@@ -199,7 +199,7 @@ namespace Hecton8.Gameplay
 
         private void CacheRegistryServicesCold()
         {
-            _missionManager = GlobalRegistry.Missions;
+            _missionManager = MissionManager.Instance;
             _firstHourDirector = GlobalRegistry.FirstHour;
         }
 

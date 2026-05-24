@@ -8,7 +8,7 @@ namespace Hecton8.Gameplay
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Gameplay/Field Operation Log System")]
-    public sealed class FieldOperationLogSystem : MonoBehaviour, ISaveable, IServiceHeartbeat, IServiceShutdown
+    public sealed class FieldOperationLogSystem : MonoBehaviour, ISaveable, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener
     {
         public readonly struct FieldOperationSnapshot
         {
@@ -41,6 +41,7 @@ namespace Hecton8.Gameplay
         private readonly List<FieldOperationRecord> _recent = new List<FieldOperationRecord>(12);
         private bool _runtimeRegistered;
         private bool _saveRegistered;
+        private bool _hotSwapRegistered;
         private ISaveService _saveService;
         private static FieldOperationLogSystem s_activeRuntime;
 
@@ -66,6 +67,7 @@ namespace Hecton8.Gameplay
             if (!TryRegisterRuntime())
                 return;
 
+            TryRegisterHotSwapListener();
             TryRegisterSaveParticipant();
         }
 
@@ -77,12 +79,14 @@ namespace Hecton8.Gameplay
         private void OnDisable()
         {
             TryUnregisterSaveParticipant();
+            TryUnregisterHotSwapListener();
             TryUnregisterRuntime();
         }
 
         private void OnDestroy()
         {
             TryUnregisterSaveParticipant();
+            TryUnregisterHotSwapListener();
             TryUnregisterRuntime();
         }
 
@@ -112,6 +116,7 @@ namespace Hecton8.Gameplay
         public void OnServiceShutdown()
         {
             TryUnregisterSaveParticipant();
+            TryUnregisterHotSwapListener();
             TryUnregisterRuntime();
             _recent.Clear();
             LogChanged = null;
@@ -180,6 +185,36 @@ namespace Hecton8.Gameplay
 
             _saveRegistered = false;
             _saveService = null;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Save)
+                return;
+
+            TryUnregisterSaveParticipant();
+            _saveService = currentService as ISaveService;
+            TryRegisterSaveParticipant();
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
 
         public int CopyRecentEntries(FieldOperationSnapshot[] buffer)

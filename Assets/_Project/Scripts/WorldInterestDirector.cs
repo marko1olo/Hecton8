@@ -114,7 +114,7 @@ namespace Hecton8.World
 
         private void CacheRuntimeDependencies()
         {
-            _playerRuntimeContext = GlobalRegistry.Player;
+            _playerRuntimeContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
             ApplyPlayerRuntimeContext();
         }
 

@@ -592,7 +592,7 @@ namespace Hecton8.PDA
 
             if (forceRefresh || !_playerContextColdResolved || _cachedPlayerContext == null)
             {
-                _cachedPlayerContext = GlobalRegistry.Player;
+                _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
                 _playerContextColdResolved = _cachedPlayerContext != null;
                 _mainCamera = null;
             }

@@ -393,3 +393,11 @@ Solution: Fix only narrow compile-surface issues that the build proved and stop 
 Rejected Alternatives: Killing user/agent processes was rejected. Staging whole dirty fauna/thermal/first-hour files was rejected. Reporting a green build was rejected.
 Scalability potential: Process integrity only; the localization runtime route remains independent of the unresolved dirty compile wall.
 Hardware Impact: 0 us runtime gain for compile-wall notes; protects source ownership in a multi-agent tree.
+
+## Decision 50
+
+Problem: Runtime cache refresh paths in 16 tracked consumers still read `GlobalRegistry.Player` directly, while mission and research bridges read quest/mission owners through registry slots. `FieldOperationLogSystem` also registered with the save service once and had no hot-swap path if the save owner was replaced.
+Solution: Publish `PlayerRuntimeContextService.ActiveRuntimeContext` from the context owner, keep `TryGetActiveRuntimeContext()` on that owner-local pointer, route selected consumers through owner-active pointers, and add save-service hot-swap unregister/re-register to `FieldOperationLogSystem`.
+Rejected Alternatives: A broad DI rewrite was rejected because the workspace is dirty and 20+ agents are active. Staging dirty `PlayerRuntimeContextService.cs` wholesale was rejected; only the EXTERNAL_FIXER hunk is staged. Editing untracked parasite files and unrelated scooter velocity changes was rejected after detection.
+Scalability potential: Low tier avoids repeated player/quest/mission service-locator reads in UI, visor, diagnostic, geology, and bridge cache refresh paths; Middle keeps identical behavior; High and Ultra preserve richer presentation and mission feedback without adding owner-discovery cadence cost.
+Hardware Impact: STATIC estimate only: removes one registry read from each affected cache refresh path and removes stale-save-registration risk after save-service replacement. No profiler microsecond claim.

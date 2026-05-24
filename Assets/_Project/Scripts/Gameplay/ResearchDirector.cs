@@ -164,7 +164,7 @@ namespace Hecton8.Gameplay
         private void CacheRegistryServicesCold()
         {
             _loreDatabase = GlobalRegistry.LoreDatabase;
-            _questManager = GlobalRegistry.Quest;
+            _questManager = QuestManager.ActiveRuntimeInstance;
         }
 
         private void TryRegisterHotSwapListener()

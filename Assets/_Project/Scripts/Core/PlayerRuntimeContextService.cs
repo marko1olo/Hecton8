@@ -49,6 +49,9 @@ namespace Hecton8.Core
         private Collider _playerCollider;
         private HUDNotification _hudNotification;
         private readonly PlayerRuntimeContext _runtimeContext = new PlayerRuntimeContext();
+        private static PlayerRuntimeContextService s_activeRuntimeInstance;
+
+        public static IPlayerRuntimeContext ActiveRuntimeContext => s_activeRuntimeInstance;
         private readonly List<VisorHUDController> _visorResolveBuffer = new List<VisorHUDController>(2); // COLD ALLOC: List<VisorHUDController>[2] â€” one-shot player visor child resolution buffer used during root rebinds â€” owner: PlayerRuntimeContextService
 
         /// <inheritdoc />
@@ -352,7 +355,7 @@ namespace Hecton8.Core
         public static bool TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext)
         {
             runtimeContext = null;
-            PlayerRuntimeContextService runtime = GlobalRegistry.PlayerRuntimeContextRuntime;
+            PlayerRuntimeContextService runtime = s_activeRuntimeInstance;
             if (runtime == null)
                 return false;
 
@@ -450,6 +453,9 @@ namespace Hecton8.Core
             _syncInProgress = false;
             _dynamicContextReferencesEnabled = false;
             ClearCachedPlayerReferences();
+
+            if (ReferenceEquals(s_activeRuntimeInstance, this))
+                s_activeRuntimeInstance = null;
 
             GlobalRegistry.ClearPlayerRuntimeContextRuntime(this);
         }
@@ -953,6 +959,8 @@ namespace Hecton8.Core
 
             GlobalRegistry.RegisterPlayerRuntimeContext(this);
             _registeredContext = ReferenceEquals(GlobalRegistry.Player, this);
+            if (_registeredContext)
+                s_activeRuntimeInstance = this;
         }
 
         private void TryUnregisterContext()
@@ -962,6 +970,8 @@ namespace Hecton8.Core
 
             GlobalRegistry.UnregisterPlayerRuntimeContext(this);
             _registeredContext = false;
+            if (ReferenceEquals(s_activeRuntimeInstance, this))
+                s_activeRuntimeInstance = null;
         }
     }
 }

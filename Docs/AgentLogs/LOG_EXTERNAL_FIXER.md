@@ -808,3 +808,27 @@ Verification:
 - `git diff --cached --check` passed.
 - Core build was attempted with `/m:1`, shared compilation disabled, node reuse disabled.
 - Build did not report errors from the staged localization tranche, but verification is blocked by unrelated dirty compile-wall waves. Last wall: duplicate `_saveRegistered` and `_saveService` fields in `FirstHourDirector.cs`.
+## 2026-05-24 - Player Active Context And Save Hot-Swap Tranche
+
+What was wrong:
+- 16 tracked runtime/UI/visor/geology/diagnostic files still refreshed player context through `GlobalRegistry.Player`.
+- Mission bridge and quest consumers used registry slots for cold cache refresh where owner-active facades already existed.
+- `FieldOperationLogSystem` held a save-service reference without a hot-swap unregister/re-register path.
+
+What was done:
+- Added `PlayerRuntimeContextService.ActiveRuntimeContext` and moved `TryGetActiveRuntimeContext()` to the owner-local active pointer.
+- Routed selected player consumers through `PlayerRuntimeContextService.ActiveRuntimeContext`.
+- Routed `MissionManager`, `ResearchDirector`, and `DirectorMissionBridge` through `QuestManager.ActiveRuntimeInstance` / `MissionManager.Instance`.
+- Added `IGlobalRegistryHotSwapListener` handling to `FieldOperationLogSystem` for `GlobalRegistryServiceSlot.Save`.
+- Staged the dirty `PlayerRuntimeContextService.cs` hunk via clean index patch only; unrelated dirty player-context and scooter changes remain unstaged.
+
+Cinematic Cheats used:
+- None. This tranche is service-route hygiene and stale-save-registration repair.
+
+Exact Microseconds saved:
+- STATIC estimate only: one registry read removed from each affected cache refresh path; stale save registration after save-service replacement removed. No profiler capture, no microsecond claim.
+
+Evidence:
+- STATIC_SOURCE: 21 staged source files.
+- CLI_DIFF: `git diff --cached --check` passed.
+- CLI_COMPILE: blocked; no compiler processes remained, but CPU stayed at 93-94 percent from unrelated user processes, so `dotnet build` was not launched under the local CPU gate.

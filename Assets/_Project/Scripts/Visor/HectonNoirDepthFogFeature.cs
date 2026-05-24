@@ -258,7 +258,7 @@ namespace Hecton8.Visor
             RecreateMaterial(ref _material, shader);
             _pass ??= new NoirDepthFogPass();
             TryRegisterHotSwapListener();
-            _cachedPlayerContext = GlobalRegistry.Player;
+            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
         }
 
         public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)

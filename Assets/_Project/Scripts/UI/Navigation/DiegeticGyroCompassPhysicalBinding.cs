@@ -100,7 +100,7 @@ namespace Hecton8.UI.Navigation
                 return;
 
             runtime.InjectDependencies(
-                GlobalRegistry.Player,
+                Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext,
                 GlobalRegistry.DataVault,
                 HomeostasisBrain.GlobalQualityWeight);
         }

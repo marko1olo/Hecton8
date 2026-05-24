@@ -81,7 +81,7 @@ namespace Hecton8.Gameplay
             if (_serviceRegistered)
             {
                 s_activeRuntime = this;
-                _questManager = GlobalRegistry.Quest;
+                _questManager = QuestManager.ActiveRuntimeInstance;
             }
         }
 
