@@ -1476,7 +1476,7 @@ namespace Hecton8.Tools
         {
             _dataVault = GlobalRegistry.DataVault;
             _saveService = GlobalRegistry.Save;
-            _playerRuntimeContext = GlobalRegistry.Player;
+            _playerRuntimeContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
             _brineDensityReadModel = GlobalRegistry.BrineFluidDensity;
         }
 

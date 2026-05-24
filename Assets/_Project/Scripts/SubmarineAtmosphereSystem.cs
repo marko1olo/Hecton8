@@ -2848,7 +2848,7 @@ namespace Hecton8.Atmosphere
 
         private void CacheReferencesCold()
         {
-            CachePlayerRuntimeContext(GlobalRegistry.Player);
+            CachePlayerRuntimeContext(Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext);
             _powerGridService = GlobalRegistry.PowerGrid;
             _audioLogs = GlobalRegistry.AudioLogs;
             _playerSensoryService = GlobalRegistry.PlayerSensory;

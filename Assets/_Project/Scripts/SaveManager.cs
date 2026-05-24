@@ -3219,7 +3219,7 @@ namespace Hecton8.SaveSystem
             if (data == null)
                 return false;
 
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
             Transform playerTransform = playerContext != null ? playerContext.PlayerTransform : null;
             if (playerTransform == null && !GameBootstrapper.TryGetCurrentPlayerTransform(out playerTransform))
                 return false;

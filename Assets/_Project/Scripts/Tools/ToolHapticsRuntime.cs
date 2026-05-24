@@ -742,7 +742,7 @@ namespace Hecton8.Tools
         {
             if (_dataVault == null)
                 _dataVault = GlobalRegistry.DataVault;
-            _playerRuntimeContext = GlobalRegistry.Player;
+            _playerRuntimeContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
         }
 
         private void RebindDataVault(IDataVault dataVault)

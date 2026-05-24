@@ -410,7 +410,7 @@ namespace Hecton8.Progression
 
             if (_playerMovement == null)
             {
-                CachePlayerRuntimeContext(GlobalRegistry.Player);
+                CachePlayerRuntimeContext(Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext);
 
                 if (_playerMovement == null)
                     TryGetComponent(out _playerMovement);

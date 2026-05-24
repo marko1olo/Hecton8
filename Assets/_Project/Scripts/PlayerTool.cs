@@ -902,7 +902,7 @@ namespace Hecton8.Gameplay
             _modularEquipmentService = GlobalRegistry.ModularEquipment;
             _powerGridService = GlobalRegistry.PowerGrid;
             _submarineRuntimeContext = GlobalRegistry.Submarine;
-            _playerRuntimeContext = GlobalRegistry.Player;
+            _playerRuntimeContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
             _playerInventoryService = GlobalRegistry.PlayerInventory;
             _inputService = GlobalRegistry.Input;
             _interactionSignalService = GlobalRegistry.InteractionSignals;

@@ -1443,7 +1443,7 @@ namespace Hecton8.Physics
 
         private static Camera ResolvePlayerCamera()
         {
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
             return playerContext != null ? playerContext.PlayerCamera : null;
         }
 

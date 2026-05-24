@@ -238,7 +238,7 @@ namespace Hecton8.UI
         {
             RefreshQualityPolicy();
             _cachedAudioManager = GlobalRegistry.Audio as SpatialAudioManager;
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
             if (!ReferenceEquals(_cachedPlayerContext, playerContext))
             {
                 _cachedPlayerContext = playerContext;

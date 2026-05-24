@@ -277,7 +277,7 @@ namespace Hecton8.Quest
 
         private void ResolvePlayerContextCold()
         {
-            CachePlayerContext(GlobalRegistry.Player);
+            CachePlayerContext(Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext);
             ResolvePlayerContext();
         }
 

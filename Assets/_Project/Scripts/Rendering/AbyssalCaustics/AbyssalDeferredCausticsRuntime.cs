@@ -1290,7 +1290,7 @@ namespace Hecton8.Rendering
             if (forceRefresh || _dataVault == null)
                 _dataVault = GlobalRegistry.DataVault;
             if (forceRefresh || _playerRuntimeContext == null)
-                _playerRuntimeContext = GlobalRegistry.Player;
+                _playerRuntimeContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
             if (forceRefresh || _weatherService == null)
                 _weatherService = GlobalRegistry.Weather;
         }

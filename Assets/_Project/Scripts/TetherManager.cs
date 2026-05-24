@@ -764,7 +764,7 @@ namespace Hecton8.Physics
             if (_dataVault == null)
                 _dataVault = GlobalRegistry.DataVault;
 
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
             if (playerContext != null)
             {
                 if (playerContext.PlayerCamera != null)

@@ -557,8 +557,8 @@ namespace Hecton8.SaveSystem
             if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
                 playerTransform != null)
             {
-                _cachedCaptureCamera = GlobalRegistry.Player != null && GlobalRegistry.Player.PlayerCamera != null
-                    ? GlobalRegistry.Player.PlayerCamera
+                _cachedCaptureCamera = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext != null && Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext.PlayerCamera != null
+                    ? Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext.PlayerCamera
                     : ResolveCaptureCamera(playerTransform);
             }
 

@@ -185,7 +185,7 @@ namespace Hecton8.Dev
                     playerInventory = playerTransform.GetComponent<PlayerInventory>();
 
                 if (toolManager == null)
-                    toolManager = ((Hecton8.Core.GlobalRegistry.Player != null && Hecton8.Core.GlobalRegistry.Player.ToolManager != null) ? Hecton8.Core.GlobalRegistry.Player.ToolManager : playerTransform.GetComponent<PlayerToolManager>());
+                    toolManager = ((Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext != null && Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext.ToolManager != null) ? Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext.ToolManager : playerTransform.GetComponent<PlayerToolManager>());
             }
         }
 

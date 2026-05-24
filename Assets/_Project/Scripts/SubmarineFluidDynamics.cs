@@ -5434,7 +5434,7 @@ namespace Hecton8.Physics
         private void RefreshRuntimeActorContextsIfMissing()
         {
             if (_playerRuntime == null || IsUnityObjectInvalid(_playerRuntime))
-                _playerRuntime = GlobalRegistry.Player;
+                _playerRuntime = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
 
             if (_submarineRuntime == null || IsUnityObjectInvalid(_submarineRuntime))
                 _submarineRuntime = GlobalRegistry.Submarine;

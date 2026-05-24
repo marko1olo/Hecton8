@@ -857,7 +857,7 @@ namespace Hecton8.Inventory
         private void CacheRegistryServicesCold()
         {
             _cachedPersistentWorldRegistry = GlobalRegistry.PersistentWorldRegistry;
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
             if (!ReferenceEquals(_cachedPlayerContext, playerContext))
             {
                 _cachedPlayerContext = playerContext;

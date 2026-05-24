@@ -240,7 +240,7 @@ namespace Hecton8.World
             if (seamRegistry == null)
                 seamRegistry = SeamRegistry.ActiveRuntimeInstance;
 
-            CachePlayerRuntimeContext(GlobalRegistry.Player);
+            CachePlayerRuntimeContext(Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext);
 
             if (playerTransform == null)
                 WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform);

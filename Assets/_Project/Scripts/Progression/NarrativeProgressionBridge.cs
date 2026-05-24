@@ -228,7 +228,7 @@ namespace Hecton8.Progression
 
         private static bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)
         {
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
             if (playerContext != null && playerContext.PlayerMovement != null)
             {
                 playerAup = playerContext.PlayerMovement.CurrentAup;

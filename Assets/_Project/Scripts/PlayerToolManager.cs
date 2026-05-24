@@ -162,7 +162,7 @@ namespace Hecton8.Gameplay
         private static readonly int _highCapacityBatteryHashId = LocHash.Compute(HighCapacityBatteryPersistentId);
         internal Transform HandAnchor => handAnchor;
         internal PlayerInventory Inventory => playerInventory;
-        internal IPlayerRuntimeContext PlayerRuntimeContext => GlobalRegistry.Player;
+        internal IPlayerRuntimeContext PlayerRuntimeContext => Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
 
         // ══════════════════════════════════════════════════════════
         //  SWAP STATE MACHINE

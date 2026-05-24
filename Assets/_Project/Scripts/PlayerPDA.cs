@@ -1115,7 +1115,7 @@ namespace Hecton8.UI
             _inputService = GlobalRegistry.Input;
             _audioService = GlobalRegistry.Audio;
             _renderTexturePool = GlobalRegistry.RenderTexturePool;
-            CachePlayerRuntimeContext(GlobalRegistry.Player);
+            CachePlayerRuntimeContext(Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext);
         }
 
         private void CachePlayerRuntimeContext(IPlayerRuntimeContext playerRuntimeContext)
@@ -1887,7 +1887,7 @@ namespace Hecton8.UI
             if (playerPda == null)
                 playerPda = ResolvePlayerPdaInParents(transform);
 
-            CachePlayerRuntimeContext(GlobalRegistry.Player);
+            CachePlayerRuntimeContext(Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext);
 
             labelFont = LocalizedFontResolver.ResolveReadableFont(labelFont);
             numericFont = LocalizedFontResolver.ResolveNumericFont(numericFont, labelFont);
@@ -1896,7 +1896,7 @@ namespace Hecton8.UI
         private void OnEnable()
         {
             TryRegisterHotSwapListener();
-            CachePlayerRuntimeContext(GlobalRegistry.Player);
+            CachePlayerRuntimeContext(Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext);
             EnsureBuilt();
             PDAEvents.Register(this);
             EvaluateTickRegistration();
