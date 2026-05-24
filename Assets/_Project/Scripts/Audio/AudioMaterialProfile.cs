@@ -6,6 +6,7 @@ namespace Hecton8.Audio
     /// Per-layer acoustic material template used by environment authors.
     /// </summary>
     [System.Serializable]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct AcousticLayerTemplate
     {
         [Tooltip("Author-facing semantic label for this acoustic layer entry.")]

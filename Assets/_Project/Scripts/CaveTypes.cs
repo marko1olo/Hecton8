@@ -177,6 +177,7 @@ namespace Hecton8.Caves
     ///
     /// Size: 48 bytes (3 cache lines on most architectures).
     /// </summary>
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct CaveNode
     {
         /// <summary>World-space center of this room.</summary>
@@ -220,6 +221,7 @@ namespace Hecton8.Caves
     ///
     /// Size: 56 bytes.
     /// </summary>
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct CaveTunnel
     {
         /// <summary>World-space start point (typically center of source room).</summary>
@@ -268,6 +270,7 @@ namespace Hecton8.Caves
     ///
     /// Size: 76 bytes.
     /// </summary>
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct CaveEntrance
     {
         /// <summary>World-space position of the entrance on terrain surface.</summary>
@@ -310,6 +313,7 @@ namespace Hecton8.Caves
     ///
     /// Size: 52 bytes.
     /// </summary>
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct CaveStructure
     {
         /// <summary>World-space center/base of the structure.</summary>
@@ -355,6 +359,7 @@ namespace Hecton8.Caves
     ///
     /// Size: 84 bytes.
     /// </summary>
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct CaveGenerationParams
     {
         // ── Domain Warping ──────────────────────────────────────────────────
@@ -450,6 +455,7 @@ namespace Hecton8.Caves
     ///
     /// Size: 16 bytes.
     /// </summary>
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct CaveSpawnData
     {
         /// <summary>World-space position of the spawn point on cave floor.</summary>

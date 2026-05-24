@@ -10,6 +10,7 @@ namespace Hecton8.Ecosystem
     public sealed class CreatureGeneticsProfile : ScriptableObject
     {
         [Serializable]
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
         public struct SpeciesGeneticsTuning
         {
             [Tooltip("Stable species identifier matching FaunaSpeciesProfile.speciesID.")]

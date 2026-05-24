@@ -3,6 +3,7 @@ using UnityEngine;
 namespace Hecton8.AI
 {
     [System.Serializable]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct FaunaProfile
     {
         [Range(0f, 1f)] public float aggressionLevel;
@@ -15,6 +16,7 @@ namespace Hecton8.AI
     /// Legacy managed state execution has been removed; runtime decisions are owned by PredatorCognitionDomain.
     /// </summary>
     [System.Serializable]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct FaunaStateMachine
     {
         [Header("── State Configuration ────────────────────────────")]

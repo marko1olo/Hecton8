@@ -15,6 +15,7 @@ namespace Hecton8.Inventory
 
     public sealed class InventoryGrid
     {
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
         public readonly struct InventoryItemDescriptor
         {
             public readonly int HashId;

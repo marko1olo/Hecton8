@@ -11,6 +11,7 @@ namespace Hecton8.Data
     /// Burst job that unpacks creature genome records from the monolithic AoS blob into SoA arrays.
     /// </summary>
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public unsafe struct H8CreatureSoAReconstructJob : IJobParallelFor
     {
         [ReadOnly, NoAlias] public NativeArray<byte> Blob;
@@ -50,6 +51,7 @@ namespace Hecton8.Data
     /// Burst job that unpacks item records from the monolithic AoS blob into cache-linear SoA arrays.
     /// </summary>
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public unsafe struct H8ItemSoAReconstructJob : IJobParallelFor
     {
         [ReadOnly, NoAlias] public NativeArray<byte> Blob;

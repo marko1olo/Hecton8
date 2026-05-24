@@ -10,6 +10,7 @@ namespace Hecton8.Gameplay
     public sealed class HazardMutationProfile : ScriptableObject
     {
         [Serializable]
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
         public struct MutationThreshold
         {
             [Tooltip("UI-facing mutation label pushed when the threshold is crossed.")]

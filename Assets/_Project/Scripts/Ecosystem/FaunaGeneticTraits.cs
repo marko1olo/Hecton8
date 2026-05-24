@@ -6,6 +6,7 @@ namespace Hecton8.Ecosystem
     /// Deterministic runtime variation payload applied to one spawned fauna instance.
     /// </summary>
     [Serializable]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct FaunaGeneticTraits
     {
         public ulong Genome;

@@ -7,6 +7,7 @@ using Hecton8.Core.Contracts;
 
 namespace Hecton8.Atmosphere
 {
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     internal struct SurfaceWeatherMathState
     {
         public float cloudDensityThreshold;
@@ -108,6 +109,7 @@ namespace Hecton8.Atmosphere
         }
     }
 
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     internal struct SurfaceWeatherBindingSnapshot
     {
         public float gustMultiplier;
@@ -130,6 +132,7 @@ namespace Hecton8.Atmosphere
         public float targetFoamScale;
     }
 
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     internal struct SurfaceWeatherJobInput
     {
         public SurfaceWeatherMathState currentState;
@@ -162,6 +165,7 @@ namespace Hecton8.Atmosphere
         public float defaultFoamScale;
     }
 
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     internal struct SurfaceWeatherJobOutput
     {
         public SurfaceWeatherMathState currentState;
@@ -189,6 +193,7 @@ namespace Hecton8.Atmosphere
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     internal struct SurfaceWeatherMathJob : IJob
     {
         private const byte SurfaceExecutionModeSurfaceActive = 0;

@@ -18,6 +18,7 @@ namespace Hecton8.UI
         /// Burst path for corrupted diegetic text stored as UTF-16 code units in caller-owned native memory.
         /// </summary>
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
         public struct DiegeticGlitchXorJob : IJobParallelFor
         {
             [NoAlias]

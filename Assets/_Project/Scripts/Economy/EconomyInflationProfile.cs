@@ -12,6 +12,7 @@ namespace Hecton8.Economy
     public sealed class EconomyInflationProfile : ScriptableObject
     {
         [Serializable]
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
         public struct ResourceInflationRule
         {
             [Tooltip("Resource item that receives sector-local deflation when over-mined.")]

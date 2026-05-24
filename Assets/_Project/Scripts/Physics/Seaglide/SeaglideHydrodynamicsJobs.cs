@@ -22,6 +22,7 @@ namespace Hecton8.Physics
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct InitializeSeaglideColdBuffersJob : IJob
     {
         [WriteOnly, NoAlias] public NativeArray<SeaglideFlowSampleDTO> FlowSamples;
@@ -56,6 +57,7 @@ namespace Hecton8.Physics
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct GenerateMockSeaglidePropulsionDataJob : IJobParallelFor
     {
         // SAFETY_JUSTIFICATION_PARAGRAPH_1:
@@ -150,6 +152,7 @@ namespace Hecton8.Physics
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct CalculateSeaglideThrustJob : IJobParallelFor
     {
         // SAFETY_JUSTIFICATION_PARAGRAPH_1:
@@ -424,6 +427,7 @@ namespace Hecton8.Physics
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct ProcessSeaglideMetabolismJob : IJobParallelFor
     {
         // SAFETY_JUSTIFICATION_PARAGRAPH_1:
@@ -457,6 +461,7 @@ namespace Hecton8.Physics
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct CalculateSeaglideAudioParametersJob : IJobParallelFor
     {
         [ReadOnly, NoAlias] public NativeArray<SeaglidePropulsionRequestDTO> Requests;
@@ -508,6 +513,7 @@ namespace Hecton8.Physics
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct ReduceSeaglideTelemetryJob : IJob
     {
         [ReadOnly, NoAlias] public NativeArray<SeaglideForcePacketDTO> ForcePackets;

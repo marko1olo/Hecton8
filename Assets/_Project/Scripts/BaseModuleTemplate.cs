@@ -15,6 +15,7 @@ namespace Hecton8.Building
     public sealed class BaseModuleTemplate : ScriptableObject
     {
         [Serializable]
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
         public struct ItemHashCost
         {
             [Tooltip("Stable item hash resolved from ItemData.PersistentId.")]
@@ -28,6 +29,7 @@ namespace Hecton8.Building
         }
 
         [Serializable]
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
         public struct VfxSocket
         {
             [Tooltip("Module-local socket coordinate in template space.")]
@@ -41,6 +43,7 @@ namespace Hecton8.Building
         }
 
         [Serializable]
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
         public struct SocketDefinition
         {
             [Tooltip("Module-local socket coordinate in template space.")]

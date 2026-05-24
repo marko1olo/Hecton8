@@ -6,6 +6,7 @@ namespace Hecton8.World
     public sealed class TectonicActivityProfile : ScriptableObject
     {
         [System.Serializable]
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
         public struct SeismicEventSettings
         {
             [Range(0.1f, 4f)] public float collapseChanceMultiplier;
@@ -35,6 +36,7 @@ namespace Hecton8.World
         }
 
         [System.Serializable]
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
         public struct BiomeSeismicRule
         {
             public string familyId;

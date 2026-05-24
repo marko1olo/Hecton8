@@ -8,6 +8,7 @@ namespace Hecton.Localization
     /// One localized sprite override for a specific language.
     /// </summary>
     [Serializable]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct LocalizedSpriteVariant
     {
         [Tooltip("Language for this sprite variant.")]

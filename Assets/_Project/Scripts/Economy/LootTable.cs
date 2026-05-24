@@ -7,6 +7,7 @@ namespace Hecton8.Economy
     /// Compact normalized loot-table record shared by resource nodes, outcrops, and fauna drops.
     /// </summary>
     [Serializable]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct LootTableEntry
     {
         [Tooltip("Stable shared item hash for the dropped result.")]

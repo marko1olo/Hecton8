@@ -14,6 +14,7 @@ namespace Hecton8.World
         private const int FloraChunkInstanceHardCap = 4096;
         private const int PoissonDiskMaxRejectionAttempts = 30;
 
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
         internal readonly struct ScatterPlacementSpatialMetadata
         {
             public ScatterPlacementSpatialMetadata(
@@ -40,6 +41,7 @@ namespace Hecton8.World
             public readonly byte FloraBudgetClass;
         }
 
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
         internal struct ScatterCellCandidateAcceptanceInput
         {
             public float3 Position;
@@ -61,6 +63,7 @@ namespace Hecton8.World
             public float ClusterNoiseThreshold;
         }
 
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
         private readonly struct ScatterRescueCandidateFilter
         {
             public readonly WorldPrefabFamilyProfile ExactFamily;
@@ -229,6 +232,7 @@ namespace Hecton8.World
         }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
         private struct CanAcceptCandidateJob : IJob
         {
             [ReadOnly] public NativeParallelMultiHashMap<int, float3> PositionBuckets;
@@ -333,6 +337,7 @@ namespace Hecton8.World
         }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
         private struct EvaluateScatterCellCandidateBatchJob : IJob
         {
             [ReadOnly] public NativeParallelMultiHashMap<int, float3> ExistingPositionBuckets;
@@ -856,6 +861,7 @@ namespace Hecton8.World
         }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
         private struct EvaluateScatterRescueCandidateBatchJob : IJob
         {
             [ReadOnly] public NativeParallelMultiHashMap<int, float3> ExistingPositionBuckets;

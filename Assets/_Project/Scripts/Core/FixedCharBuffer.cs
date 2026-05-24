@@ -7,6 +7,7 @@ namespace Hecton8.Core
     /// Wrapper around a fixed char buffer for zero-allocation string building in hot paths.
     /// Utilizes LocNumericBuffer for localized template formatting.
     /// </summary>
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct FixedCharBuffer
     {
         private readonly char[] _buffer;

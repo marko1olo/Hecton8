@@ -3,6 +3,7 @@ using UnityEngine;
 namespace Hecton8.World
 {
     [System.Serializable]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct WorldChunkCoordinate
     {
         public int x;

@@ -24,6 +24,7 @@ namespace Hecton8.Audio
     /// Serialized music cue entry used by biome profiles and the music director.
     /// </summary>
     [Serializable]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct HectonMusicClip
     {
         [Header("Identity")]

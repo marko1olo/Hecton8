@@ -67,6 +67,7 @@ namespace Hecton8.Construction
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public unsafe struct GenerateMockBulkheadsJob : IJobParallelFor
     {
         [NativeDisableUnsafePtrRestriction, NoAlias] public BulkheadStateDTO* States;
@@ -123,6 +124,7 @@ namespace Hecton8.Construction
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public unsafe struct UpdateBulkheadClosureJob : IJobParallelFor
     {
         [NativeDisableUnsafePtrRestriction, NoAlias] public BulkheadStateDTO* States;
@@ -176,6 +178,7 @@ namespace Hecton8.Construction
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public unsafe struct ApplyBulkheadLockJob : IJobParallelFor
     {
         [NativeDisableUnsafePtrRestriction, NoAlias] public BulkheadStateDTO* States;
@@ -222,6 +225,7 @@ namespace Hecton8.Construction
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public unsafe struct ProcessDoorOverrideJob : IJob
     {
         [ReadOnly, NoAlias] public NativeArray<InteractionUiSignal>.ReadOnly Signals;
@@ -304,6 +308,7 @@ namespace Hecton8.Construction
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public unsafe struct EvaluateDoorCollisionsJob : IJob
     {
         [NativeDisableUnsafePtrRestriction, NoAlias] public BulkheadStateDTO* States;
@@ -429,6 +434,7 @@ namespace Hecton8.Construction
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public unsafe struct ApplyCatastrophicDoorDamageJob : IJobParallelFor
     {
         [NativeDisableUnsafePtrRestriction, NoAlias] public BulkheadStateDTO* States;
@@ -471,6 +477,7 @@ namespace Hecton8.Construction
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public unsafe struct RecordBulkheadTelemetryJob : IJob
     {
         [NativeDisableUnsafePtrRestriction, NoAlias] public BulkheadStateDTO* States;

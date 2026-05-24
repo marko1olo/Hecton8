@@ -395,6 +395,7 @@ namespace Hecton8.SaveSystem
             return HectonPersistentPathPolicy.CombineFile(relativePath);
         }
 
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
         private struct SidecarWriter
         {
             private readonly byte* _buffer;
@@ -493,6 +494,7 @@ namespace Hecton8.SaveSystem
             }
         }
 
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
         private struct SidecarReader
         {
             private readonly byte* _buffer;

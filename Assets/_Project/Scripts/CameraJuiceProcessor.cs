@@ -18,6 +18,7 @@ using UnityEngine;
 
 namespace Hecton8.Gameplay
 {
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct CameraJuiceOutput
     {
         public Vector3 localPositionOffset;
@@ -27,6 +28,7 @@ namespace Hecton8.Gameplay
         public byte stepEvent;
     }
 
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct CameraJuiceInput
     {
         public byte isWalking;

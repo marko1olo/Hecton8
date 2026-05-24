@@ -10,12 +10,14 @@ namespace Hecton8.World
 {
     public sealed partial class HectonMapMagicVegetationBridge
     {
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
         private struct PoolBlock
         {
             public int Offset;
             public int Length;
         }
 
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
         private struct NativeChunkPool : IDisposable
         {
             public NativeArray<Matrix4x4> Matrices;
@@ -55,6 +57,7 @@ namespace Hecton8.World
             }
         }
 
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
         private struct ActiveAggregateNativeBufferSet : IDisposable
         {
             public NativeArray<Matrix4x4> Matrices;
@@ -89,6 +92,7 @@ namespace Hecton8.World
             }
         }
 
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
         private struct VegetationNativeMemory : IDisposable
         {
             public NativeArray<VegetationDensityChunkRecord> DensityQueryChunksNative;

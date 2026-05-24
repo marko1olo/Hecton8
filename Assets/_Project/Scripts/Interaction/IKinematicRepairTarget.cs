@@ -17,6 +17,7 @@ namespace Hecton8.Interaction
         bool TryResolveKinematicRepairSnap(in KinematicRepairTargetProbe probe, out KinematicRepairSnapPoint snapPoint);
     }
 
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public readonly struct KinematicRepairTargetProbe
     {
         public readonly AbsoluteUniversePosition RayOriginAup;
@@ -43,6 +44,7 @@ namespace Hecton8.Interaction
         }
     }
 
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct KinematicRepairSnapPoint
     {
         public AbsoluteUniversePosition AnchorAup;

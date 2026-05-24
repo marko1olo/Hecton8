@@ -12,6 +12,7 @@ namespace Hecton8.Physics
     public sealed class FluidCompartmentTemplate : ScriptableObject
     {
         [Serializable]
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
         public struct CompartmentRecord
         {
             [Tooltip("Stable authoring hash for the hull module or compartment owner.")]

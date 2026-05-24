@@ -6,6 +6,7 @@ namespace Hecton8.Atmosphere
     /// Unified surface-atmosphere snapshot authored by HectonCelestialEngine and consumed by
     /// surface/underwater/environment systems without re-deriving sky state independently.
     /// </summary>
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct AtmosphericLightingState
     {
         public byte IsValid;

@@ -10,6 +10,7 @@ namespace Hecton8.AI
     /// </summary>
     internal static class FaunaScanRuntimeRegistry
     {
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
         internal readonly struct FaunaScanMetadata
         {
             public FaunaScanMetadata(uint[] loreUnlockHashes, uint fullLoreHash, FaunaAttackPattern[] attackPatterns)

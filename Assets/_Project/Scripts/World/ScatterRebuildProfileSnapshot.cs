@@ -1,5 +1,6 @@
 namespace Hecton8.World
 {
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     internal readonly struct ScatterRebuildProfileSnapshot
     {
         public readonly float TotalMs;

@@ -6,6 +6,7 @@ namespace Hecton8.World
 {
     public sealed partial class WorldProceduralScatterDirector
     {
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
         private struct ScatterRefreshSampleState
         {
             public byte HasSample;
@@ -17,6 +18,7 @@ namespace Hecton8.World
             public float Time;
         }
 
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
         private struct ScatterResolvedRuntimeSettings
         {
             public float CellSize;
@@ -25,12 +27,14 @@ namespace Hecton8.World
             public float MacroZoneSize;
         }
 
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
         private struct ScatterStartupRuntimeState
         {
             public byte StabilizationPending;
             public float StartTime;
         }
 
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
         private struct ScatterReconcileRuntimeState
         {
             public byte HasPendingStartupPlacements;
@@ -40,6 +44,7 @@ namespace Hecton8.World
             public Vector3 LastObserverPosition;
         }
 
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
         private struct ScatterBootstrapRuntimeState
         {
             public byte PresenceResolved;
@@ -49,6 +54,7 @@ namespace Hecton8.World
             public byte SamplingPipelinePrewarmed;
         }
 
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
         private struct ScatterLifecycleRuntimeState
         {
             public byte RegisteredToTickManager;
@@ -58,6 +64,7 @@ namespace Hecton8.World
             public float NextTickDrivenScatterAttemptTime;
         }
 
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
         private readonly struct ScatterSamplingBeginContext
         {
             public readonly IReadOnlyList<WorldProceduralPlacementRule> Rules;
@@ -114,6 +121,7 @@ namespace Hecton8.World
             }
         }
 
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
         private struct ScatterSamplingCompletionContext
         {
             public Vector3 AbsoluteCenter;
@@ -232,6 +240,7 @@ namespace Hecton8.World
             }
         }
 
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
         private struct ScatterCellPlacementAcceptanceContext
         {
             public int LocalGroundBudget;
@@ -248,6 +257,7 @@ namespace Hecton8.World
             public ScatterPlacementRegistrationContext PlacementRegistrationContext;
         }
 
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
         private readonly struct ScatterBiomeTransitionContext
         {
             public readonly byte HasSecondary;
@@ -276,6 +286,7 @@ namespace Hecton8.World
             }
         }
 
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
         private struct ScatterCellPlacementCounters
         {
             public int GroundCount;
@@ -286,6 +297,7 @@ namespace Hecton8.World
             public int SpawnCountSecondary;
         }
 
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
         private struct ScatterClassicParityAccumulator
         {
             private const ulong FnvOffset = 14695981039346656037UL;

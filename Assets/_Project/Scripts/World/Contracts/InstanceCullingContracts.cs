@@ -31,6 +31,7 @@ namespace Hecton8.World
     /// <summary>
     /// Camera position payload consumed by culling without polling Camera.main.
     /// </summary>
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct InstanceCullingCameraPositionSignal
     {
         public Vector3 Position;
@@ -42,6 +43,7 @@ namespace Hecton8.World
     /// <summary>
     /// Packed frustum payload consumed by culling without camera-owned concrete dependencies.
     /// </summary>
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct InstanceCullingCameraFrustumSignal
     {
         public Matrix4x4 ViewProjection;
@@ -58,6 +60,7 @@ namespace Hecton8.World
     /// <summary>
     /// Complete camera state for a culling dispatch. Planes use float4(normal.xyz, d).
     /// </summary>
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct InstanceCullingCameraState
     {
         public InstanceCullingCameraPositionSignal Position;
@@ -67,6 +70,7 @@ namespace Hecton8.World
     /// <summary>
     /// Mesh and range metadata needed to rebuild indirect arguments without a CPU readback.
     /// </summary>
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct InstanceCullingIndirectArgs
     {
         public uint IndexCountPerInstance;
@@ -78,6 +82,7 @@ namespace Hecton8.World
     /// <summary>
     /// Caller-owned source data for one procedural instance culling dispatch.
     /// </summary>
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct InstanceCullingDispatchDescriptor
     {
         public GraphicsBuffer AllInstancesBuffer;
@@ -94,6 +99,7 @@ namespace Hecton8.World
     /// <summary>
     /// Delayed visibility telemetry read back from indirect args.
     /// </summary>
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct InstanceCullingTelemetry
     {
         public uint Frame;

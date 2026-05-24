@@ -5,6 +5,7 @@ namespace Hecton8.World
 {
     public sealed partial class WorldProceduralScatterDirector
     {
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
         private readonly struct ScatterPlacementReconcilePlan
         {
             public readonly ScatterPlacement Placement;
@@ -37,6 +38,7 @@ namespace Hecton8.World
             }
         }
 
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
         private struct ScatterReconcileExecutionContext
         {
             public Transform Root;
@@ -69,6 +71,7 @@ namespace Hecton8.World
             }
         }
 
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
         private struct ScatterReconcileCleanupContext
         {
             public Dictionary<long, WorldProceduralProxyInstance> ActiveInstances;

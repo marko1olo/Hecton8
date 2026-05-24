@@ -5,6 +5,7 @@ using UnityEngine;
 namespace Hecton8.Gameplay
 {
     [Serializable]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct BarterItemAmount
     {
         public ItemData item;

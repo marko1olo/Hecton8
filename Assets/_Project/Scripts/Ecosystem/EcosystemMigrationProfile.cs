@@ -7,6 +7,7 @@ namespace Hecton8.Ecosystem
     public sealed class EcosystemMigrationProfile : ScriptableObject
     {
         [Serializable]
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
         public struct TemperatureRoute
         {
             [Tooltip("Diagnostic label for this temperature band.")]

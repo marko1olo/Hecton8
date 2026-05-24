@@ -8,6 +8,7 @@ namespace Hecton8.Economy
     /// Immutable resource/quantity pair used by runtime recycling overlays.
     /// </summary>
     [Serializable]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct ResourceStack
     {
         [Tooltip("Resolved item granted or consumed by the stack.")]

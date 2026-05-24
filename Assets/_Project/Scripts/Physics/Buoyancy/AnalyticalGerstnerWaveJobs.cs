@@ -9,6 +9,7 @@ using Unity.Mathematics;
 namespace Hecton8.Physics
 {
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct GenerateMockWaveSpectrumJob : IJobParallelFor
     {
         [WriteOnly, NoAlias] public NativeArray<GerstnerWaveParamsDTO> Spectrum;
@@ -78,6 +79,7 @@ namespace Hecton8.Physics
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct GenerateMockWaveRequestsJob : IJobParallelFor
     {
         [WriteOnly, NoAlias] public NativeArray<OceanSampleRequestDTO> Requests;
@@ -112,6 +114,7 @@ namespace Hecton8.Physics
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct BuildMacroSwellGridJob : IJobParallelFor
     {
         [ReadOnly, NoAlias] public NativeArray<GerstnerWaveParamsDTO> Spectrum;
@@ -163,6 +166,7 @@ namespace Hecton8.Physics
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public unsafe struct EvaluateAnalyticalWavesJob : IJobParallelFor
     {
         [ReadOnly, NoAlias] public NativeArray<OceanSampleRequestDTO> Requests;
@@ -434,6 +438,7 @@ namespace Hecton8.Physics
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct RecordWaveMathTelemetryJob : IJob
     {
         [ReadOnly, NoAlias] public NativeArray<OceanSampleResultDTO> Results;

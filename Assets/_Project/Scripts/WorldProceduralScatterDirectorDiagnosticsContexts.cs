@@ -2,6 +2,7 @@ namespace Hecton8.World
 {
     public sealed partial class WorldProceduralScatterDirector
     {
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
         internal readonly struct ScatterDiagnosticsCommitContext
         {
             public readonly long RebuildStartTimestamp;

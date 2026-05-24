@@ -8,6 +8,7 @@ using Unity.Mathematics;
 namespace Hecton8.Physics
 {
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct GenerateMockAsyncReadbackJob : IJob
     {
         [ReadOnly, NoAlias] public NativeArray<ReadbackRequestDTO> Requests;
@@ -97,6 +98,7 @@ namespace Hecton8.Physics
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct ApplyDelayedBuoyancyReadbackJob : IJobParallelFor
     {
         [ReadOnly, NoAlias] public NativeArray<ReadbackRequestDTO> CompletedRequests;

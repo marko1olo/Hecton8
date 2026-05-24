@@ -5,6 +5,7 @@ namespace Hecton8.Gameplay
     /// <summary>
     /// Immutable payload delivered to objects that want custom reactions to a heavy-tow cable snap.
     /// </summary>
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public readonly struct TowSnapEventData
     {
         /// <summary>

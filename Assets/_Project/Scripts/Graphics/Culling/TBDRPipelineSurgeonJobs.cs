@@ -7,6 +7,7 @@ using Unity.Mathematics;
 namespace Hecton8.Graphics.Culling
 {
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct MockQualityWeightJob : IJob
     {
         [NoAlias] public NativeArray<MockQualityWeightSignal> QualitySignal;
@@ -45,6 +46,7 @@ namespace Hecton8.Graphics.Culling
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct BuildDistanceSortKeysJob : IJobParallelFor
     {
         [NoAlias] public NativeArray<PoiTransformDTO> Instances;
@@ -64,6 +66,7 @@ namespace Hecton8.Graphics.Culling
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct EarlyZRadixSortJob : IJob
     {
         [NoAlias] public NativeArray<PoiTransformDTO> Source;
@@ -119,6 +122,7 @@ namespace Hecton8.Graphics.Culling
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public unsafe struct VertexBudgetJob : IJob
     {
         [NativeDisableUnsafePtrRestriction]
@@ -201,6 +205,7 @@ namespace Hecton8.Graphics.Culling
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public unsafe struct DearLieFrustumSqueezeJob : IJob
     {
         [NativeDisableUnsafePtrRestriction]
@@ -275,6 +280,7 @@ namespace Hecton8.Graphics.Culling
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct DearLieFrustumVisibilityJob : IJobParallelFor
     {
         [NoAlias] public NativeArray<PoiTransformDTO> Instances;
@@ -335,6 +341,7 @@ namespace Hecton8.Graphics.Culling
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct TransparentOverdrawLimiterJob : IJob
     {
         [NoAlias] public NativeArray<int> TransparentQuadCount;
@@ -371,6 +378,7 @@ namespace Hecton8.Graphics.Culling
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct PopulateLockedMatrixBufferJob : IJobParallelFor
     {
         [ReadOnly, NoAlias]
@@ -396,6 +404,7 @@ namespace Hecton8.Graphics.Culling
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct HzbAabbOcclusionCullJob : IJobParallelFor
     {
         [NoAlias] public NativeArray<PoiTransformDTO> Instances;
@@ -464,6 +473,7 @@ namespace Hecton8.Graphics.Culling
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct BuildIndirectDrawArgsJob : IJob
     {
         [ReadOnly, NoAlias] public NativeArray<int> VisibleCountOut;
@@ -497,6 +507,7 @@ namespace Hecton8.Graphics.Culling
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct AupLocalizationForGpuJob : IJobParallelFor
     {
         [ReadOnly, NoAlias]

@@ -17,6 +17,7 @@ namespace Hecton8.World
     internal static class HectonBatchRendererGroupUtility
     {
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
         public struct BuildMatrixVisibilityMaskJob : IJobParallelFor
         {
             [ReadOnly, NoAlias] public NativeArray<Matrix4x4> Matrices;
@@ -69,6 +70,7 @@ namespace Hecton8.World
         }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
         public unsafe struct FinalizeSingleDrawCommandOutputJob : IJob
         {
             [ReadOnly, NoAlias] public NativeArray<byte> VisibilityMask;

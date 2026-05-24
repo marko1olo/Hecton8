@@ -8,6 +8,7 @@ namespace Hecton8.Optimization
     /// VRAM budget thresholds for target hardware (NVIDIA MX350 2GB).
     /// </summary>
     [Serializable]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct VRAMBudgetThresholds
     {
         private const long BytesPerMegabyte = 1024L * 1024L;

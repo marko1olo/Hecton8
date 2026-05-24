@@ -25,6 +25,7 @@ namespace Hecton8.Inventory
             CraftLocked = 8
         }
 
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
         public readonly struct BulkTransferResult
         {
             public readonly TransferFailureCode FailureCode;
@@ -179,6 +180,7 @@ namespace Hecton8.Inventory
         }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
         public struct InventoryTransferValidationJob : IJob
         {
             [ReadOnly] public NativeArray<uint> SourceHashes;
@@ -284,6 +286,7 @@ namespace Hecton8.Inventory
         }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
         public struct InventoryCompactionJob : IJob
         {
             public NativeArray<uint> ItemHashes;
@@ -426,6 +429,7 @@ namespace Hecton8.Inventory
         }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
         public struct DefragmentJob : IJob
         {
             public NativeArray<uint> ItemHashes;
@@ -470,6 +474,7 @@ namespace Hecton8.Inventory
         }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
         public struct FrostTickConditionDecayJob : IJob
         {
             [ReadOnly] public NativeArray<uint> PerishableHashes;

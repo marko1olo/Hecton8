@@ -13,6 +13,7 @@ namespace Hecton8.Core
     /// </summary>
     internal static class RenderSettingsLifecycleGuard
     {
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
         private struct RenderSettingsSnapshot
         {
             public bool Fog;

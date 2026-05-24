@@ -901,6 +901,7 @@ namespace Hecton8.World
         }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
         private struct BiomeInfluencePackJob : IJobParallelFor
         {
             [ReadOnly, NoAlias] public NativeArray<WorldProceduralFieldSampler.BiomeInfluenceCell> Source;

@@ -7,6 +7,7 @@ namespace Hecton.Localization
     /// <summary>
     /// Numeric payload wrapper for zero-allocation localized template writes.
     /// </summary>
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public readonly struct LocNumericArg
     {
         private readonly int _intValue;

@@ -5,6 +5,7 @@ namespace Hecton8.World
 {
     public sealed partial class WorldProceduralScatterDirector
     {
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
         private readonly struct ScatterPlacementRegistrationContext
         {
             public readonly Dictionary<long, ScatterPlacement> DesiredPlacements;
@@ -25,6 +26,7 @@ namespace Hecton8.World
             }
         }
 
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
         private readonly struct ScatterRetentionEvictionContext
         {
             public readonly Dictionary<long, ScatterPlacement> RetainedPlacements;
@@ -48,6 +50,7 @@ namespace Hecton8.World
             }
         }
 
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
         private readonly struct ScatterRetentionRestoreContext
         {
             public readonly Dictionary<long, ScatterPlacement> DesiredPlacements;

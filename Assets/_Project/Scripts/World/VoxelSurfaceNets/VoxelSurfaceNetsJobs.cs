@@ -8,6 +8,7 @@ using Unity.Mathematics;
 namespace Hecton8.World.VoxelSurfaceNets
 {
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct GenerateMockVoxelDensitySphereJob : IJobParallelFor
     {
         [NoAlias]
@@ -48,6 +49,7 @@ namespace Hecton8.World.VoxelSurfaceNets
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct SurfaceNetExtractionJob : IJob
     {
         [ReadOnly]
@@ -608,6 +610,7 @@ namespace Hecton8.World.VoxelSurfaceNets
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct VoxelSurfacePriorityJob : IJobParallelFor
     {
         [NoAlias]
@@ -662,6 +665,7 @@ namespace Hecton8.World.VoxelSurfaceNets
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct VoxelSurfaceDirtySignalJob : IJob
     {
         [ReadOnly]
@@ -702,6 +706,7 @@ namespace Hecton8.World.VoxelSurfaceNets
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct VoxelSurfaceAabbShiftJob : IJobParallelFor
     {
         [NoAlias]
@@ -722,6 +727,7 @@ namespace Hecton8.World.VoxelSurfaceNets
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct VoxelSurfacePhysicsBakeRequestJob : IJobParallelFor
     {
         [ReadOnly]
@@ -758,6 +764,7 @@ namespace Hecton8.World.VoxelSurfaceNets
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct VoxelSurfaceHzbCullJob : IJobParallelFor
     {
         [NoAlias]
@@ -880,6 +887,7 @@ namespace Hecton8.World.VoxelSurfaceNets
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public unsafe struct VoxelSurfaceGpuUploadCopyJob : IJob
     {
         [ReadOnly]

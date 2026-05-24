@@ -4,6 +4,7 @@ using Hecton8.Core;
 namespace Hecton8.World
 {
     [System.Serializable]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct WorldGenerativeGeologySeamPlan
     {
         public long runtimeKey;

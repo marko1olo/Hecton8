@@ -4,6 +4,7 @@ namespace Hecton8.World
     /// Read-only runtime status snapshot for the scatter hybrid backend host.
     /// Lets the director consume one typed status instead of reading host state field-by-field.
     /// </summary>
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     internal readonly struct ScatterBackendRuntimeStatus
     {
         public readonly ScatterSimulationBackendKind ActiveBackendKind;

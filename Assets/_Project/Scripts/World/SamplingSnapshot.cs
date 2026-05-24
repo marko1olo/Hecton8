@@ -2,6 +2,7 @@ using UnityEngine;
 
 namespace Hecton8.World
 {
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     internal readonly struct SamplingSnapshot
     {
         public readonly Vector3 RuntimeCenter;

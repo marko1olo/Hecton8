@@ -11,6 +11,7 @@ namespace Hecton8.Construction
     internal static class LogisticsPipeRoutingKernel
     {
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
         internal struct RouteBfsJob : IJob
         {
             public int NodeCount;
@@ -39,6 +40,7 @@ namespace Hecton8.Construction
         }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
         internal struct BuildLinearStressGraphJob : IJobParallelFor
         {
             public int NodeCount;

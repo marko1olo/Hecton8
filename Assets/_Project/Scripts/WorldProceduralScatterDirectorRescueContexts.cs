@@ -4,6 +4,7 @@ namespace Hecton8.World
 {
     public sealed partial class WorldProceduralScatterDirector
     {
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
         private struct ScatterRescueTrackingContext
         {
             public int StructureStride;
@@ -69,6 +70,7 @@ namespace Hecton8.World
             }
         }
 
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
         private readonly struct ScatterRescueContext
         {
             public readonly WorldProceduralPattern Pattern;

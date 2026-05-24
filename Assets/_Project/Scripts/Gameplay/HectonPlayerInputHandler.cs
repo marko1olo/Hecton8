@@ -7,6 +7,7 @@ namespace Hecton8.Gameplay
     /// <summary>
     /// Zero-allocation reader for frame-cached player input snapshots.
     /// </summary>
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     internal struct HectonPlayerInputHandler
     {
         public bool TryReadFrame(
@@ -77,6 +78,7 @@ namespace Hecton8.Gameplay
     /// <summary>
     /// Value snapshot consumed by the locomotion orchestrator after input service reads.
     /// </summary>
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     internal readonly struct HectonPlayerInputFrame
     {
         public HectonPlayerInputFrame(

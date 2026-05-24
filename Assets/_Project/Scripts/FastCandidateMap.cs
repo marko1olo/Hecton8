@@ -5,6 +5,7 @@ namespace Hecton8.World
 {
     public sealed partial class WorldProceduralScatterDirector
     {
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
         internal struct FastCandidateMap
         {
             private const ulong FibonacciHashMultiplier = 11400714819323198485UL;

@@ -7,6 +7,7 @@ namespace Hecton8.Meta
     /// Systems may read this snapshot to scale survival pressure without hard difficulty toggles.
     /// </summary>
     [Serializable]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct DifficultyModifierData
     {
         /// <summary>

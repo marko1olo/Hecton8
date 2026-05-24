@@ -17,6 +17,7 @@ namespace Hecton8.Construction
         }
 
         [Serializable]
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
         public struct VariantIntegrity
         {
             [SerializeField] private PipeMaterialVariant variant;

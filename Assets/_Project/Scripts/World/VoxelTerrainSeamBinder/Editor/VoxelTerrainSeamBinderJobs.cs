@@ -29,6 +29,7 @@ namespace Hecton8.World.VoxelTerrainSeamBinder.Editor
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public unsafe struct ExtractSeamVerticesJob : IJobParallelFor
     {
         [ReadOnly]
@@ -111,6 +112,7 @@ namespace Hecton8.World.VoxelTerrainSeamBinder.Editor
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct CopySeamIndex16RangesJob : IJobParallelFor
     {
         [ReadOnly]
@@ -147,6 +149,7 @@ namespace Hecton8.World.VoxelTerrainSeamBinder.Editor
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct CopySeamIndex32RangesJob : IJobParallelFor
     {
         [ReadOnly]
@@ -184,6 +187,7 @@ namespace Hecton8.World.VoxelTerrainSeamBinder.Editor
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct ClearBoundaryMaskJob : IJobParallelFor
     {
         // SAFETY: IJobParallelFor writes only BoundaryMask[index].
@@ -199,6 +203,7 @@ namespace Hecton8.World.VoxelTerrainSeamBinder.Editor
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct BuildTriangleEdgeMapJob : IJobParallelFor
     {
         [ReadOnly]
@@ -255,6 +260,7 @@ namespace Hecton8.World.VoxelTerrainSeamBinder.Editor
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct MarkBoundaryVerticesJob : IJob
     {
         [ReadOnly]
@@ -298,6 +304,7 @@ namespace Hecton8.World.VoxelTerrainSeamBinder.Editor
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct ConstructBoundarySpatialHashJob : IJobParallelFor
     {
         [ReadOnly]
@@ -337,6 +344,7 @@ namespace Hecton8.World.VoxelTerrainSeamBinder.Editor
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public unsafe struct EvaluateSeamSnappingJob : IJobParallelFor
     {
         [NoAlias]
@@ -440,6 +448,7 @@ namespace Hecton8.World.VoxelTerrainSeamBinder.Editor
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public unsafe struct BlendSeamNormalsJob : IJob
     {
         [NoAlias]
@@ -466,6 +475,7 @@ namespace Hecton8.World.VoxelTerrainSeamBinder.Editor
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public unsafe struct BakeSeamTransitionColorsJob : IJobParallelFor
     {
         [NoAlias]
@@ -530,6 +540,7 @@ namespace Hecton8.World.VoxelTerrainSeamBinder.Editor
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct GenerateMockSeamJob : IJobParallelFor
     {
         [WriteOnly]
@@ -582,6 +593,7 @@ namespace Hecton8.World.VoxelTerrainSeamBinder.Editor
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct GenerateMockPlaneIndicesJob : IJobParallelFor
     {
         [WriteOnly]

@@ -11,6 +11,7 @@ namespace Hecton8.Gameplay
     public sealed class HectonBiomeRegistry : ScriptableObject
     {
         [Serializable]
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
         public struct BiomeEntry
         {
             public int id;

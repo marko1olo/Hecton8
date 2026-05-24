@@ -8,6 +8,7 @@ using Unity.Mathematics;
 namespace Hecton8.Construction
 {
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct BuildFoundationModulesFromSocketModulesJob : IJobParallelFor
     {
         [ReadOnly, NoAlias] public NativeArray<ConstructionSocketModuleDTO> SocketModules;
@@ -48,6 +49,7 @@ namespace Hecton8.Construction
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct GenerateMockSeafloorSDFJob : IJobParallelFor
     {
         [WriteOnly, NoAlias, NativeDisableParallelForRestriction] public NativeArray<float> Distances;
@@ -88,6 +90,7 @@ namespace Hecton8.Construction
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct CalculateFoundationPylonsJob : IJobParallelFor
     {
         [ReadOnly, NoAlias] public NativeArray<FoundationModuleAupDTO> Modules;
@@ -539,6 +542,7 @@ namespace Hecton8.Construction
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct ReduceFoundationPylonCountersJob : IJob
     {
         [ReadOnly, NoAlias] public NativeArray<FoundationPylonFrameCounters> PerModuleCounters;
@@ -575,6 +579,7 @@ namespace Hecton8.Construction
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct CompactFoundationPylonDrawListJob : IJob
     {
         [NoAlias, NativeDisableParallelForRestriction] public NativeArray<PylonMatrixDTO> PylonMatrices;
@@ -619,6 +624,7 @@ namespace Hecton8.Construction
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct BuildFoundationPylonIndirectArgsJob : IJob
     {
         [ReadOnly, NoAlias] public NativeArray<FoundationPylonFrameCounters> FrameCounters;

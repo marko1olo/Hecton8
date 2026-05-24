@@ -14,6 +14,7 @@ namespace Hecton8.Gameplay
     public sealed class PlayerToolSwimContract : MonoBehaviour
     {
         [System.Serializable]
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
         private struct PoseBiasData
         {
             [Tooltip("Local position bias applied by this pose contract.")]

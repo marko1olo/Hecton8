@@ -40,6 +40,7 @@ namespace Hecton8.Items
     }
 
     [System.Serializable]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct DeconstructYieldEntry
     {
         public ItemData item;

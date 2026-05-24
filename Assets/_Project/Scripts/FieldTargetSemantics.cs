@@ -17,6 +17,7 @@ namespace Hecton8.Gameplay
         private const string SafeReelEdgeText = " is near the safe reel edge.";
         private const string ReelIntentExceededText = " exceeds reel intent.";
 
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
         public readonly struct SemanticAssessment
         {
             public readonly string Headline;

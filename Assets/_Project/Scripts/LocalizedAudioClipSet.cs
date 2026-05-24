@@ -7,6 +7,7 @@ namespace Hecton.Localization
     /// One localized audio clip override for a specific language.
     /// </summary>
     [Serializable]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct LocalizedAudioClipVariant
     {
         [Tooltip("Language for this audio override.")]
@@ -30,6 +31,7 @@ namespace Hecton.Localization
     /// Serializable audio localization set with a default clip and optional per-language overrides.
     /// </summary>
     [Serializable]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct LocalizedAudioClipSet
     {
         [Tooltip("Default clip used when no per-language override exists.")]

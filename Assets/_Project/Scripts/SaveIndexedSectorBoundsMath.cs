@@ -4,6 +4,7 @@ using Unity.Jobs;
 
 namespace Hecton8.SaveSystem
 {
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     internal struct IndexedSectorBoundsProbe
     {
         public long ByteOffset;
@@ -14,6 +15,7 @@ namespace Hecton8.SaveSystem
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     internal struct ValidateIndexedSectorBoundsProbeJob : IJobParallelFor
     {
         [ReadOnly] public NativeArray<IndexedSectorBoundsProbe> Probes;

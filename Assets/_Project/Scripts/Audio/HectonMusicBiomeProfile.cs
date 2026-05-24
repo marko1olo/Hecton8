@@ -7,6 +7,7 @@ namespace Hecton8.Audio
     /// Weighted foreign-profile bleed configuration used to keep exploration music varied.
     /// </summary>
     [Serializable]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct HectonMusicProfileBlend
     {
         [Tooltip("Secondary profile that can inject cues into the current biome.")]

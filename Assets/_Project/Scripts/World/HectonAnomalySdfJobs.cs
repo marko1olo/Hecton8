@@ -12,6 +12,7 @@ namespace Hecton8.World
     /// Burst kernel that locks SDF density to a terrain heightfield, with hysteresis for micro-deltas.
     /// </summary>
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct SnapSDFToTerrainJob : Unity.Jobs.IJobParallelFor
     {
         private const double TerrainSampleTruncationScale = AUPDeterminism.AUP_DETERMINISM_MULTIPLIER;
@@ -107,6 +108,7 @@ namespace Hecton8.World
     /// Burst kernel that locks the nearest terrain-roof voxel in each XZ column, with hysteresis for micro-deltas.
     /// </summary>
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct SnapSDFTopCellsToTerrainJob : Unity.Jobs.IJobParallelFor
     {
         private const double TerrainSampleTruncationScale = AUPDeterminism.AUP_DETERMINISM_MULTIPLIER;
@@ -235,6 +237,7 @@ namespace Hecton8.World
     /// Burst kernel that writes the same terrain seam lock into primary and secondary SDF arrays, with micro-delta hysteresis.
     /// </summary>
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct SnapDualSDFTopCellsToTerrainJob : Unity.Jobs.IJobParallelFor
     {
         private const double TerrainSampleTruncationScale = AUPDeterminism.AUP_DETERMINISM_MULTIPLIER;
@@ -392,6 +395,7 @@ namespace Hecton8.World
     /// Burst kernel that unions a 1 km chthonic pillar into an SDF density array.
     /// </summary>
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct InjectMegaPillarSDFJob : Unity.Jobs.IJobParallelFor
     {
         /// <summary>SDF density array. Positive means solid.</summary>
@@ -481,6 +485,7 @@ namespace Hecton8.World
     /// Burst kernel that unions the selected strongest pillar record into an SDF density array.
     /// </summary>
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct InjectSelectedMegaPillarSDFJob : Unity.Jobs.IJobParallelFor
     {
         /// <summary>SDF density array. Positive means solid.</summary>
@@ -626,6 +631,7 @@ namespace Hecton8.World
     /// Burst kernel that carves a sharp vertical fissure into an SDF density array.
     /// </summary>
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct InjectDeepFissureSDFJob : Unity.Jobs.IJobParallelFor
     {
         /// <summary>SDF density array. Positive means solid.</summary>
@@ -709,6 +715,7 @@ namespace Hecton8.World
     /// Burst kernel that applies lateral noise displacement to steep SDF slopes.
     /// </summary>
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct VoxelCliffOverhangNoiseJob : Unity.Jobs.IJobParallelFor
     {
         /// <summary>Input stitched SDF density array.</summary>

@@ -13,6 +13,7 @@ namespace Hecton8.Gameplay
     [DisallowMultipleComponent]
     public sealed class EnvironmentalAnalyzerTool : PlayerTool
     {
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
         private readonly struct AnalyzerAssessment
         {
             public readonly string Headline;

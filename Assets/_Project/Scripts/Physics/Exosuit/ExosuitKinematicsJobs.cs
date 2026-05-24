@@ -75,6 +75,7 @@ namespace Hecton8.Physics.Exosuit
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct GenerateMockExosuitInputsJob : IJob
     {
         [NoAlias] public NativeArray<ExosuitFrameInputDTO> Input;
@@ -167,6 +168,7 @@ namespace Hecton8.Physics.Exosuit
     /// Deterministic 6D kinematic exosuit solver over DataVault-owned buffers.
     /// </summary>
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct ExosuitKinematicIntegrationJob : IJob
     {
         [NoAlias] public NativeArray<ExosuitStateDTO> State;
@@ -1239,6 +1241,7 @@ namespace Hecton8.Physics.Exosuit
             return (hash ^ value) * 16777619u;
         }
 
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
         private struct SdfSample
         {
             public float Distance;
@@ -1247,6 +1250,7 @@ namespace Hecton8.Physics.Exosuit
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct ExosuitSdfCollisionJob : IJob
     {
         [NoAlias] public NativeArray<ExosuitStateDTO> State;
@@ -1352,6 +1356,7 @@ namespace Hecton8.Physics.Exosuit
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct ApplyHydraulicDampeningJob : IJob
     {
         [NoAlias] public NativeArray<ExosuitStateDTO> State;
@@ -1391,6 +1396,7 @@ namespace Hecton8.Physics.Exosuit
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct EvaluateMagneticClampsJob : IJob
     {
         [NoAlias] public NativeArray<ExosuitStateDTO> State;
@@ -1425,6 +1431,7 @@ namespace Hecton8.Physics.Exosuit
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct EvaluateExosuitMetabolismJob : IJob
     {
         [NoAlias] public NativeArray<ExosuitStateDTO> State;

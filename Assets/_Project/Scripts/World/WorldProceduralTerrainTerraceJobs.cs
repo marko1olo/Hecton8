@@ -8,6 +8,7 @@ using Unity.Mathematics;
 namespace Hecton8.World
 {
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct WorldProceduralTerrainTerraceJob : IJobParallelFor
     {
         [ReadOnly, NoAlias] public NativeArray<float> InputHeights01;

@@ -13,6 +13,7 @@ namespace Hecton8.Gameplay
         private const float HeavySuitMassThreshold = 220f;
 
         [System.Serializable]
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
         private struct SuitPresentationBinding
         {
             [Tooltip("Suit asset that should drive this swim presentation profile.")]

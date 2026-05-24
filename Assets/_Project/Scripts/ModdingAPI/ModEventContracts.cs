@@ -54,6 +54,7 @@ namespace Hecton8.Modding
     /// Read-only player spawn snapshot for mod event hooks.
     /// No mutable engine arrays or Unity object references are exposed.
     /// </summary>
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public readonly struct ModPlayerSpawnedEvent
     {
         public ModPlayerSpawnedEvent(ulong playerId, float3 absoluteUniversePosition, int biomeId)
@@ -71,6 +72,7 @@ namespace Hecton8.Modding
     /// <summary>
     /// Read-only biome transition snapshot for mod event hooks.
     /// </summary>
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public readonly struct ModBiomeChangedEvent
     {
         public ModBiomeChangedEvent(int previousBiomeId, int currentBiomeId, float3 absoluteUniversePosition)

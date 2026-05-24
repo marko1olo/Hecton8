@@ -4,6 +4,7 @@ using UnityEngine;
 namespace Hecton8.Systems.AI
 {
     [Serializable]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     internal struct EncounterThreatBand
     {
         [Tooltip("Threat class selected when the current director intensity passes this threshold.")]

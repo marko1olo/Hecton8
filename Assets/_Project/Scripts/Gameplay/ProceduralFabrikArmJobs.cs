@@ -9,6 +9,7 @@ namespace Hecton8.Gameplay
     /// <summary>
     /// Blittable chain descriptor for caller-owned FABRIK arm buffers.
     /// </summary>
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     internal struct ProceduralFabrikArmChain
     {
         public int PositionStart;
@@ -42,6 +43,7 @@ namespace Hecton8.Gameplay
     /// <summary>
     /// Blittable target packet consumed by the Burst FABRIK solve.
     /// </summary>
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     internal struct ProceduralFabrikArmTarget
     {
         public float3 TargetPositionWS;
@@ -68,6 +70,7 @@ namespace Hecton8.Gameplay
     /// Alloc-free FABRIK arm solver. The owner allocates all NativeArray buffers once and schedules this job.
     /// </summary>
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     internal struct ProceduralFabrikArmSolveJob : IJobParallelFor
     {
         [ReadOnly] public NativeArray<ProceduralFabrikArmChain> Chains;

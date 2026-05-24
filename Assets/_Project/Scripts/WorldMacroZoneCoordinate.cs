@@ -3,6 +3,7 @@ using UnityEngine;
 namespace Hecton8.World
 {
     [System.Serializable]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public readonly struct WorldMacroZoneCoordinate
     {
         public readonly int x;

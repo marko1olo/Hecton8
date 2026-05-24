@@ -6,6 +6,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Fixed 256-byte FIFO for same-step transient events. No heap ownership, no disposal.
     /// </summary>
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public unsafe struct StackQueue<T> where T : unmanaged
     {
         private const int BufferBytes = 256;

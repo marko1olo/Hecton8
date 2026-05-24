@@ -12,6 +12,7 @@ namespace Hecton8.AI.Pathfinding
     /// Burst string-pulling funnel over sector-local portal edges.
     /// </summary>
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct FunnelSmoothingJob : IJob
     {
         [ReadOnly, NoAlias] public NativeArray<NavPortal> Portals;

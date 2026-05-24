@@ -8,6 +8,7 @@ namespace Hecton8.Physics
     /// </summary>
     internal static class HectonContactJob
     {
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
         internal struct InelasticImpactResult
         {
             public byte ExceedsYield;

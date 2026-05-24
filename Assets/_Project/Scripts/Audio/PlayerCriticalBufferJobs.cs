@@ -12,6 +12,7 @@ namespace Hecton8.Audio
     internal static class PlayerCriticalBufferJobs
     {
         [BurstCompile(CompileSynchronously = true, FloatPrecision = FloatPrecision.Standard, FloatMode = FloatMode.Fast)]
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
         public struct DopplerShiftBatchJob : IJobParallelFor
         {
             [ReadOnly, NoAlias] public NativeArray<float> SourceFrequencies;
@@ -53,6 +54,7 @@ namespace Hecton8.Audio
         }
 
         [BurstCompile(CompileSynchronously = true, FloatPrecision = FloatPrecision.Standard, FloatMode = FloatMode.Fast)]
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
         public struct BinauralVoxelAcousticsOutputJob : IJob
         {
             [ReadOnly, NoAlias] public NativeArray<float> MonoInput;
@@ -173,6 +175,7 @@ namespace Hecton8.Audio
         }
 
         [BurstCompile(CompileSynchronously = true, FloatPrecision = FloatPrecision.Standard, FloatMode = FloatMode.Fast)]
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
         public struct GranularSynthesisBlockJob : IJob
         {
             [ReadOnly, NoAlias] public NativeArray<float> GrainBank;
@@ -406,6 +409,7 @@ namespace Hecton8.Audio
         }
 
         [BurstCompile(CompileSynchronously = true, FloatPrecision = FloatPrecision.Standard, FloatMode = FloatMode.Fast)]
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
         public struct VwsCooldownDecayJob : IJob
         {
             [NoAlias] public NativeArray<float> Cooldowns;
@@ -427,6 +431,7 @@ namespace Hecton8.Audio
         }
 
         [BurstCompile(CompileSynchronously = true, FloatPrecision = FloatPrecision.Standard, FloatMode = FloatMode.Fast)]
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
         public struct VwsPrioritySortJob : IJob
         {
             [NoAlias] public NativeArray<byte> Queue;

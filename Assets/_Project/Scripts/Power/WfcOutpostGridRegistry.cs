@@ -9,6 +9,7 @@ namespace Hecton8.Power
     /// <summary>
     /// Read-only lease for a registered WFC outpost native grid.
     /// </summary>
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public readonly struct WfcOutpostGridLease
     {
         public readonly WfcOutpostGridDescriptor Descriptor;
