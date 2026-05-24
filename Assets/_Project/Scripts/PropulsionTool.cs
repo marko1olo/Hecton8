@@ -167,7 +167,7 @@ namespace Hecton8.Gameplay
         public override void OnSpawn()
         {
             base.OnSpawn();
-            _localization = GlobalRegistry.Localization;
+            RefreshLocalization(GlobalRegistry.Localization);
             _feedbackCooldownRemaining = 0f;
             ForceReleaseWithoutFeedback();
         }
@@ -175,7 +175,7 @@ namespace Hecton8.Gameplay
         public override void OnEquip()
         {
             base.OnEquip();
-            _localization = GlobalRegistry.Localization;
+            RefreshLocalization(GlobalRegistry.Localization);
             InvalidateAssessmentCache();
         }
 
@@ -234,6 +234,32 @@ namespace Hecton8.Gameplay
             ForceReleaseWithoutFeedback();
             _localization = null;
             _feedbackCooldownRemaining = 0f;
+        }
+
+        protected override void OnToolRegistryServiceRebound(
+            GlobalRegistryServiceSlot serviceSlot,
+            ref object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.LocalizationRuntime)
+                RefreshLocalization(currentService as LocalizationManager);
+        }
+
+        protected override void OnToolRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.LocalizationRuntime)
+                RefreshLocalization(currentService as LocalizationManager);
+        }
+
+        private void RefreshLocalization(LocalizationManager localization)
+        {
+            if (ReferenceEquals(_localization, localization))
+                return;
+
+            _localization = localization;
+            InvalidateAssessmentCache();
         }
 
         public override void ToolTick(float deltaTime)

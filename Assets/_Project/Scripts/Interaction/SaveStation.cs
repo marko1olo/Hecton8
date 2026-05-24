@@ -5,6 +5,7 @@
 
 using Hecton.Localization;
 using Hecton8.Audio;
+using Hecton8.Core;
 using Hecton8.SaveSystem;
 using Hecton8.UI;
 using UnityEngine;
@@ -16,7 +17,7 @@ namespace Hecton8.Interaction
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Collider))]
-    public sealed class SaveStation : MonoBehaviour, IInteractable, ILocalizationLanguageChangedListener
+    public sealed class SaveStation : MonoBehaviour, IInteractable, IInteractableTextProvider, ILocalizationLanguageChangedListener, IGlobalRegistryHotSwapListener
     {
         [Header("── Settings ──────────────────────────────")]
         [Tooltip("Otobrazhaemoe imya terminala v podskazke vzaimodeystviya.")]
@@ -34,20 +35,28 @@ namespace Hecton8.Interaction
         [SerializeField] private AudioClip _interactionSound;
 
         private string _cachedInteractText;
+        private SaveManager _saveManager;
+        private Hecton8.Core.IAudioService _audioService;
+        private LocalizationManager _localization;
+        private bool _hotSwapRegistered;
 
         private void Awake()
         {
+            CacheRegistryServicesCold();
             RefreshCachedInteractText();
         }
 
         private void OnEnable()
         {
+            CacheRegistryServicesCold();
+            TryRegisterHotSwapListener();
             LocalizationEvents.RegisterLanguageListener(this);
             RefreshCachedInteractText();
         }
 
         private void OnDisable()
         {
+            TryUnregisterHotSwapListener();
             LocalizationEvents.UnregisterLanguageListener(this);
         }
 
@@ -64,7 +73,7 @@ namespace Hecton8.Interaction
         /// <inheritdoc />
         public void Interact(Transform interactor)
         {
-            SaveManager saveManager = Hecton8.Core.GlobalRegistry.SaveRuntime;
+            SaveManager saveManager = _saveManager;
             if (saveManager == null)
             {
                 ResolveHudNotification();
@@ -120,12 +129,17 @@ namespace Hecton8.Interaction
             return _cachedInteractText;
         }
 
+        public bool TryCopyInteractText(System.Span<char> destination, out int length)
+        {
+            return InteractableTextCopy.TryCopy(_cachedInteractText, destination, out length);
+        }
+
         private void PlayInteractionSound()
         {
             if (_interactionSound == null)
                 return;
 
-            Hecton8.Core.IAudioService audioManager = Hecton8.Core.GlobalRegistry.Audio;
+            Hecton8.Core.IAudioService audioManager = _audioService;
             if (audioManager == null)
                 return;
 
@@ -140,9 +154,53 @@ namespace Hecton8.Interaction
 
         private void RefreshCachedInteractText()
         {
-            string stationName = _localizedStationName.ResolveOrFallback(FallbackOrDefault(_stationName, "Save Station"));
+            string stationName = _localizedStationName.ResolveOrFallback(_localization, FallbackOrDefault(_stationName, "Save Station"));
             string actionLabel = ResolveLocalized(LocalizationKeys.INTERACT_SAVE_GAME, "Save Game");
             _cachedInteractText = actionLabel + " (" + stationName + ")";
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.Save:
+                    _saveManager = currentService as SaveManager;
+                    break;
+                case GlobalRegistryServiceSlot.Audio:
+                    _audioService = currentService as Hecton8.Core.IAudioService;
+                    break;
+                case GlobalRegistryServiceSlot.LocalizationRuntime:
+                    _localization = currentService as LocalizationManager;
+                    RefreshCachedInteractText();
+                    break;
+            }
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            _saveManager = GlobalRegistry.SaveRuntime;
+            _audioService = GlobalRegistry.Audio;
+            _localization = GlobalRegistry.Localization;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
 
         public void OnLocalizationLanguageChanged(in LocalizationEventPayload payload)
@@ -159,9 +217,9 @@ namespace Hecton8.Interaction
             RefreshCachedInteractText();
         }
 
-        private static string ResolveLocalized(string key, string fallback)
+        private string ResolveLocalized(string key, string fallback)
         {
-            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
+            LocalizationManager manager = _localization;
             return manager != null
                 ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback)
                 : fallback;

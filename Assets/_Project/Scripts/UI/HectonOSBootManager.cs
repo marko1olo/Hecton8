@@ -3,9 +3,7 @@ using System;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Gameplay;
-using Hecton8.Modding;
 using Hecton8.World;
-using System.Text;
 using TMPro;
 using Unity.Mathematics;
 using UnityEngine;
@@ -18,7 +16,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Hecton OS Boot Manager")]
-    public sealed class HectonOSBootManager : MonoBehaviour, ITickable, IUpdatable, IPDAEventListener, IPDAIntrusionEventListener
+    public sealed class HectonOSBootManager : MonoBehaviour, ITickable, IUpdatable, IPDAEventListener, IPDAIntrusionEventListener, IGlobalRegistryHotSwapListener
     {
         private enum BootReason : byte
         {
@@ -56,6 +54,13 @@ namespace Hecton8.UI
         private const string DefaultDegradedStatus = "DEGRADED";
         private const float IntegrityFailureThreshold01 = 0.94f;
         private const float IntegrityDegradedThreshold01 = 0.82f;
+        private static readonly int MetersKeyHash = LocHash.Compute(LocalizationKeys.HUD_UNIT_METERS);
+        private static readonly int AtmosphereKeyHash = LocHash.Compute(LocalizationKeys.HUD_ATM);
+        private static readonly int OxygenKeyHash = LocHash.Compute(LocalizationKeys.HUD_O2);
+        private static readonly int PowerKeyHash = LocHash.Compute(LocalizationKeys.HUD_PWR);
+        private static readonly int HullKeyHash = LocHash.Compute(LocalizationKeys.HUD_HULL);
+        private static readonly int PressureKeyHash = LocHash.Compute(LocalizationKeys.HUD_PRESSURE);
+        private static readonly int DepthKeyHash = LocHash.Compute(LocalizationKeys.HUD_DEPTH);
 
         [Header("── Font ──────────────────")]
         [Tooltip("Optional TMP font override for the boot log. Leave empty to use the readable fallback resolver.")]
@@ -75,16 +80,95 @@ namespace Hecton8.UI
         private SequenceState _state;
         private HectonSurvivalSystem _survivalSystem;
         private HectonPlayerMovement _playerMovement;
-        private HectonEventSubscription _gameLoadedSubscription;
-        private HectonEventSubscription _playerSpawnedSubscription;
+        private LocalizationManager _localization;
+        private DepthZoneDirector _depthZoneDirector;
+        private bool _hotSwapRegistered;
+        private uint _lastSessionLifecycleSequence;
         private readonly char[] _sequencePayloadBuffer = new char[BootPayloadCharCapacity]; // COLD ALLOC: char[1024] — Hecton-OS boot TMP payload buffer — owner: HectonOSBootManager
-        private readonly StringBuilder _sequenceBuilder = new StringBuilder(BootPayloadCharCapacity); // COLD ALLOC: StringBuilder[1024] — Hecton-OS boot sequence formatting buffer — owner: HectonOSBootManager
+
+        private struct BootTextWriter
+        {
+            private readonly char[] _buffer;
+            public int Length;
+
+            public BootTextWriter(char[] buffer)
+            {
+                _buffer = buffer;
+                Length = 0;
+            }
+
+            public void Append(ReadOnlySpan<char> text)
+            {
+                if (_buffer == null || text.Length <= 0 || Length >= _buffer.Length)
+                    return;
+
+                int writable = math.min(text.Length, _buffer.Length - Length);
+                text.Slice(0, writable).CopyTo(_buffer.AsSpan(Length, writable));
+                Length += writable;
+            }
+
+            public void Append(char value)
+            {
+                if (_buffer == null || Length >= _buffer.Length)
+                    return;
+
+                _buffer[Length++] = value;
+            }
+
+            public void AppendLine()
+            {
+                Append('\n');
+            }
+
+            public void AppendLine(ReadOnlySpan<char> text)
+            {
+                Append(text);
+                AppendLine();
+            }
+
+            public void AppendUpperInvariant(string value)
+            {
+                if (string.IsNullOrWhiteSpace(value))
+                    return;
+
+                for (int i = 0; i < value.Length; i++)
+                    Append(char.ToUpperInvariant(value[i]));
+            }
+
+            public void AppendInt(int value)
+            {
+                if (value == int.MinValue)
+                {
+                    Append("-2147483648".AsSpan());
+                    return;
+                }
+
+                if (value < 0)
+                {
+                    Append('-');
+                    value = -value;
+                }
+
+                Span<char> digits = stackalloc char[10];
+                int count = 0;
+                do
+                {
+                    digits[count++] = (char)('0' + (value % 10));
+                    value /= 10;
+                }
+                while (value > 0 && count < digits.Length);
+
+                for (int i = count - 1; i >= 0; i--)
+                    Append(digits[i]);
+            }
+        }
 
         private void OnEnable()
         {
-            font = LocalizedFontResolver.ResolveReadableFont(font);
+            CacheRegistryServicesCold();
+            TryRegisterHotSwapListener();
+            font = LocalizedFontResolver.ResolveReadableFont(font, _localization);
             EnsureUiBuilt();
-            SubscribeToEventBus();
             RebindOwnerSubscriptions();
             PDAIntrusionEvents.Register(this);
             PDAEvents.Register(this);
@@ -98,28 +182,29 @@ namespace Hecton8.UI
 
         private void OnDisable()
         {
+            TryUnregisterHotSwapListener();
             PDAIntrusionEvents.Unregister(this);
             PDAEvents.Unregister(this);
             UnbindOwnerSubscriptions();
-            UnsubscribeFromEventBus();
             UnregisterFromTickManager();
             HideOverlay();
         }
 
         private void OnDestroy()
         {
+            TryUnregisterHotSwapListener();
             PDAIntrusionEvents.Unregister(this);
             PDAIntrusionEvents.AssertUnregistered(this, nameof(HectonOSBootManager));
             PDAEvents.Unregister(this);
             PDAEvents.AssertUnregistered(this, nameof(HectonOSBootManager));
             UnbindOwnerSubscriptions();
-            UnsubscribeFromEventBus();
             UnregisterFromTickManager();
         }
 
         /// <inheritdoc />
         public void Tick(float deltaTime)
         {
+            ProcessSessionLifecycleSignals();
             ConsumeFatalPressureSignals();
 
             if (_consoleLabel == null || _overlayGroup == null || _state == SequenceState.Hidden)
@@ -165,17 +250,34 @@ namespace Hecton8.UI
             return math.saturate((12f * x) / (12f + (6f * x) + (x * x)));
         }
 
-        private void HandleGameLoaded(GameLoadedEvent gameLoadedEvent)
+        private void ProcessSessionLifecycleSignals()
         {
-            _queuedSlotName = gameLoadedEvent != null ? gameLoadedEvent.SlotName : string.Empty;
+            ReadOnlySpan<SessionLifecycleSignal> signals = SignalBus<SessionLifecycleSignal>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
+            {
+                SessionLifecycleSignal signal = signals[i];
+                if (!IsNewerSequence(signal.Sequence, _lastSessionLifecycleSequence))
+                    continue;
+
+                _lastSessionLifecycleSequence = signal.Sequence;
+                if (signal.Kind == SessionLifecycleSignal.KindGameLoaded)
+                    HandleGameLoaded();
+                else if (signal.Kind == SessionLifecycleSignal.KindPlayerSpawned)
+                    HandlePlayerSpawned(in signal);
+            }
+        }
+
+        private void HandleGameLoaded()
+        {
+            _queuedSlotName = string.Empty;
             _awaitingLoadBoot = true;
             TryStartPendingLoadBoot();
         }
 
-        private void HandlePlayerSpawned(PlayerSpawnedEvent playerSpawnedEvent)
+        private void HandlePlayerSpawned(in SessionLifecycleSignal signal)
         {
             ulong ownerEntityId = EntityId.ToULong(gameObject.GetEntityId());
-            if (playerSpawnedEvent == null || playerSpawnedEvent.PlayerEntityId != ownerEntityId)
+            if (signal.PlayerEntityId == 0ul || signal.PlayerEntityId != ownerEntityId)
                 return;
 
             RebindOwnerSubscriptions();
@@ -232,23 +334,6 @@ namespace Hecton8.UI
             StartSequence(BootReason.PressureRecovery, DefaultRecoverySlot);
         }
 
-        private void SubscribeToEventBus()
-        {
-            if (_gameLoadedSubscription == null)
-                _gameLoadedSubscription = HectonEventBus.Subscribe<GameLoadedEvent>(HandleGameLoaded, "ui.boot-sequence");
-
-            if (_playerSpawnedSubscription == null)
-                _playerSpawnedSubscription = HectonEventBus.Subscribe<PlayerSpawnedEvent>(HandlePlayerSpawned, "ui.boot-sequence");
-        }
-
-        private void UnsubscribeFromEventBus()
-        {
-            _gameLoadedSubscription?.Dispose();
-            _gameLoadedSubscription = null;
-            _playerSpawnedSubscription?.Dispose();
-            _playerSpawnedSubscription = null;
-        }
-
         private void RebindOwnerSubscriptions()
         {
             UnbindOwnerSubscriptions();
@@ -295,9 +380,7 @@ namespace Hecton8.UI
             if (_consoleLabel == null || _overlayGroup == null)
                 return;
 
-            BuildSequenceText(_sequenceBuilder, reason, slotName);
-            int payloadLength = math.min(_sequenceBuilder.Length, _sequencePayloadBuffer.Length);
-            _sequenceBuilder.CopyTo(0, _sequencePayloadBuffer, 0, payloadLength);
+            int payloadLength = BuildSequenceText(_sequencePayloadBuffer, reason, slotName);
             _consoleLabel.SetCharArray(_sequencePayloadBuffer, 0, payloadLength);
             _visibleCharacterTarget = payloadLength;
             _visibleCharacterProgress = 0f;
@@ -310,23 +393,23 @@ namespace Hecton8.UI
             RegisterToTickManager();
         }
 
-        private void BuildSequenceText(StringBuilder builder, BootReason reason, string slotName)
+        private int BuildSequenceText(char[] destination, BootReason reason, string slotName)
         {
-            builder.Clear();
+            BootTextWriter writer = new BootTextWriter(destination);
             ResolveOwners();
 
-            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
+            LocalizationManager manager = _localization;
             SurvivalStats stats = _survivalSystem != null ? _survivalSystem.Stats : null;
-            DepthZoneDirector depthZoneDirector = GlobalRegistry.DepthZone;
+            DepthZoneDirector depthZoneDirector = _depthZoneDirector;
             DepthZoneProfile currentZone = depthZoneDirector != null ? depthZoneDirector.CurrentZone : null;
 
-            string metersLabel = ResolveLocalized(manager, LocalizationKeys.HUD_UNIT_METERS, "m");
-            string atmLabel = ResolveLocalized(manager, LocalizationKeys.HUD_ATM, "ATM");
-            string o2Label = ResolveLocalized(manager, LocalizationKeys.HUD_O2, "O2");
-            string powerLabel = ResolveLocalized(manager, LocalizationKeys.HUD_PWR, "PWR");
-            string hullLabel = ResolveLocalized(manager, LocalizationKeys.HUD_HULL, "HULL");
-            string pressureLabel = ResolveLocalized(manager, LocalizationKeys.HUD_PRESSURE, "PRESSURE");
-            string depthLabel = ResolveLocalized(manager, LocalizationKeys.HUD_DEPTH, "DEPTH");
+            ReadOnlySpan<char> metersLabel = ResolveLocalizedSpan(manager, MetersKeyHash, "m".AsSpan());
+            ReadOnlySpan<char> atmLabel = ResolveLocalizedSpan(manager, AtmosphereKeyHash, "ATM".AsSpan());
+            ReadOnlySpan<char> o2Label = ResolveLocalizedSpan(manager, OxygenKeyHash, "O2".AsSpan());
+            ReadOnlySpan<char> powerLabel = ResolveLocalizedSpan(manager, PowerKeyHash, "PWR".AsSpan());
+            ReadOnlySpan<char> hullLabel = ResolveLocalizedSpan(manager, HullKeyHash, "HULL".AsSpan());
+            ReadOnlySpan<char> pressureLabel = ResolveLocalizedSpan(manager, PressureKeyHash, "PRESSURE".AsSpan());
+            ReadOnlySpan<char> depthLabel = ResolveLocalizedSpan(manager, DepthKeyHash, "DEPTH".AsSpan());
 
             float maxOxygen = stats != null ? stats.MaxOxygen : 0f;
             float maxEnergy = stats != null ? stats.MaxEnergy : 0f;
@@ -336,128 +419,141 @@ namespace Hecton8.UI
             float livePressure = _survivalSystem != null ? _survivalSystem.Pressure : 0f;
             float liveIntegrity = _survivalSystem != null ? _survivalSystem.Integrity : 0f;
             float integrityNormalized = _survivalSystem != null ? _survivalSystem.IntegrityNormalized : 0f;
-            string zoneName = currentZone != null ? currentZone.DisplayNameOrFallback : DefaultUnknownZone;
-            string bootVector = ResolveBootVector(reason);
+            ReadOnlySpan<char> zoneName = (currentZone != null ? currentZone.DisplayNameOrFallback : DefaultUnknownZone).AsSpan();
+            ReadOnlySpan<char> bootVector = ResolveBootVector(reason).AsSpan();
             bool hasStats = stats != null;
             bool hasZone = currentZone != null;
-            string memoryStatus = hasStats ? DefaultOkStatus : DefaultFailedStatus;
-            string dataStatus = hasZone ? DefaultOkStatus : DefaultDegradedStatus;
-            string localizationStatus = manager != null ? DefaultOkStatus : DefaultDegradedStatus;
-            string hullStatus = ResolveHullIntegrityStatus(integrityNormalized, _survivalSystem, reason);
-            string pressureStatus = ResolvePressureBusStatus(_survivalSystem);
+            ReadOnlySpan<char> memoryStatus = (hasStats ? DefaultOkStatus : DefaultFailedStatus).AsSpan();
+            ReadOnlySpan<char> dataStatus = (hasZone ? DefaultOkStatus : DefaultDegradedStatus).AsSpan();
+            ReadOnlySpan<char> localizationStatus = (manager != null ? DefaultOkStatus : DefaultDegradedStatus).AsSpan();
+            ReadOnlySpan<char> hullStatus = ResolveHullIntegrityStatus(integrityNormalized, _survivalSystem, reason).AsSpan();
+            ReadOnlySpan<char> pressureStatus = ResolvePressureBusStatus(_survivalSystem).AsSpan();
 
-            builder.AppendLine(DefaultBootHeader);
-            builder.Append("BOOT VECTOR ....... ").AppendLine(bootVector);
-            builder.Append("SAVE SLOT ......... ");
-            AppendSlotValue(builder, slotName);
-            builder.AppendLine();
-            builder.Append("CHECKING MEMORY ... ").Append(memoryStatus)
-                .Append(" [")
-                .Append(o2Label).Append(' ');
-            AppendRounded(builder, maxOxygen);
-            builder
-                .Append(" | ")
-                .Append(powerLabel).Append(' ');
-            AppendRounded(builder, maxEnergy);
-            builder
-                .Append(" | ")
-                .Append(hullLabel).Append(' ');
-            AppendRounded(builder, maxIntegrity);
-            builder
-                .Append(']')
-                .AppendLine();
-            builder.Append("MOUNTING ABYSSAL DATA ... ").Append(dataStatus)
-                .Append(" [")
-                .Append(depthLabel).Append(' ');
-            AppendRounded(builder, liveDepth);
-            builder.Append(' ').Append(metersLabel)
-                .Append(" | ")
-                .Append(zoneName)
-                .Append(']')
-                .AppendLine();
-            builder.Append("LOADING LOCALIZATION MODULES ... ").Append(localizationStatus)
-                .Append(" [LANG ");
-            AppendLanguageTag(builder, manager);
-            builder.Append(']').AppendLine();
-            builder.Append("CALIBRATING HULL INTEGRITY ... ").Append(hullStatus)
-                .Append(" [")
-                .Append(hullLabel).Append(' ');
-            AppendRounded(builder, liveIntegrity);
-            builder.Append(" / ");
-            AppendRounded(builder, maxIntegrity);
-            builder
-                .Append(']')
-                .AppendLine();
-            builder.Append("SYNCING PRESSURE BUS ... ").Append(pressureStatus)
-                .Append(" [")
-                .Append(pressureLabel).Append(' ');
-            AppendFixedOne(builder, livePressure);
-            builder.Append(' ').Append(atmLabel)
-                .Append(" | SAFE ");
-            AppendRounded(builder, safeDepth);
-            builder.Append(' ').Append(metersLabel).Append(']');
+            writer.AppendLine(DefaultBootHeader.AsSpan());
+            writer.Append("BOOT VECTOR ....... ".AsSpan());
+            writer.AppendLine(bootVector);
+            writer.Append("SAVE SLOT ......... ".AsSpan());
+            AppendSlotValue(ref writer, slotName);
+            writer.AppendLine();
+            writer.Append("CHECKING MEMORY ... ".AsSpan());
+            writer.Append(memoryStatus);
+            writer.Append(" [".AsSpan());
+            writer.Append(o2Label);
+            writer.Append(' ');
+            AppendRounded(ref writer, maxOxygen);
+            writer.Append(" | ".AsSpan());
+            writer.Append(powerLabel);
+            writer.Append(' ');
+            AppendRounded(ref writer, maxEnergy);
+            writer.Append(" | ".AsSpan());
+            writer.Append(hullLabel);
+            writer.Append(' ');
+            AppendRounded(ref writer, maxIntegrity);
+            writer.Append(']');
+            writer.AppendLine();
+            writer.Append("MOUNTING ABYSSAL DATA ... ".AsSpan());
+            writer.Append(dataStatus);
+            writer.Append(" [".AsSpan());
+            writer.Append(depthLabel);
+            writer.Append(' ');
+            AppendRounded(ref writer, liveDepth);
+            writer.Append(' ');
+            writer.Append(metersLabel);
+            writer.Append(" | ".AsSpan());
+            writer.Append(zoneName);
+            writer.Append(']');
+            writer.AppendLine();
+            writer.Append("LOADING LOCALIZATION MODULES ... ".AsSpan());
+            writer.Append(localizationStatus);
+            writer.Append(" [LANG ".AsSpan());
+            AppendLanguageTag(ref writer, manager);
+            writer.Append(']');
+            writer.AppendLine();
+            writer.Append("CALIBRATING HULL INTEGRITY ... ".AsSpan());
+            writer.Append(hullStatus);
+            writer.Append(" [".AsSpan());
+            writer.Append(hullLabel);
+            writer.Append(' ');
+            AppendRounded(ref writer, liveIntegrity);
+            writer.Append(" / ".AsSpan());
+            AppendRounded(ref writer, maxIntegrity);
+            writer.Append(']');
+            writer.AppendLine();
+            writer.Append("SYNCING PRESSURE BUS ... ".AsSpan());
+            writer.Append(pressureStatus);
+            writer.Append(" [".AsSpan());
+            writer.Append(pressureLabel);
+            writer.Append(' ');
+            AppendFixedOne(ref writer, livePressure);
+            writer.Append(' ');
+            writer.Append(atmLabel);
+            writer.Append(" | SAFE ".AsSpan());
+            AppendRounded(ref writer, safeDepth);
+            writer.Append(' ');
+            writer.Append(metersLabel);
+            writer.Append(']');
+            return writer.Length;
         }
 
-        private static void AppendSlotValue(StringBuilder builder, string slotName)
+        private static void AppendSlotValue(ref BootTextWriter writer, string slotName)
         {
             if (string.IsNullOrWhiteSpace(slotName))
             {
-                builder.Append(DefaultRecoverySlot);
+                writer.Append(DefaultRecoverySlot.AsSpan());
                 return;
             }
 
-            for (int i = 0; i < slotName.Length; i++)
-                builder.Append(char.ToUpperInvariant(slotName[i]));
+            writer.AppendUpperInvariant(slotName);
         }
 
-        private static void AppendLanguageTag(StringBuilder builder, LocalizationManager manager)
+        private static void AppendLanguageTag(ref BootTextWriter writer, LocalizationManager manager)
         {
             if (manager == null)
             {
-                builder.Append("FALLBACK");
+                writer.Append("FALLBACK".AsSpan());
                 return;
             }
 
             switch (manager.CurrentLanguage)
             {
-                case GameLanguage.English: builder.Append("ENGLISH"); break;
-                case GameLanguage.Russian: builder.Append("RUSSIAN"); break;
-                case GameLanguage.German: builder.Append("GERMAN"); break;
-                case GameLanguage.French: builder.Append("FRENCH"); break;
-                case GameLanguage.Spanish: builder.Append("SPANISH"); break;
-                case GameLanguage.Italian: builder.Append("ITALIAN"); break;
-                case GameLanguage.PortugueseBrazilian: builder.Append("PORTUGUESEBRAZILIAN"); break;
-                case GameLanguage.Polish: builder.Append("POLISH"); break;
-                case GameLanguage.Turkish: builder.Append("TURKISH"); break;
-                case GameLanguage.Ukrainian: builder.Append("UKRAINIAN"); break;
-                case GameLanguage.ChineseSimplified: builder.Append("CHINESESIMPLIFIED"); break;
-                case GameLanguage.ChineseTraditional: builder.Append("CHINESETRADITIONAL"); break;
-                case GameLanguage.Japanese: builder.Append("JAPANESE"); break;
-                case GameLanguage.Korean: builder.Append("KOREAN"); break;
-                case GameLanguage.Hindi: builder.Append("HINDI"); break;
-                case GameLanguage.Indonesian: builder.Append("INDONESIAN"); break;
-                case GameLanguage.Arabic: builder.Append("ARABIC"); break;
-                default: builder.Append("UNKNOWN"); break;
+                case GameLanguage.English: writer.Append("ENGLISH".AsSpan()); break;
+                case GameLanguage.Russian: writer.Append("RUSSIAN".AsSpan()); break;
+                case GameLanguage.German: writer.Append("GERMAN".AsSpan()); break;
+                case GameLanguage.French: writer.Append("FRENCH".AsSpan()); break;
+                case GameLanguage.Spanish: writer.Append("SPANISH".AsSpan()); break;
+                case GameLanguage.Italian: writer.Append("ITALIAN".AsSpan()); break;
+                case GameLanguage.PortugueseBrazilian: writer.Append("PORTUGUESEBRAZILIAN".AsSpan()); break;
+                case GameLanguage.Polish: writer.Append("POLISH".AsSpan()); break;
+                case GameLanguage.Turkish: writer.Append("TURKISH".AsSpan()); break;
+                case GameLanguage.Ukrainian: writer.Append("UKRAINIAN".AsSpan()); break;
+                case GameLanguage.ChineseSimplified: writer.Append("CHINESESIMPLIFIED".AsSpan()); break;
+                case GameLanguage.ChineseTraditional: writer.Append("CHINESETRADITIONAL".AsSpan()); break;
+                case GameLanguage.Japanese: writer.Append("JAPANESE".AsSpan()); break;
+                case GameLanguage.Korean: writer.Append("KOREAN".AsSpan()); break;
+                case GameLanguage.Hindi: writer.Append("HINDI".AsSpan()); break;
+                case GameLanguage.Indonesian: writer.Append("INDONESIAN".AsSpan()); break;
+                case GameLanguage.Arabic: writer.Append("ARABIC".AsSpan()); break;
+                default: writer.Append("UNKNOWN".AsSpan()); break;
             }
         }
 
-        private static void AppendRounded(StringBuilder builder, float value)
+        private static void AppendRounded(ref BootTextWriter writer, float value)
         {
-            builder.Append(Mathf.RoundToInt(value));
+            writer.AppendInt(Mathf.RoundToInt(value));
         }
 
-        private static void AppendFixedOne(StringBuilder builder, float value)
+        private static void AppendFixedOne(ref BootTextWriter writer, float value)
         {
             int scaled = Mathf.RoundToInt(value * 10f);
             if (scaled < 0)
             {
-                builder.Append('-');
+                writer.Append('-');
                 scaled = -scaled;
             }
 
-            builder.Append(scaled / 10);
-            builder.Append('.');
-            builder.Append(scaled % 10);
+            writer.AppendInt(scaled / 10);
+            writer.Append('.');
+            writer.Append((char)('0' + (scaled % 10)));
         }
 
         private static string ResolveBootVector(BootReason reason)
@@ -522,6 +618,48 @@ namespace Hecton8.UI
 
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
             _tickRegistered = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.LocalizationRuntime:
+                    _localization = currentService as LocalizationManager;
+                    font = LocalizedFontResolver.ResolveReadableFont(font, _localization);
+                    if (_consoleLabel != null && font != null)
+                        _consoleLabel.font = font;
+                    break;
+                case GlobalRegistryServiceSlot.DepthZoneRuntime:
+                    _depthZoneDirector = currentService as DepthZoneDirector;
+                    break;
+            }
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            _localization = GlobalRegistry.Localization;
+            _depthZoneDirector = GlobalRegistry.DepthZone;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
 
         private void HideOverlay()
@@ -623,11 +761,16 @@ namespace Hecton8.UI
             return overlay != null && overlay.TryGetComponent(out Canvas canvas) ? canvas : null;
         }
 
-        private static string ResolveLocalized(LocalizationManager manager, string key, string fallback)
+        private static ReadOnlySpan<char> ResolveLocalizedSpan(LocalizationManager manager, int keyHash, ReadOnlySpan<char> fallback)
         {
             return manager != null
-                ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback)
+                ? manager.GetRawSpanOrFallback(keyHash, fallback)
                 : fallback;
+        }
+
+        private static bool IsNewerSequence(uint candidate, uint lastProcessed)
+        {
+            return candidate != 0u && (lastProcessed == 0u || unchecked((int)(candidate - lastProcessed)) > 0);
         }
 
         private static RectTransform FindExistingChild(Transform parent, string childName)

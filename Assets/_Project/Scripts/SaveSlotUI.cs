@@ -1,6 +1,8 @@
 using System;
 using Hecton.Localization;
+using Hecton8.Core;
 using Hecton8.SaveSystem;
+using Hecton8.UI;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
@@ -14,7 +16,7 @@ namespace Hecton.UI.MainMenu
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Button))]
-    public sealed class SaveSlotUI : MonoBehaviour, ILocalizationLanguageChangedListener
+    public sealed class SaveSlotUI : MonoBehaviour, ILocalizationLanguageChangedListener, IGlobalRegistryHotSwapListener
     {
         [Header("=== Text Fields ===")]
         [SerializeField] private TMP_Text slotNameText;
@@ -36,6 +38,13 @@ namespace Hecton.UI.MainMenu
         private Color _detailsBaseColor;
         private bool _useCompactSingleTextLayout;
         private UnityAction _buttonClickAction;
+        private LocalizationManager _localization;
+        private bool _hotSwapRegistered;
+        private readonly char[] _slotLineBuffer = new char[128]; // COLD ALLOC: char[128] - save slot title staging buffer - owner: SaveSlotUI
+        private readonly char[] _detailsLineBuffer = new char[512]; // COLD ALLOC: char[512] - save slot metadata staging buffer - owner: SaveSlotUI
+        private readonly char[] _compactLineBuffer = new char[768]; // COLD ALLOC: char[768] - compact save slot combined label staging buffer - owner: SaveSlotUI
+        private readonly char[] _timestampBuffer = new char[32]; // COLD ALLOC: char[32] - timestamp staging buffer, yyyy-MM-dd HH:mm - owner: SaveSlotUI
+        private int _timestampLength;
 
         /// <summary>
         /// True when the slot button can currently be selected by menu navigation.
@@ -59,6 +68,7 @@ namespace Hecton.UI.MainMenu
 
         private void Awake()
         {
+            CacheRegistryServicesCold();
             AutoWireTextReferences();
             TryGetComponent(out _button);
             _buttonClickAction = OnButtonClicked; // COLD ALLOC: UnityAction[1] - cached save slot click listener - owner: SaveSlotUI
@@ -77,16 +87,20 @@ namespace Hecton.UI.MainMenu
 
         private void OnEnable()
         {
+            CacheRegistryServicesCold();
+            TryRegisterHotSwapListener();
             LocalizationEvents.RegisterLanguageListener(this);
         }
 
         private void OnDisable()
         {
+            TryUnregisterHotSwapListener();
             LocalizationEvents.UnregisterLanguageListener(this);
         }
 
         private void OnDestroy()
         {
+            TryUnregisterHotSwapListener();
             if (_button != null)
                 _button.onClick.RemoveListener(_buttonClickAction);
         }
@@ -119,6 +133,7 @@ namespace Hecton.UI.MainMenu
             _slotId = slotId;
             _exists = exists;
             _timestamp = timestamp;
+            _timestampLength = CopyStringToBuffer(timestamp, _timestampBuffer);
             _playtime = playtime;
             _sceneName = string.Empty;
             _statusLabel = string.Empty;
@@ -147,10 +162,13 @@ namespace Hecton.UI.MainMenu
             Init(
                 slotInfo.slotName,
                 slotInfo.HasAnySaveData,
-                metadata != null ? metadata.GetDateTime().ToLocalTime().ToString("g") : string.Empty,
+                string.Empty,
                 metadata != null ? metadata.totalPlayTime : 0f,
                 onClickCallback);
 
+            _timestampLength = metadata != null
+                ? WriteTimestamp(metadata.GetDateTime().ToLocalTime(), _timestampBuffer)
+                : 0;
             _sceneName = metadata != null ? metadata.sceneName : string.Empty;
             _statusLabel = slotInfo.GetStatusLabel();
             _integrityState = slotInfo.IntegrityState;
@@ -280,13 +298,14 @@ namespace Hecton.UI.MainMenu
 
         private void ApplyPresentation()
         {
-            LocalizationManager loc = Hecton8.Core.GlobalRegistry.Localization;
+            LocalizationManager loc = _localization;
             string prefix = loc != null
                 ? loc.Get(LocalizationKeys.SLOT_PREFIX)
                 : "SLOT";
-            string number = ExtractSlotNumber(_slotId);
-            string slotLine = string.Concat(prefix, " ", number);
-            string detailsLine = BuildDetailsLine(loc);
+            int slotLineLength = BuildSlotLine(prefix.AsSpan(), ExtractSlotNumberSpan(_slotId), _slotLineBuffer);
+            int detailsLineLength = _useCompactSingleTextLayout
+                ? BuildCompactDetailsLine(loc, _detailsLineBuffer)
+                : BuildDetailsLine(loc, _detailsLineBuffer);
 
             if (slotNameText != null)
             {
@@ -310,7 +329,11 @@ namespace Hecton.UI.MainMenu
 
             if (_useCompactSingleTextLayout && slotNameText != null)
             {
-                slotNameText.SetText(string.Concat(slotLine, "\n", detailsLine));
+                int compactLength = 0;
+                Append(_slotLineBuffer, slotLineLength, _compactLineBuffer, ref compactLength);
+                Append("\n".AsSpan(), _compactLineBuffer, ref compactLength);
+                Append(_detailsLineBuffer, detailsLineLength, _compactLineBuffer, ref compactLength);
+                slotNameText.SetCharArray(_compactLineBuffer, 0, compactLength);
                 slotNameText.color = _exists
                     ? GetStatusColor(_integrityState, _slotNameBaseColor)
                     : _slotNameBaseColor;
@@ -319,7 +342,7 @@ namespace Hecton.UI.MainMenu
 
             if (slotNameText != null)
             {
-                slotNameText.SetText(slotLine);
+                slotNameText.SetCharArray(_slotLineBuffer, 0, slotLineLength);
                 slotNameText.color = _exists
                     ? GetStatusColor(_integrityState, _slotNameBaseColor)
                     : _slotNameBaseColor;
@@ -327,68 +350,107 @@ namespace Hecton.UI.MainMenu
 
             if (detailsText != null)
             {
-                detailsText.SetText(detailsLine);
+                detailsText.SetCharArray(_detailsLineBuffer, 0, detailsLineLength);
                 detailsText.color = _exists
                     ? GetStatusColor(_integrityState, _detailsBaseColor)
                     : _detailsBaseColor;
             }
         }
 
-        private string BuildDetailsLine(LocalizationManager loc)
+        private static int BuildSlotLine(ReadOnlySpan<char> prefix, ReadOnlySpan<char> number, char[] destination)
+        {
+            int cursor = 0;
+            Append(prefix, destination, ref cursor);
+            Append(" ".AsSpan(), destination, ref cursor);
+            Append(number, destination, ref cursor);
+            return cursor;
+        }
+
+        private int BuildDetailsLine(LocalizationManager loc, char[] destination)
         {
             if (_useCompactSingleTextLayout)
-                return BuildCompactDetailsLine(loc);
+                return BuildCompactDetailsLine(loc, destination);
+
+            int cursor = 0;
 
             if (_exists)
             {
-                string formattedPlaytime = FormatPlaytime(_playtime);
                 string sceneLabel = ResolveSceneLabel(loc, _sceneName);
                 string statusLabel = ResolveStatusLabel(loc, _integrityState, _statusLabel);
-                string sceneChunk = string.IsNullOrEmpty(sceneLabel) ? string.Empty : string.Concat(" | ", sceneLabel);
-                string statusChunk = string.IsNullOrEmpty(statusLabel) ? string.Empty : string.Concat("\n", statusLabel);
-                return string.Concat(_timestamp, " | ", formattedPlaytime, sceneChunk, statusChunk);
+                if (_timestampLength > 0)
+                    Append(_timestampBuffer, _timestampLength, destination, ref cursor);
+                else
+                    Append(string.IsNullOrEmpty(_timestamp) ? ReadOnlySpan<char>.Empty : _timestamp.AsSpan(), destination, ref cursor);
+                Append(" | ".AsSpan(), destination, ref cursor);
+                AppendPlaytime(_playtime, destination, ref cursor);
+                if (!string.IsNullOrEmpty(sceneLabel))
+                {
+                    Append(" | ".AsSpan(), destination, ref cursor);
+                    Append(sceneLabel.AsSpan(), destination, ref cursor);
+                }
+
+                if (!string.IsNullOrEmpty(statusLabel))
+                {
+                    Append("\n".AsSpan(), destination, ref cursor);
+                    Append(statusLabel.AsSpan(), destination, ref cursor);
+                }
+
+                return cursor;
             }
 
-            return loc != null
+            string noData = loc != null
                 ? loc.Get(LocalizationKeys.SLOT_NO_DATA)
                 : "NO DATA";
+            Append(noData.AsSpan(), destination, ref cursor);
+            return cursor;
         }
 
-        private string BuildCompactDetailsLine(LocalizationManager loc)
+        private int BuildCompactDetailsLine(LocalizationManager loc, char[] destination)
         {
+            int cursor = 0;
             if (!_exists)
             {
                 string noData = loc != null
                     ? loc.Get(LocalizationKeys.SLOT_NO_DATA)
                     : "NO DATA";
-                return string.Concat("<size=58%>", noData, "</size>");
+                Append("<size=58%>".AsSpan(), destination, ref cursor);
+                Append(noData.AsSpan(), destination, ref cursor);
+                Append("</size>".AsSpan(), destination, ref cursor);
+                return cursor;
             }
 
-            string formattedPlaytime = FormatPlaytime(_playtime);
-            string compactSceneName = GetCompactSceneName(loc, _sceneName);
+            Append("<size=52%>".AsSpan(), destination, ref cursor);
+            AppendPlaytime(_playtime, destination, ref cursor);
+            string sceneLabel = ResolveSceneLabel(loc, _sceneName);
             string compactStatus = GetCompactStatusLabel(loc, _integrityState, _statusLabel);
 
-            string details = string.IsNullOrEmpty(compactSceneName)
-                ? formattedPlaytime
-                : string.Concat(formattedPlaytime, " | ", compactSceneName);
+            if (!string.IsNullOrEmpty(sceneLabel))
+            {
+                Append(" | ".AsSpan(), destination, ref cursor);
+                AppendCompactSceneName(sceneLabel.AsSpan(), destination, ref cursor);
+            }
 
             if (!string.IsNullOrEmpty(compactStatus))
-                details = string.Concat(details, " | ", compactStatus);
+            {
+                Append(" | ".AsSpan(), destination, ref cursor);
+                Append(compactStatus.AsSpan(), destination, ref cursor);
+            }
 
-            return string.Concat("<size=52%>", details, "</size>");
+            Append("</size>".AsSpan(), destination, ref cursor);
+            return cursor;
         }
 
-        private static string GetCompactSceneName(LocalizationManager loc, string sceneName)
+        private static void AppendCompactSceneName(ReadOnlySpan<char> sceneLabel, char[] destination, ref int cursor)
         {
-            string sceneLabel = ResolveSceneLabel(loc, sceneName);
-            if (string.IsNullOrEmpty(sceneLabel))
-                return string.Empty;
-
             const int CompactSceneNameLimit = 16;
             if (sceneLabel.Length <= CompactSceneNameLimit)
-                return sceneLabel;
+            {
+                Append(sceneLabel, destination, ref cursor);
+                return;
+            }
 
-            return string.Concat(sceneLabel.Substring(0, CompactSceneNameLimit - 1), "...");
+            Append(sceneLabel.Slice(0, CompactSceneNameLimit - 1), destination, ref cursor);
+            Append("...".AsSpan(), destination, ref cursor);
         }
 
         private static string GetCompactStatusLabel(
@@ -490,7 +552,42 @@ namespace Hecton.UI.MainMenu
             _onClickCallback?.Invoke(_slotId);
         }
 
-        private static string FormatPlaytime(float totalSeconds)
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.LocalizationRuntime)
+                return;
+
+            _localization = currentService as LocalizationManager;
+            if (!string.IsNullOrEmpty(_slotId))
+                ApplyPresentation();
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            _localization = GlobalRegistry.Localization;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
+        }
+
+        private static void AppendPlaytime(float totalSeconds, char[] destination, ref int cursor)
         {
             if (totalSeconds < 0f)
                 totalSeconds = 0f;
@@ -500,15 +597,47 @@ namespace Hecton.UI.MainMenu
             int minutes = totalMinutes % 60;
 
             int hourDigits = CountTwoDigitMinimumDecimalDigits(hours);
-            return string.Create(
-                hourDigits + 3,
-                (hours, minutes, hourDigits),
-                static (buffer, state) =>
-                {
-                    WritePaddedPositiveDecimal(state.hours, buffer.Slice(0, state.hourDigits));
-                    buffer[state.hourDigits] = ':';
-                    WritePaddedPositiveDecimal(state.minutes, buffer.Slice(state.hourDigits + 1, 2));
-                });
+            if (destination == null || cursor + hourDigits + 3 > destination.Length)
+                return;
+
+            WritePaddedPositiveDecimal(hours, destination.AsSpan(cursor, hourDigits));
+            cursor += hourDigits;
+            destination[cursor++] = ':';
+            WritePaddedPositiveDecimal(minutes, destination.AsSpan(cursor, 2));
+            cursor += 2;
+        }
+
+        private static int WriteTimestamp(DateTime localTime, char[] destination)
+        {
+            if (destination == null || destination.Length < 16)
+                return 0;
+
+            int cursor = 0;
+            WritePaddedPositiveDecimal(localTime.Year, destination.AsSpan(cursor, 4));
+            cursor += 4;
+            destination[cursor++] = '-';
+            WritePaddedPositiveDecimal(localTime.Month, destination.AsSpan(cursor, 2));
+            cursor += 2;
+            destination[cursor++] = '-';
+            WritePaddedPositiveDecimal(localTime.Day, destination.AsSpan(cursor, 2));
+            cursor += 2;
+            destination[cursor++] = ' ';
+            WritePaddedPositiveDecimal(localTime.Hour, destination.AsSpan(cursor, 2));
+            cursor += 2;
+            destination[cursor++] = ':';
+            WritePaddedPositiveDecimal(localTime.Minute, destination.AsSpan(cursor, 2));
+            cursor += 2;
+            return cursor;
+        }
+
+        private static int CopyStringToBuffer(string source, char[] destination)
+        {
+            if (string.IsNullOrEmpty(source) || destination == null || destination.Length == 0)
+                return 0;
+
+            int length = Mathf.Min(source.Length, destination.Length);
+            source.AsSpan(0, length).CopyTo(destination.AsSpan(0, length));
+            return length;
         }
 
         private static int CountTwoDigitMinimumDecimalDigits(int value)
@@ -534,16 +663,36 @@ namespace Hecton.UI.MainMenu
             }
         }
 
-        private static string ExtractSlotNumber(string slotId)
+        private static ReadOnlySpan<char> ExtractSlotNumberSpan(string slotId)
         {
             if (string.IsNullOrEmpty(slotId))
-                return "?";
+                return "?".AsSpan();
 
             int underscoreIndex = slotId.LastIndexOf('_');
             if (underscoreIndex >= 0 && underscoreIndex < slotId.Length - 1)
-                return slotId.Substring(underscoreIndex + 1);
+                return slotId.AsSpan(underscoreIndex + 1);
 
-            return slotId;
+            return slotId.AsSpan();
+        }
+
+        private static bool Append(ReadOnlySpan<char> source, char[] destination, ref int cursor)
+        {
+            if (destination == null || source.Length == 0 || cursor >= destination.Length)
+                return source.Length == 0;
+
+            int writable = Mathf.Min(source.Length, destination.Length - cursor);
+            source.Slice(0, writable).CopyTo(destination.AsSpan(cursor, writable));
+            cursor += writable;
+            return writable == source.Length;
+        }
+
+        private static bool Append(char[] source, int sourceLength, char[] destination, ref int cursor)
+        {
+            if (source == null || sourceLength <= 0)
+                return true;
+
+            int safeLength = Mathf.Clamp(sourceLength, 0, source.Length);
+            return Append(source.AsSpan(0, safeLength), destination, ref cursor);
         }
 
         /// <summary>

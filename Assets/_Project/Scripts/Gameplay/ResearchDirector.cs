@@ -10,7 +10,7 @@ namespace Hecton8.Gameplay
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-95)]
-    public sealed class ResearchDirector : MonoBehaviour, IScanEventListener
+    public sealed class ResearchDirector : MonoBehaviour, IScanEventListener, IGlobalRegistryHotSwapListener
     {
         [Header("── Research Graph ──────────────────")]
         [Tooltip("Authored xenobiology graph evaluated from completed scientific scans.")]
@@ -21,14 +21,20 @@ namespace Hecton8.Gameplay
         private ushort[] _scanCounts;
         private ulong _resolvedNodeBits;
         private bool _registered;
+        private bool _hotSwapRegistered;
+        private LoreDatabaseManager _loreDatabase;
+        private QuestManager _questManager;
 
         private void Awake()
         {
             BuildRuntimeCache();
+            CacheRegistryServicesCold();
         }
 
         private void OnEnable()
         {
+            CacheRegistryServicesCold();
+            TryRegisterHotSwapListener();
             RegisterScanListener();
         }
 
@@ -39,11 +45,13 @@ namespace Hecton8.Gameplay
 
         private void OnDisable()
         {
+            TryUnregisterHotSwapListener();
             UnregisterScanListener();
         }
 
         private void OnDestroy()
         {
+            TryUnregisterHotSwapListener();
             UnregisterScanListener();
         }
 
@@ -122,14 +130,58 @@ namespace Hecton8.Gameplay
             while (resolvedAnotherNode);
         }
 
-        private static void ResolveNode(XenoBiologyTree.Node node)
+        private void ResolveNode(XenoBiologyTree.Node node)
         {
-            if (node.LoreUnlockBits != 0UL && Hecton8.Core.GlobalRegistry.LoreDatabase != null)
-                Hecton8.Core.GlobalRegistry.LoreDatabase.UnlockByPackedBits(node.LoreUnlockBits);
+            LoreDatabaseManager loreDatabase = _loreDatabase;
+            if (node.LoreUnlockBits != 0UL && loreDatabase != null)
+                loreDatabase.UnlockByPackedBits(node.LoreUnlockBits);
 
-            QuestManager questManager = GlobalRegistry.Quest;
+            QuestManager questManager = _questManager;
             if (!string.IsNullOrWhiteSpace(node.UnlockQuestId) && questManager != null)
                 questManager.ActivateQuest(node.UnlockQuestId);
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.LoreDatabaseRuntime:
+                    _loreDatabase = currentService as LoreDatabaseManager;
+                    break;
+                case GlobalRegistryServiceSlot.QuestRuntime:
+                    _questManager = currentService as QuestManager;
+                    break;
+                case GlobalRegistryServiceSlot.QuestSystem:
+                    if (currentService is QuestManager questManager)
+                        _questManager = questManager;
+                    break;
+            }
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            _loreDatabase = GlobalRegistry.LoreDatabase;
+            _questManager = GlobalRegistry.Quest;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
 
         private void RegisterScanListener()

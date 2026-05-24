@@ -1,5 +1,4 @@
 using Hecton8.Core;
-using Hecton8.Input;
 using Hecton.Localization;
 using System;
 using Unity.Mathematics;
@@ -143,7 +142,7 @@ namespace Hecton8.Gameplay
         public override void OnSpawn()
         {
             base.OnSpawn();
-            _localization = GlobalRegistry.Localization;
+            RefreshLocalization(GlobalRegistry.Localization);
             _cooldown = 0f;
             _feedbackCooldownRemaining = 0f;
             _secondaryLatched = false;
@@ -163,7 +162,33 @@ namespace Hecton8.Gameplay
         public override void OnEquip()
         {
             base.OnEquip();
-            _localization = GlobalRegistry.Localization;
+            RefreshLocalization(GlobalRegistry.Localization);
+            InvalidateAssessmentCache();
+        }
+
+        protected override void OnToolRegistryServiceRebound(
+            GlobalRegistryServiceSlot serviceSlot,
+            ref object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.LocalizationRuntime)
+                RefreshLocalization(currentService as LocalizationManager);
+        }
+
+        protected override void OnToolRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.LocalizationRuntime)
+                RefreshLocalization(currentService as LocalizationManager);
+        }
+
+        private void RefreshLocalization(LocalizationManager localization)
+        {
+            if (ReferenceEquals(_localization, localization))
+                return;
+
+            _localization = localization;
             InvalidateAssessmentCache();
         }
 
@@ -182,7 +207,11 @@ namespace Hecton8.Gameplay
                     effectiveDamage,
                     hit.point,
                     shotDirection,
-                    ResolveImpulse());
+                    ResolveImpulse(),
+                    DamageSourceIds.StunPistol,
+                    CombatDamageTypes.Emp,
+                    CombatStatusBits.Stunned,
+                    ResolveStunDuration());
 
                 if (TryBuildDescriptorAssessment(hit.collider, hit.distance, out StunAssessment descriptorAssessment))
                 {
@@ -644,12 +673,13 @@ namespace Hecton8.Gameplay
         }
     }
 
-    public sealed class StunTargetRuntime : MonoBehaviour, ITickable, IUpdatable
+    public sealed class StunTargetRuntime : MonoBehaviour, ITickable, IUpdatable, IGlobalRegistryHotSwapListener
     {
         private LocalizationManager _localization;
         private float _remaining;
         private bool _armed;
         private bool _registeredToTickManager;
+        private bool _hotSwapRegistered;
 
         public float RemainingTime => _remaining;
         public bool IsArmed => _armed;
@@ -686,6 +716,7 @@ namespace Hecton8.Gameplay
         private void OnEnable()
         {
             _localization = GlobalRegistry.Localization;
+            TryRegisterHotSwapListener();
             RegisterToTickManager();
         }
 
@@ -694,12 +725,44 @@ namespace Hecton8.Gameplay
             _armed = false;
             _remaining = 0f;
             _localization = null;
+            TryUnregisterHotSwapListener();
             UnregisterFromTickManager();
+        }
+
+        private void OnDestroy()
+        {
+            TryUnregisterHotSwapListener();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.LocalizationRuntime)
+                _localization = currentService as LocalizationManager;
         }
 
         private void LogRecovery()
         {
             StunPistolTool.RecordRecoveryLog(_localization);
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
 
         private void RegisterToTickManager()

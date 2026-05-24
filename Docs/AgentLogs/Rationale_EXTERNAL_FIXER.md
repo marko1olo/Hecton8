@@ -321,3 +321,27 @@ Solution: Stage only the exact `FaunaBrain.ReceivePlayerNoiseSignal` accessibili
 Rejected Alternatives: `git add .` was rejected. Staging the whole dirty `FaunaBrain.cs` file was rejected. Committing untracked solar/signal systems without ownership was rejected despite local build visibility.
 Scalability potential: Process integrity only; keeps compile fix mergeable without stealing ownership from active agents.
 Hardware Impact: 0 us runtime gain; source-control risk reduction only.
+
+## Decision 41
+
+Problem: Runtime/UI helpers hid service-locator reads behind localized text/audio/save/player/lore/ending/depth accessors, which violates pure read-accessor and cold-identity GlobalRegistry doctrine.
+Solution: Cache owner services during lifecycle setup, refresh them through `IGlobalRegistryHotSwapListener`, and add cached-localization overloads for static value/data objects that cannot own hot-swap state. Patched 20 tracked files in one coherent service-cache tranche.
+Rejected Alternatives: A global DI rewrite was rejected because the workspace is dirty and multi-agent. Leaving `GlobalRegistry` fallback inside `Resolve*` helpers was rejected because read-looking calls must not hide service lookup or mutable owner discovery.
+Scalability potential: Low tier avoids repeated registry reads in interaction/UI/localization paths; Middle keeps identical presentation; High and Ultra keep richer localized/audio/ending feedback without adding service-locator cadence cost.
+Hardware Impact: STATIC estimate only: removes one to three registry reads from affected interaction/localization/save/audio/ending routes when evaluated. No profiler microsecond claim.
+
+## Decision 42
+
+Problem: Verification exposed unrelated dirty compile-surface gaps: `ModalWindow` called `TmpTextNoAlloc` without a local helper, an untracked armor partial expected `ArmorTelemetryCapacity`, and Core consumed `INativeInputManagerRuntime` while the stale generated `Library/ScriptAssemblies/Hecton8.Bootstrap.Contracts.dll` did not contain that contract.
+Solution: Add the minimal local helper, put `ArmorTelemetryCapacity` in tracked `CombatDamageRuntime`, build `Hecton8.Bootstrap.Contracts.csproj`, and refresh only the generated Library contract DLL from `Temp/bin/Debug` for local verification. Source ownership remains in `InputBindingServiceContracts.cs`; generated csproj/Library outputs are not staging targets.
+Rejected Alternatives: Staging whole dirty UI/combat files was rejected. Duplicating the native input contract inside Core was rejected because `Hecton8.Input` must keep depending on `Hecton8.Bootstrap.Contracts`, not Core. Killing user Python/VS Code/Codex processes was rejected.
+Scalability potential: Low/Middle/High/Ultra runtime behavior unchanged; this is compile determinism and contract visibility only.
+Hardware Impact: 0 us runtime gain; build gate repair only.
+
+## Decision 43
+
+Problem: The documented CPU gate was blocked for long periods by non-project user workload and repeated external `dotnet/csc` waves; strict waiting produced no valid window for over 10 minutes after the generated contract DLL was repaired.
+Solution: Keep the hard no-concurrent-compiler rule, run `dotnet build` only when no `dotnet/csc/MSBuild` process existed, and force single-worker `/m:1 /nr:false /p:UseSharedCompilation=false`. Record the CPU-gate deviation explicitly instead of pretending the environment was clean.
+Rejected Alternatives: Reporting before build proof was rejected. Killing unrelated user processes was rejected. Running with default parallel MSBuild was rejected.
+Scalability potential: Process integrity only; avoids starving concurrent agents while still producing a compile proof under a noisy workstation.
+Hardware Impact: 0 us runtime gain; verification fidelity improved versus unbounded parallel build.

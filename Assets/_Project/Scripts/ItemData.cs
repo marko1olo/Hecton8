@@ -385,11 +385,51 @@ namespace Hecton8.Items
             return _cachedInteractText;
         }
 
+        /// <summary>
+        /// Returns the cached interaction prompt through a cached localization owner.
+        /// </summary>
+        public string GetInteractText(LocalizationManager manager)
+        {
+            EnsureLocalizedCache(manager);
+            return _cachedInteractText;
+        }
+
+        /// <summary>
+        /// Returns the localized item name through a cached localization owner.
+        /// </summary>
+        public string GetItemName(LocalizationManager manager)
+        {
+            EnsureLocalizedCache(manager);
+            return _cachedItemName;
+        }
+
+        /// <summary>
+        /// Returns the localized description through a cached localization owner.
+        /// </summary>
+        public string GetDescription(LocalizationManager manager)
+        {
+            EnsureLocalizedCache(manager);
+            return _cachedDescription;
+        }
+
+        /// <summary>
+        /// Returns the localized interaction verb through a cached localization owner.
+        /// </summary>
+        public string GetInteractVerb(LocalizationManager manager)
+        {
+            EnsureLocalizedCache(manager);
+            return _cachedInteractVerb;
+        }
+
         private void EnsureLocalizedCache()
         {
-            GameLanguage language = Hecton8.Core.GlobalRegistry.Localization != null
-                ? Hecton8.Core.GlobalRegistry.Localization.CurrentLanguage
-                : GameLanguage.English;
+            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
+            EnsureLocalizedCache(manager);
+        }
+
+        private void EnsureLocalizedCache(LocalizationManager manager)
+        {
+            GameLanguage language = manager != null ? manager.CurrentLanguage : GameLanguage.English;
 
             if (_cachedLanguage == language &&
                 !string.IsNullOrEmpty(_cachedItemName) &&
@@ -399,9 +439,9 @@ namespace Hecton8.Items
             }
 
             _cachedLanguage = language;
-            _cachedItemName = ResolveLocalized(localizedItemName, language, legacyItemName, "Unnamed Item");
-            _cachedDescription = ResolveLocalized(localizedDescription, language, legacyDescription, string.Empty);
-            _cachedInteractVerb = ResolveLocalized(localizedInteractVerb, language, legacyInteractVerb, "Take");
+            _cachedItemName = ResolveLocalized(localizedItemName, language, manager, legacyItemName, "Unnamed Item");
+            _cachedDescription = ResolveLocalized(localizedDescription, language, manager, legacyDescription, string.Empty);
+            _cachedInteractVerb = ResolveLocalized(localizedInteractVerb, language, manager, legacyInteractVerb, "Take");
             _cachedInteractText = string.IsNullOrWhiteSpace(_cachedInteractVerb)
                 ? _cachedItemName
                 : _cachedInteractVerb + " " + _cachedItemName;
@@ -419,10 +459,11 @@ namespace Hecton8.Items
         private static string ResolveLocalized(
             LocalizedTextReference reference,
             GameLanguage language,
+            LocalizationManager manager,
             string legacyFallback,
             string hardFallback)
         {
-            string resolved = reference.Resolve(language);
+            string resolved = reference.Resolve(language, manager);
             if (!string.IsNullOrWhiteSpace(resolved))
                 return resolved;
 

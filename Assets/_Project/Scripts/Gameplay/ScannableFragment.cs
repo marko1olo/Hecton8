@@ -50,7 +50,7 @@ namespace Hecton8.Gameplay
     /// Implements IInteractable for scanner tool integration.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class ScannableFragment : MonoBehaviour, IInteractable, ILocalizationLanguageChangedListener
+    public sealed class ScannableFragment : MonoBehaviour, IInteractable, ILocalizationLanguageChangedListener, IGlobalRegistryHotSwapListener
     {
         // ══════════════════════════════════════════════════════════
         //  SHADER PROPERTY IDs — cached once, zero GC
@@ -156,6 +156,10 @@ namespace Hecton8.Gameplay
         private int _spatialHandle;
         private byte _appliedLoreStagesMask;
         private float _scanPulsePhase;
+        private IAudioService _audioService;
+        private LocalizationManager _localization;
+        private LoreDatabaseManager _loreDatabase;
+        private bool _hotSwapRegistered;
 
         /// <summary>
         /// Cached MaterialPropertyBlock for scan VFX.
@@ -231,6 +235,7 @@ namespace Hecton8.Gameplay
                 fragmentRenderer = Hecton8.Core.ComponentReferenceUtility.ResolveOwnedComponent<Renderer>(transform);
             }
 
+            CacheRegistryServicesCold();
             RebuildLocalizedTextCache();
 
             ResetState();
@@ -238,6 +243,8 @@ namespace Hecton8.Gameplay
 
         private void OnEnable()
         {
+            CacheRegistryServicesCold();
+            TryRegisterHotSwapListener();
             LocalizationEvents.RegisterLanguageListener(this);
             RefreshDiscoveryHash();
             RebuildLocalizedTextCache();
@@ -247,6 +254,7 @@ namespace Hecton8.Gameplay
 
         private void OnDisable()
         {
+            TryUnregisterHotSwapListener();
             UnregisterSpatialContact();
             UnregisterScanRenderProxy();
             LocalizationEvents.UnregisterLanguageListener(this);
@@ -254,6 +262,7 @@ namespace Hecton8.Gameplay
 
         private void OnDestroy()
         {
+            TryUnregisterHotSwapListener();
             UnregisterSpatialContact();
         }
 
@@ -419,9 +428,9 @@ namespace Hecton8.Gameplay
             RegisterScanRenderProxy();
 
             // Play scanning sound
-            if (scanningSound != null && Hecton8.Core.GlobalRegistry.Audio is Hecton8.Core.IAudioService audio)
+            if (scanningSound != null && _audioService != null)
             {
-                audio.PlayAtPoint(scanningSound, _transform.position, scanVolume);
+                _audioService.PlayAtPoint(scanningSound, _transform.position, scanVolume);
             }
 
             // Fire started event
@@ -443,9 +452,9 @@ namespace Hecton8.Gameplay
             }
 
             // Play complete sound
-            if (completeSound != null && Hecton8.Core.GlobalRegistry.Audio is Hecton8.Core.IAudioService audio)
+            if (completeSound != null && _audioService != null)
             {
-                audio.PlayAtPoint(completeSound, _transform.position, scanVolume);
+                _audioService.PlayAtPoint(completeSound, _transform.position, scanVolume);
             }
 
             // Fire completion event with unlock ID
@@ -615,12 +624,56 @@ namespace Hecton8.Gameplay
             RebuildLocalizedTextCache();
         }
 
-        private static string ResolveLocalized(string key, string fallback)
+        private string ResolveLocalized(string key, string fallback)
         {
-            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
+            LocalizationManager manager = _localization;
             return manager != null
                 ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback)
                 : fallback;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.Audio:
+                    _audioService = currentService as IAudioService;
+                    break;
+                case GlobalRegistryServiceSlot.LocalizationRuntime:
+                    _localization = currentService as LocalizationManager;
+                    RebuildLocalizedTextCache();
+                    break;
+                case GlobalRegistryServiceSlot.LoreDatabaseRuntime:
+                    _loreDatabase = currentService as LoreDatabaseManager;
+                    break;
+            }
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            _audioService = GlobalRegistry.Audio;
+            _localization = GlobalRegistry.Localization;
+            _loreDatabase = GlobalRegistry.LoreDatabase;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
 
         private void EmitResearchDiscoveryEvent()
@@ -679,7 +732,8 @@ namespace Hecton8.Gameplay
 
         private void TryUnlockLoreStages(float previousProgressNormalized, float currentProgressNormalized)
         {
-            if (researchData == null || Hecton8.Core.GlobalRegistry.LoreDatabase == null)
+            LoreDatabaseManager loreDatabase = _loreDatabase;
+            if (researchData == null || loreDatabase == null)
                 return;
 
             TryUnlockLoreStage(previousProgressNormalized, currentProgressNormalized, 0.25f, QuarterLoreStageBit, 0);
@@ -706,7 +760,7 @@ namespace Hecton8.Gameplay
                 researchData.TryGetLoreUnlockMask(stageIndex, out ulong packedBits) &&
                 packedBits != 0UL)
             {
-                Hecton8.Core.GlobalRegistry.LoreDatabase.UnlockByPackedBits(packedBits);
+                _loreDatabase?.UnlockByPackedBits(packedBits);
             }
         }
     }

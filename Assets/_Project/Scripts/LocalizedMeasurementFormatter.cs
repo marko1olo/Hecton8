@@ -73,6 +73,14 @@ namespace Hecton.Localization
         public static string ResolveDistanceUnitLabel(GameLanguage language)
         {
             LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
+            return ResolveDistanceUnitLabel(language, manager);
+        }
+
+        /// <summary>
+        /// Resolve a localized distance unit label through a cached localization owner.
+        /// </summary>
+        public static string ResolveDistanceUnitLabel(GameLanguage language, LocalizationManager manager)
+        {
             string key = GetDistanceUnitKey(language);
             string fallback = GetDistanceUnitFallback(language);
             return manager != null
@@ -86,6 +94,14 @@ namespace Hecton.Localization
         public static string ResolveTemperatureUnitLabel(GameLanguage language)
         {
             LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
+            return ResolveTemperatureUnitLabel(language, manager);
+        }
+
+        /// <summary>
+        /// Resolve a localized temperature unit label through a cached localization owner.
+        /// </summary>
+        public static string ResolveTemperatureUnitLabel(GameLanguage language, LocalizationManager manager)
+        {
             string key = GetTemperatureUnitKey(language);
             string fallback = GetTemperatureUnitFallback(language);
             return manager != null

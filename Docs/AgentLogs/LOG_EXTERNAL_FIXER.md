@@ -736,3 +736,28 @@ Exact Microseconds saved: 0 us runtime. Compile-surface repair only.
 Verification: `git diff --check -- Assets/_Project/Scripts/Fauna/FaunaBrain.cs` passed with LF->CRLF warning only. Static scans found no remaining unqualified sanitizer calls except local private helper definitions. Guarded `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal /p:UseSharedCompilation=false /nr:false` succeeded with 0 errors and 4 pre-existing CS0649 warnings in `HectonCombatRuntime_ArmorPenetration.cs`.
 
 Commit boundary: staged subset is limited to the exact `FaunaBrain.ReceivePlayerNoiseSignal` accessibility hunk and EXTERNAL_FIXER docs. Untracked split-signal and solar source surfaces remain unstaged because they belong to concurrent agent work.
+
+## 2026-05-24 - Localization And Runtime Service Cache Tranche
+
+What was wrong:
+- Runtime/UI/data helpers still hid `GlobalRegistry` reads behind localization/audio/save/player/lore/ending/depth accessors.
+- This made read-looking helpers impure and kept service-locator fallback on interaction/UI paths.
+- Verification exposed a dirty compile surface: missing local `TmpTextNoAlloc`, tracked combat armor telemetry constant gap, and stale generated `Library/ScriptAssemblies/Hecton8.Bootstrap.Contracts.dll` without `INativeInputManagerRuntime`.
+
+What was done:
+- Patched 20 tracked source files to cache owner services and refresh them through `IGlobalRegistryHotSwapListener`.
+- Added cached localization overloads for text/audio/measurement/font/data helpers so runtime owners can pass their cached `LocalizationManager`.
+- Fixed narrow compile blockers without staging broad dirty UI/combat files.
+- Built `Hecton8.Bootstrap.Contracts.csproj` and refreshed only the generated Library contract DLL for local verification.
+
+Cinematic cheats used:
+- None. This tranche is service-route and compile-surface hardening; no physical simulation expansion.
+
+Exact microseconds saved:
+- Not measured. STATIC estimate only: removes one to three registry reads from affected localization/audio/save/player/lore/ending/depth runtime routes when evaluated.
+
+Verification:
+- `git diff --check` on touched tracked paths passed with LF->CRLF warnings only.
+- `dotnet build .\Hecton8.Bootstrap.Contracts.csproj --no-restore -v:minimal /p:UseSharedCompilation=false /nr:false /m:1` succeeded with 0 warnings and 0 errors.
+- `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal /p:UseSharedCompilation=false /nr:false /m:1` succeeded with 0 warnings and 0 errors.
+- CPU gate was blocked for long periods by non-project user workload and external compile waves; final Core build ran only after no `dotnet/csc/MSBuild` process was present, single worker, node reuse disabled.

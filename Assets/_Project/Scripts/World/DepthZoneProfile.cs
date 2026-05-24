@@ -58,9 +58,19 @@ namespace Hecton8.World
         [System.NonSerialized] public string cachedHudLabel;
         [System.NonSerialized] private uint _cachedZoneHash;
 
-        public string DisplayNameOrFallback => localizedDisplayName.ResolveOrFallback(FallbackOrDefault(displayName, "UNKNOWN ZONE"));
-        public string DescriptionOrFallback => localizedDescription.ResolveOrFallback(description);
+        public string DisplayNameOrFallback => ResolveDisplayName(Hecton8.Core.GlobalRegistry.Localization);
+        public string DescriptionOrFallback => ResolveDescription(Hecton8.Core.GlobalRegistry.Localization);
         public uint ZoneHash => _cachedZoneHash;
+
+        public string ResolveDisplayName(LocalizationManager manager)
+        {
+            return localizedDisplayName.ResolveOrFallback(manager, FallbackOrDefault(displayName, "UNKNOWN ZONE"));
+        }
+
+        public string ResolveDescription(LocalizationManager manager)
+        {
+            return localizedDescription.ResolveOrFallback(manager, description);
+        }
 
         private void OnEnable()
         {
@@ -73,12 +83,12 @@ namespace Hecton8.World
                 ? 0u
                 : unchecked((uint)LocHash.Compute(zoneId));
 
-            string resolvedDisplayName = DisplayNameOrFallback;
+            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
+            string resolvedDisplayName = ResolveDisplayName(manager);
             string upperDisplayName = string.IsNullOrWhiteSpace(resolvedDisplayName)
                 ? "UNKNOWN ZONE"
                 : resolvedDisplayName.ToUpperInvariant();
 
-            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
             cachedHudLabel = manager != null
                 ? manager.GetFormatted(LocalizationKeys.DEPTH_ZONE_ENTER, upperDisplayName)
                 : "ZONE: " + upperDisplayName;

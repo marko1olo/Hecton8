@@ -8,7 +8,7 @@ namespace Hecton8.World
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-4031)]
-    public sealed class WorldGenerativeGeologyIntegrationDirector : MonoBehaviour, ISlowTickable, IOriginShiftListener
+    public sealed class WorldGenerativeGeologyIntegrationDirector : MonoBehaviour, ISlowTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener
     {
         private const int PlanRuntimeKeyCapacity = 256;
 
@@ -56,6 +56,7 @@ namespace Hecton8.World
         private readonly HashSet<long> _selectedRuntimeKeys = new HashSet<long>(PlanRuntimeKeyCapacity);
         private IPlayerRuntimeContext _playerRuntimeContext;
         private bool _registeredToTickManager;
+        private bool _hotSwapRegistered;
         private bool _hasPlanRefreshSample;
         private bool _hasPlanRefreshAup;
         private Vector3 _lastPlanRefreshPosition;
@@ -73,12 +74,15 @@ namespace Hecton8.World
         {
             ActiveRuntimeInstance = this;
             ResolveReferences();
+            CacheRegistryServicesCold();
             RebuildIntegrationPlans();
         }
 
         private void OnEnable()
         {
             ResolveReferences();
+            CacheRegistryServicesCold();
+            TryRegisterHotSwapListener();
             if (Application.isPlaying)
                 HectonFloatingOrigin.RegisterListener(this);
 
@@ -95,12 +99,14 @@ namespace Hecton8.World
         private void OnDisable()
         {
             TryUnregister();
+            TryUnregisterHotSwapListener();
             HectonFloatingOrigin.UnregisterListener(this);
         }
 
         private void OnDestroy()
         {
             TryUnregister();
+            TryUnregisterHotSwapListener();
             HectonFloatingOrigin.UnregisterListener(this);
 
             if (ReferenceEquals(ActiveRuntimeInstance, this))
@@ -126,6 +132,41 @@ namespace Hecton8.World
                 GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
 
             _registeredToTickManager = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Player)
+                return;
+
+            _playerRuntimeContext = currentService as IPlayerRuntimeContext;
+            _hasPlanRefreshSample = false;
+            _hasPlanRefreshAup = false;
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            _playerRuntimeContext = GlobalRegistry.Player;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
 
         public void SlowTick()
@@ -651,11 +692,6 @@ namespace Hecton8.World
             hasPlayerAup = false;
 
             IPlayerRuntimeContext player = _playerRuntimeContext;
-            if (player == null)
-            {
-                player = GlobalRegistry.Player;
-                _playerRuntimeContext = player;
-            }
 
             if (player != null &&
                 player.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot) &&
@@ -720,7 +756,7 @@ namespace Hecton8.World
             if (!IsFinite(runtimePosition))
                 return false;
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             if (!IsFinite(in originAup))
                 return false;
 

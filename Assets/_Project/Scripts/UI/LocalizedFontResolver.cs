@@ -39,6 +39,14 @@ namespace Hecton8.UI
         public static TMP_FontAsset ResolveReadableFont(TMP_FontAsset preferred)
         {
             LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
+            return ResolveReadableFont(preferred, manager);
+        }
+
+        /// <summary>
+        /// Resolve a readable text font through a cached localization owner.
+        /// </summary>
+        public static TMP_FontAsset ResolveReadableFont(TMP_FontAsset preferred, LocalizationManager manager)
+        {
             GameLanguage language = manager != null ? manager.CurrentLanguage : GameLanguage.English;
             return ResolveReadableFontForLanguage(preferred, language);
         }
@@ -73,6 +81,21 @@ namespace Hecton8.UI
                 return preferred;
 
             TMP_FontAsset resolvedReadable = ResolveReadableFont(readableFallback);
+            return resolvedReadable != null ? resolvedReadable : TMP_Settings.defaultFontAsset;
+        }
+
+        /// <summary>
+        /// Resolve a numeric-capable font through a cached localization owner.
+        /// </summary>
+        public static TMP_FontAsset ResolveNumericFont(
+            TMP_FontAsset preferred,
+            TMP_FontAsset readableFallback,
+            LocalizationManager manager)
+        {
+            if (preferred != null)
+                return preferred;
+
+            TMP_FontAsset resolvedReadable = ResolveReadableFont(readableFallback, manager);
             return resolvedReadable != null ? resolvedReadable : TMP_Settings.defaultFontAsset;
         }
 

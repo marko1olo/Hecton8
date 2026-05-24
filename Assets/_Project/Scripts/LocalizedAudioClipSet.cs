@@ -48,10 +48,16 @@ namespace Hecton.Localization
         /// </summary>
         public AudioClip Resolve()
         {
-            GameLanguage language = Hecton8.Core.GlobalRegistry.Localization != null
-                ? Hecton8.Core.GlobalRegistry.Localization.CurrentLanguage
-                : GameLanguage.English;
+            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
+            return Resolve(manager);
+        }
 
+        /// <summary>
+        /// Resolve the clip through a cached localization owner.
+        /// </summary>
+        public AudioClip Resolve(LocalizationManager manager)
+        {
+            GameLanguage language = manager != null ? manager.CurrentLanguage : GameLanguage.English;
             return Resolve(language);
         }
 

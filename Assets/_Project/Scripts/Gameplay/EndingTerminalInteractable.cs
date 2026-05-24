@@ -24,7 +24,7 @@ namespace Hecton8.Gameplay
 {
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Collider))]
-    public sealed class EndingTerminalInteractable : MonoBehaviour, IInteractable, IEndingEventListener, ILocalizationLanguageChangedListener, IGlobalRegistryHotSwapListener
+    public sealed class EndingTerminalInteractable : MonoBehaviour, IInteractable, IInteractableTextProvider, IEndingEventListener, ILocalizationLanguageChangedListener, IGlobalRegistryHotSwapListener
     {
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
@@ -53,6 +53,7 @@ namespace Hecton8.Gameplay
         private string _cachedDataLoadedText;
         private EndingSystem _cachedEnding;
         private QuestManager _cachedQuest;
+        private LocalizationManager _cachedLocalization;
         private bool _hotSwapListenerRegistered;
 
         // Pre-cached interact texts — zero GC
@@ -134,6 +135,11 @@ namespace Hecton8.Gameplay
             if (ending.IsEndingComplete) return _cachedCompleteText;
             if (!HasAllAtlasKeys()) return _cachedInactiveText;
             return _cachedActiveText;
+        }
+
+        public bool TryCopyInteractText(System.Span<char> destination, out int length)
+        {
+            return InteractableTextCopy.TryCopy(GetInteractText(), destination, out length);
         }
 
         // ══════════════════════════════════════════════════════════
@@ -266,6 +272,13 @@ namespace Hecton8.Gameplay
                 else if (currentService is QuestManager questManager)
                     _cachedQuest = questManager;
                 UpdateActiveIndicator();
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.LocalizationRuntime)
+            {
+                _cachedLocalization = currentService as LocalizationManager;
+                RebuildLocalizedTextCache();
             }
         }
 
@@ -290,6 +303,7 @@ namespace Hecton8.Gameplay
         {
             _cachedEnding = GlobalRegistry.Ending;
             _cachedQuest = GlobalRegistry.Quest;
+            _cachedLocalization = GlobalRegistry.Localization;
         }
 
         private void RebuildLocalizedTextCache()
@@ -321,9 +335,9 @@ namespace Hecton8.Gameplay
                       "Use GlobalRegistry.Ending.ChooseEnding(EndingChoice.X) to select.");
         }
 
-        private static string ResolveLocalized(string key, string fallback)
+        private string ResolveLocalized(string key, string fallback)
         {
-            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
+            LocalizationManager manager = _cachedLocalization;
             if (manager == null)
                 return fallback;
 

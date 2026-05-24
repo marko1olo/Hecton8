@@ -1,4 +1,5 @@
 using System;
+using Hecton8.Core;
 using UnityEngine;
 
 namespace Hecton.Localization
@@ -32,7 +33,7 @@ namespace Hecton.Localization
     [DisallowMultipleComponent]
     [RequireComponent(typeof(SpriteRenderer))]
     [AddComponentMenu("Hecton/Localization/Localized Sprite Renderer")]
-    public sealed class LocalizedSpriteRenderer : MonoBehaviour, ILocalizationLanguageChangedListener
+    public sealed class LocalizedSpriteRenderer : MonoBehaviour, ILocalizationLanguageChangedListener, IGlobalRegistryHotSwapListener
     {
         [Header("References")]
         [Tooltip("Target SpriteRenderer. Defaults to the component on the same GameObject.")]
@@ -46,21 +47,32 @@ namespace Hecton.Localization
         [SerializeField] private LocalizedSpriteVariant[] variants;
 
         private Sprite _appliedSprite;
+        private LocalizationManager _localization;
+        private bool _hotSwapRegistered;
 
         private void Awake()
         {
             ResolveRenderer();
+            CacheRegistryServicesCold();
         }
 
         private void OnEnable()
         {
+            CacheRegistryServicesCold();
+            TryRegisterHotSwapListener();
             LocalizationEvents.RegisterLanguageListener(this);
             ApplyCurrentSprite();
         }
 
         private void OnDisable()
         {
+            TryUnregisterHotSwapListener();
             LocalizationEvents.UnregisterLanguageListener(this);
+        }
+
+        private void OnDestroy()
+        {
+            TryUnregisterHotSwapListener();
         }
 
 #if UNITY_EDITOR
@@ -101,9 +113,8 @@ namespace Hecton.Localization
 
         private Sprite ResolveSpriteForCurrentLanguage()
         {
-            GameLanguage language = Hecton8.Core.GlobalRegistry.Localization != null
-                ? Hecton8.Core.GlobalRegistry.Localization.CurrentLanguage
-                : GameLanguage.English;
+            LocalizationManager manager = _localization;
+            GameLanguage language = manager != null ? manager.CurrentLanguage : GameLanguage.English;
 
             if (variants != null)
             {
@@ -124,6 +135,40 @@ namespace Hecton.Localization
         {
             if (targetRenderer == null)
                 TryGetComponent(out targetRenderer);
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.LocalizationRuntime)
+                return;
+
+            _localization = currentService as LocalizationManager;
+            ApplyCurrentSprite();
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            _localization = GlobalRegistry.Localization;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
     }
 }

@@ -16,7 +16,8 @@ namespace Hecton8.UI
         MonoBehaviour,
         ISaveEventListener,
         ILocalizationLanguageChangedListener,
-        ILocalizationCorruptionVisualStateListener
+        ILocalizationCorruptionVisualStateListener,
+        IGlobalRegistryHotSwapListener
     {
         private const int MessageCharCapacity = 160;
         private static readonly int SaveSynchronizedKeyHash = LocHash.Compute(LocalizationKeys.SAVE_NOTIFICATION_SYNCHRONIZED);
@@ -26,12 +27,16 @@ namespace Hecton8.UI
         [SerializeField] private HUDNotification notificationSystem;
 
         private FixedCharBuffer _messageBuffer = new FixedCharBuffer(MessageCharCapacity); // COLD ALLOC: char[160] - save notification HUD staging buffer - owner: HUDSaveNotificationLink
+        private LocalizationManager _localization;
+        private bool _hotSwapRegistered;
         
         private void OnEnable()
         {
             if (notificationSystem == null)
                 TryGetComponent(out notificationSystem);
 
+            _localization = GlobalRegistry.Localization;
+            TryRegisterHotSwapListener();
             SaveEvents.Register(this);
             LocalizationEvents.RegisterLanguageListener(this);
             LocalizationEvents.RegisterCorruptionVisualStateListener(this);
@@ -39,6 +44,7 @@ namespace Hecton8.UI
 
         private void OnDisable()
         {
+            TryUnregisterHotSwapListener();
             LocalizationEvents.UnregisterCorruptionVisualStateListener(this);
             LocalizationEvents.UnregisterLanguageListener(this);
             SaveEvents.Unregister(this);
@@ -104,7 +110,36 @@ namespace Hecton8.UI
             _messageBuffer.Clear();
         }
 
-        private static void AppendSlotLabel(ref FixedCharBuffer buffer, in FixedString64Bytes slotName)
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.LocalizationRuntime)
+                return;
+
+            _localization = currentService as LocalizationManager;
+            ClearMessageCache();
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
+        }
+
+        private void AppendSlotLabel(ref FixedCharBuffer buffer, in FixedString64Bytes slotName)
         {
             if (slotName.Length <= 0)
                 return;
@@ -132,9 +167,9 @@ namespace Hecton8.UI
                 AppendAsciiByte(ref buffer, slotName[index]);
         }
 
-        private static void AppendLocalized(ref FixedCharBuffer buffer, int keyHash, ReadOnlySpan<char> fallback)
+        private void AppendLocalized(ref FixedCharBuffer buffer, int keyHash, ReadOnlySpan<char> fallback)
         {
-            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
+            LocalizationManager manager = _localization;
             ReadOnlySpan<char> text = manager != null ? manager.GetRawSpanOrFallback(keyHash, fallback) : fallback;
             buffer.Append(text);
         }

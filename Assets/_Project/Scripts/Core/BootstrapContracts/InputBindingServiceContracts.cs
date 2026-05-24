@@ -1,4 +1,7 @@
 using System;
+using UnityEngine;
+using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.UI;
 
 namespace Hecton8.Core
 {
@@ -37,7 +40,7 @@ namespace Hecton8.Core
         /// Implementers with a real tick lane should override this; the default prevents legacy ready
         /// services from false-positive alarms until they publish service-owned counters.
         /// </summary>
-        int TickCount => Environment.TickCount;
+        int TickCount => global::System.Environment.TickCount;
     }
 
     /// <summary>
@@ -176,6 +179,106 @@ namespace Hecton8.Core
         {
             s_unregister?.Invoke(slot, service);
         }
+    }
+
+    /// <summary>
+    /// Bootstrap-owned native input runtime surface used by Core services without binding to the concrete input owner.
+    /// Implementers must return cached action references and cached readiness state only.
+    /// </summary>
+    public interface INativeInputManagerRuntime : IServiceHeartbeat, IServiceShutdown
+    {
+        event Action<Vector2> OnNavigate;
+
+        event Action OnSubmit;
+
+        event Action OnCancel;
+
+        event Action OnTabNext;
+
+        event Action OnTabPrevious;
+
+        event Action OnPause;
+
+        event Action<byte> OnInputDisplayStyleCodeChanged;
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        event Action OnDebugToggleBlackBoxDashboard;
+
+        event Action OnDebugToggleEngineHealthOverlay;
+#endif
+
+        bool IsPlayerInputEnabled { get; }
+
+        bool IsUIInputEnabled { get; }
+
+        bool CanSwitchActionMaps { get; }
+
+        bool IsSprinting { get; }
+
+        Vector2 MoveInput { get; }
+
+        Vector2 LookInput { get; }
+
+        byte CurrentDisplayStyleCode { get; }
+
+        void EnablePlayerInput();
+
+        void DisablePlayerInput();
+
+        void EnableUIInput();
+
+        void DisableUIInput();
+
+        void SwitchToPlayerInput();
+
+        void SwitchToUIInput();
+
+        InputAction GetAction(string actionName, string actionMap = "Player");
+
+        InputActionMap GetActionMap(string actionMap = "Player");
+
+        int GetPreferredBindingIndex(string actionName, string actionMap = "Player");
+
+        bool TryReadUiPoint(out Vector2 point);
+
+        bool TryReadUiScrollWheel(out Vector2 scrollDelta);
+
+        string GetBindingDisplayString(string actionName, string actionMap = "Player", int bindingIndex = 0);
+
+        bool TryGetBindingDisplayString(InputAction action, int bindingIndex, out string display);
+
+        bool TryWriteBindingDisplayString(
+            string actionName,
+            string actionMap,
+            int bindingIndex,
+            char[] buffer,
+            int bufferOffset,
+            out int charsWritten);
+
+        bool TryWriteBindingDisplayString(
+            InputAction action,
+            int bindingIndex,
+            char[] buffer,
+            int bufferOffset,
+            out int charsWritten);
+
+        bool TryGetBindingMarkupForToken(string token, out string markup);
+
+        bool TryConfigureUiInputModule(InputSystemUIInputModule inputModule);
+
+        string SaveBindingOverridesAsJson();
+
+        void LoadBindingOverridesFromJson(string json);
+
+        void ClearBindingOverrides();
+    }
+
+    public static class NativeInputDisplayStyle
+    {
+        public const byte KeyboardMouse = 0;
+        public const byte Gamepad = 1;
+        public const byte SteamDeck = 2;
+        public const byte XRTouch = 3;
     }
 
     /// <summary>

@@ -67,11 +67,17 @@ namespace Hecton.Localization
         /// </summary>
         public string Resolve()
         {
-            GameLanguage language = Hecton8.Core.GlobalRegistry.Localization != null
-                ? Hecton8.Core.GlobalRegistry.Localization.CurrentLanguage
-                : GameLanguage.English;
+            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
+            return Resolve(manager);
+        }
 
-            return Resolve(language);
+        /// <summary>
+        /// Resolve text through a cached localization owner.
+        /// </summary>
+        public string Resolve(LocalizationManager manager)
+        {
+            GameLanguage language = manager != null ? manager.CurrentLanguage : GameLanguage.English;
+            return Resolve(language, manager);
         }
 
         /// <summary>
@@ -80,6 +86,14 @@ namespace Hecton.Localization
         public string Resolve(GameLanguage language)
         {
             LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
+            return Resolve(language, manager);
+        }
+
+        /// <summary>
+        /// Resolve text for a specific language through a cached localization owner.
+        /// </summary>
+        public string Resolve(GameLanguage language, LocalizationManager manager)
+        {
 
             if (TryResolveInline(language, out string inlineValue))
                 return manager != null ? manager.ExpandText(inlineValue) : inlineValue;
@@ -99,6 +113,18 @@ namespace Hecton.Localization
         public string ResolveOrFallback(string legacyFallback)
         {
             string resolved = Resolve();
+            if (!string.IsNullOrWhiteSpace(resolved))
+                return resolved;
+
+            return legacyFallback ?? string.Empty;
+        }
+
+        /// <summary>
+        /// Resolve text through a cached localization owner, but keep a legacy string as the last fallback.
+        /// </summary>
+        public string ResolveOrFallback(LocalizationManager manager, string legacyFallback)
+        {
+            string resolved = Resolve(manager);
             if (!string.IsNullOrWhiteSpace(resolved))
                 return resolved;
 

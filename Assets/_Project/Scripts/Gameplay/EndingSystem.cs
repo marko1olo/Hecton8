@@ -728,6 +728,7 @@ namespace Hecton8.Gameplay
         private AtlasSignalSystem _atlasSignal;
         private Atlas6DirectiveSystem _atlas6Directive;
         private QuestManager _questRuntime;
+        private SaveManager _saveRuntime;
         private LocalizationManager _localization;
         private uint _endingQuestHash;
 
@@ -758,14 +759,12 @@ namespace Hecton8.Gameplay
                 return;
 
             TryRegister();
-
-            if (Hecton8.Core.GlobalRegistry.SaveRuntime != null)
-                Hecton8.Core.GlobalRegistry.SaveRuntime.Register(this);
+            CacheRuntimeDependencies();
+            TryRegisterSaveParticipant();
 
             AtlasSignalEvents.Register(this);
 
             ResolveSurvivalSystem();
-            CacheRuntimeDependencies();
             TryRegisterHotSwapListener();
         }
 
@@ -774,9 +773,7 @@ namespace Hecton8.Gameplay
             TryUnregisterHotSwapListener();
             TryUnregister();
             TryUnregisterService();
-
-            if (Hecton8.Core.GlobalRegistry.SaveRuntime != null)
-                Hecton8.Core.GlobalRegistry.SaveRuntime.Unregister(this);
+            TryUnregisterSaveParticipant();
 
             AtlasSignalEvents.Unregister(this);
             ClearRuntimeDependencies();
@@ -864,6 +861,7 @@ namespace Hecton8.Gameplay
             _atlasSignal = Hecton8.Core.GlobalRegistry.AtlasSignal;
             _atlas6Directive = Hecton8.Core.GlobalRegistry.Atlas6Directive;
             _questRuntime = GlobalRegistry.Quest;
+            _saveRuntime = Hecton8.Core.GlobalRegistry.SaveRuntime;
             _localization = Hecton8.Core.GlobalRegistry.Localization;
         }
 
@@ -872,6 +870,7 @@ namespace Hecton8.Gameplay
             _atlasSignal = null;
             _atlas6Directive = null;
             _questRuntime = null;
+            _saveRuntime = null;
             _localization = null;
         }
 
@@ -908,10 +907,31 @@ namespace Hecton8.Gameplay
                 case GlobalRegistryServiceSlot.QuestRuntime:
                     _questRuntime = currentService as QuestManager;
                     break;
+                case GlobalRegistryServiceSlot.Save:
+                    if (previousService is SaveManager previousSave)
+                        previousSave.Unregister(this);
+
+                    _saveRuntime = currentService as SaveManager;
+                    TryRegisterSaveParticipant();
+                    break;
                 case GlobalRegistryServiceSlot.LocalizationRuntime:
                     _localization = currentService as LocalizationManager;
                     break;
             }
+        }
+
+        private void TryRegisterSaveParticipant()
+        {
+            SaveManager saveRuntime = _saveRuntime;
+            if (saveRuntime != null)
+                saveRuntime.Register(this);
+        }
+
+        private void TryUnregisterSaveParticipant()
+        {
+            SaveManager saveRuntime = _saveRuntime;
+            if (saveRuntime != null)
+                saveRuntime.Unregister(this);
         }
 
         private void TryUnregisterService()
