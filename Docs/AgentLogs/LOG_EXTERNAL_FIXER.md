@@ -1007,3 +1007,28 @@ Evidence:
 - STATIC_GREP: filtered tracked runtime scan now reports 0 remaining exact `GlobalRegistry.Localization` reads outside excluded owner/editor/bootstrap paths.
 - CLI_COMPILE: not launched for this slice; CPU measured 60 percent and the previous guarded Core build had already failed before C# compile on missing `Temp\obj\Hecton8.Core\project.assets.json`.
 - GIT: committed and pushed `3ed6f84f1 perf(localization): route active readers` to `main`.
+
+## 2026-05-24 - Audio Active Runtime Sweep 1
+
+What was wrong:
+- 30 tracked runtime/audio/gameplay files still had exact `GlobalRegistry.Audio` reads in playback, cache refresh, scene transition bridge, and gameplay feedback routes.
+- These reads bypassed the existing owner-published `SpatialAudioManager.ActiveRuntimeInstance` pointer.
+
+What was done:
+- Routed exact `GlobalRegistry.Audio` and `Hecton8.Core.GlobalRegistry.Audio` reads through `Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance`.
+- Built staged blobs from exact `HEAD` content and left dirty working-copy edits untouched.
+- Detected a bad manual two-file correction that collapsed newlines, restored those staged blobs to `HEAD`, and reapplied them with newline-preserving blob generation before commit.
+- Committed and pushed the source tranche as `4eeea7c20 perf(audio): route active service readers`.
+
+Cinematic Cheats used:
+- None. This tranche is runtime service-route hygiene.
+
+Exact Microseconds saved:
+- STATIC estimate only: 43 exact audio service-locator reads removed from affected runtime/helper routes. No profiler capture, no microsecond claim.
+
+Evidence:
+- STATIC_SOURCE: 30 staged source files.
+- CLI_DIFF: `git diff --cached --check` passed; final staged stat was 30 files, 43 insertions, 43 deletions.
+- STATIC_GREP: no malformed `Hecton8.Core.Hecton8.Audio` or `SpatialAudioManager.ActiveRuntimeInstance*` suffix text was found in staged source.
+- CLI_COMPILE: not launched; `Temp\obj\Hecton8.Core\project.assets.json` is missing and CPU measured 91 percent, so restore/build retry was gated off.
+- GIT: committed and pushed `4eeea7c20 perf(audio): route active service readers` to `main`.
