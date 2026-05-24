@@ -433,3 +433,11 @@ Solution: Stage new blobs from exact `HEAD` content and route only exact player-
 Rejected Alternatives: Broad DI rewrite was rejected because it would cross many domain boundaries and capture other agents' edits. Scene search fallback was rejected because it can allocate/search and hides owner discovery. Build execution was rejected because CPU was 99 percent and `dotnet`/`csc` were active.
 Scalability potential: Low tier avoids repeated player-owner discovery in UI/tool/PDA/save-thumbnail routes; Middle keeps identical behavior; High and Ultra preserve richer diegetic UI, audio, scanner, and submarine presentation without service-locator cadence cost.
 Hardware Impact: STATIC estimate only: 38 exact player registry reads removed from 30 staged source files. No profiler, GCMonitor, Unity Console, or player-build artifact; CLI_COMPILE proof is blocked by CPU/compiler gate.
+
+## Decision 55
+
+Problem: UI/PDA and visor runtime/render-feature files still read `GlobalRegistry.Player` directly from cache refreshes, camera fallbacks, PDA spectrum helpers, volume profile resolution, and visor cold-service setup. These are read-looking paths where service-locator polling is hidden.
+Solution: Stage exact `HEAD` blobs and replace only exact player-context reads with `Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext`; leave `GlobalRegistry.DataVault` and other non-player owner routes unchanged.
+Rejected Alternatives: Broad UI/visor DI rewrite was rejected because the workspace is dirty and would cross ownership boundaries. VFX service-rebind and world files were deferred to keep this tranche coherent. Build execution was rejected because CPU was 85 percent and then active `dotnet`/`csc` processes appeared.
+Scalability potential: Low tier avoids repeated player-owner discovery in diegetic UI/visor routes; Middle keeps identical UI and camera behavior; High and Ultra preserve richer visor/PDA presentation without service-locator cadence cost.
+Hardware Impact: STATIC estimate only: 35 exact player registry reads removed from 30 staged source files. No profiler, GCMonitor, Unity Console, or player-build artifact; CLI_COMPILE proof is blocked by CPU/compiler gate.

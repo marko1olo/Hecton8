@@ -932,3 +932,28 @@ Evidence:
 - STATIC_GREP: tranche-local `git grep --cached` found no remaining exact `GlobalRegistry.Player` reads and no `ActiveRuntimeContextInventory/Critical/Movement/Motor/Sensory/Actions/Expression/Exploration` prefix damage.
 - CLI_COMPILE: blocked; CPU measured 99 percent and active `dotnet`/`csc` processes were present, so Core build was not launched under the local gate.
 - GIT: committed and pushed `88c55997d perf(player): route ui context readers` to `main`.
+
+## 2026-05-24 - Player Active Context Sweep 6
+
+What was wrong:
+- 22 UI/PDA files and 8 visor runtime/render-feature files still had exact `GlobalRegistry.Player` reads in cache refreshes, camera fallbacks, PDA spectrum helpers, volume profile resolution, and visor cold-service setup.
+- Dirty working-copy state makes direct source edits/full-file staging unsafe.
+
+What was done:
+- Routed exact player-context reads through `Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext`.
+- Built staged blobs from exact `HEAD` content and left dirty working-copy edits untouched.
+- Preserved non-player routes such as `GlobalRegistry.DataVault`.
+- Committed and pushed the source tranche as `3f3ef8c9d perf(player): route visor ui readers`.
+
+Cinematic Cheats used:
+- None. This tranche is runtime service-route hygiene.
+
+Exact Microseconds saved:
+- STATIC estimate only: 35 exact player service-locator reads removed from affected UI/visor helper/cache routes. No profiler capture, no microsecond claim.
+
+Evidence:
+- STATIC_SOURCE: 30 staged source files.
+- CLI_DIFF: `git diff --cached --check` passed; staged stat was 30 files, 35 insertions, 35 deletions.
+- STATIC_GREP: tranche-local `git grep --cached` found no remaining exact `GlobalRegistry.Player` reads and no `ActiveRuntimeContextInventory/Critical/Movement/Motor/Sensory/Actions/Expression/Exploration` prefix damage.
+- CLI_COMPILE: blocked; CPU measured 85 percent before wait, then active `dotnet`/`csc` processes appeared and sandbox CPU probe returned access denied, so Core build was not launched.
+- GIT: committed and pushed `3f3ef8c9d perf(player): route visor ui readers` to `main`.
