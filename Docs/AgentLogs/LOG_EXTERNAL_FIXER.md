@@ -907,3 +907,28 @@ Evidence:
 - STATIC_GREP: tranche-local `git grep --cached` found no remaining exact `GlobalRegistry.Player` reads and no `ActiveRuntimeContextInventory/Critical/Movement/Motor/Sensory/Actions/Expression/Exploration` prefix damage.
 - CLI_COMPILE: blocked; compiler processes were absent, but CPU measured 80 percent then 100 percent after a 45-second wait, so `dotnet build` was not launched under the project gate.
 - GIT: committed and pushed `ea2d96f4a perf(player): route extra context readers` to `main`.
+
+## 2026-05-24 - Player Active Context Sweep 5
+
+What was wrong:
+- 30 tracked runtime/UI files still had exact `GlobalRegistry.Player` reads in PDA, player tool, progression, quest, save-thumbnail, scanner, spatial audio, submarine, tether, loadout, and diegetic UI routes.
+- The working tree is dirty from concurrent agents, so direct source edits/full-file staging would capture unrelated changes.
+
+What was done:
+- Routed exact player-context reads through `Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext`.
+- Built staged blobs from exact `HEAD` content and left dirty working-copy edits untouched.
+- Kept non-player service slots and lifecycle ownership checks out of this slice.
+- Committed and pushed the source tranche as `88c55997d perf(player): route ui context readers`.
+
+Cinematic Cheats used:
+- None. This tranche is runtime service-route hygiene.
+
+Exact Microseconds saved:
+- STATIC estimate only: 38 exact player service-locator reads removed from affected helper/cache routes. No profiler capture, no microsecond claim.
+
+Evidence:
+- STATIC_SOURCE: 30 staged source files.
+- CLI_DIFF: `git diff --cached --check` passed; staged stat was 30 files, 35 insertions, 35 deletions.
+- STATIC_GREP: tranche-local `git grep --cached` found no remaining exact `GlobalRegistry.Player` reads and no `ActiveRuntimeContextInventory/Critical/Movement/Motor/Sensory/Actions/Expression/Exploration` prefix damage.
+- CLI_COMPILE: blocked; CPU measured 99 percent and active `dotnet`/`csc` processes were present, so Core build was not launched under the local gate.
+- GIT: committed and pushed `88c55997d perf(player): route ui context readers` to `main`.
