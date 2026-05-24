@@ -1058,7 +1058,7 @@ namespace Hecton8.Audio
 
         private void RefreshPlayerRuntimeContextIfStale(int frame)
         {
-            CachePlayerRuntimeContext(GlobalRegistry.Player, frame);
+            CachePlayerRuntimeContext(PlayerRuntimeContextService.ActiveRuntimeContext, frame);
         }
 
         private void RefreshAudioServiceIfStale(int frame)

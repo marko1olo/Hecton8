@@ -1296,7 +1296,7 @@ namespace Hecton8.Gameplay
             _cachedLocalization = GlobalRegistry.Localization;
             _cachedSpatialAudioManager = GlobalRegistry.Audio as SpatialAudioManager;
             _cachedObjectPool = GlobalRegistry.ObjectPool;
-            _cachedPlayerContext = GlobalRegistry.Player;
+            _cachedPlayerContext = PlayerRuntimeContextService.ActiveRuntimeContext;
             _cachedVoxelEngine = GlobalRegistry.VoxelEngine;
             _cachedSargassumDrag = GlobalRegistry.SargassumDrag;
 

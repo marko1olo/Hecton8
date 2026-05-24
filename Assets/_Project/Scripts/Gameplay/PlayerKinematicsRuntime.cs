@@ -1750,7 +1750,7 @@ namespace Hecton8.Gameplay
             if (_motor == null && GlobalRegistry.PlayerMotor != null)
                 _motor = GlobalRegistry.PlayerMotor;
 
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = PlayerRuntimeContextService.ActiveRuntimeContext;
             _cameraTransform = playerContext != null && playerContext.PlayerCamera != null
                 ? playerContext.PlayerCamera.transform
                 : null;

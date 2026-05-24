@@ -1974,7 +1974,7 @@ namespace Hecton8.Gameplay
 
         private void CachePlayerContextCold()
         {
-            _cachedPlayerContext = GlobalRegistry.Player;
+            _cachedPlayerContext = PlayerRuntimeContextService.ActiveRuntimeContext;
             Camera playerCamera = _cachedPlayerContext != null ? _cachedPlayerContext.PlayerCamera : null;
             if (playerCamera != null)
                 _cameraTransform = playerCamera.transform;

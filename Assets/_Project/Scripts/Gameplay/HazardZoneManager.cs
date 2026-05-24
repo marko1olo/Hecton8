@@ -853,7 +853,7 @@ namespace Hecton8.Gameplay
             }
             else
             {
-                IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+                IPlayerRuntimeContext playerContext = PlayerRuntimeContextService.ActiveRuntimeContext;
                 if (playerContext != null)
                 {
                     ApplyPlayerContextReferences(

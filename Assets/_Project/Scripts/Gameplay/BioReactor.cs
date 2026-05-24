@@ -463,7 +463,7 @@ namespace Hecton8.Gameplay
         private void RefreshColdRegistryReferences()
         {
             _audioService = GlobalRegistry.Audio;
-            _playerRuntime = GlobalRegistry.Player;
+            _playerRuntime = PlayerRuntimeContextService.ActiveRuntimeContext;
             _localizationRuntime = GlobalRegistry.Localization;
         }
 

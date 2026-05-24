@@ -226,7 +226,7 @@ namespace Hecton8.Gameplay
 
         private void CacheRegistryServicesCold()
         {
-            _cachedPlayerContext = GlobalRegistry.Player;
+            _cachedPlayerContext = PlayerRuntimeContextService.ActiveRuntimeContext;
         }
 
         private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)

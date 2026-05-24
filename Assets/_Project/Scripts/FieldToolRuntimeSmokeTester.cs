@@ -503,11 +503,11 @@ namespace Hecton8.Gameplay
         private void AutoResolveSceneReferences()
         {
             if (toolManager == null)
-                toolManager = (Hecton8.Core.GlobalRegistry.Player != null ? Hecton8.Core.GlobalRegistry.Player.ToolManager : null);
+                toolManager = (Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext != null ? Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext.ToolManager : null);
             if (playerInventory == null)
-                playerInventory = (Hecton8.Core.GlobalRegistry.Player != null ? Hecton8.Core.GlobalRegistry.Player.Inventory : null);
+                playerInventory = (Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext != null ? Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext.Inventory : null);
             if (playerBuilder == null)
-                playerBuilder = (Hecton8.Core.GlobalRegistry.Player != null ? Hecton8.Core.GlobalRegistry.Player.PlayerBuilder : null);
+                playerBuilder = (Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext != null ? Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext.PlayerBuilder : null);
             if (constructionManager == null)
                 constructionManager = Hecton8.Core.GlobalRegistry.ConstructionRuntime;
             if (loadoutProvisioner == null)

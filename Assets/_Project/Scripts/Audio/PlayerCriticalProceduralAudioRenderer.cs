@@ -8503,7 +8503,7 @@ namespace Hecton8.Audio
             }
 
             _playerContextLookupFrame = frame;
-            playerContext = GlobalRegistry.Player;
+            playerContext = PlayerRuntimeContextService.ActiveRuntimeContext;
             _playerRuntimeContext = playerContext != null && playerContext.IsInitialized ? playerContext : null;
             return _playerRuntimeContext;
         }

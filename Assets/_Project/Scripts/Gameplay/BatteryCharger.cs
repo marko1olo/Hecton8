@@ -197,7 +197,7 @@ namespace Hecton8.Gameplay
                 _cachedToolManager = interactor.GetComponentInParent<PlayerToolManager>();
 
             if (_cachedToolManager == null)
-                _cachedToolManager = Hecton8.Core.GlobalRegistry.Player != null ? Hecton8.Core.GlobalRegistry.Player.ToolManager : null;
+                _cachedToolManager = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext != null ? Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext.ToolManager : null;
 
             return _cachedToolManager;
         }
@@ -211,7 +211,7 @@ namespace Hecton8.Gameplay
                 _cachedPlayerInventory = interactor.GetComponentInParent<PlayerInventory>();
 
             if (_cachedPlayerInventory == null)
-                _cachedPlayerInventory = Hecton8.Core.GlobalRegistry.Player != null ? Hecton8.Core.GlobalRegistry.Player.Inventory : null;
+                _cachedPlayerInventory = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext != null ? Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext.Inventory : null;
 
             return _cachedPlayerInventory;
         }

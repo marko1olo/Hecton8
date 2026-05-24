@@ -662,7 +662,7 @@ namespace Hecton8.Core
                 return true;
             }
 
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = PlayerRuntimeContextService.ActiveRuntimeContext;
             if (playerContext != null)
             {
                 if (playerContext.PlayerCamera != null)

@@ -189,7 +189,7 @@ namespace Hecton8.Gameplay
             }
 
             // ── Kesh Main Camera Transform ──
-            Camera playerCamera = ((Hecton8.Core.GlobalRegistry.Player != null && Hecton8.Core.GlobalRegistry.Player.PlayerCamera != null) ? Hecton8.Core.GlobalRegistry.Player.PlayerCamera : playerTransform.GetComponent<Camera>());
+            Camera playerCamera = ((Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext != null && Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext.PlayerCamera != null) ? Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext.PlayerCamera : playerTransform.GetComponent<Camera>());
             if (playerCamera != null)
             {
                 _cameraTransform = playerCamera.transform;

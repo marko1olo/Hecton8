@@ -306,7 +306,7 @@ namespace Hecton8.Gameplay.Loot
         private void RefreshDependencies()
         {
             _vault = GlobalRegistry.DataVault;
-            _playerContext = GlobalRegistry.Player;
+            _playerContext = PlayerRuntimeContextService.ActiveRuntimeContext;
             _inventory = _playerContext != null && _playerContext.Inventory != null
                 ? _playerContext.Inventory
                 : GlobalRegistry.PlayerInventoryRuntime;

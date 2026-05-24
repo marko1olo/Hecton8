@@ -607,7 +607,7 @@ namespace Hecton8.Gameplay
 
         private void RefreshColdRegistryReferences()
         {
-            _playerRuntime = GlobalRegistry.Player;
+            _playerRuntime = PlayerRuntimeContextService.ActiveRuntimeContext;
             _scanLogRuntime = GlobalRegistry.ScanLog;
         }
 

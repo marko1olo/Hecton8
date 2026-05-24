@@ -1477,7 +1477,7 @@ namespace Hecton8.Gameplay
 
         private void RefreshColdRegistryDependencies()
         {
-            _playerRuntimeContext = GlobalRegistry.Player;
+            _playerRuntimeContext = PlayerRuntimeContextService.ActiveRuntimeContext;
             _qualityTier = GlobalRegistry.ScalabilityTier;
         }
 

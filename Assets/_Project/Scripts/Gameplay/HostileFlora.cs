@@ -218,7 +218,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            IPlayerRuntimeContext player = GlobalRegistry.Player;
+            IPlayerRuntimeContext player = PlayerRuntimeContextService.ActiveRuntimeContext;
             _playerTarget = player != null && player.IsInitialized ? player.PlayerTransform : null;
             _playerFound = _playerTarget != null;
         }

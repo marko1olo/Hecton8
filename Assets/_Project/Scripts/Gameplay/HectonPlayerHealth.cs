@@ -768,7 +768,7 @@ namespace Hecton8.Gameplay
         {
             if (_playerMovement == null)
             {
-                IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+                IPlayerRuntimeContext playerContext = PlayerRuntimeContextService.ActiveRuntimeContext;
                 if (playerContext != null)
                     _playerMovement = playerContext.PlayerMovement;
             }
@@ -796,7 +796,7 @@ namespace Hecton8.Gameplay
 
             if (_playerMovement == null)
             {
-                IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+                IPlayerRuntimeContext playerContext = PlayerRuntimeContextService.ActiveRuntimeContext;
                 if (playerContext != null)
                     _playerMovement = playerContext.PlayerMovement;
             }
@@ -813,7 +813,7 @@ namespace Hecton8.Gameplay
                 }
             }
 
-            IPlayerRuntimeContext fallbackContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext fallbackContext = PlayerRuntimeContextService.ActiveRuntimeContext;
             if (fallbackContext != null &&
                 fallbackContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot))
             {

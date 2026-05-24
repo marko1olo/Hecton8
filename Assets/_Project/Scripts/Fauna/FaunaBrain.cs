@@ -1107,7 +1107,7 @@ namespace Hecton8.AI
 
         private void RefreshColdRegistryDependencies()
         {
-            _playerRuntimeContext = GlobalRegistry.Player;
+            _playerRuntimeContext = PlayerRuntimeContextService.ActiveRuntimeContext;
             _objectPool = GlobalRegistry.ObjectPool;
             _persistentWorldRegistry = GlobalRegistry.PersistentWorldRegistry;
             _hazardZones = GlobalRegistry.HazardZones;

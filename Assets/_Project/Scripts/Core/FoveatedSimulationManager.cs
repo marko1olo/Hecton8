@@ -386,7 +386,7 @@ namespace Hecton8.Core
         {
             TryRegisterHotSwapListener();
             RebindDataVaultForOwnerRoute(_dataVault, GlobalRegistry.DataVault);
-            _playerContext = GlobalRegistry.Player;
+            _playerContext = PlayerRuntimeContextService.ActiveRuntimeContext;
 
             if (!_originShiftListenerRegistered)
             {
