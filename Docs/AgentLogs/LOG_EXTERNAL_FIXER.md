@@ -982,3 +982,28 @@ Evidence:
 - STATIC_GREP: filtered tracked runtime scan now reports 0 remaining exact `GlobalRegistry.Player` reads outside excluded lifecycle/editor/non-player slots; no `ActiveRuntimeContextInventory/Critical/Movement/Motor/Sensory/Actions/Expression/Exploration` prefix damage.
 - CLI_COMPILE: attempted under gate at CPU 49 percent/no compiler process; `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal /p:UseSharedCompilation=false /nr:false /m:1` failed before C# compile with NETSDK1004 missing `Temp\obj\Hecton8.Core\project.assets.json`. CPU then measured 79 percent, so restore/build retry was gated off.
 - GIT: committed and pushed `135bce8a9 perf(player): route world context readers` to `main`.
+
+## 2026-05-24 - Localization Active Runtime Sweep 2
+
+What was wrong:
+- 22 tracked runtime/UI/gameplay files still had exact `GlobalRegistry.Localization` reads in cache refresh, modal text, tool feedback, PDA inventory text, subtitle, and emergency relay routes.
+- These reads bypassed the existing owner-published `LocalizationManager.ActiveRuntimeInstance` pointer.
+
+What was done:
+- Routed exact `GlobalRegistry.Localization` and `Hecton8.Core.GlobalRegistry.Localization` reads through `Hecton.Localization.LocalizationManager.ActiveRuntimeInstance`.
+- Built staged blobs from exact `HEAD` content and left dirty working-copy edits untouched.
+- Kept localization owner lifecycle/registration, editor, smoke, and bootstrap paths out of the slice.
+- Committed and pushed the source tranche as `3ed6f84f1 perf(localization): route active readers`.
+
+Cinematic Cheats used:
+- None. This tranche is runtime service-route hygiene.
+
+Exact Microseconds saved:
+- STATIC estimate only: 41 exact localization service-locator reads removed from affected runtime/UI helper routes. No profiler capture, no microsecond claim.
+
+Evidence:
+- STATIC_SOURCE: 22 staged source files.
+- CLI_DIFF: `git diff --cached --check` passed; staged stat was 22 files, 40 insertions, 40 deletions.
+- STATIC_GREP: filtered tracked runtime scan now reports 0 remaining exact `GlobalRegistry.Localization` reads outside excluded owner/editor/bootstrap paths.
+- CLI_COMPILE: not launched for this slice; CPU measured 60 percent and the previous guarded Core build had already failed before C# compile on missing `Temp\obj\Hecton8.Core\project.assets.json`.
+- GIT: committed and pushed `3ed6f84f1 perf(localization): route active readers` to `main`.
