@@ -500,7 +500,7 @@ namespace Hecton8.Items
 
         private static void CacheColdRegistryReferences()
         {
-            s_playerRuntimeContext = GlobalRegistry.Player;
+            s_playerRuntimeContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
             s_playerInventoryService = GlobalRegistry.PlayerInventory;
             s_physicsService = GlobalRegistry.Physics;
             s_objectPool = GlobalRegistry.ObjectPool;

@@ -1214,7 +1214,7 @@ namespace Hecton8.PDA
             if (!force && _playerMovement != null)
                 return true;
 
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
             if (playerContext != null)
             {
                 playerTransform = playerContext.PlayerTransform;
@@ -1258,7 +1258,7 @@ namespace Hecton8.PDA
         private static bool TryResolvePlayerAupFromContext(out AbsoluteUniversePosition playerAup)
         {
             playerAup = default;
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
             if (playerContext == null || playerContext.PlayerMovement == null)
                 return false;
 

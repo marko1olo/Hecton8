@@ -546,7 +546,7 @@ namespace Hecton8.Physiology
         private bool TryResolvePlayerPose(out PlayerPose pose)
         {
             pose = default;
-            IPlayerRuntimeContext player = GlobalRegistry.Player;
+            IPlayerRuntimeContext player = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
             if (player == null || !player.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot))
                 return false;
 

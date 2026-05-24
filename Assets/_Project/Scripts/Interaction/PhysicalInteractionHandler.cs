@@ -240,7 +240,7 @@ namespace Hecton8.Interaction
 
             if (interactionAnchor == null)
             {
-                IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+                IPlayerRuntimeContext playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
                 _playerCamera = playerContext != null ? playerContext.PlayerCamera : null;
                 if (_playerCamera == null)
                     TryGetComponent(out _playerCamera);

@@ -426,7 +426,7 @@ namespace Hecton8.Interaction
         private void RefreshColdRegistryReferences()
         {
             _playerMotor = GlobalRegistry.PlayerMotor;
-            _playerRuntimeContext = GlobalRegistry.Player;
+            _playerRuntimeContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
             _playerMovement = _playerRuntimeContext != null ? _playerRuntimeContext.PlayerMovement : null;
         }
 

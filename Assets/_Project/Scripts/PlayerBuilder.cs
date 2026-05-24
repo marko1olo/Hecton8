@@ -4189,7 +4189,7 @@ namespace Hecton8.Building
 
         private static IPlayerRuntimeContext ResolvePlayerRuntimeContext()
         {
-            return GlobalRegistry.Player;
+            return Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
         }
 
         private static IEnvironmentRuntimeContext ResolveEnvironmentRuntimeContext()

@@ -1103,7 +1103,7 @@ namespace Hecton8.Gameplay
 
         private void CachePlayerRuntimeContextCold()
         {
-            _playerRuntimeContext = GlobalRegistry.Player;
+            _playerRuntimeContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
         }
 
         private void TryRegisterHotSwap()

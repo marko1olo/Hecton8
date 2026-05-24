@@ -854,7 +854,7 @@ namespace Hecton8.Interaction
         private void RefreshColdRegistryReferences()
         {
             _worldStateManager = Hecton8.Core.GlobalRegistry.WorldState;
-            s_playerRuntimeContext = Hecton8.Core.GlobalRegistry.Player;
+            s_playerRuntimeContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
             s_playerInventoryService = Hecton8.Core.GlobalRegistry.PlayerInventory;
             s_physicsService = Hecton8.Core.GlobalRegistry.Physics;
             s_objectPool = Hecton8.Core.GlobalRegistry.ObjectPool;

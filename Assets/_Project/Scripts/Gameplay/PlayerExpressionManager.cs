@@ -852,13 +852,13 @@ namespace Hecton8.Gameplay
                 playerTransform != null)
             {
                 if (toolManager == null)
-                    toolManager = ((Hecton8.Core.GlobalRegistry.Player != null && Hecton8.Core.GlobalRegistry.Player.ToolManager != null) ? Hecton8.Core.GlobalRegistry.Player.ToolManager : playerTransform.GetComponent<PlayerToolManager>());
+                    toolManager = ((Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext != null && Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext.ToolManager != null) ? Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext.ToolManager : playerTransform.GetComponent<PlayerToolManager>());
 
                 if (playerMovement == null)
                 {
                     playerMovement = playerTransform.GetComponent<HectonPlayerMovement>();
                     if (playerMovement == null)
-                        playerMovement = ((Hecton8.Core.GlobalRegistry.Player != null && Hecton8.Core.GlobalRegistry.Player.PlayerMovement != null) ? Hecton8.Core.GlobalRegistry.Player.PlayerMovement : playerTransform.GetComponent<HectonPlayerMovement>());
+                        playerMovement = ((Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext != null && Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext.PlayerMovement != null) ? Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext.PlayerMovement : playerTransform.GetComponent<HectonPlayerMovement>());
                 }
             }
 

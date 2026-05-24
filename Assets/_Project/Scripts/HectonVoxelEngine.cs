@@ -4948,7 +4948,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         targetVehicle = null;
         velocity = Vector3.zero;
 
-        IPlayerRuntimeContext player = GlobalRegistry.Player;
+        IPlayerRuntimeContext player = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
         targetMovement = player != null ? player.PlayerMovement : null;
         if (targetMovement != null &&
             targetMovement.TryGetActiveTransportPlatform(out ITransportPlatform platform) &&
@@ -5879,7 +5879,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
 
     private static bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)
     {
-        IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+        IPlayerRuntimeContext playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
         HectonPlayerMovement playerMovement = playerContext != null ? playerContext.PlayerMovement : null;
         if (playerMovement != null)
         {

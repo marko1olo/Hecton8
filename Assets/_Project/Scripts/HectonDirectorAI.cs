@@ -1837,7 +1837,7 @@ namespace Hecton8.Systems.AI
 
         private void RefreshColdRegistryReferences()
         {
-            _playerRuntimeContext = GlobalRegistry.Player;
+            _playerRuntimeContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
             _ecosystemDirector = GlobalRegistry.EcosystemDirector;
             _sargassumMicroFauna = GlobalRegistry.SargassumMicroFauna;
             _dataVault = GlobalRegistry.DataVault;

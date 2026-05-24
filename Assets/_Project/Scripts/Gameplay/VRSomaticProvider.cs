@@ -726,7 +726,7 @@ namespace Hecton8.Gameplay
                 _cachedPlayerCamera = runtimeContext.PlayerCamera;
             if (_cachedPlayerCamera == null)
             {
-                IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+                IPlayerRuntimeContext playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
                 _cachedPlayerCamera = playerContext != null ? playerContext.PlayerCamera : null;
             }
         }

@@ -1961,7 +1961,7 @@ namespace Hecton8.Physics
             if (_physicsCullingOverseer == null)
                 _physicsCullingOverseer = GlobalRegistry.PhysicsCullingOverseer;
             if (_playerRuntimeContext == null)
-                _playerRuntimeContext = GlobalRegistry.Player;
+                _playerRuntimeContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
             IPlayerMovementContracts playerMovementContracts = GlobalRegistry.PlayerMovementContracts;
             if (_playerMovementForceSink == null)
                 _playerMovementForceSink = playerMovementContracts;

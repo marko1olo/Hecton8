@@ -2477,7 +2477,7 @@ namespace Hecton8.Tools
             _thermodynamicsService = GlobalRegistry.ThermodynamicsService;
             _powerGridService = GlobalRegistry.PowerGrid;
             _toolDurabilityService = GlobalRegistry.ToolDurability;
-            _playerRuntimeContext = GlobalRegistry.Player;
+            _playerRuntimeContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
             _submarineRuntimeContext = GlobalRegistry.Submarine;
         }
 

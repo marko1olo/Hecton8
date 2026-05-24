@@ -1220,7 +1220,7 @@ namespace Hecton8.UI
             _nativeInputManager = GlobalRegistry.NativeInputManager;
             _resourceScarcityRuntime = GlobalRegistry.ResourceScarcity;
             RebindPlayerInventoryService(GlobalRegistry.PlayerInventory);
-            RebindPlayerRuntimeContext(GlobalRegistry.Player);
+            RebindPlayerRuntimeContext(Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext);
         }
 
         private void RebindNativeInputManager(InputManager inputManager)

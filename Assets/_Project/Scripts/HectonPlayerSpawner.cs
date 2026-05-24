@@ -235,7 +235,7 @@ public class HectonPlayerSpawner : MonoBehaviour
             InitializeSpawnTrigLut();
         }
 
-        IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+        IPlayerRuntimeContext playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
         if (playerRigidbody == null && playerContext != null)
             playerRigidbody = playerContext.PlayerRigidbody;
         if (_playerMovement == null && playerContext != null)

@@ -146,7 +146,7 @@ namespace Hecton8.Modding
             _queuedProjectedEventCount = 0;
             _projectionScheduled = false;
             _tickCount = 0;
-            _playerRuntimeContext = GlobalRegistry.Player;
+            _playerRuntimeContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
 
             HectonEventBus.InstallNativeQueueBindings();
             GlobalRegistry.RegisterModdingBridgeRuntime(this);

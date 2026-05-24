@@ -1280,8 +1280,8 @@ namespace Hecton.Localization
                 return null;
 
             _cachedPlayerToolManager =
-                Hecton8.Core.GlobalRegistry.Player != null && Hecton8.Core.GlobalRegistry.Player.ToolManager != null
-                    ? Hecton8.Core.GlobalRegistry.Player.ToolManager
+                Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext != null && Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext.ToolManager != null
+                    ? Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext.ToolManager
                     : ResolvePlayerToolManager(playerTransform);
             return _cachedPlayerToolManager;
         }

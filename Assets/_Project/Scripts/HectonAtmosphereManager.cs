@@ -2042,8 +2042,8 @@ namespace Hecton8.Atmosphere
             if (_playerTransform != null)
             {
                 _playerTransform.TryGetComponent(out _playerMovement);
-                Camera playerOwnedCamera = Hecton8.Core.GlobalRegistry.Player != null && Hecton8.Core.GlobalRegistry.Player.PlayerCamera != null
-                    ? Hecton8.Core.GlobalRegistry.Player.PlayerCamera
+                Camera playerOwnedCamera = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext != null && Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext.PlayerCamera != null
+                    ? Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext.PlayerCamera
                     : Hecton8.Core.ComponentReferenceUtility.ResolveOwnedComponent<Camera>(_playerTransform);
                 if (playerOwnedCamera != null)
                     _playerCameraTransform = playerOwnedCamera.transform;

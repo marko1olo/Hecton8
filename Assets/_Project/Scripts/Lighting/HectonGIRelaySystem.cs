@@ -498,7 +498,7 @@ namespace Hecton8.Lighting
             if (biomeMatrix != null && math.isfinite(biomeMatrix.CurrentDepthMeters))
                 return math.max(0f, biomeMatrix.CurrentDepthMeters);
 
-            IPlayerRuntimeContext player = GlobalRegistry.Player;
+            IPlayerRuntimeContext player = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
             var movement = player != null ? player.PlayerMovement : null;
             if (movement != null && math.isfinite(movement.CurrentDepth))
                 return math.max(0f, movement.CurrentDepth);

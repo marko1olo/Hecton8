@@ -539,7 +539,7 @@ namespace Hecton8.Core
 
             GlobalRegistry.RegisterFloatingOriginRuntime(this);
             _dataVault = GlobalRegistry.DataVault;
-            _playerRuntimeContext = GlobalRegistry.Player;
+            _playerRuntimeContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
             _submarineRuntime = GlobalRegistry.Submarine;
             TryRegisterHotSwapListener();
             RefreshThresholdCache();
