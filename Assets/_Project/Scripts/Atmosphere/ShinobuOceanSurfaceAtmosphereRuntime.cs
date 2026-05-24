@@ -1765,7 +1765,7 @@ namespace Hecton8.Atmosphere
 
         private static double3 ResolveCameraAupDouble()
         {
-            IPlayerRuntimeContext player = GlobalRegistry.Player;
+            IPlayerRuntimeContext player = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
             if (player != null)
             {
                 if (player.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot) &&
@@ -2093,7 +2093,7 @@ namespace Hecton8.Atmosphere
             if (cameraTransform != null)
                 return;
 
-            IPlayerRuntimeContext player = GlobalRegistry.Player;
+            IPlayerRuntimeContext player = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
             Camera camera = player != null ? player.PlayerCamera : null;
             if (camera != null)
                 cameraTransform = camera.transform;

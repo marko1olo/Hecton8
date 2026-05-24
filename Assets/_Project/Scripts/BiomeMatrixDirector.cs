@@ -932,7 +932,7 @@ namespace Hecton8.Environment
 
         private void CacheRuntimeDependencies()
         {
-            _playerRuntimeContext ??= GlobalRegistry.Player;
+            _playerRuntimeContext ??= Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
             _resolvedFluidDecals ??= GlobalRegistry.AbyssalFluidDecals;
             _resolvedFluidEngine ??= GlobalRegistry.Fluid;
             _resolvedMapMagicBridge ??= GlobalRegistry.MapMagic;

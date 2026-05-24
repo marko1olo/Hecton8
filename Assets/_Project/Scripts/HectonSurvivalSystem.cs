@@ -653,7 +653,7 @@ namespace Hecton8.Gameplay
                 return;
 
             _runtimeContext = runtimeContext;
-            _playerRuntimeContext = GlobalRegistry.Player;
+            _playerRuntimeContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
             _playerMovement = runtimeContext.PlayerMovement;
             _playerTransportCoordinator = runtimeContext.PlayerTransportCoordinator;
             _traumaDispatcher = runtimeContext.TraumaDispatcher;

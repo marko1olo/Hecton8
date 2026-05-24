@@ -938,7 +938,7 @@ namespace Hecton8.AtlasSignal
                 _questManager = GlobalRegistry.Quest;
 
             if (_playerRuntimeContext == null)
-                _playerRuntimeContext = Hecton8.Core.GlobalRegistry.Player;
+                _playerRuntimeContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
 
             if (_localization == null)
                 _localization = LocalizationManager.ActiveRuntimeInstance;

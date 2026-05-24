@@ -199,7 +199,7 @@ namespace Hecton8.UI
 
             if (toolManager == null)
             {
-                IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+                IPlayerRuntimeContext playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
                 if (playerContext != null && playerContext.ToolManager != null)
                 {
                     toolManager = playerContext.ToolManager;

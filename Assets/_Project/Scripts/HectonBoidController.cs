@@ -1496,7 +1496,7 @@ namespace Hecton8.AI.GPU
         {
             if (forceRefresh || _playerRuntimeContext == null)
             {
-                _playerRuntimeContext = GlobalRegistry.Player;
+                _playerRuntimeContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
                 _playerTransform = _playerRuntimeContext != null ? _playerRuntimeContext.PlayerTransform : _playerTransform;
                 _mainCamera = null;
             }

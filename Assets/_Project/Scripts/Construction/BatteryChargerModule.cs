@@ -185,7 +185,7 @@ namespace Hecton8.Construction
                     return toolManager;
             }
 
-            IPlayerRuntimeContext player = GlobalRegistry.Player;
+            IPlayerRuntimeContext player = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
             return player != null ? player.ToolManager : null;
         }
 

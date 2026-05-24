@@ -5664,7 +5664,7 @@ namespace Hecton8.Celestial
         {
             playerAup = default;
 
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
             if (playerContext == null)
                 return false;
 
@@ -5686,7 +5686,7 @@ namespace Hecton8.Celestial
         {
             runtimePosition = Vector3.zero;
 
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
             if (playerContext == null)
                 return false;
 

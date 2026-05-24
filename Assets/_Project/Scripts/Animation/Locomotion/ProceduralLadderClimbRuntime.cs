@@ -330,7 +330,7 @@ namespace Hecton8.Animation.Locomotion
             _exitPoint = exitPoint;
             _matchRotation = matchRotation;
             _movementForceSink = GlobalRegistry.PlayerMovementContracts;
-            _playerContext = GlobalRegistry.Player;
+            _playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
             _vrGripRequired = forceVrGripPullMode || UnityEngine.XR.XRSettings.enabled;
             _cameraSlidePresentationActive = !_vrGripRequired;
             _climbDirection = goingUp ? 1f : -1f;

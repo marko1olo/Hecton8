@@ -4116,7 +4116,7 @@ namespace Hecton8.Construction
         private static bool TryResolvePlayerPosition(out Vector3 position)
         {
             position = Vector3.zero;
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
             if (playerContext == null)
                 return false;
 
@@ -6042,7 +6042,7 @@ namespace Hecton8.Construction
         private static bool TryResolvePlayerAup(out double3 playerAup)
         {
             playerAup = default;
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
             if (playerContext == null)
                 return false;
 

@@ -517,7 +517,7 @@ namespace Hecton8.Atmosphere
 
         private void ResolvePlayerMovementReference()
         {
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
             if (playerContext != null && playerContext.PlayerMovement != null)
             {
                 playerMovement = playerContext.PlayerMovement;
@@ -578,7 +578,7 @@ namespace Hecton8.Atmosphere
 
             if (_playerTransform != null)
             {
-                IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+                IPlayerRuntimeContext playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
                 if (stormVisorController == null || !stormVisorController.transform.IsChildOf(_playerTransform))
                     stormVisorController = playerContext != null ? playerContext.VisorController : null;
 

@@ -401,3 +401,11 @@ Solution: Publish `PlayerRuntimeContextService.ActiveRuntimeContext` from the co
 Rejected Alternatives: A broad DI rewrite was rejected because the workspace is dirty and 20+ agents are active. Staging dirty `PlayerRuntimeContextService.cs` wholesale was rejected; only the EXTERNAL_FIXER hunk is staged. Editing untracked parasite files and unrelated scooter velocity changes was rejected after detection.
 Scalability potential: Low tier avoids repeated player/quest/mission service-locator reads in UI, visor, diagnostic, geology, and bridge cache refresh paths; Middle keeps identical behavior; High and Ultra preserve richer presentation and mission feedback without adding owner-discovery cadence cost.
 Hardware Impact: STATIC estimate only: removes one registry read from each affected cache refresh path and removes stale-save-registration risk after save-service replacement. No profiler microsecond claim.
+
+## Decision 51
+
+Problem: `GlobalRegistry.Player` remained in additional tracked runtime helpers and cache refresh paths after the first player active-context tranche, including atlas, atmosphere, construction, visual, survival, geology, and diagnostic systems.
+Solution: Route 22 tracked `HEAD` call sites through `PlayerRuntimeContextService.ActiveRuntimeContext`, which is an owner-published pointer from the player runtime context service. Stage only the exact `HEAD` hunks because the same files carry unrelated dirty changes from other agents.
+Rejected Alternatives: Changing `GlobalRegistry.Player` lifecycle ownership was rejected. Full-file staging was rejected. Editing editor assertion strings or untracked parasite files was rejected. Launching `dotnet build` while CPU stayed above 50 percent was rejected.
+Scalability potential: Low tier avoids repeated player service-locator reads in cache/helper paths; Middle keeps identical behavior; High and Ultra keep richer atlas, atmosphere, construction, celestial, survival, and visual presentation without adding registry lookup cadence.
+Hardware Impact: STATIC estimate only: removes one player registry read from each affected staged helper/cache path. No profiler microsecond claim.

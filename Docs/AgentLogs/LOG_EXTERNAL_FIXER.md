@@ -833,3 +833,26 @@ Evidence:
 - CLI_DIFF: `git diff --cached --check` passed.
 - CLI_COMPILE: blocked; no compiler processes remained, but CPU stayed at 93-94 percent from unrelated user processes, so `dotnet build` was not launched under the local CPU gate.
 - GIT: committed and pushed `87e2a1238 perf(player): cache active runtime context` to `main`.
+
+## 2026-05-24 - Player Active Context Sweep 2
+
+What was wrong:
+- 22 tracked runtime files still had `GlobalRegistry.Player` reads in static helpers, cache refresh paths, or presentation/diagnostic resolution paths.
+- The files were dirty from concurrent work, so full-file staging would have captured unrelated changes.
+
+What was done:
+- Routed selected `HEAD` call sites through `PlayerRuntimeContextService.ActiveRuntimeContext`.
+- Kept owner lifecycle checks on `GlobalRegistry.Player` untouched.
+- Staged only exact `HEAD` hunks via cached patch; unrelated dirty file changes remain unstaged.
+- Shut down stale MSBuild/VBCS build servers with `dotnet build-server shutdown`.
+
+Cinematic Cheats used:
+- None. This tranche is player-context service-route hygiene.
+
+Exact Microseconds saved:
+- STATIC estimate only: one player registry read removed per affected helper/cache path. No profiler capture, no microsecond claim.
+
+Evidence:
+- STATIC_SOURCE: 22 staged source files.
+- CLI_DIFF: `git diff --cached --check` passed.
+- CLI_COMPILE: blocked; after build-server shutdown no compiler processes remained, but CPU stayed 74-91 percent, so `dotnet build` was not launched under the local CPU gate.
