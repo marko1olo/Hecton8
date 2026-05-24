@@ -13,7 +13,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Settings Live Preview")]
-    public sealed class SettingsLivePreview : MonoBehaviour, ILateFrameTickable
+    public sealed class SettingsLivePreview : MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const float MainCameraResolveRetryInterval = 1f;
 
@@ -34,9 +34,11 @@ namespace Hecton8.UI
         // ══════════════════════════════════════════════════════════
 
         private bool _registered;
+        private bool _hotSwapRegistered;
         private bool _isDirty;
         private float _dirtyTimer;
         private float _mainCameraResolveRetryTimer;
+        private IPlayerRuntimeContext _playerRuntimeContext;
         private float _pendingFOV = -1f;
         private bool _pendingBloom;
         private bool _pendingMotionBlur;
@@ -48,16 +50,20 @@ namespace Hecton8.UI
 
         private void OnEnable()
         {
+            CacheRegistryServicesCold();
+            TryRegisterHotSwapListener();
             RefreshTickRegistration();
         }
 
         private void OnDisable()
         {
+            TryUnregisterHotSwapListener();
             TryUnregister();
         }
 
         private void OnDestroy()
         {
+            TryUnregisterHotSwapListener();
             TryUnregister();
         }
 
@@ -187,7 +193,7 @@ namespace Hecton8.UI
                     return true;
                 }
 
-                IPlayerRuntimeContext playerContext = Hecton8.Core.GlobalRegistry.Player;
+                IPlayerRuntimeContext playerContext = _playerRuntimeContext;
                 Camera playerChildCamera = playerContext != null ? playerContext.PlayerCamera : null;
                 if (playerChildCamera != null)
                 {
@@ -229,6 +235,40 @@ namespace Hecton8.UI
             }
 
             return null;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Player)
+            {
+                _playerRuntimeContext = currentService as IPlayerRuntimeContext;
+                _mainCameraResolveRetryTimer = 0f;
+            }
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            _playerRuntimeContext = GlobalRegistry.Player;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
 
         private void ApplyPostProcessing()

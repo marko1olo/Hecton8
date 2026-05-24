@@ -70,7 +70,9 @@ namespace Hecton8.World
         /// <summary>
         /// Singleton instance. Null if not initialized.
         /// </summary>
-        public static DynamicResolutionScaler Instance => GlobalRegistry.DynamicResolution;
+        private static DynamicResolutionScaler s_activeRuntime;
+
+        public static DynamicResolutionScaler Instance => s_activeRuntime;
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR SETTINGS
@@ -131,6 +133,7 @@ namespace Hecton8.World
         private float _startupGraceRemainingSeconds;
         private bool _registered;
         private bool _serviceRegistered;
+        private bool _saveRegistered;
         private LODQualityPreset _qualityPreset = LODQualityPreset.Medium;
         private float _smoothedFrameTimeMs;
         private float _peakFrameTimeMs;
@@ -145,6 +148,7 @@ namespace Hecton8.World
         private bool _systemOverrideActive;
         private bool _thermalOverrideActive;
         private DynamicResolutionRuntimeSnapshot _snapshot;
+        private ISaveService _saveService;
 
         private UniversalRenderPipelineAsset _urpAsset;
 
@@ -222,6 +226,12 @@ namespace Hecton8.World
 
         internal float DebugRenderScaleOverrideValue => _debugRenderScaleOverrideValue;
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            s_activeRuntime = null;
+        }
+
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
         // ══════════════════════════════════════════════════════════
@@ -268,8 +278,7 @@ namespace Hecton8.World
                 ApplyRenderScale();
             }
 
-            // Register with the authoritative save service.
-            GlobalRegistry.Save?.Register(this);
+            TryRegisterSaveParticipant();
 
             #if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.Log("[DynamicResolutionScaler] Initialized.");
@@ -279,6 +288,7 @@ namespace Hecton8.World
         private void OnEnable()
         {
             TryRegisterService();
+            TryRegisterSaveParticipant();
             TryRegister();
         }
 
@@ -290,8 +300,7 @@ namespace Hecton8.World
 
         private void OnDestroy()
         {
-            // Unregister from the authoritative save service.
-            GlobalRegistry.Save?.Unregister(this);
+            TryUnregisterSaveParticipant();
 
             Dispose();
 
@@ -301,6 +310,7 @@ namespace Hecton8.World
         {
             RestoreDefaultRenderScale();
             TryUnregister();
+            TryUnregisterSaveParticipant();
             TryUnregisterService();
         }
 
@@ -337,6 +347,8 @@ namespace Hecton8.World
 
             GlobalRegistry.RegisterDynamicResolutionRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.DynamicResolution, this);
+            if (_serviceRegistered)
+                s_activeRuntime = this;
         }
 
         private void TryUnregisterService()
@@ -348,6 +360,34 @@ namespace Hecton8.World
                 GlobalRegistry.UnregisterDynamicResolutionRuntime(this);
 
             _serviceRegistered = false;
+            if (ReferenceEquals(s_activeRuntime, this))
+                s_activeRuntime = null;
+        }
+
+        private void TryRegisterSaveParticipant()
+        {
+            if (_saveRegistered)
+                return;
+
+            _saveService = GlobalRegistry.Save;
+            if (_saveService == null)
+                return;
+
+            _saveService.Register(this);
+            _saveRegistered = true;
+        }
+
+        private void TryUnregisterSaveParticipant()
+        {
+            if (!_saveRegistered)
+                return;
+
+            ISaveService saveService = _saveService;
+            if (saveService != null)
+                saveService.Unregister(this);
+
+            _saveService = null;
+            _saveRegistered = false;
         }
 
         // ══════════════════════════════════════════════════════════

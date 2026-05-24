@@ -21,7 +21,7 @@ namespace Hecton8.Gameplay
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Gameplay/Director Mission Bridge")]
-    public sealed class DirectorMissionBridge : MonoBehaviour, IDirectorAIEventListener
+    public sealed class DirectorMissionBridge : MonoBehaviour, IDirectorAIEventListener, IGlobalRegistryHotSwapListener
     {
         [Header("── Mission IDs ─────────────────────────────")]
         [Tooltip("ID missiy kotorye Director mozhet aktivirovat sluchayno.")]
@@ -35,20 +35,27 @@ namespace Hecton8.Gameplay
         [SerializeField] private FirstHourMilestone minimumMilestone = FirstHourMilestone.FirstCraft;
 
         private int _lastMissionIndex;
+        private bool _hotSwapRegistered;
+        private MissionManager _missionManager;
+        private FirstHourDirector _firstHourDirector;
 
         private void OnEnable()
         {
+            CacheRegistryServicesCold();
+            TryRegisterHotSwapListener();
             DirectorAIEvents.Register(this);
         }
 
         private void OnDisable()
         {
             DirectorAIEvents.Unregister(this);
+            TryUnregisterHotSwapListener();
         }
 
         private void OnDestroy()
         {
             DirectorAIEvents.Unregister(this);
+            TryUnregisterHotSwapListener();
         }
 
 #if UNITY_EDITOR
@@ -100,7 +107,7 @@ namespace Hecton8.Gameplay
             if (directorMissionIds == null || directorMissionIds.Length == 0)
                 return;
 
-            MissionManager mm = GlobalRegistry.Missions;
+            MissionManager mm = _missionManager;
             if (mm == null) return;
 
             // Cycle through configured missions.
@@ -167,11 +174,50 @@ namespace Hecton8.Gameplay
 
         private bool CanServeDirectorContent()
         {
-            FirstHourDirector firstHourDirector = Hecton8.Core.GlobalRegistry.FirstHour;
+            FirstHourDirector firstHourDirector = _firstHourDirector;
             if (firstHourDirector == null)
                 return true;
 
             return firstHourDirector.IsMilestoneComplete(minimumMilestone);
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.MissionRuntime:
+                    _missionManager = currentService as MissionManager;
+                    break;
+                case GlobalRegistryServiceSlot.FirstHourRuntime:
+                    _firstHourDirector = currentService as FirstHourDirector;
+                    break;
+            }
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            _missionManager = GlobalRegistry.Missions;
+            _firstHourDirector = GlobalRegistry.FirstHour;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
     }
 }

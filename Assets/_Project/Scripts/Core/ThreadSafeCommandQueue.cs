@@ -224,6 +224,7 @@ namespace Hecton8.Core
         private static int _pendingStorageReservationCommitResolvedCount;
         private static int _storageReservationCommitListenerCount;
         private static int _lastStorageReservationCommitOverflowWarningFrame = -1;
+        private static ObjectPoolManager _objectPool;
 
         /// <summary>
         /// True once the structural command queue has allocated its persistent native storage.
@@ -253,6 +254,7 @@ namespace Hecton8.Core
                 nameof(_pendingCommands),
                 NativeAllocationLifetime.Session);
             PrewarmQueue(ref _pendingCommands, MaxMainThreadCommandsPerDrain);
+            CacheRegistryServicesCold();
         }
 
         public static void Register(IStorageReservationCommitResolvedListener listener)
@@ -355,6 +357,7 @@ namespace Hecton8.Core
             _freeTokens.Clear();
             _nextToken = 1;
             _pendingStorageReservationCommitResolvedCount = 0;
+            _objectPool = null;
         }
 
         public static bool DrainMainThread()
@@ -436,6 +439,7 @@ namespace Hecton8.Core
             _nextToken = 1;
             _pendingStorageReservationCommitResolvedCount = 0;
             _lastStorageReservationCommitOverflowWarningFrame = -1;
+            _objectPool = null;
         }
 
         private static int AllocateToken()
@@ -481,7 +485,7 @@ namespace Hecton8.Core
             {
                 case EntityCommandType.DespawnGameObject:
                 {
-                    ObjectPoolManager pool = GlobalRegistry.ObjectPool;
+                    ObjectPoolManager pool = ResolveObjectPoolCold();
                     if (pool != null)
                         pool.Despawn(instance, Mathf.Max(0f, command.FloatValue));
                     else
@@ -502,7 +506,7 @@ namespace Hecton8.Core
 
                 case EntityCommandType.SpawnGameObject:
                 {
-                    ObjectPoolManager pool = GlobalRegistry.ObjectPool;
+                    ObjectPoolManager pool = ResolveObjectPoolCold();
                     if (pool != null)
                         pool.Spawn(instance, command.VectorValue, Quaternion.identity);
                     break;
@@ -539,6 +543,21 @@ namespace Hecton8.Core
                     break;
                 }
             }
+        }
+
+        private static void CacheRegistryServicesCold()
+        {
+            _objectPool = GlobalRegistry.ObjectPool;
+        }
+
+        private static ObjectPoolManager ResolveObjectPoolCold()
+        {
+            ObjectPoolManager pool = _objectPool;
+            if (pool != null)
+                return pool;
+
+            _objectPool = GlobalRegistry.ObjectPool;
+            return _objectPool;
         }
 
         private static void RaiseStorageReservationCommitResolved(int requesterId, int reservationId, bool committed)

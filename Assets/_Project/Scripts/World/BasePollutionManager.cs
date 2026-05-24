@@ -78,13 +78,14 @@ namespace Hecton8.World
         private int _lastCompletedDrillCycles;
         private EnvironmentalStrainManager _cachedEnvironmentalStrain;
         private bool _hotSwapRegistered;
+        private static BasePollutionManager s_activeRuntime;
 
         /// <summary>Current local acoustic signature emitted by the base cluster.</summary>
         public static float CurrentNoiseLevel
         {
             get
             {
-                BasePollutionManager runtime = GlobalRegistry.BasePollution;
+                BasePollutionManager runtime = s_activeRuntime;
                 return runtime != null ? runtime._currentNoiseLevel : 0f;
             }
         }
@@ -94,7 +95,7 @@ namespace Hecton8.World
         {
             get
             {
-                BasePollutionManager runtime = GlobalRegistry.BasePollution;
+                BasePollutionManager runtime = s_activeRuntime;
                 return runtime != null ? runtime._currentMicroplasticLevel : 0f;
             }
         }
@@ -159,6 +160,8 @@ namespace Hecton8.World
 
             GlobalRegistry.RegisterBasePollutionRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.BasePollution, this);
+            if (_serviceRegistered)
+                s_activeRuntime = this;
         }
 
         private void TryUnregisterService()
@@ -168,6 +171,8 @@ namespace Hecton8.World
 
             GlobalRegistry.UnregisterBasePollutionRuntime(this);
             _serviceRegistered = false;
+            if (ReferenceEquals(s_activeRuntime, this))
+                s_activeRuntime = null;
         }
 
         public void SlowTick()

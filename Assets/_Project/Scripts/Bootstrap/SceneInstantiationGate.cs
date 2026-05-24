@@ -10,23 +10,32 @@ namespace Hecton8.Bootstrap
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-20010)]
-    public sealed class SceneInstantiationGate : MonoBehaviour
+    public sealed class SceneInstantiationGate : MonoBehaviour, IGlobalRegistryHotSwapListener
     {
         private const int GateOpenWatchdogFrames = 50000;
 
+        private static SceneInstantiationGate s_activeRuntime;
         private bool _worldPrimed;
         private bool _playerInstantiated;
         private bool _memorySnapshotCaptured;
         private bool _gateOpen;
+        private bool _hotSwapRegistered;
+        private VRAMPressureMonitor _vramPressure;
         private string _sceneName = string.Empty;
 
-        internal static SceneInstantiationGate ActiveRuntime => GlobalRegistry.SceneInstantiationGateRuntime;
+        internal static SceneInstantiationGate ActiveRuntime => s_activeRuntime;
         internal bool IsOpen => _gateOpen;
         internal string LastFailureReason { get; private set; } = "UNINITIALIZED";
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            s_activeRuntime = null;
+        }
+
         internal static SceneInstantiationGate EnsureRuntimeInstance()
         {
-            SceneInstantiationGate runtime = GlobalRegistry.SceneInstantiationGateRuntime;
+            SceneInstantiationGate runtime = s_activeRuntime;
             if (runtime != null)
                 return runtime;
 
@@ -44,10 +53,17 @@ namespace Hecton8.Bootstrap
             }
 
             GlobalRegistry.RegisterSceneInstantiationGateRuntime(this);
+            if (ReferenceEquals(GlobalRegistry.SceneInstantiationGateRuntime, this))
+                s_activeRuntime = this;
+            CacheRegistryServicesCold();
+            TryRegisterHotSwapListener();
         }
 
         private void OnDestroy()
         {
+            TryUnregisterHotSwapListener();
+            if (ReferenceEquals(s_activeRuntime, this))
+                s_activeRuntime = null;
             GlobalRegistry.ClearSceneInstantiationGateRuntime(this);
         }
 
@@ -132,7 +148,7 @@ namespace Hecton8.Bootstrap
                 return false;
             }
 
-            VRAMPressureMonitor pressureMonitor = Hecton8.Core.GlobalRegistry.VRAMPressure;
+            VRAMPressureMonitor pressureMonitor = _vramPressure;
             if (pressureMonitor == null || !pressureMonitor.HasSample)
             {
                 failureReason = "PRESSURE_SAMPLE_PENDING";
@@ -153,6 +169,37 @@ namespace Hecton8.Bootstrap
 
             failureReason = "NONE";
             return true;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.VRAMPressureRuntime)
+                _vramPressure = currentService as VRAMPressureMonitor;
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            _vramPressure = GlobalRegistry.VRAMPressure;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
     }
 }

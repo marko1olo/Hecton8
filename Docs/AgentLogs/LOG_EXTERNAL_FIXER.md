@@ -761,3 +761,27 @@ Verification:
 - `dotnet build .\Hecton8.Bootstrap.Contracts.csproj --no-restore -v:minimal /p:UseSharedCompilation=false /nr:false /m:1` succeeded with 0 warnings and 0 errors.
 - `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal /p:UseSharedCompilation=false /nr:false /m:1` succeeded with 0 warnings and 0 errors.
 - CPU gate was blocked for long periods by non-project user workload and external compile waves; final Core build ran only after no `dotnet/csc/MSBuild` process was present, single worker, node reuse disabled.
+
+## 2026-05-24 - Runtime Facade And Save Hot-Swap Cache Tranche
+
+What was wrong:
+- Static runtime facades and read-looking helpers still pulled from `GlobalRegistry` in UI audio/tooltips, mission facade, pollution/ambient/rock/dynamic-resolution/LOD/emergency relay accessors, scene gate checks, profiler/editor callbacks, player sensory ensure, and command queue object-pool routes.
+- Save registration and event bridges still used direct registry reads in Atlas6, seam, LOD, dynamic resolution, director mission bridge, settings preview, analyzer scan-log, and RT lifecycle paths.
+- LOD shader math handoff still used a binary mode in this surface instead of continuous quality weight.
+
+What was done:
+- Patched 20 tracked source files.
+- Replaced static facade reads with owner-published active runtime pointers.
+- Added cold caches and hot-swap refreshes for save, VRAM pressure, RT lifecycle, mission/first-hour, quest, player, scan-log, and object-pool routes.
+- Routed LOD preset shader math through continuous `ResolvePresetQualityWeight01()`.
+
+Cinematic cheats used:
+- No simulation expansion. This tranche buys cheaper service routes for existing UI, RT pool, mission, LOD, and bootstrap presentation systems.
+
+Exact microseconds saved:
+- Not measured. STATIC estimate only: removes one registry read from affected facade/callback/event/RT/command routes when invoked.
+
+Verification:
+- `git diff --check` on the 20 touched tracked source files passed with LF->CRLF warnings only.
+- `dotnet build-server shutdown` cleared stale build servers after external compiler waves.
+- `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal /p:UseSharedCompilation=false /nr:false /m:1` succeeded with 0 warnings and 0 errors.

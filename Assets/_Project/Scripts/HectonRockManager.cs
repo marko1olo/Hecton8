@@ -25,7 +25,9 @@ namespace Hecton8.World
         //  SINGLETON
         // ══════════════════════════════════════════════════════════
 
-        public static HectonRockManager Instance => GlobalRegistry.RockManager;
+        private static HectonRockManager s_activeRuntime;
+
+        public static HectonRockManager Instance => s_activeRuntime;
 
         internal GPUInstancerPrefabManager GpuInstancerManager => gpuiManager;
 
@@ -243,6 +245,8 @@ namespace Hecton8.World
 
             GlobalRegistry.RegisterRockManagerRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.RockManager, this);
+            if (_serviceRegistered)
+                s_activeRuntime = this;
         }
 
         private void TryUnregisterFromGlobalRegistry()
@@ -252,6 +256,8 @@ namespace Hecton8.World
 
             GlobalRegistry.UnregisterRockManagerRuntime(this);
             _serviceRegistered = false;
+            if (ReferenceEquals(s_activeRuntime, this))
+                s_activeRuntime = null;
         }
 
         private void TryRegisterToTickManager()

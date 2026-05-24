@@ -345,3 +345,35 @@ Solution: Keep the hard no-concurrent-compiler rule, run `dotnet build` only whe
 Rejected Alternatives: Reporting before build proof was rejected. Killing unrelated user processes was rejected. Running with default parallel MSBuild was rejected.
 Scalability potential: Process integrity only; avoids starving concurrent agents while still producing a compile proof under a noisy workstation.
 Hardware Impact: 0 us runtime gain; verification fidelity improved versus unbounded parallel build.
+
+## Decision 44
+
+Problem: Static compatibility facades and read-looking helpers still routed through `GlobalRegistry` for UI audio/tooltips, mission facade, pollution levels, ambient water motion, rock manager, dynamic resolution, LOD, emergency relay, scene gate, profiler callbacks, player sensory, and command queue object-pool use.
+Solution: Publish owner-local active runtime pointers from registration/unregistration phases and route static accessors/callbacks through those pointers. Keep registry reads only in cold lifecycle ownership checks or first cache fill.
+Rejected Alternatives: A global DI rewrite was rejected because the tree has broad concurrent work. Leaving static `Instance => GlobalRegistry.*` facades was rejected because read accessors must not hide service lookup.
+Scalability potential: Low tier avoids repeated service-locator reads in UI/event/command routes; Middle keeps identical behavior; High and Ultra keep richer visual/audio systems without adding registry lookup cadence.
+Hardware Impact: STATIC estimate only: removes one registry read from each affected facade/callback invocation. No profiler microsecond claim.
+
+## Decision 45
+
+Problem: Save participants and runtime event bridges registered/unregistered through direct `GlobalRegistry.Save`/`SaveRuntime` or resolved mission/first-hour/player/scan-log/RT lifecycle services from event-time paths.
+Solution: Cache save and runtime owner services, refresh cache through `IGlobalRegistryHotSwapListener` where owners already participate in hot-swap, and use derived `PlayerTool` rebind hooks for `EnvironmentalAnalyzerTool`.
+Rejected Alternatives: Polling registry from event handlers was rejected. Adding separate hot-swap registration to derived player tools was rejected because base `PlayerTool` already owns the route.
+Scalability potential: Low/Middle avoid locator work in save/UI/event paths; High/Ultra preserve the same richer feedback and mission routing without service lookup pressure.
+Hardware Impact: STATIC estimate only: removes registry reads from RT allocation/disposal, director mission trigger, settings preview camera resolution, analyzer scan-log rebind, and save participant register/unregister paths.
+
+## Decision 46
+
+Problem: LOD preset routing still carried a binary high/low shader math handoff in a file being touched for registry cleanup, conflicting with continuous quality-weight doctrine.
+Solution: Add `ResolvePresetQualityWeight01()` and push a continuous float weight for Low/Middle/High instead of a binary `MathLodMode` switch.
+Rejected Alternatives: Keeping the binary mode was rejected. A full quality policy rewrite was rejected because this tranche owns cache/facade cleanup only.
+Scalability potential: Low uses 0.25 survival weight; Middle uses 0.62; High/Ultra-capable routes can consume 1.0 visual-overkill weight through existing `DistanceMath` quality API.
+Hardware Impact: Runtime cost unchanged; quality routing becomes continuous and avoids mode discontinuity.
+
+## Decision 47
+
+Problem: Verification was blocked by external `dotnet/csc/VBCSCompiler` waves after several waits, then stale build-server processes remained.
+Solution: Use `dotnet build-server shutdown`, re-check CPU/compiler gate, then run single-worker Core build with node reuse and shared compilation disabled. Build succeeded with 0 errors and 0 warnings.
+Rejected Alternatives: Running during active compiler waves was rejected. Killing unrelated Python/Code/Codex user processes was rejected. Parallel MSBuild was rejected.
+Scalability potential: Process integrity only; produces compile proof without stealing broad workstation resources.
+Hardware Impact: 0 us runtime gain; verification integrity only.

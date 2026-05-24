@@ -84,8 +84,9 @@ namespace Hecton8.Physics
         // If no observer is assigned or found, avoid hitting bootstrap every frame.
         private float _observerResolveTimer;
         private const float ObserverResolveCooldown = 2f;
+        private static AmbientWaterMotionManager s_activeRuntime;
 
-        public static AmbientWaterMotionManager Instance => GlobalRegistry.AmbientWaterMotion;
+        public static AmbientWaterMotionManager Instance => s_activeRuntime;
 
         //  LIFECYCLE
 
@@ -539,6 +540,8 @@ namespace Hecton8.Physics
 
             GlobalRegistry.RegisterAmbientWaterMotionRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.AmbientWaterMotion, this);
+            if (_serviceRegistered)
+                s_activeRuntime = this;
         }
 
         private void TryUnregisterService()
@@ -548,6 +551,8 @@ namespace Hecton8.Physics
 
             GlobalRegistry.UnregisterAmbientWaterMotionRuntime(this);
             _serviceRegistered = false;
+            if (ReferenceEquals(s_activeRuntime, this))
+                s_activeRuntime = null;
         }
 
         private void CacheRegistryServicesCold()

@@ -41,6 +41,8 @@ namespace Hecton8.Gameplay
         private readonly List<FieldOperationRecord> _recent = new List<FieldOperationRecord>(12);
         private bool _runtimeRegistered;
         private bool _saveRegistered;
+        private ISaveService _saveService;
+        private static FieldOperationLogSystem s_activeRuntime;
 
         public int SavePriority => 36;
         public int LoadPriority => 36;
@@ -86,12 +88,12 @@ namespace Hecton8.Gameplay
 
         public static void RecordOperation(string source, string title, string summary, string severity = "INFO")
         {
-            GlobalRegistry.FieldOperations?.Push(source, title, summary, severity);
+            s_activeRuntime?.Push(source, title, summary, severity);
         }
 
         public static void RecordOperation(string source, string title, in FixedCharBuffer summaryBuffer, string severity = "INFO")
         {
-            FieldOperationLogSystem instance = GlobalRegistry.FieldOperations;
+            FieldOperationLogSystem instance = s_activeRuntime;
             if (instance == null)
                 return;
 
@@ -100,7 +102,7 @@ namespace Hecton8.Gameplay
 
         public static void RecordOperation(string source, in FixedCharBuffer titleBuffer, in FixedCharBuffer summaryBuffer, string severity = "INFO")
         {
-            FieldOperationLogSystem instance = GlobalRegistry.FieldOperations;
+            FieldOperationLogSystem instance = s_activeRuntime;
             if (instance == null)
                 return;
 
@@ -113,6 +115,7 @@ namespace Hecton8.Gameplay
             TryUnregisterRuntime();
             _recent.Clear();
             LogChanged = null;
+            _saveService = null;
         }
 
         private bool TryRegisterRuntime()
@@ -132,6 +135,8 @@ namespace Hecton8.Gameplay
 
             GlobalRegistry.RegisterFieldOperationLogRuntime(this);
             _runtimeRegistered = ReferenceEquals(GlobalRegistry.FieldOperations, this);
+            if (_runtimeRegistered)
+                s_activeRuntime = this;
             return _runtimeRegistered;
         }
 
@@ -142,6 +147,8 @@ namespace Hecton8.Gameplay
 
             GlobalRegistry.UnregisterFieldOperationLogRuntime(this);
             _runtimeRegistered = false;
+            if (ReferenceEquals(s_activeRuntime, this))
+                s_activeRuntime = null;
         }
 
         private void TryRegisterSaveParticipant()
@@ -149,7 +156,12 @@ namespace Hecton8.Gameplay
             if (_saveRegistered)
                 return;
 
-            ISaveService saveService = GlobalRegistry.Save;
+            ISaveService saveService = _saveService;
+            if (saveService == null)
+            {
+                saveService = GlobalRegistry.Save;
+                _saveService = saveService;
+            }
             if (saveService == null)
                 return;
 
@@ -162,11 +174,12 @@ namespace Hecton8.Gameplay
             if (!_saveRegistered)
                 return;
 
-            ISaveService saveService = GlobalRegistry.Save;
+            ISaveService saveService = _saveService;
             if (saveService != null)
                 saveService.Unregister(this);
 
             _saveRegistered = false;
+            _saveService = null;
         }
 
         public int CopyRecentEntries(FieldOperationSnapshot[] buffer)

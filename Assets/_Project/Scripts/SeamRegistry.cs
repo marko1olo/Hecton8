@@ -29,6 +29,8 @@ namespace Hecton8.World
         private Dictionary<long, ProceduralGeologyCaveEntranceDTO> _caveEntrancesByRuntimeKey;
         private NativeParallelHashMap<int2, float2> _seamHeightsByChunk;
         private const Allocator DataVaultExemptSeamHeightIndexAllocator = Allocator.Persistent;
+        private ISaveService _saveService;
+        private bool _saveRegistered;
 
         internal static SeamRegistry ActiveRuntimeInstance { get; private set; }
 
@@ -58,16 +60,17 @@ namespace Hecton8.World
 
         private void OnEnable()
         {
-            GlobalRegistry.Save?.Register(this);
+            TryRegisterSaveParticipant();
         }
 
         private void OnDisable()
         {
-            GlobalRegistry.Save?.Unregister(this);
+            TryUnregisterSaveParticipant();
         }
 
         private void OnDestroy()
         {
+            TryUnregisterSaveParticipant();
             if (_seamHeightsByChunk.IsCreated)
             {
                 NativeMemorySentinel.UnregisterNativeParallelHashMap(nameof(SeamRegistry), nameof(_seamHeightsByChunk));
@@ -76,6 +79,32 @@ namespace Hecton8.World
 
             if (ReferenceEquals(ActiveRuntimeInstance, this))
                 ActiveRuntimeInstance = null;
+        }
+
+        private void TryRegisterSaveParticipant()
+        {
+            if (_saveRegistered)
+                return;
+
+            _saveService = GlobalRegistry.Save;
+            if (_saveService == null)
+                return;
+
+            _saveService.Register(this);
+            _saveRegistered = true;
+        }
+
+        private void TryUnregisterSaveParticipant()
+        {
+            if (!_saveRegistered)
+                return;
+
+            ISaveService saveService = _saveService;
+            if (saveService != null)
+                saveService.Unregister(this);
+
+            _saveService = null;
+            _saveRegistered = false;
         }
 
         /// <summary>

@@ -76,7 +76,7 @@ namespace Hecton8.Gameplay
         public override void OnSpawn()
         {
             base.OnSpawn();
-            _scanLog = GlobalRegistry.ScanLog;
+            CacheScanLog(GlobalRegistry.ScanLog);
         }
 
         public override void OnDespawn()
@@ -108,11 +108,28 @@ namespace Hecton8.Gameplay
         {
             base.OnEquip();
 
-            _scanLog = GlobalRegistry.ScanLog;
+            CacheScanLog(GlobalRegistry.ScanLog);
             TryResolveSurvival();
 
             if (_notification == null)
                 HUDNotification.TryGetActive(out _notification);
+        }
+
+        protected override void OnToolRegistryServiceRebound(GlobalRegistryServiceSlot serviceSlot, ref object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.ScanLogRuntime)
+                CacheScanLog(currentService as ScanLogSystem);
+        }
+
+        protected override void OnToolRegistryServiceReplaced(GlobalRegistryServiceSlot serviceSlot, object previousService, object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.ScanLogRuntime)
+                CacheScanLog(currentService as ScanLogSystem);
+        }
+
+        private void CacheScanLog(ScanLogSystem scanLog)
+        {
+            _scanLog = scanLog;
         }
 
         public override void UsePrimary(float deltaTime)

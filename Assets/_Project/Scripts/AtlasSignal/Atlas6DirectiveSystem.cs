@@ -723,12 +723,14 @@ namespace Hecton8.AtlasSignal
         private bool _registered;
         private bool _serviceRegistered;
         private bool _hotSwapRegistered;
+        private bool _saveRegistered;
         private HectonPlayerMovement _playerMovement;
         private AtlasSignalSystem _atlasSignal;
         private FirstHourDirector _firstHourDirector;
         private Quest.QuestManager _questManager;
         private IPlayerRuntimeContext _playerRuntimeContext;
         private LocalizationManager _localization;
+        private ISaveService _saveService;
         private uint _latestScarcityDirectiveQuestHash;
         private uint _latestScarcityDirectiveResourceHash;
 
@@ -779,9 +781,7 @@ namespace Hecton8.AtlasSignal
             CacheAtlasDependenciesCold();
             TryRegisterHotSwapListener();
             TryRegister();
-
-            if (Hecton8.Core.GlobalRegistry.SaveRuntime != null)
-                Hecton8.Core.GlobalRegistry.SaveRuntime.Register(this);
+            TryRegisterSaveParticipant();
 
             NarrativeEvents.Register(this);
             Atlas6Events.Register(this);
@@ -794,9 +794,7 @@ namespace Hecton8.AtlasSignal
             TryUnregisterService();
             TryUnregisterHotSwapListener();
             ClearAtlasDependencies();
-
-            if (Hecton8.Core.GlobalRegistry.SaveRuntime != null)
-                Hecton8.Core.GlobalRegistry.SaveRuntime.Unregister(this);
+            TryUnregisterSaveParticipant();
 
             NarrativeEvents.Unregister(this);
             Atlas6Events.Unregister(this);
@@ -807,6 +805,7 @@ namespace Hecton8.AtlasSignal
             TryUnregister();
             TryUnregisterService();
             TryUnregisterHotSwapListener();
+            TryUnregisterSaveParticipant();
             ClearAtlasDependencies();
         }
 
@@ -915,6 +914,15 @@ namespace Hecton8.AtlasSignal
                 case GlobalRegistryServiceSlot.LocalizationRuntime:
                     _localization = currentService as LocalizationManager;
                     break;
+                case GlobalRegistryServiceSlot.Save:
+                    TryUnregisterSaveParticipant();
+                    _saveService = currentService as ISaveService;
+                    if (_saveService != null)
+                    {
+                        _saveService.Register(this);
+                        _saveRegistered = true;
+                    }
+                    break;
             }
         }
 
@@ -934,6 +942,32 @@ namespace Hecton8.AtlasSignal
 
             if (_localization == null)
                 _localization = Hecton8.Core.GlobalRegistry.Localization;
+        }
+
+        private void TryRegisterSaveParticipant()
+        {
+            if (_saveRegistered)
+                return;
+
+            _saveService = GlobalRegistry.Save;
+            if (_saveService == null)
+                return;
+
+            _saveService.Register(this);
+            _saveRegistered = true;
+        }
+
+        private void TryUnregisterSaveParticipant()
+        {
+            if (!_saveRegistered)
+                return;
+
+            ISaveService saveService = _saveService;
+            if (saveService != null)
+                saveService.Unregister(this);
+
+            _saveService = null;
+            _saveRegistered = false;
         }
 
         private void ClearAtlasDependencies()

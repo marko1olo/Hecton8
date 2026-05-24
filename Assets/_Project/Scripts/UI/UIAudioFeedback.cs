@@ -95,6 +95,7 @@ namespace Hecton8.UI
         // Stats
         private int _totalSoundsPlayed;
         private int _throttledSounds;
+        private static UIAudioFeedback s_activeRuntime;
         public ServiceHeartbeatState HeartbeatState => _runtimeRegistered ? ServiceHeartbeatState.Ready : ServiceHeartbeatState.NotStarted;
         public bool IsServiceReady => _runtimeRegistered;
 
@@ -165,35 +166,35 @@ namespace Hecton8.UI
 
         public static void PlayPanelOpen()
         {
-            UIAudioFeedback instance = GlobalRegistry.UIAudioFeedback;
+            UIAudioFeedback instance = s_activeRuntime;
             if (instance != null && instance.panelOpen != null)
                 instance.PlaySound(instance.panelOpen, instance.volume);
         }
 
         public static void PlayPanelClose()
         {
-            UIAudioFeedback instance = GlobalRegistry.UIAudioFeedback;
+            UIAudioFeedback instance = s_activeRuntime;
             if (instance != null && instance.panelClose != null)
                 instance.PlaySound(instance.panelClose, instance.volume);
         }
 
         public static void PlayClickPrimary()
         {
-            UIAudioFeedback instance = GlobalRegistry.UIAudioFeedback;
+            UIAudioFeedback instance = s_activeRuntime;
             if (instance != null && instance.clickPrimary != null)
                 instance.PlaySound(instance.clickPrimary, instance.volume);
         }
 
         public static void PlayClickSecondary()
         {
-            UIAudioFeedback instance = GlobalRegistry.UIAudioFeedback;
+            UIAudioFeedback instance = s_activeRuntime;
             if (instance != null && instance.clickSecondary != null)
                 instance.PlaySound(instance.clickSecondary, instance.volume);
         }
 
         public static void PlayClickDestructive()
         {
-            UIAudioFeedback instance = GlobalRegistry.UIAudioFeedback;
+            UIAudioFeedback instance = s_activeRuntime;
             if (instance != null && instance.clickDestructive != null)
                 instance.PlaySound(instance.clickDestructive, instance.volume);
         }
@@ -203,7 +204,7 @@ namespace Hecton8.UI
         /// </summary>
         public static void GetStats(out int totalPlayed, out int throttled)
         {
-            UIAudioFeedback instance = GlobalRegistry.UIAudioFeedback;
+            UIAudioFeedback instance = s_activeRuntime;
             if (instance != null)
             {
                 totalPlayed = instance._totalSoundsPlayed;
@@ -221,7 +222,7 @@ namespace Hecton8.UI
         /// </summary>
         public static void ResetStats()
         {
-            UIAudioFeedback instance = GlobalRegistry.UIAudioFeedback;
+            UIAudioFeedback instance = s_activeRuntime;
             if (instance != null)
             {
                 instance._totalSoundsPlayed = 0;
@@ -263,6 +264,8 @@ namespace Hecton8.UI
 
             GlobalRegistry.RegisterUIAudioFeedbackRuntime(this);
             _runtimeRegistered = ReferenceEquals(GlobalRegistry.UIAudioFeedback, this);
+            if (_runtimeRegistered)
+                s_activeRuntime = this;
             return _runtimeRegistered;
         }
 
@@ -273,6 +276,8 @@ namespace Hecton8.UI
 
             GlobalRegistry.UnregisterUIAudioFeedbackRuntime(this);
             _runtimeRegistered = false;
+            if (ReferenceEquals(s_activeRuntime, this))
+                s_activeRuntime = null;
         }
 
         private void TryRegisterHotSwapListener()
@@ -584,11 +589,7 @@ namespace Hecton8.UI
         private void PlaySound(AudioClip clip, float vol)
         {
             if (_audioManager == null)
-            {
-                _audioManager = GlobalRegistry.Audio;
-                if (_audioManager == null)
-                    return;
-            }
+                return;
 
             _audioManager.PlayStatic2D(clip, vol, _audioManager.InterfaceGroup);
             _totalSoundsPlayed++;

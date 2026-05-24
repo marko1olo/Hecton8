@@ -20,7 +20,9 @@ namespace Hecton8.World
         private const string DefaultRelayFallback =
             "HOLD TO THE SERVICE TRACE. RELAYS AND CACHES GIVE LORE, SUPPLIES, AND THE NEXT FOOTHOLD.";
 
-        public static EmergencyServiceRelayDirector ActiveRuntimeInstance => GlobalRegistry.EmergencyRelay;
+        private static EmergencyServiceRelayDirector s_activeRuntime;
+
+        public static EmergencyServiceRelayDirector ActiveRuntimeInstance => s_activeRuntime;
 
         [Header("── Relay Chain ────────────────────────────")]
         [Tooltip("Chain ID used by the first-hour breadcrumb route.")]
@@ -101,7 +103,10 @@ namespace Hecton8.World
             GlobalRegistry.RegisterEmergencyRelayRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.EmergencyRelay, this);
             if (_serviceRegistered)
+            {
+                s_activeRuntime = this;
                 return true;
+            }
 
             Destroy(gameObject);
             return false;
@@ -116,6 +121,8 @@ namespace Hecton8.World
                 GlobalRegistry.UnregisterEmergencyRelayRuntime(this);
 
             _serviceRegistered = false;
+            if (ReferenceEquals(s_activeRuntime, this))
+                s_activeRuntime = null;
         }
 
         /// <inheritdoc />

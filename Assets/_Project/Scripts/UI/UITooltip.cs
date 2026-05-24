@@ -62,6 +62,7 @@ namespace Hecton8.UI
         private bool _hasPositionCache;
         private bool _pendingPositionRefresh;
         private int _currentTextLength;
+        private static UITooltip s_activeRuntime;
         // COLD ALLOC: char[512] - tooltip TMP staging buffer, never resized - owner: UITooltip
         private readonly char[] _textBuffer = new char[TooltipTextCapacity];
         private const int TooltipTextCapacity = 512;
@@ -127,6 +128,8 @@ namespace Hecton8.UI
             TryUnregister();
             TryUnregisterRuntime();
             HideInternal();
+            if (ReferenceEquals(s_activeRuntime, this))
+                s_activeRuntime = null;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -138,7 +141,7 @@ namespace Hecton8.UI
         /// </summary>
         public static void Show(string text)
         {
-            UITooltip instance = GlobalRegistry.UITooltip;
+            UITooltip instance = s_activeRuntime;
             if (instance == null || string.IsNullOrEmpty(text))
                 return;
 
@@ -150,7 +153,7 @@ namespace Hecton8.UI
         /// </summary>
         public static void Hide()
         {
-            UITooltip instance = GlobalRegistry.UITooltip;
+            UITooltip instance = s_activeRuntime;
             if (instance == null)
                 return;
 
@@ -218,6 +221,8 @@ namespace Hecton8.UI
 
             GlobalRegistry.RegisterUITooltipRuntime(this);
             _runtimeRegistered = ReferenceEquals(GlobalRegistry.UITooltip, this);
+            if (_runtimeRegistered)
+                s_activeRuntime = this;
             return _runtimeRegistered;
         }
 
@@ -228,6 +233,8 @@ namespace Hecton8.UI
 
             GlobalRegistry.UnregisterUITooltipRuntime(this);
             _runtimeRegistered = false;
+            if (ReferenceEquals(s_activeRuntime, this))
+                s_activeRuntime = null;
         }
 
         private void TryRegister()

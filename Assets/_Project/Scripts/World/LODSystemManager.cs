@@ -89,7 +89,9 @@ namespace Hecton8.World
         /// <summary>
         /// Registry-backed runtime instance. Null if not initialized.
         /// </summary>
-        public static LODSystemManager Instance => GlobalRegistry.LODSystem;
+        private static LODSystemManager s_activeRuntime;
+
+        public static LODSystemManager Instance => s_activeRuntime;
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR SETTINGS
@@ -133,9 +135,11 @@ namespace Hecton8.World
 
         private bool _registered;
         private bool _serviceRegistered;
+        private bool _saveRegistered;
 
         private Camera _mainCamera;
         private Transform _cameraTransform;
+        private ISaveService _saveService;
         private IPlayerRuntimeContext _playerRuntimeContext;
         private ITickDispatcher _dispatcher;
         private DynamicResolutionScaler _dynamicResolutionScaler;
@@ -187,6 +191,7 @@ namespace Hecton8.World
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
+            s_activeRuntime = null;
         }
 
         private void Awake()
@@ -209,8 +214,7 @@ namespace Hecton8.World
             TryResolveMainCamera();
             ApplyQualityPreset(_qualityPreset);
 
-            // Register with the authoritative save service.
-            GlobalRegistry.Save?.Register(this);
+            TryRegisterSaveParticipant();
 
             #if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.Log("[LODSystemManager] Initialized. Max LOD groups: " + _maxLODGroupsPerFrame);
@@ -221,6 +225,7 @@ namespace Hecton8.World
         {
             CacheRegistryServicesCold();
             TryRegisterHotSwapListener();
+            TryRegisterSaveParticipant();
             InvalidateViewerAupCache();
             EnsureDistanceScratchAllocated();
             TryRegisterService();
@@ -242,8 +247,7 @@ namespace Hecton8.World
 
         private void OnDestroy()
         {
-            // Unregister from the authoritative save service.
-            GlobalRegistry.Save?.Unregister(this);
+            TryUnregisterSaveParticipant();
 
             ReleaseDistanceScratch();
 
@@ -292,6 +296,8 @@ namespace Hecton8.World
 
             GlobalRegistry.RegisterLODSystemRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.LODSystem, this);
+            if (_serviceRegistered)
+                s_activeRuntime = this;
         }
 
         private void TryUnregisterService()
@@ -303,6 +309,34 @@ namespace Hecton8.World
                 GlobalRegistry.UnregisterLODSystemRuntime(this);
 
             _serviceRegistered = false;
+            if (ReferenceEquals(s_activeRuntime, this))
+                s_activeRuntime = null;
+        }
+
+        private void TryRegisterSaveParticipant()
+        {
+            if (_saveRegistered)
+                return;
+
+            _saveService = GlobalRegistry.Save;
+            if (_saveService == null)
+                return;
+
+            _saveService.Register(this);
+            _saveRegistered = true;
+        }
+
+        private void TryUnregisterSaveParticipant()
+        {
+            if (!_saveRegistered)
+                return;
+
+            ISaveService saveService = _saveService;
+            if (saveService != null)
+                saveService.Unregister(this);
+
+            _saveService = null;
+            _saveRegistered = false;
         }
 
         private void CacheRegistryServicesCold()
@@ -370,6 +404,15 @@ namespace Hecton8.World
                     break;
                 case GlobalRegistryServiceSlot.ImpostorRuntime:
                     _impostorSystem = currentService as ImpostorSystem;
+                    break;
+                case GlobalRegistryServiceSlot.Save:
+                    TryUnregisterSaveParticipant();
+                    _saveService = currentService as ISaveService;
+                    if (_saveService != null)
+                    {
+                        _saveService.Register(this);
+                        _saveRegistered = true;
+                    }
                     break;
             }
         }
@@ -554,6 +597,21 @@ namespace Hecton8.World
                 case LODQualityPreset.Medium: return 1.0f;
                 case LODQualityPreset.High:   return 0.7f;
                 default:                      return 1.0f;
+            }
+        }
+
+        public static float ResolvePresetQualityWeight01(LODQualityPreset preset)
+        {
+            switch (preset)
+            {
+                case LODQualityPreset.Low:
+                    return 0.25f;
+                case LODQualityPreset.Medium:
+                    return 0.62f;
+                case LODQualityPreset.High:
+                    return 1f;
+                default:
+                    return 0.62f;
             }
         }
 
@@ -790,7 +848,7 @@ namespace Hecton8.World
         {
             _qualityPreset = preset;
             QualitySettings.lodBias = GetLODBias();
-            DistanceMath.PushShaderMathLod(preset == LODQualityPreset.High ? MathLodMode.High : MathLodMode.Low);
+            DistanceMath.PushShaderMathLod(ResolvePresetQualityWeight01(preset));
 
             _dynamicResolutionScaler?.SetQualityPreset(preset);
         }

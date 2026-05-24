@@ -16,6 +16,7 @@ namespace Hecton8.Core
     [DefaultExecutionOrder(-9921)]
     public sealed class PlayerSensoryManager : MonoBehaviour, IPlayerSensoryService, IUpdatable, IServiceHeartbeat, IServiceShutdown
     {
+        private static PlayerSensoryManager s_activeRuntime;
         private bool _isInitialized;
         private bool _registeredUpdatable;
         private bool _registeredService;
@@ -110,6 +111,7 @@ namespace Hecton8.Core
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
+            s_activeRuntime = null;
             GlobalRegistry.ClearPlayerSensoryRuntime(null);
         }
 
@@ -118,9 +120,14 @@ namespace Hecton8.Core
         /// </summary>
         public static PlayerSensoryManager EnsureRuntimeInstance()
         {
-            PlayerSensoryManager runtime = GlobalRegistry.PlayerSensoryRuntime;
+            PlayerSensoryManager runtime = s_activeRuntime != null
+                ? s_activeRuntime
+                : GlobalRegistry.PlayerSensoryRuntime;
             if (runtime != null)
+            {
+                s_activeRuntime = runtime;
                 return runtime;
+            }
 
             GameObject runtimeRoot = new GameObject("[PlayerSensoryManager]"); // COLD ALLOC: GameObject[1] - bootstrap-owned player sensory service root - owner: PlayerSensoryManager
             return runtimeRoot.AddComponent<PlayerSensoryManager>();
@@ -140,7 +147,7 @@ namespace Hecton8.Core
             }
 
             EnsureSingletonOwnership();
-            if (GlobalRegistry.PlayerSensoryRuntime != this)
+            if (!ReferenceEquals(s_activeRuntime, this))
                 return;
 
             _isInitialized = true;
@@ -204,11 +211,15 @@ namespace Hecton8.Core
             _visorResolveBuffer.Clear();
 
             GlobalRegistry.ClearPlayerSensoryRuntime(this);
+            if (ReferenceEquals(s_activeRuntime, this))
+                s_activeRuntime = null;
         }
 
         private void EnsureSingletonOwnership()
         {
-            PlayerSensoryManager runtime = GlobalRegistry.PlayerSensoryRuntime;
+            PlayerSensoryManager runtime = s_activeRuntime != null
+                ? s_activeRuntime
+                : GlobalRegistry.PlayerSensoryRuntime;
             if (runtime != null && runtime != this)
             {
                 Destroy(gameObject);
@@ -216,6 +227,8 @@ namespace Hecton8.Core
             }
 
             GlobalRegistry.RegisterPlayerSensoryRuntime(this);
+            if (ReferenceEquals(GlobalRegistry.PlayerSensoryRuntime, this))
+                s_activeRuntime = this;
         }
 
         private void SyncSensoryContext()

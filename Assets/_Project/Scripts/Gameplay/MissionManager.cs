@@ -9,9 +9,10 @@ namespace Hecton8.Gameplay
     /// Compatibility facade over the packed quest runtime.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class MissionManager : MonoBehaviour, IQuestEventListener
+    public sealed class MissionManager : MonoBehaviour, IQuestEventListener, IGlobalRegistryHotSwapListener
     {
         private const int MissionCacheCapacity = 32;
+        private static MissionManager s_activeRuntime;
 
         public sealed class MissionInstance
         {
@@ -27,9 +28,11 @@ namespace Hecton8.Gameplay
         private readonly Dictionary<uint, MissionInstance> _activeMissions = new Dictionary<uint, MissionInstance>(MissionCacheCapacity);
         // COLD ALLOC: HashSet<uint>[32] - compatibility facade completed mission cache keyed by FNV quest hash - owner: MissionManager
         private readonly HashSet<uint> _completedMissions = new HashSet<uint>(MissionCacheCapacity);
+        private QuestManager _questManager;
         private bool _serviceRegistered;
+        private bool _hotSwapRegistered;
 
-        public static MissionManager Instance => GlobalRegistry.Missions;
+        public static MissionManager Instance => s_activeRuntime;
 
         private void Awake()
         {
@@ -44,17 +47,20 @@ namespace Hecton8.Gameplay
         private void OnEnable()
         {
             TryRegisterService();
+            TryRegisterHotSwapListener();
             QuestEvents.Register(this);
         }
 
         private void OnDisable()
         {
             QuestEvents.Unregister(this);
+            TryUnregisterHotSwapListener();
             TryUnregisterService();
         }
 
         private void OnDestroy()
         {
+            TryUnregisterHotSwapListener();
             TryUnregisterService();
         }
 
@@ -72,6 +78,11 @@ namespace Hecton8.Gameplay
 
             GlobalRegistry.RegisterMissionRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.Missions, this);
+            if (_serviceRegistered)
+            {
+                s_activeRuntime = this;
+                _questManager = GlobalRegistry.Quest;
+            }
         }
 
         private void TryUnregisterService()
@@ -81,6 +92,9 @@ namespace Hecton8.Gameplay
 
             GlobalRegistry.UnregisterMissionRuntime(this);
             _serviceRegistered = false;
+            if (ReferenceEquals(s_activeRuntime, this))
+                s_activeRuntime = null;
+            _questManager = null;
         }
 
         public void StartMission(string missionId)
@@ -92,7 +106,7 @@ namespace Hecton8.Gameplay
             if (missionHash == 0u || _completedMissions.Contains(missionHash) || _activeMissions.ContainsKey(missionHash))
                 return;
 
-            QuestManager questManager = GlobalRegistry.Quest;
+            QuestManager questManager = _questManager;
             if (questManager == null)
                 return;
 
@@ -106,7 +120,7 @@ namespace Hecton8.Gameplay
             if (string.IsNullOrWhiteSpace(missionId) || string.IsNullOrWhiteSpace(objectiveId))
                 return;
 
-            QuestManager questManager = GlobalRegistry.Quest;
+            QuestManager questManager = _questManager;
             if (questManager == null || !questManager.IsActive(missionId))
                 return;
 
@@ -122,7 +136,7 @@ namespace Hecton8.Gameplay
             if (missionHash == 0u)
                 return null;
 
-            QuestManager questManager = GlobalRegistry.Quest;
+            QuestManager questManager = _questManager;
             if (questManager != null && questManager.IsActive(missionId))
                 return EnsureActiveInstance(missionHash, missionId);
 
@@ -147,8 +161,34 @@ namespace Hecton8.Gameplay
             if (_completedMissions.Contains(missionHash))
                 return true;
 
-            QuestManager questManager = GlobalRegistry.Quest;
+            QuestManager questManager = _questManager;
             return questManager != null && questManager.IsCompleted(missionId);
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.QuestRuntime)
+                _questManager = currentService as QuestManager;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
 
         public void OnQuestEvent(in QuestEventPayload payload)
