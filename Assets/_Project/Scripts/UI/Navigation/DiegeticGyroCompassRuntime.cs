@@ -503,7 +503,7 @@ namespace Hecton8.UI.Navigation
             RefreshQualityPolicy();
 
             if (_playerContext == null)
-                _playerContext = GlobalRegistry.Player;
+                _playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
 
             if (_vault == null)
                 _vault = GlobalRegistry.DataVault;

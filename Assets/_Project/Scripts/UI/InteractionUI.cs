@@ -754,7 +754,7 @@ namespace Hecton8.UI
 
         private void RefreshCachedRegistryServices()
         {
-            _cachedPlayerContext = GlobalRegistry.Player;
+            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
             _cachedInputManager = GlobalRegistry.NativeInputManager;
             _cachedPlayerActions = GlobalRegistry.PlayerActions;
             _cachedLocalization = Hecton8.Core.GlobalRegistry.Localization;

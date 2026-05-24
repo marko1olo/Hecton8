@@ -1703,7 +1703,7 @@ namespace Hecton8.UI
             if (_playerContext != null)
                 return;
 
-            _playerContext = GlobalRegistry.Player;
+            _playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
         }
 
         private void EnsureTextLeases()

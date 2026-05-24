@@ -926,7 +926,7 @@ namespace Hecton8.UI
         private void CacheRegistryServicesCold()
         {
             _input = GlobalRegistry.Input;
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
             _cachedPlayerContext = playerContext;
             RefreshRuntimeOriginSnapshotForOwner();
 

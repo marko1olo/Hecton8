@@ -141,7 +141,7 @@ namespace Hecton8.Visor
 
                 if (camera == null)
                 {
-                    IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+                    IPlayerRuntimeContext playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
                     camera = playerContext != null ? playerContext.PlayerCamera : null;
                 }
             }

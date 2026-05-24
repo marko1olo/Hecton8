@@ -495,7 +495,7 @@ namespace Hecton8.Visor
         {
             _dataVault = GlobalRegistry.DataVault;
             _noirResolutionScaler = GlobalRegistry.ResolutionScaler;
-            _noirPlayerContext = GlobalRegistry.Player;
+            _noirPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
             RefreshNoirPlayerContextCold();
         }
 

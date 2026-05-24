@@ -354,7 +354,7 @@ namespace Hecton8.UI
             _atlasSignalSystem = GlobalRegistry.AtlasSignal;
             _atlasSignalDecoder = GlobalRegistry.AtlasSignalDecoder;
             _firstHourDirector = GlobalRegistry.FirstHour;
-            _playerRuntimeContext = GlobalRegistry.Player;
+            _playerRuntimeContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
         }
 
         private void TryRegisterHotSwapListener()

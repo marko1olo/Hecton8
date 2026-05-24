@@ -189,7 +189,7 @@ namespace Hecton8.UI
 
         private void AutoResolve()
         {
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
             if (_inventoryManager == null)
                 _inventoryManager = GlobalRegistry.PlayerInventory as PlayerInventoryManager;
             if (playerInventory == null && playerContext != null)

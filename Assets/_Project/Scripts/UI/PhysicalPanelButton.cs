@@ -575,7 +575,7 @@ namespace Hecton8.UI
         private void CacheRegistryServicesCold()
         {
             _cachedAudioService = GlobalRegistry.Audio;
-            _cachedPlayerContext = GlobalRegistry.Player;
+            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
         }
 
         private void TryRegisterHotSwapListener()

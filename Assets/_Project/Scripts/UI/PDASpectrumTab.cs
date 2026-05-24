@@ -556,7 +556,7 @@ namespace Hecton8.UI
 
         private bool TryResolveSurvivalSystem(out HectonSurvivalSystem survival)
         {
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
             if (playerContext != null && playerContext.PlayerMovement != null)
                 _playerMovement = playerContext.PlayerMovement;
 
@@ -613,7 +613,7 @@ namespace Hecton8.UI
         {
             if (_playerMovement == null)
             {
-                IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+                IPlayerRuntimeContext playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
                 if (playerContext != null)
                     _playerMovement = playerContext.PlayerMovement;
             }

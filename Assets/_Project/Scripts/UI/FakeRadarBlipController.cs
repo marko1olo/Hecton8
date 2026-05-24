@@ -547,7 +547,7 @@ namespace Hecton8.UI
         private void CacheRegistryServicesCold()
         {
             RefreshQualityPolicy();
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
             if (ReferenceEquals(_cachedPlayerContext, playerContext))
                 return;
 

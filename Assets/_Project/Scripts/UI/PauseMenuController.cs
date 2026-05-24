@@ -509,7 +509,7 @@ namespace Hecton8.UI
                 if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
                     playerTransform != null)
                 {
-                    IPlayerRuntimeContext playerContext = Hecton8.Core.GlobalRegistry.Player;
+                    IPlayerRuntimeContext playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
                     if (playerContext != null && playerContext.PlayerPDA != null)
                     {
                         playerPDA = playerContext.PlayerPDA;

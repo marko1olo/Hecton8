@@ -1395,7 +1395,7 @@ namespace Hecton8.UI
                     return true;
                 }
 
-                IPlayerRuntimeContext playerContext = Hecton8.Core.GlobalRegistry.Player;
+                IPlayerRuntimeContext playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
                 Camera playerChildCamera = playerContext != null ? playerContext.PlayerCamera : null;
                 if (playerChildCamera != null)
                 {
@@ -1454,9 +1454,9 @@ namespace Hecton8.UI
                 return true;
             }
 
-            if (Hecton8.Core.GlobalRegistry.Player != null &&
-                Hecton8.Core.GlobalRegistry.Player.PlayerCamera != null &&
-                TryCacheVolumeProfile(Hecton8.Core.ComponentReferenceUtility.ResolveOwnedComponent<Volume>(Hecton8.Core.GlobalRegistry.Player.PlayerCamera.transform)))
+            if (Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext != null &&
+                Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext.PlayerCamera != null &&
+                TryCacheVolumeProfile(Hecton8.Core.ComponentReferenceUtility.ResolveOwnedComponent<Volume>(Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext.PlayerCamera.transform)))
             {
                 return true;
             }

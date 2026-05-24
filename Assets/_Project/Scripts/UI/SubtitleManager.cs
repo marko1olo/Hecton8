@@ -1535,7 +1535,7 @@ namespace Hecton8.UI
 
         private static void ResolveAudioLogCueTransform(out Vector3 runtimePosition, out Vector3 direction)
         {
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
             if (playerContext == null || !playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot))
             {
                 runtimePosition = Vector3.zero;

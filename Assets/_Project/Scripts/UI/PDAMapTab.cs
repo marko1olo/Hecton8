@@ -518,7 +518,7 @@ namespace Hecton8.UI
         private IPlayerRuntimeContext ResolvePlayerContext()
         {
             if (!IsLiveUnityObjectReference(_playerContext))
-                _playerContext = GlobalRegistry.Player;
+                _playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
 
             return _playerContext;
         }

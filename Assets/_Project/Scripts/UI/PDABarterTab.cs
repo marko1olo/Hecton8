@@ -120,7 +120,7 @@ namespace Hecton8.UI
                 exchangeSystem = GlobalRegistry.PDAExchange;
             if (playerPDA == null)
             {
-                IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+                IPlayerRuntimeContext playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
                 if (playerContext != null)
                     playerPDA = playerContext.PlayerPDA;
 
