@@ -209,7 +209,7 @@ namespace Hecton8.World
         {
             playerAup = default;
 
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
             if (playerContext == null)
                 return false;
 

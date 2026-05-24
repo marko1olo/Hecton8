@@ -946,7 +946,7 @@ namespace Hecton8.World
 
         private static bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)
         {
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
             HectonPlayerMovement playerMovement = playerContext != null ? playerContext.PlayerMovement : null;
             if (playerMovement != null)
             {
@@ -1251,7 +1251,7 @@ namespace Hecton8.World
 
         private Camera ResolveViewCamera()
         {
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
             if (playerContext != null && playerContext.PlayerCamera != null)
             {
                 _viewCamera = playerContext.PlayerCamera;

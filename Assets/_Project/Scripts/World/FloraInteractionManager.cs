@@ -2210,7 +2210,7 @@ namespace Hecton8.World
             if (runtimePlayerTransform == null)
                 return null;
 
-            IPlayerRuntimeContext playerContext = Hecton8.Core.GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
             if (playerContext != null && playerContext.ToolManager != null)
                 return playerContext.ToolManager;
 
@@ -3286,7 +3286,7 @@ namespace Hecton8.World
         {
             playerAup = default;
 
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
             if (playerContext == null)
                 return false;
 
@@ -4623,7 +4623,7 @@ namespace Hecton8.World
             if (exposure01 < ToxicSporePoisonMinimumExposure)
                 return;
 
-            IPlayerRuntimeContext playerContext = Hecton8.Core.GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
             HectonPlayerHealth playerHealth = playerContext != null ? playerContext.PlayerHealth : null;
             if (playerHealth == null)
                 return;

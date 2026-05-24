@@ -1915,7 +1915,7 @@ namespace Hecton8.World
                 _dispatcher = GlobalRegistry.Dispatcher;
 
             if (_playerRuntimeContext == null)
-                _playerRuntimeContext = GlobalRegistry.Player;
+                _playerRuntimeContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
 
             if (_voxelEngine == null)
                 _voxelEngine = GlobalRegistry.VoxelEngine;

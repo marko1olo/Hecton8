@@ -2585,7 +2585,7 @@ namespace Hecton8.World
 
         private void CacheRegistryServicesCold()
         {
-            _playerRuntimeContext = GlobalRegistry.Player;
+            _playerRuntimeContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
             _submarineRuntimeContext = GlobalRegistry.Submarine;
             if (cutManager == null)
                 cutManager = GlobalRegistry.SargassumCut;

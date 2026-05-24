@@ -2342,7 +2342,7 @@ namespace Hecton8.World
             if (_abyssalFluidDecals == null)
                 _abyssalFluidDecals = GlobalRegistry.AbyssalFluidDecals;
 
-            _playerRuntimeContext = GlobalRegistry.Player;
+            _playerRuntimeContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
 
             if (_simulationBucketer == null)
                 _simulationBucketer = GlobalRegistry.SimulationBucketer;

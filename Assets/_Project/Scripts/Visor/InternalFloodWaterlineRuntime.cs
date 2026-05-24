@@ -313,7 +313,7 @@ namespace Hecton8.Visor
             out IPlayerRuntimeContext runtimeContext,
             out PlayerRuntimePoseSnapshot poseSnapshot)
         {
-            runtimeContext = GlobalRegistry.Player;
+            runtimeContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
             poseSnapshot = default;
             return runtimeContext != null &&
                    runtimeContext.IsInitialized &&

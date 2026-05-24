@@ -2409,7 +2409,7 @@ namespace Hecton8.World
                 }
             }
 
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
             if (playerContext != null)
             {
                 HectonPlayerMovement movement = playerContext.PlayerMovement;
@@ -5471,7 +5471,7 @@ namespace Hecton8.World
             {
                 if (!playerTransform.TryGetComponent(out _cachedViewCamera))
                 {
-                    IPlayerRuntimeContext playerContext = Hecton8.Core.GlobalRegistry.Player;
+                    IPlayerRuntimeContext playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
                     _cachedViewCamera = playerContext != null ? playerContext.PlayerCamera : null;
                 }
             }

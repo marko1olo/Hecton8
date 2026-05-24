@@ -537,7 +537,7 @@ namespace Hecton8.World
                 if (playerTransform.TryGetComponent(out Camera playerOwnedCamera))
                     return playerOwnedCamera;
 
-                IPlayerRuntimeContext playerContext = Hecton8.Core.GlobalRegistry.Player;
+                IPlayerRuntimeContext playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
                 return playerContext != null ? playerContext.PlayerCamera : null;
             }
 

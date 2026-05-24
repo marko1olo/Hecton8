@@ -1489,7 +1489,7 @@ namespace Hecton8.World
                 }
             }
 
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
             if (playerContext != null)
             {
                 HectonSurvivalSystem survivalSystem = playerContext.SurvivalSystem;
@@ -5210,7 +5210,7 @@ namespace Hecton8.World
                 }
             }
 
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
             HectonPlayerMovement playerMovement = playerContext != null ? playerContext.PlayerMovement : null;
             if (playerMovement == null)
                 return false;

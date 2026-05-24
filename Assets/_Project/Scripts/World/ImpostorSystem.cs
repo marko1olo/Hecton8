@@ -293,7 +293,7 @@ namespace Hecton8.World
         private void CacheRegistryServicesCold()
         {
             if (_playerRuntimeContext == null)
-                _playerRuntimeContext = GlobalRegistry.Player;
+                _playerRuntimeContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
 
             if (_dispatcher == null)
                 _dispatcher = GlobalRegistry.Dispatcher;

@@ -420,7 +420,7 @@ namespace Hecton8.World
         {
             _cachedNarrativeDirector = GlobalRegistry.NarrativeDirector;
             _cachedAudioLogSystem = GlobalRegistry.AudioLogs;
-            _cachedPlayerContext = GlobalRegistry.Player;
+            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
             _cachedLocalization = GlobalRegistry.Localization;
         }
 

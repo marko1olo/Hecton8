@@ -202,7 +202,7 @@ namespace Hecton8.World.Biomes
 
         private void RefreshColdRegistryReferences()
         {
-            _playerContext = GlobalRegistry.Player;
+            _playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
         }
 
         private void TryUnregister()

@@ -83,7 +83,7 @@ namespace Hecton8.World
         private bool TryResolveObserverAbsolutePosition(out Vector3 absolutePosition)
         {
             absolutePosition = default;
-            var player = GlobalRegistry.Player;
+            var player = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
             var movement = player != null ? player.PlayerMovement : null;
             if (movement != null)
             {

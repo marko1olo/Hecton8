@@ -11350,7 +11350,7 @@ namespace Hecton8.World
 
         private static Camera ResolveFloraGpuiCullingCamera()
         {
-            IPlayerRuntimeContext player = GlobalRegistry.Player;
+            IPlayerRuntimeContext player = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
             if (player != null && player.PlayerCamera != null)
                 return player.PlayerCamera;
 

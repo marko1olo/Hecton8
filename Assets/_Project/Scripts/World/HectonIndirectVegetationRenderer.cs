@@ -4623,7 +4623,7 @@ namespace Hecton8.World
             if (!BootstrapState.TryGetCurrentPlayerTransform(out Transform playerTransform) || playerTransform == null)
                 return;
 
-            IPlayerRuntimeContext playerContext = Hecton8.Core.GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
             if (playerContext != null && playerContext.ToolManager != null)
             {
                 _playerToolManager = playerContext.ToolManager;
