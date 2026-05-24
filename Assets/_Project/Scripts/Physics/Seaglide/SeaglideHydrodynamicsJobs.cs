@@ -199,7 +199,10 @@ namespace Hecton8.Physics
                                math.isfinite(request.Throttle01) &
                                math.isfinite(request.BatteryLevel);
 
-            float quality = SeaglideSimdMath.AuthoritativeQualityWeight;
+            float quality = math.saturate(math.select(
+                SeaglideSimdMath.AuthoritativeQualityWeight,
+                GlobalQualityWeight,
+                math.isfinite(GlobalQualityWeight)));
             double3 sector = math.select(double3.zero, tuning.SectorAUP, math.isfinite(tuning.SectorAUP));
             double3 currentAup = math.select(double3.zero, request.CurrentAUP, math.isfinite(request.CurrentAUP));
             double3 localAupDelta = AupPrecisionMath.LocalDeltaDouble(currentAup, sector);
