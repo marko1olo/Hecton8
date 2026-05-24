@@ -1057,3 +1057,29 @@ Evidence:
 - STATIC_GREP: no malformed `Hecton8.Core.Hecton8.Audio` or `SpatialAudioManager.ActiveRuntimeInstance*` suffix text was found in staged source; raw remaining audio grep contains only excluded editor/bootstrap/owner/comment/tooling references.
 - CLI_COMPILE: not launched; CPU measured 100 percent, an active `dotnet` process was present, and `Temp\obj\Hecton8.Core\project.assets.json` remains missing.
 - GIT: committed and pushed `ebfe12fa6 perf(audio): route remaining readers` to `main`.
+
+## 2026-05-24 - Save Active Runtime Sweep 1
+
+What was wrong:
+- 30 tracked runtime/gameplay/meta/narrative files still had exact `GlobalRegistry.Save` or `GlobalRegistry.SaveRuntime` reads in registration, cache, profile, narrative, and telemetry helper routes.
+- `SaveManager` had only the registry compatibility accessor, so consumers had no owner-published active pointer equivalent to the player/audio/localization routes.
+
+What was done:
+- Added `public static SaveManager ActiveRuntimeInstance` to `SaveManager`, assigned it after successful owner registration, and cleared it on owner shutdown.
+- Routed exact save registry reads through `Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance`.
+- Used exact `HEAD` staged blobs and left dirty working-copy edits untouched.
+- Kept bootstrap/core registration, editor/dev smoke, and owner lifecycle self-checks out of the slice.
+- Committed and pushed the source tranche as `e385a63e5 perf(save): route runtime readers`.
+
+Cinematic Cheats used:
+- None. This tranche is runtime service-route hygiene.
+
+Exact Microseconds saved:
+- STATIC estimate only: 75 exact save service-locator reads removed from affected registration/cache/helper routes. No profiler capture, no microsecond claim.
+
+Evidence:
+- STATIC_SOURCE: 31 staged source files: 30 consumers plus `SaveManager` owner publication.
+- CLI_DIFF: `git diff --cached --check` passed; staged stat was 31 files, 85 insertions, 75 deletions.
+- STATIC_GREP: selected-file staged grep found zero remaining exact `GlobalRegistry.Save`/`GlobalRegistry.SaveRuntime` reads; malformed suffix/namespace grep passed.
+- CLI_COMPILE: not launched; CPU measured 91 percent and `Temp\obj\Hecton8.Core\project.assets.json` remains missing.
+- GIT: committed and pushed `e385a63e5 perf(save): route runtime readers` to `main`.
