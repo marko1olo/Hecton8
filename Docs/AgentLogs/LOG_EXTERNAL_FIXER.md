@@ -857,3 +857,28 @@ Evidence:
 - CLI_DIFF: `git diff --cached --check` passed.
 - CLI_COMPILE: blocked; after build-server shutdown no compiler processes remained, but CPU stayed 74-91 percent, so `dotnet build` was not launched under the local CPU gate.
 - GIT: committed and pushed `8153be898 perf(player): route cache readers via owner` to `main`.
+
+## 2026-05-24 - Player Active Context Sweep 3
+
+What was wrong:
+- 30 tracked runtime/dev-smoke files still had exact `GlobalRegistry.Player` reads in cache refreshes, audio helpers, player camera fallbacks, dispatcher helpers, and gameplay routes.
+- The workspace is heavily dirty, so full-file staging would capture unrelated agent/user edits.
+
+What was done:
+- Routed exact player-context reads through `PlayerRuntimeContextService.ActiveRuntimeContext`.
+- Used `Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext` where files lacked `using Hecton8.Core`.
+- Staged only exact `HEAD` hunks for 30 source files.
+- Reversed an initial bad generated patch before commit after review showed prefix risk for `PlayerCriticalAudio`/similar service slots.
+
+Cinematic Cheats used:
+- None. This tranche is service-route hygiene, not physical simulation or visual fake work.
+
+Exact Microseconds saved:
+- STATIC estimate only: one player registry read removed from each affected helper/cache route. No profiler capture, no microsecond claim.
+
+Evidence:
+- STATIC_SOURCE: 30 staged source files, 39 exact replacements.
+- CLI_DIFF: `git diff --cached --check` passed.
+- STATIC_GREP: no staged `GlobalRegistry.Player` exact reads remained in the selected files; no `ActiveRuntimeContextCritical/Inventory/Movement/Motor/Sensory/Actions/Expression/Exploration` text remained.
+- CLI_COMPILE: blocked; CPU measured 85 percent and seven `dotnet` processes were active, so Core build was not launched under the local gate.
+- GIT: committed and pushed `2f18aaa8d perf(player): route more context readers` to `main`.
