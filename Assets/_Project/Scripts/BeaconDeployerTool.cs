@@ -671,7 +671,7 @@ namespace Hecton8.Gameplay
         private void CacheColdDependencies()
         {
             _beaconNetwork = Hecton8.Core.GlobalRegistry.BeaconNetwork;
-            _localization = Hecton8.Core.GlobalRegistry.Localization;
+            _localization = Hecton.Localization.LocalizationManager.ActiveRuntimeInstance;
             WorldRuntimeReferenceUtility.TryResolveBiomeMatrixDirector(ref _biomeMatrixDirector);
             WorldRuntimeReferenceUtility.TryResolveWorldZoneDirector(ref _worldZoneDirector);
         }

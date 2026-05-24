@@ -975,7 +975,7 @@ namespace Hecton8.Gameplay
             _cachedEmergencyRelayDirector = Hecton8.Core.GlobalRegistry.EmergencyRelay;
             _cachedAudioLogSystem = Hecton8.Core.GlobalRegistry.AudioLogs;
             _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
-            _cachedLocalization = Hecton8.Core.GlobalRegistry.Localization;
+            _cachedLocalization = Hecton.Localization.LocalizationManager.ActiveRuntimeInstance;
         }
 
         private void ClearCachedRuntimeServices()

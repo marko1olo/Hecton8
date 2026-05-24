@@ -4059,7 +4059,7 @@ namespace Hecton8.Gameplay
             _dataVault = GlobalRegistry.DataVault;
             _audioService = GlobalRegistry.Audio;
             _settingsRuntime = GlobalRegistry.Settings;
-            _localizationRuntime = GlobalRegistry.Localization;
+            _localizationRuntime = Hecton.Localization.LocalizationManager.ActiveRuntimeInstance;
             _spectrumRuntime = GlobalRegistry.Spectrum;
             _resourceDistributionRuntime = GlobalRegistry.ResourceDistribution;
             _gasDynamicsRuntime = GlobalRegistry.GasDynamics;

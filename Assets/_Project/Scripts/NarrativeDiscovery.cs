@@ -335,7 +335,7 @@ namespace Hecton8.Interaction
             _narrativeDirector = GlobalRegistry.NarrativeDirector;
             _audioLogs = GlobalRegistry.AudioLogs;
             _loreDatabase = GlobalRegistry.LoreDatabase;
-            _localization = GlobalRegistry.Localization;
+            _localization = Hecton.Localization.LocalizationManager.ActiveRuntimeInstance;
         }
 
         private void TryRegisterHotSwapListener()

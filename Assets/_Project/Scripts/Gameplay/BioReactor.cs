@@ -464,7 +464,7 @@ namespace Hecton8.Gameplay
         {
             _audioService = GlobalRegistry.Audio;
             _playerRuntime = PlayerRuntimeContextService.ActiveRuntimeContext;
-            _localizationRuntime = GlobalRegistry.Localization;
+            _localizationRuntime = Hecton.Localization.LocalizationManager.ActiveRuntimeInstance;
         }
 
         public void OnGlobalRegistryServiceReplaced(GlobalRegistryServiceSlot serviceSlot, object previousService, object currentService)

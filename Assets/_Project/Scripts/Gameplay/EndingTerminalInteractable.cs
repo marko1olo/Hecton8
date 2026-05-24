@@ -303,7 +303,7 @@ namespace Hecton8.Gameplay
         {
             _cachedEnding = GlobalRegistry.Ending;
             _cachedQuest = GlobalRegistry.Quest;
-            _cachedLocalization = GlobalRegistry.Localization;
+            _cachedLocalization = Hecton.Localization.LocalizationManager.ActiveRuntimeInstance;
         }
 
         private void RebuildLocalizedTextCache()

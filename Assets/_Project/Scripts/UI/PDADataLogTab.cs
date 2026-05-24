@@ -636,7 +636,7 @@ namespace Hecton8.UI
 
         private static void CacheRegistryServicesCold()
         {
-            s_cachedLocalization = GlobalRegistry.Localization;
+            s_cachedLocalization = Hecton.Localization.LocalizationManager.ActiveRuntimeInstance;
             s_cachedLoreDatabase = GlobalRegistry.LoreDatabase;
             s_cachedAudioLogs = GlobalRegistry.AudioLogs;
             s_cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;

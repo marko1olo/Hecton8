@@ -413,7 +413,7 @@ namespace Hecton8.UI
 
         private void CacheRegistryServicesCold()
         {
-            _cachedLocalization = Hecton8.Core.GlobalRegistry.Localization;
+            _cachedLocalization = Hecton.Localization.LocalizationManager.ActiveRuntimeInstance;
         }
 
         /// <summary>

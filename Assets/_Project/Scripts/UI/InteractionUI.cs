@@ -757,7 +757,7 @@ namespace Hecton8.UI
             _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
             _cachedInputManager = GlobalRegistry.NativeInputManager;
             _cachedPlayerActions = GlobalRegistry.PlayerActions;
-            _cachedLocalization = Hecton8.Core.GlobalRegistry.Localization;
+            _cachedLocalization = Hecton.Localization.LocalizationManager.ActiveRuntimeInstance;
         }
 
         /// <inheritdoc />

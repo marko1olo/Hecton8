@@ -80,7 +80,7 @@ namespace Hecton8.Gameplay
         private void CacheColdDependencies()
         {
             _scanLog = GlobalRegistry.ScanLog;
-            _localization = GlobalRegistry.Localization;
+            _localization = Hecton.Localization.LocalizationManager.ActiveRuntimeInstance;
         }
 
         public override void UsePrimary(float deltaTime)

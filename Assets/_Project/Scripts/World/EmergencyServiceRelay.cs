@@ -421,7 +421,7 @@ namespace Hecton8.World
             _cachedNarrativeDirector = GlobalRegistry.NarrativeDirector;
             _cachedAudioLogSystem = GlobalRegistry.AudioLogs;
             _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
-            _cachedLocalization = GlobalRegistry.Localization;
+            _cachedLocalization = Hecton.Localization.LocalizationManager.ActiveRuntimeInstance;
         }
 
         private void TryRegisterHotSwapListener()

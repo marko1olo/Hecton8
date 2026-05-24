@@ -1252,7 +1252,7 @@ namespace Hecton8.Gameplay
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.LocalizationRuntime:
-                    _cachedLocalization = currentService as LocalizationManager ?? GlobalRegistry.Localization;
+                    _cachedLocalization = currentService as LocalizationManager ?? Hecton.Localization.LocalizationManager.ActiveRuntimeInstance;
                     break;
                 case GlobalRegistryServiceSlot.Audio:
                     _cachedSpatialAudioManager = currentService as SpatialAudioManager;
@@ -1293,7 +1293,7 @@ namespace Hecton8.Gameplay
 
         private void CacheRegistryServicesCold()
         {
-            _cachedLocalization = GlobalRegistry.Localization;
+            _cachedLocalization = Hecton.Localization.LocalizationManager.ActiveRuntimeInstance;
             _cachedSpatialAudioManager = GlobalRegistry.Audio as SpatialAudioManager;
             _cachedObjectPool = GlobalRegistry.ObjectPool;
             _cachedPlayerContext = PlayerRuntimeContextService.ActiveRuntimeContext;

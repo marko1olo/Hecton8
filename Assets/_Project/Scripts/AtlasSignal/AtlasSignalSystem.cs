@@ -540,7 +540,7 @@ namespace Hecton8.AtlasSignal
             _firstHourDirector = Hecton8.Core.GlobalRegistry.FirstHour;
             _narrativeDirector = GlobalRegistry.NarrativeDirector;
             _audioLogs = GlobalRegistry.AudioLogs;
-            _localization = Hecton8.Core.GlobalRegistry.Localization;
+            _localization = Hecton.Localization.LocalizationManager.ActiveRuntimeInstance;
         }
 
         private void ClearRuntimeDependencies()

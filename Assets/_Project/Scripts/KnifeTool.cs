@@ -155,7 +155,7 @@ namespace Hecton8.Gameplay
         public override void OnSpawn()
         {
             base.OnSpawn();
-            _localization = GlobalRegistry.Localization;
+            _localization = Hecton.Localization.LocalizationManager.ActiveRuntimeInstance;
             _feedbackCooldownRemaining = 0f;
             InvalidateHitCache();
         }
@@ -171,7 +171,7 @@ namespace Hecton8.Gameplay
         public override void OnEquip()
         {
             base.OnEquip();
-            _localization = GlobalRegistry.Localization;
+            _localization = Hecton.Localization.LocalizationManager.ActiveRuntimeInstance;
             InvalidateHitCache();
         }
 

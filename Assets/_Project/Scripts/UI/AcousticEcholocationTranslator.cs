@@ -959,7 +959,7 @@ namespace Hecton8.UI
         private void CacheRegistryServicesCold()
         {
             _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
-            _cachedLocalization = GlobalRegistry.Localization;
+            _cachedLocalization = Hecton.Localization.LocalizationManager.ActiveRuntimeInstance;
             _cachedAtmosphere = GlobalRegistry.Atmosphere;
         }
 

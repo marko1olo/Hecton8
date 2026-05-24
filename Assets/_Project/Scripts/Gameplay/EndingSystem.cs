@@ -862,7 +862,7 @@ namespace Hecton8.Gameplay
             _atlas6Directive = Hecton8.Core.GlobalRegistry.Atlas6Directive;
             _questRuntime = GlobalRegistry.Quest;
             _saveRuntime = Hecton8.Core.GlobalRegistry.SaveRuntime;
-            _localization = Hecton8.Core.GlobalRegistry.Localization;
+            _localization = Hecton.Localization.LocalizationManager.ActiveRuntimeInstance;
         }
 
         private void ClearRuntimeDependencies()

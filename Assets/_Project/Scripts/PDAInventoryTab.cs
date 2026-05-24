@@ -1651,7 +1651,7 @@ namespace Hecton8.UI
             if (_detailDesc != null)
                 SetSelectedDescriptionText(_detailDesc);
 
-            LocalizationManager localizationManager = Hecton8.Core.GlobalRegistry.Localization;
+            LocalizationManager localizationManager = Hecton.Localization.LocalizationManager.ActiveRuntimeInstance;
             if (_detailDescMadnessFx != null)
                 _detailDescMadnessFx.SetEffectActive(localizationManager != null && localizationManager.IsMadnessWhisperVisualActive());
 
@@ -3496,8 +3496,8 @@ namespace Hecton8.UI
 
         private static string ResolveLocalized(string key, string fallback)
         {
-            return Hecton8.Core.GlobalRegistry.Localization != null
-                ? Hecton8.Core.GlobalRegistry.Localization.GetOrFallback(Hecton8.Core.GlobalRegistry.Localization.CurrentLanguage, key, fallback)
+            return Hecton.Localization.LocalizationManager.ActiveRuntimeInstance != null
+                ? Hecton.Localization.LocalizationManager.ActiveRuntimeInstance.GetOrFallback(Hecton.Localization.LocalizationManager.ActiveRuntimeInstance.CurrentLanguage, key, fallback)
                 : fallback;
         }
 
@@ -3506,7 +3506,7 @@ namespace Hecton8.UI
             if (string.IsNullOrEmpty(text))
                 return string.Empty;
 
-            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
+            LocalizationManager manager = Hecton.Localization.LocalizationManager.ActiveRuntimeInstance;
             if (manager == null)
                 return text;
 
