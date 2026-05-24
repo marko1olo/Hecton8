@@ -864,7 +864,7 @@ namespace Hecton8.Inventory
                 _playerImpactBodyId = 0ul;
             }
 
-            _cachedAudioService = GlobalRegistry.Audio;
+            _cachedAudioService = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
             _cachedDataVault = GlobalRegistry.DataVault;
         }
 

@@ -769,7 +769,7 @@ namespace Hecton8.Gameplay
 
         private static void PublishParasiteAudioLoad(int parasiteCount)
         {
-            if (GlobalRegistry.Audio is SpatialAudioManager spatialAudioManager)
+            if (Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance is SpatialAudioManager spatialAudioManager)
                 spatialAudioManager.SetParasiteRoomAcousticLoad(parasiteCount);
         }
 

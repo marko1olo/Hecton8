@@ -4057,7 +4057,7 @@ namespace Hecton8.Gameplay
         public void OnDependencyInject()
         {
             _dataVault = GlobalRegistry.DataVault;
-            _audioService = GlobalRegistry.Audio;
+            _audioService = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
             _settingsRuntime = GlobalRegistry.Settings;
             _localizationRuntime = Hecton.Localization.LocalizationManager.ActiveRuntimeInstance;
             _spectrumRuntime = GlobalRegistry.Spectrum;

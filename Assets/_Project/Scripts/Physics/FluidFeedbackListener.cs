@@ -237,7 +237,7 @@ namespace Hecton8.Physics
         private void OnEnable()
         {
             _fluidDecals = GlobalRegistry.AbyssalFluidDecals;
-            _audio = GlobalRegistry.Audio;
+            _audio = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
             FluidFeedbackEvents.Register(this);
         }
 

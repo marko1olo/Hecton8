@@ -1328,9 +1328,9 @@ namespace Hecton8.Gameplay
         private void PlaySound(AudioClip clip)
         {
             if (clip == null) return;
-            if (Hecton8.Core.GlobalRegistry.Audio == null) return;
+            if (Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance == null) return;
 
-            Hecton8.Core.GlobalRegistry.Audio.PlayStatic2D(clip, audioVolume);
+            Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance.PlayStatic2D(clip, audioVolume);
         }
 
         // ══════════════════════════════════════════════════════════

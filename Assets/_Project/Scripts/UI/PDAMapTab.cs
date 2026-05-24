@@ -502,7 +502,7 @@ namespace Hecton8.UI
         private IAudioService ResolveAudioService()
         {
             if (!IsLiveUnityObjectReference(_audioService))
-                _audioService = GlobalRegistry.Audio;
+                _audioService = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
 
             return _audioService;
         }

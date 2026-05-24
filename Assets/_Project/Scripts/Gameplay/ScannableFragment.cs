@@ -654,7 +654,7 @@ namespace Hecton8.Gameplay
 
         private void CacheRegistryServicesCold()
         {
-            _audioService = GlobalRegistry.Audio;
+            _audioService = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
             _localization = Hecton.Localization.LocalizationManager.ActiveRuntimeInstance;
             _loreDatabase = GlobalRegistry.LoreDatabase;
         }

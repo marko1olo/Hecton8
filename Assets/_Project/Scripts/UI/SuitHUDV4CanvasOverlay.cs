@@ -2025,7 +2025,7 @@ namespace Hecton8.UI
             LocalizationManager localizationRuntime = GlobalRegistry.Localization;
             bool localizationChanged = !ReferenceEquals(_localizationRuntime, localizationRuntime);
             _localizationRuntime = localizationRuntime;
-            _spatialAudioManager = GlobalRegistry.Audio;
+            _spatialAudioManager = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
             _playerRuntimeContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
             if (_vegetationBridge == null)
                 _vegetationBridge = GlobalRegistry.MapMagicVegetation;

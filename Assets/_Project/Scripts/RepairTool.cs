@@ -530,7 +530,7 @@ namespace Hecton8.Gameplay
 
         private void CacheRepairAudioCold()
         {
-            IAudioService audioService = GlobalRegistry.Audio;
+            IAudioService audioService = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
             _cachedRepairAudioMixerGroup = audioService != null ? audioService.AmbientGroup : null;
         }
 

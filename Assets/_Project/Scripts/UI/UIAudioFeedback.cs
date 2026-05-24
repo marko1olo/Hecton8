@@ -299,7 +299,7 @@ namespace Hecton8.UI
 
         private void BindAudioAndRegisterControls()
         {
-            _audioManager = GlobalRegistry.Audio;
+            _audioManager = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
 
             if (_controlsRegistered)
                 return;

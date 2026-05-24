@@ -171,7 +171,7 @@ namespace Hecton8.UI
 
         private void QueuePressAudio()
         {
-            IAudioService audio = GlobalRegistry.Audio;
+            IAudioService audio = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
             if (!emitPressAudio || pressAudioEventId == 0u || audio == null || !audio.IsInitialized)
                 return;
 

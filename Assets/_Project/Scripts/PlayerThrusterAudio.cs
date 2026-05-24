@@ -494,7 +494,7 @@ namespace Hecton8.Audio
 
         private void RefreshRuntimeAudioServicesCold()
         {
-            CacheSpatialAudioManager(GlobalRegistry.Audio);
+            CacheSpatialAudioManager(Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance);
         }
 
         private void CacheSpatialAudioManager(IAudioService audioService)

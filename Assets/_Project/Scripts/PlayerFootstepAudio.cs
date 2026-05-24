@@ -560,7 +560,7 @@ namespace Hecton8.Audio
 
         private void RefreshColdRegistryReferences()
         {
-            _audioService = GlobalRegistry.Audio;
+            _audioService = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
             _mapMagic = GlobalRegistry.MapMagic;
         }
 

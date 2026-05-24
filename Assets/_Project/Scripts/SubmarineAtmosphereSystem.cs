@@ -2852,7 +2852,7 @@ namespace Hecton8.Atmosphere
             _powerGridService = GlobalRegistry.PowerGrid;
             _audioLogs = GlobalRegistry.AudioLogs;
             _playerSensoryService = GlobalRegistry.PlayerSensory;
-            _audioService = GlobalRegistry.Audio;
+            _audioService = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
             _thermodynamicsService = GlobalRegistry.ThermodynamicsService;
             CacheReferencesFromCache();
         }

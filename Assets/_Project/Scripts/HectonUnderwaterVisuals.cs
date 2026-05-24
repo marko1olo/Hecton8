@@ -2029,7 +2029,7 @@ namespace Hecton8.Environment
             if (!Application.isPlaying)
                 return;
 
-            _audioRuntime = GlobalRegistry.Audio;
+            _audioRuntime = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
             _dynamicResolutionRuntime = GlobalRegistry.DynamicResolution;
             _weatherRuntime = GlobalRegistry.Weather;
             _surfaceWeatherRuntime = GlobalRegistry.SurfaceWeather;

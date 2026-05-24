@@ -297,7 +297,7 @@ namespace Hecton8.Gameplay
             _state = CrateState.Opening;
 
             // Play open sound
-            if (openSound != null && Hecton8.Core.GlobalRegistry.Audio is Hecton8.Core.IAudioService audio)
+            if (openSound != null && Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance is Hecton8.Core.IAudioService audio)
             {
                 audio.PlayAtPoint(openSound, _transform.position, crateVolume);
             }
@@ -325,7 +325,7 @@ namespace Hecton8.Gameplay
             _state = CrateState.Closed;
 
             // Play close sound
-            if (closeSound != null && Hecton8.Core.GlobalRegistry.Audio is Hecton8.Core.IAudioService audio)
+            if (closeSound != null && Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance is Hecton8.Core.IAudioService audio)
             {
                 audio.PlayAtPoint(closeSound, _transform.position, crateVolume);
             }

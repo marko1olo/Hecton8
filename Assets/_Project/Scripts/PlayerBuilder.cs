@@ -1389,7 +1389,7 @@ namespace Hecton8.Building
             if (_cachedAutonomousExtractorSystem == null)
                 _cachedAutonomousExtractorSystem = GlobalRegistry.AutonomousExtractors;
             if (_cachedAudioService == null)
-                _cachedAudioService = GlobalRegistry.Audio;
+                _cachedAudioService = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (builderDebugLogging)
                 LogBuilderDebug($"BindRuntimeReferences catalogCount={(_buildCatalog != null ? _buildCatalog.Count : -1)}");

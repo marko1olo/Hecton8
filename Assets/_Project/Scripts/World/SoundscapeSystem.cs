@@ -644,7 +644,7 @@ namespace Hecton8.World
 
         private void OnEnable()
         {
-            CacheAudioService(GlobalRegistry.Audio);
+            CacheAudioService(Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance);
             RefreshCachedScalabilityTier();
             TryRegisterService();
             TryRegister();

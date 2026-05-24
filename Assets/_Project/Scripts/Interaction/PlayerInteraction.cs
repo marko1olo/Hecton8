@@ -577,9 +577,9 @@ namespace Hecton8.Interaction
 
             // Audio: subtle metallic click on hover acquisition.
             if (hoverSound != null
-                && Hecton8.Core.GlobalRegistry.Audio != null)
+                && Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance != null)
             {
-                Hecton8.Core.GlobalRegistry.Audio.PlayStatic2D(
+                Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance.PlayStatic2D(
                     hoverSound, 0.3f);
             }
 
@@ -711,9 +711,9 @@ namespace Hecton8.Interaction
         {
             // Audio: firm metallic confirmation.
             if (interactSound != null
-                && Hecton8.Core.GlobalRegistry.Audio != null)
+                && Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance != null)
             {
-                Hecton8.Core.GlobalRegistry.Audio.PlayStatic2D(
+                Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance.PlayStatic2D(
                     interactSound, 0.6f);
             }
 

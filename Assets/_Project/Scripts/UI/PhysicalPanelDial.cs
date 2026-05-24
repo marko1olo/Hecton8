@@ -201,7 +201,7 @@ namespace Hecton8.UI
 
         private void QueueScrollAudio()
         {
-            IAudioService audio = GlobalRegistry.Audio;
+            IAudioService audio = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
             if (!emitScrollAudio || scrollAudioEventId == 0u || audio == null || !audio.IsInitialized)
                 return;
 
