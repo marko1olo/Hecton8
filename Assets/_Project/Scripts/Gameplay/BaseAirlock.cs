@@ -667,7 +667,7 @@ namespace Hecton8.Gameplay
 
             // Play cycle start sound
             if (cycleStartSound != null &&
-                Hecton8.Core.GlobalRegistry.Audio is Hecton8.Core.IAudioService audio &&
+                Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance is Hecton8.Core.IAudioService audio &&
                 TryResolveBulkheadAudioRuntimePosition(out Vector3 audioPosition))
             {
                 audio.PlayAtPoint(cycleStartSound, audioPosition);
@@ -702,7 +702,7 @@ namespace Hecton8.Gameplay
 
             // Play cycle end sound
             if (cycleEndSound != null &&
-                Hecton8.Core.GlobalRegistry.Audio is Hecton8.Core.IAudioService audio &&
+                Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance is Hecton8.Core.IAudioService audio &&
                 TryResolveBulkheadAudioRuntimePosition(out Vector3 audioPosition))
             {
                 audio.PlayAtPoint(cycleEndSound, audioPosition);

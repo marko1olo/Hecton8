@@ -536,7 +536,7 @@ namespace Hecton8.Gameplay
         {
             _playerInventoryRuntime = GlobalRegistry.PlayerInventoryRuntime;
             _persistentWorldRegistry = GlobalRegistry.PersistentWorldRegistry;
-            _audioService = GlobalRegistry.Audio;
+            _audioService = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
             _objectPool = GlobalRegistry.ObjectPool;
             _localizationManager = GlobalRegistry.Localization;
         }

@@ -323,7 +323,7 @@ namespace Hecton8.Gameplay
         public void Interact(Transform interactor)
         {
             // Play access sound
-            if (accessSound != null && Hecton8.Core.GlobalRegistry.Audio is Hecton8.Core.IAudioService audio)
+            if (accessSound != null && Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance is Hecton8.Core.IAudioService audio)
             {
                 audio.PlayStatic2D(accessSound, 0.7f);
             }
@@ -399,7 +399,7 @@ namespace Hecton8.Gameplay
                 UpdateState();
 
                 // Play new message alert
-                if (newMessageAlertSound != null && Hecton8.Core.GlobalRegistry.Audio is Hecton8.Core.IAudioService audio)
+                if (newMessageAlertSound != null && Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance is Hecton8.Core.IAudioService audio)
                 {
                     audio.PlayStatic2D(newMessageAlertSound, 0.8f);
                 }

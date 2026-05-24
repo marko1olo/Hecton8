@@ -935,7 +935,7 @@ namespace Hecton8.Audio
                 return null;
 
             _nextAudioServiceResolveFrame = frame + AudioServiceResolveRetryFrames;
-            audioService = GlobalRegistry.Audio;
+            audioService = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
             _cachedAudioService = audioService != null && audioService.IsInitialized ? audioService : null;
             _cachedSpatialAudioManager = _cachedAudioService as SpatialAudioManager;
             return _cachedAudioService;

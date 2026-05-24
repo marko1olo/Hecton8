@@ -345,7 +345,7 @@ namespace Hecton8.Gameplay
                 BallisticTrajectoryFlags.HostileFlora);
 
             // Play shoot sound
-            if (shootSound != null && Hecton8.Core.GlobalRegistry.Audio is Hecton8.Core.IAudioService audio)
+            if (shootSound != null && Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance is Hecton8.Core.IAudioService audio)
             {
                 audio.PlayAtPoint(shootSound, spawnPos, shootVolume);
             }

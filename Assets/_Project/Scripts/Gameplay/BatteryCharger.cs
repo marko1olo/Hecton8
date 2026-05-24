@@ -566,7 +566,7 @@ namespace Hecton8.Gameplay
             slots[slotIndex].currentCharge = currentCharge;
 
             // Play insert sound
-            if (insertSound != null && Hecton8.Core.GlobalRegistry.Audio is Hecton8.Core.IAudioService audio)
+            if (insertSound != null && Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance is Hecton8.Core.IAudioService audio)
             {
                 audio.PlayAtPoint(insertSound, _cachedTransform.position);
             }

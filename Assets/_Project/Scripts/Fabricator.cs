@@ -1912,8 +1912,8 @@ namespace Hecton8.Crafting
             if (clip == null)
                 return;
 
-            if (Hecton8.Core.GlobalRegistry.Audio != null)
-                Hecton8.Core.GlobalRegistry.Audio.PlayAtPoint(clip, transform.position);
+            if (Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance != null)
+                Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance.PlayAtPoint(clip, transform.position);
         }
 
         private void RaiseFabricatorProgressAudioPing()

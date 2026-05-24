@@ -439,7 +439,7 @@ namespace Hecton8.AtlasSignal
         private void CacheRegistryServicesCold()
         {
             _audioLogs = GlobalRegistry.AudioLogs;
-            _spatialAudio = GlobalRegistry.Audio as SpatialAudioManager;
+            _spatialAudio = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance as SpatialAudioManager;
             _playerRuntimeContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
             ResolvePlayer();
         }

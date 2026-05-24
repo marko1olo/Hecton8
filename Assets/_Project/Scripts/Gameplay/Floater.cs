@@ -355,7 +355,7 @@ namespace Hecton8.Gameplay
             _transform.localPosition = Vector3.forward * 0.5f;
 
             // Play pickup sound
-            if (pickupSound != null && Hecton8.Core.GlobalRegistry.Audio is Hecton8.Core.IAudioService audio)
+            if (pickupSound != null && Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance is Hecton8.Core.IAudioService audio)
             {
                 audio.PlayAtPoint(pickupSound, _transform.position, floaterVolume);
             }
@@ -447,7 +447,7 @@ namespace Hecton8.Gameplay
             }
 
             // Play attach sound
-            if (attachSound != null && Hecton8.Core.GlobalRegistry.Audio is Hecton8.Core.IAudioService audio)
+            if (attachSound != null && Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance is Hecton8.Core.IAudioService audio)
             {
                 audio.PlayAtPoint(attachSound, hitPoint, floaterVolume);
             }

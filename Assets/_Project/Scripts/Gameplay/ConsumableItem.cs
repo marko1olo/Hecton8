@@ -54,8 +54,8 @@ namespace Hecton8.Gameplay
             if (survivalSystem != null)
                 ApplyEffects(item, survivalSystem);
 
-            if (item.useSound != null && Hecton8.Core.GlobalRegistry.Audio != null)
-                Hecton8.Core.GlobalRegistry.Audio.PlayStatic2D(item.useSound, 1f);
+            if (item.useSound != null && Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance != null)
+                Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance.PlayStatic2D(item.useSound, 1f);
 
             return true;
         }

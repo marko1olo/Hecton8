@@ -1032,7 +1032,7 @@ namespace Hecton8.Narrative
 
         private void CacheRegistryServicesCold()
         {
-            CacheAudioService(GlobalRegistry.Audio);
+            CacheAudioService(Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance);
             _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
         }
 

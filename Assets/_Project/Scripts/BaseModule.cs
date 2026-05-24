@@ -3597,7 +3597,7 @@ namespace Hecton8.Gameplay
             if (source == null || source.outputAudioMixerGroup != null)
                 return;
 
-            if (GlobalRegistry.Audio is SpatialAudioManager spatialAudioManager)
+            if (Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance is SpatialAudioManager spatialAudioManager)
                 source.outputAudioMixerGroup = spatialAudioManager.SfxGroup;
         }
 
@@ -3684,7 +3684,7 @@ namespace Hecton8.Gameplay
             if (clip == null)
                 return;
 
-            Hecton8.Core.IAudioService sam = Hecton8.Core.GlobalRegistry.Audio;
+            Hecton8.Core.IAudioService sam = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
             if (sam != null)
                 sam.PlayAtPoint(clip, ResolveInteriorHazardWorldPosition());
         }

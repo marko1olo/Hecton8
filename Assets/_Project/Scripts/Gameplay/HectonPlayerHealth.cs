@@ -675,7 +675,7 @@ namespace Hecton8.Gameplay
 
         private void PlaySurvivalGraceHeartbeatPulse()
         {
-            IAudioService audioService = GlobalRegistry.Audio;
+            IAudioService audioService = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
             if (audioService == null || survivalGraceHeartbeatClip == null)
                 return;
 

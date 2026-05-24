@@ -262,7 +262,7 @@ namespace Hecton8.Gameplay
             Vector3 pos = _transform.position;
 
             // Play sound
-            if (collectSound != null && Hecton8.Core.GlobalRegistry.Audio is Hecton8.Core.IAudioService audio)
+            if (collectSound != null && Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance is Hecton8.Core.IAudioService audio)
             {
                 audio.PlayAtPoint(collectSound, pos, collectVolume);
             }

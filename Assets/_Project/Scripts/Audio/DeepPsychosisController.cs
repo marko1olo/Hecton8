@@ -322,7 +322,7 @@ namespace Hecton8.Audio
             int frame = Time.frameCount;
             CachePlayerRuntimeContext(PlayerRuntimeContextService.ActiveRuntimeContext, frame);
             CacheEnvironmentalStrainManager(GlobalRegistry.EnvironmentalStrain, frame);
-            CacheAudioService(GlobalRegistry.Audio, frame);
+            CacheAudioService(Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance, frame);
             CacheAcousticZone(GlobalRegistry.AcousticZone, frame);
         }
 
@@ -420,7 +420,7 @@ namespace Hecton8.Audio
 
         private void RefreshAudioServiceIfStale(int frame)
         {
-            CacheAudioService(GlobalRegistry.Audio, frame);
+            CacheAudioService(Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance, frame);
         }
 
         private void RefreshAcousticZoneIfStale(int frame)
