@@ -882,3 +882,28 @@ Evidence:
 - STATIC_GREP: no staged `GlobalRegistry.Player` exact reads remained in the selected files; no `ActiveRuntimeContextCritical/Inventory/Movement/Motor/Sensory/Actions/Expression/Exploration` text remained.
 - CLI_COMPILE: blocked; CPU measured 85 percent and seven `dotnet` processes were active, so Core build was not launched under the local gate.
 - GIT: committed and pushed `2f18aaa8d perf(player): route more context readers` to `main`.
+
+## 2026-05-24 - Player Active Context Sweep 4
+
+What was wrong:
+- 30 tracked runtime/UI/source files still had exact `GlobalRegistry.Player` reads in cache refreshes, player camera fallbacks, tool-manager fallbacks, lighting, PDA, interaction, physiology, and gameplay routes.
+- The same files have dirty working-copy risk from concurrent agents, so normal full-file edits/staging would capture unrelated work.
+
+What was done:
+- Routed exact `GlobalRegistry.Player` and `Hecton8.Core.GlobalRegistry.Player` reads through `Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext`.
+- Built staged blobs from exact `HEAD` content instead of touching dirty worktree files.
+- Kept non-player service slots such as `PlayerInventory`, `PlayerCriticalAudio`, `PlayerActions`, `PlayerExpression`, and `PlayerExploration` untouched.
+- Committed and pushed the source tranche as `ea2d96f4a perf(player): route extra context readers`.
+
+Cinematic Cheats used:
+- None. This tranche is runtime service-route hygiene, not a simulation/visual-fake change.
+
+Exact Microseconds saved:
+- STATIC estimate only: 43 exact player service-locator reads removed from affected helper/cache routes. No profiler capture, no microsecond claim.
+
+Evidence:
+- STATIC_SOURCE: 30 staged source files.
+- CLI_DIFF: `git diff --cached --check` passed; staged stat was 30 files, 36 insertions, 36 deletions.
+- STATIC_GREP: tranche-local `git grep --cached` found no remaining exact `GlobalRegistry.Player` reads and no `ActiveRuntimeContextInventory/Critical/Movement/Motor/Sensory/Actions/Expression/Exploration` prefix damage.
+- CLI_COMPILE: blocked; compiler processes were absent, but CPU measured 80 percent then 100 percent after a 45-second wait, so `dotnet build` was not launched under the project gate.
+- GIT: committed and pushed `ea2d96f4a perf(player): route extra context readers` to `main`.
