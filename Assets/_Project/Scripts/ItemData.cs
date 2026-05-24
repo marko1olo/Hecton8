@@ -423,7 +423,7 @@ namespace Hecton8.Items
 
         private void EnsureLocalizedCache()
         {
-            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
+            LocalizationManager manager = LocalizationManager.ActiveRuntimeInstance;
             EnsureLocalizedCache(manager);
         }
 

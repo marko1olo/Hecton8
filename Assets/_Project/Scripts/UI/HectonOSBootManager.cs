@@ -641,7 +641,7 @@ namespace Hecton8.UI
 
         private void CacheRegistryServicesCold()
         {
-            _localization = GlobalRegistry.Localization;
+            _localization = LocalizationManager.ActiveRuntimeInstance;
             _depthZoneDirector = GlobalRegistry.DepthZone;
         }
 

@@ -183,7 +183,7 @@ namespace Hecton8.Interaction
         {
             _saveManager = GlobalRegistry.SaveRuntime;
             _audioService = GlobalRegistry.Audio;
-            _localization = GlobalRegistry.Localization;
+            _localization = LocalizationManager.ActiveRuntimeInstance;
         }
 
         private void TryRegisterHotSwapListener()

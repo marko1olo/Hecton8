@@ -67,7 +67,7 @@ namespace Hecton.Localization
         /// </summary>
         public string Resolve()
         {
-            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
+            LocalizationManager manager = LocalizationManager.ActiveRuntimeInstance;
             return Resolve(manager);
         }
 
@@ -85,7 +85,7 @@ namespace Hecton.Localization
         /// </summary>
         public string Resolve(GameLanguage language)
         {
-            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
+            LocalizationManager manager = LocalizationManager.ActiveRuntimeInstance;
             return Resolve(language, manager);
         }
 

@@ -58,8 +58,8 @@ namespace Hecton8.World
         [System.NonSerialized] public string cachedHudLabel;
         [System.NonSerialized] private uint _cachedZoneHash;
 
-        public string DisplayNameOrFallback => ResolveDisplayName(Hecton8.Core.GlobalRegistry.Localization);
-        public string DescriptionOrFallback => ResolveDescription(Hecton8.Core.GlobalRegistry.Localization);
+        public string DisplayNameOrFallback => ResolveDisplayName(LocalizationManager.ActiveRuntimeInstance);
+        public string DescriptionOrFallback => ResolveDescription(LocalizationManager.ActiveRuntimeInstance);
         public uint ZoneHash => _cachedZoneHash;
 
         public string ResolveDisplayName(LocalizationManager manager)
@@ -83,7 +83,7 @@ namespace Hecton8.World
                 ? 0u
                 : unchecked((uint)LocHash.Compute(zoneId));
 
-            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
+            LocalizationManager manager = LocalizationManager.ActiveRuntimeInstance;
             string resolvedDisplayName = ResolveDisplayName(manager);
             string upperDisplayName = string.IsNullOrWhiteSpace(resolvedDisplayName)
                 ? "UNKNOWN ZONE"

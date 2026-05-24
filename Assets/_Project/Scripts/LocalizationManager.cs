@@ -171,6 +171,11 @@ namespace Hecton.Localization
         private long _overrideCsvLastWriteTicks;
         private float _overrideCsvPollTimer;
 #endif
+        /// <summary>
+        /// Active localization owner published by the runtime owner after registry registration.
+        /// </summary>
+        public static LocalizationManager ActiveRuntimeInstance { get; private set; }
+
 
         /// <summary>
         /// Active language for runtime lookups.
@@ -183,6 +188,7 @@ namespace Hecton.Localization
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
+            ActiveRuntimeInstance = null;
         }
 
         private void Awake()
@@ -196,6 +202,8 @@ namespace Hecton.Localization
 
             GlobalRegistry.RegisterLocalizationRuntime(this);
             _registeredLocalizationRuntime = ReferenceEquals(GlobalRegistry.Localization, this);
+            if (_registeredLocalizationRuntime)
+                ActiveRuntimeInstance = this;
             GlobalRegistry.RegisterBabelLocalizationRuntime(this);
             _registeredBabelLocalizationRuntime = ReferenceEquals(GlobalRegistry.BabelLocalization, this);
             GameBootstrapper.PersistRuntimeService(this);
@@ -211,6 +219,9 @@ namespace Hecton.Localization
 
         private void OnDestroy()
         {
+            if (ReferenceEquals(ActiveRuntimeInstance, this))
+                ActiveRuntimeInstance = null;
+
             if (_registeredBabelLocalizationRuntime)
             {
                 GlobalRegistry.UnregisterBabelLocalizationRuntime(this);

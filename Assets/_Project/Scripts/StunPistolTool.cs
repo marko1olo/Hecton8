@@ -142,7 +142,7 @@ namespace Hecton8.Gameplay
         public override void OnSpawn()
         {
             base.OnSpawn();
-            RefreshLocalization(GlobalRegistry.Localization);
+            RefreshLocalization(LocalizationManager.ActiveRuntimeInstance);
             _cooldown = 0f;
             _feedbackCooldownRemaining = 0f;
             _secondaryLatched = false;
@@ -162,7 +162,7 @@ namespace Hecton8.Gameplay
         public override void OnEquip()
         {
             base.OnEquip();
-            RefreshLocalization(GlobalRegistry.Localization);
+            RefreshLocalization(LocalizationManager.ActiveRuntimeInstance);
             InvalidateAssessmentCache();
         }
 
@@ -715,7 +715,7 @@ namespace Hecton8.Gameplay
 
         private void OnEnable()
         {
-            _localization = GlobalRegistry.Localization;
+            _localization = LocalizationManager.ActiveRuntimeInstance;
             TryRegisterHotSwapListener();
             RegisterToTickManager();
         }

@@ -38,7 +38,7 @@ namespace Hecton8.UI
         /// </summary>
         public static TMP_FontAsset ResolveReadableFont(TMP_FontAsset preferred)
         {
-            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
+            LocalizationManager manager = LocalizationManager.ActiveRuntimeInstance;
             return ResolveReadableFont(preferred, manager);
         }
 

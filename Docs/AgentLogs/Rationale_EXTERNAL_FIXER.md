@@ -377,3 +377,19 @@ Solution: Use `dotnet build-server shutdown`, re-check CPU/compiler gate, then r
 Rejected Alternatives: Running during active compiler waves was rejected. Killing unrelated Python/Code/Codex user processes was rejected. Parallel MSBuild was rejected.
 Scalability potential: Process integrity only; produces compile proof without stealing broad workstation resources.
 Hardware Impact: 0 us runtime gain; verification integrity only.
+
+## Decision 48
+
+Problem: Localization read helpers and cache refresh routes still pulled `GlobalRegistry.Localization` directly from static/value-object surfaces, hiding service-locator reads behind `Resolve*` and refresh-looking APIs.
+Solution: Publish `LocalizationManager.ActiveRuntimeInstance` from the runtime owner and route 19 tracked consumers through that owner-local pointer. Files with concurrent unstaged edits were partial-staged by exact hunk only.
+Rejected Alternatives: A global DI rewrite was rejected because the workspace has broad concurrent edits. Keeping direct registry reads in static localization helpers was rejected because read helpers must not hide owner discovery.
+Scalability potential: Low tier avoids repeated localization service-locator reads in UI/tool/data resolve paths; Middle keeps identical text/audio/font behavior; High and Ultra keep richer localized presentation without adding registry lookup cadence.
+Hardware Impact: STATIC estimate only: removes one registry read from each affected localization resolve/cache refresh invocation. No profiler microsecond claim.
+
+## Decision 49
+
+Problem: Verification was blocked by a moving dirty compile wall outside the localization tranche: `IDataVault` namespace loss, stale `AbsoluteUniversePosition.AbsolutePosition`, missing fauna combat partial inclusion, then unrelated duplicate `FirstHourDirector` save fields.
+Solution: Fix only narrow compile-surface issues that the build proved and stop after the dependency wall moved beyond this tranche; do not stage broad dirty files from other agents.
+Rejected Alternatives: Killing user/agent processes was rejected. Staging whole dirty fauna/thermal/first-hour files was rejected. Reporting a green build was rejected.
+Scalability potential: Process integrity only; the localization runtime route remains independent of the unresolved dirty compile wall.
+Hardware Impact: 0 us runtime gain for compile-wall notes; protects source ownership in a multi-agent tree.

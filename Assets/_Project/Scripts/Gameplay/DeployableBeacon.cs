@@ -570,7 +570,7 @@ namespace Hecton8.Gameplay
         private void CacheRegistryServicesCold()
         {
             _audioService = GlobalRegistry.Audio;
-            _localization = GlobalRegistry.Localization;
+            _localization = LocalizationManager.ActiveRuntimeInstance;
         }
 
         private void TryRegisterHotSwapListener()

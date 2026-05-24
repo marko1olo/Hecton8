@@ -785,3 +785,26 @@ Verification:
 - `git diff --check` on the 20 touched tracked source files passed with LF->CRLF warnings only.
 - `dotnet build-server shutdown` cleared stale build servers after external compiler waves.
 - `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal /p:UseSharedCompilation=false /nr:false /m:1` succeeded with 0 warnings and 0 errors.
+
+## 2026-05-24 - Localization Active Runtime Cache Tranche
+
+What was wrong:
+- Localization value objects, UI helpers, tools, and refresh callbacks still read `GlobalRegistry.Localization` directly from read-looking paths.
+- Two relevant files already had concurrent unstaged edits, so full-file staging would have stolen unrelated work.
+
+What was done:
+- Patched 20 tracked source files.
+- Added `LocalizationManager.ActiveRuntimeInstance`.
+- Replaced direct localization registry reads in 19 consumers with the owner-local active runtime pointer.
+- Partial-staged only EXTERNAL_FIXER hunks in dirty `LocalizationManager.cs` and `LocalizedTextReference.cs`.
+
+Cinematic cheats used:
+- None. This is service-route cleanup for localized presentation.
+
+Exact microseconds saved:
+- Not measured. STATIC estimate only: removes one localization registry read from affected resolve/cache refresh calls.
+
+Verification:
+- `git diff --cached --check` passed.
+- Core build was attempted with `/m:1`, shared compilation disabled, node reuse disabled.
+- Build did not report errors from the staged localization tranche, but verification is blocked by unrelated dirty compile-wall waves. Last wall: duplicate `_saveRegistered` and `_saveService` fields in `FirstHourDirector.cs`.

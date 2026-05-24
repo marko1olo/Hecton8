@@ -941,7 +941,7 @@ namespace Hecton8.AtlasSignal
                 _playerRuntimeContext = Hecton8.Core.GlobalRegistry.Player;
 
             if (_localization == null)
-                _localization = Hecton8.Core.GlobalRegistry.Localization;
+                _localization = LocalizationManager.ActiveRuntimeInstance;
         }
 
         private void TryRegisterSaveParticipant()

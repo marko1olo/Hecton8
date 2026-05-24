@@ -219,7 +219,7 @@ namespace Hecton8.UI
             if (s_localizationColdResolved && s_cachedLocalization != null)
                 return;
 
-            s_cachedLocalization = Hecton8.Core.GlobalRegistry.Localization;
+            s_cachedLocalization = LocalizationManager.ActiveRuntimeInstance;
             s_localizationColdResolved = s_cachedLocalization != null;
         }
 

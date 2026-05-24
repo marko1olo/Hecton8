@@ -35,7 +35,7 @@ namespace Hecton8.UI
             if (notificationSystem == null)
                 TryGetComponent(out notificationSystem);
 
-            _localization = GlobalRegistry.Localization;
+            _localization = LocalizationManager.ActiveRuntimeInstance;
             TryRegisterHotSwapListener();
             SaveEvents.Register(this);
             LocalizationEvents.RegisterLanguageListener(this);

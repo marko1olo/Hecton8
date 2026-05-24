@@ -567,7 +567,7 @@ namespace Hecton.UI.MainMenu
 
         private void CacheRegistryServicesCold()
         {
-            _localization = GlobalRegistry.Localization;
+            _localization = LocalizationManager.ActiveRuntimeInstance;
         }
 
         private void TryRegisterHotSwapListener()

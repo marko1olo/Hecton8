@@ -149,7 +149,7 @@ namespace Hecton8.World
         {
             _firstHourDirector = GlobalRegistry.FirstHour;
             _atlasSignalSystem = GlobalRegistry.AtlasSignal;
-            _localizationManager = GlobalRegistry.Localization;
+            _localizationManager = LocalizationManager.ActiveRuntimeInstance;
         }
 
         private void TryRegisterHotSwapListener()

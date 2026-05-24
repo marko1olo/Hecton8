@@ -48,7 +48,7 @@ namespace Hecton.Localization
         /// </summary>
         public AudioClip Resolve()
         {
-            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
+            LocalizationManager manager = LocalizationManager.ActiveRuntimeInstance;
             return Resolve(manager);
         }
 
