@@ -884,7 +884,7 @@ namespace Hecton8.Inventory
             }
 
             _cachedAudioService = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
-            _cachedSaveService = GlobalRegistry.Save;
+            _cachedSaveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
             _cachedDataVault = GlobalRegistry.DataVault;
         }
 
@@ -894,7 +894,7 @@ namespace Hecton8.Inventory
                 return;
 
             if (_cachedSaveService == null)
-                _cachedSaveService = GlobalRegistry.Save;
+                _cachedSaveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
 
             if (_cachedSaveService == null)
                 return;

@@ -308,7 +308,7 @@ namespace Hecton8.QA
             _blackBoxCursor = 0;
             _blackBoxCount = 0;
             EnsureBlackBox();
-            _saveService = GlobalRegistry.Save;
+            _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
             _originShiftCount = 0;
             _trapCount = 0;
             _saveRequestCount = 0;

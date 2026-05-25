@@ -399,7 +399,7 @@ namespace Hecton8.World
             if (_saveRegistered)
                 return;
 
-            _saveService = GlobalRegistry.Save;
+            _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
             if (_saveService == null)
                 return;
 

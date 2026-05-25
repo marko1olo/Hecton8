@@ -262,7 +262,7 @@ namespace Hecton8.Caves
             TryGetComponent(out _engine);
             _dataVault = GlobalRegistry.DataVault;
             _simulationBucketer = GlobalRegistry.SimulationBucketer;
-            _saveService = GlobalRegistry.Save;
+            _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
             _fluidDecals = GlobalRegistry.AbyssalFluidDecals;
             TryRegisterHotSwapListener();
             EnsureCarveEventQueue();

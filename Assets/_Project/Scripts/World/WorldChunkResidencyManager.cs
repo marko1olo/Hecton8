@@ -2005,7 +2005,7 @@ namespace Hecton8.World
 
             IAsyncPersistenceService persistence = GlobalRegistry.AsyncPersistence;
             if (persistence == null)
-                persistence = GlobalRegistry.Save as IAsyncPersistenceService;
+                persistence = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance as IAsyncPersistenceService;
 
             if (persistence != null)
                 _asyncPersistenceService = persistence;

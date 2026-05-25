@@ -8109,7 +8109,7 @@ namespace Hecton8.World
                 _constructionParasiteGraph = GlobalRegistry.ConstructionParasiteGraph;
 
             if (_saveService == null)
-                _saveService = GlobalRegistry.Save;
+                _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
 
             RefreshCachedSubmarineContext();
         }

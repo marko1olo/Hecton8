@@ -1507,7 +1507,7 @@ namespace Hecton8.Tools
         private void CacheRegistryDependenciesCold()
         {
             _dataVault = GlobalRegistry.DataVault;
-            _saveService = GlobalRegistry.Save;
+            _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
             _playerRuntimeContext = GlobalRegistry.Player;
             _brineDensityReadModel = GlobalRegistry.BrineFluidDensity;
         }
