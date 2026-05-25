@@ -238,7 +238,7 @@ Vault owns native buffers. Runtime releases its generation descriptors and GPU b
 
 Stale-handle behavior:
 
-Runtime resolves generation descriptors only after boot acquisition, validates required lengths, and locks buffers before reads/writes. Failed boot after handle acquisition calls the same release path. DataVault generation/stale-handle proof remains runtime-pending.
+Runtime resolves generation descriptors after boot acquisition, validates lengths, and locks buffers before reads/writes. Failed boot calls the same release path. DataVault stale-handle proof remains runtime-pending.
 
 Rejected alternatives:
 

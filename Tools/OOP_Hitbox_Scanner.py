@@ -470,6 +470,7 @@ def main() -> int:
     fauna_combat_receiver = SCRIPTS / "Fauna" / "FaunaBrain.CombatDamageReceiver.cs"
     leviathan_tentacle_solver = SCRIPTS / "Fauna" / "LeviathanTentacleVerletSolver.cs"
     system_dispatcher = SCRIPTS / "Core" / "SystemDispatcher.cs"
+    global_signal_payloads = SCRIPTS / "Core" / "Signals" / "GlobalSignalPayloads.DomainRemainder.cs"
     camera_juice_burst = SCRIPTS / "VFX" / "CameraJuiceSystem_CameraJuiceBurst.cs"
     soundscape_system = SCRIPTS / "World" / "SoundscapeSystem.cs"
     decal_vault = SCRIPTS / "Visor" / "DynamicDecalVaultRuntime.cs"
@@ -893,6 +894,11 @@ def main() -> int:
     armor_aup_is_finite_block = extract_csharp_block_after(
         armor_runtime_text,
         "private static bool IsFinite(double3 value)",
+    )
+    global_signal_payloads_text = read_source(global_signal_payloads)
+    combat_damage_signal_codec_block = extract_csharp_block_after(
+        global_signal_payloads_text,
+        "private static bool TryResolveRuntimePointAup",
     )
     cas_torture_block = extract_csharp_block_after(
         armor_runtime_text,

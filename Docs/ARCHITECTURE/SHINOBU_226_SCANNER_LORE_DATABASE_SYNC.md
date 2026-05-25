@@ -22,11 +22,11 @@ Runtime route:
 
 - Loop 13 correction: `ScannerDataMiningRouter` hot ticks read a cached non-owning `ScannerVaultViews` snapshot through `TryReadVaultViews`; Vault handle fan-out is confined to `TryRefreshVaultViewsCold` during owner setup.
 
-- Loop 15 correction: `ScannerTool`, `PDAEncyclopediaStreamer`, and `ScannableTarget` now cache non-owning Vault views after cold/owner refresh; scanner black-box, PDA buffer, and lore entity read surfaces no longer resolve handles from hot readers.
+- Loop 15: `ScannerTool`, `PDAEncyclopediaStreamer`, and `ScannableTarget` cache non-owning Vault views after cold/owner refresh; hot readers no longer resolve scanner/PDA/lore handles.
 
 - Loop 15 signal route: `ToolAcousticSignal`, `ScanCompleteSignal`, and `ResourceDepletionDeltaSignal` publish through direct `SignalBus<T>.Push`. `AcousticPingSignal`, `ScannerToolActiveSignal`, `AnomalySignal`, and `CrashTelemetrySignal` remain explicit `GlobalSignals` bridge lanes until latest/dequeue consumers are migrated.
 
-- Loop 16 correction: `PdaH8lrLoreStore` no longer re-resolves the Vault mirror handle per readable span. The cached mirror pointer is protected by `IDataVault.TryGetBufferGeneration` against the captured `VaultGenerationHandle<byte>.Generation`; mismatch fails closed.
+- Loop 16: `PdaH8lrLoreStore` no longer re-resolves Vault mirror handle per readable span. Cached pointer checks `IDataVault.TryGetBufferGeneration`; generation mismatch fails closed.
 
 - Loop 17 correction: `ScannerDataMiningRouter.OnDisable` no longer force-completes amortized spatial query.
 - Disable enters nonblocking drain, unregisters Fast/Slow lanes, and keeps LateFrame only until `TryFinalizeScheduledQuery` sees natural completion.

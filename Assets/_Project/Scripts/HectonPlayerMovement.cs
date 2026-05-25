@@ -1149,7 +1149,8 @@ namespace Hecton8.Gameplay
         private IInputService _subscribedInputManager;
         private IAudioService _audioService;
         private SettingsManager _settingsRuntime;
-        private LocalizationManager _localizationRuntime;
+        private ILocalizationStressPresentationReadModel _localizationRuntime;
+        private ILocalizationStressHudRefreshSink _localizationStressHudRefreshSink;
         private SpectrumSystem _spectrumRuntime;
         private ResourceDistributionDirector _resourceDistributionRuntime;
         private IGasDynamicsSolver _gasDynamicsRuntime;
@@ -3914,7 +3915,8 @@ namespace Hecton8.Gameplay
             _dataVault = GlobalRegistry.DataVault;
             _audioService = GlobalRegistry.Audio;
             _settingsRuntime = GlobalRegistry.Settings;
-            _localizationRuntime = GlobalRegistry.Localization;
+            _localizationRuntime = GlobalRegistry.LocalizationStressPresentation;
+            _localizationStressHudRefreshSink = GlobalRegistry.LocalizationStressHudRefreshSink;
             _spectrumRuntime = GlobalRegistry.Spectrum;
             _resourceDistributionRuntime = GlobalRegistry.ResourceDistribution;
             _gasDynamicsRuntime = GlobalRegistry.GasDynamics;
@@ -3969,7 +3971,8 @@ namespace Hecton8.Gameplay
                     _settingsRuntime = currentService as SettingsManager;
                     break;
                 case GlobalRegistryServiceSlot.LocalizationRuntime:
-                    _localizationRuntime = currentService as LocalizationManager;
+                    _localizationRuntime = currentService as ILocalizationStressPresentationReadModel;
+                    _localizationStressHudRefreshSink = currentService as ILocalizationStressHudRefreshSink;
                     break;
                 case GlobalRegistryServiceSlot.SpectrumRuntime:
                     _spectrumRuntime = currentService as SpectrumSystem;
@@ -4050,6 +4053,7 @@ namespace Hecton8.Gameplay
             _audioService = null;
             _settingsRuntime = null;
             _localizationRuntime = null;
+            _localizationStressHudRefreshSink = null;
             _spectrumRuntime = null;
             _resourceDistributionRuntime = null;
             _gasDynamicsRuntime = null;
@@ -9864,7 +9868,7 @@ namespace Hecton8.Gameplay
             if (_hullStressIntensity <= 0.9f || _hullStressHudCorruptionRefreshTimer > 0f)
                 return;
 
-            LocalizationManager localization = _localizationRuntime;
+            ILocalizationStressHudRefreshSink localization = _localizationStressHudRefreshSink;
             if (localization == null)
                 return;
 
@@ -10290,7 +10294,7 @@ namespace Hecton8.Gameplay
 
         private float ResolveFatalPressureCorruptionIntensity(float sequenceIntensity)
         {
-            LocalizationManager localization = _localizationRuntime;
+            ILocalizationStressPresentationReadModel localization = _localizationRuntime;
             float localizationIntensity = localization != null
                 ? localization.GetHullStressCorruptionIntensity()
                 : 0f;
@@ -10318,7 +10322,7 @@ namespace Hecton8.Gameplay
 
         private void PushFatalPressureCorruptionWarning()
         {
-            LocalizationManager localization = _localizationRuntime;
+            ILocalizationStressPresentationReadModel localization = _localizationRuntime;
             ReadOnlySpan<char> message = localization != null
                 ? localization.GetRawSpanOrFallback(
                     LocHash.Compute(LocalizationKeys.HUD_STATUS_PRESSURE_LIMIT_EXCEEDED),

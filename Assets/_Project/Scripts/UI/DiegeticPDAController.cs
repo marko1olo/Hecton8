@@ -12,7 +12,7 @@ namespace Hecton8.UI
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Diegetic PDA Controller")]
-    public sealed class DiegeticPDAController : MonoBehaviour, IUpdatable, ILateFrameTickable, IPanelInteractable, IGlobalRegistryHotSwapListener
+    public sealed class DiegeticPDAController : MonoBehaviour, ILateFrameTickable, IPanelInteractable, IGlobalRegistryHotSwapListener
     {
         private const string TabletScreenShaderPath = "Assets/_Project/Art/Shaders/Hecton_DiegeticPanelUnlit.shader";
         private const float ReferenceResolveRetryIntervalSeconds = 0.5f;

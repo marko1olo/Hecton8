@@ -194,7 +194,7 @@ Small Vault surface increase, bounded by fixed capacities and explicit ownership
 
 Proof required before GREEN:
 
-Unity import, script compile, shader import, RenderGraph Viewer pass order, Frame Debugger one-pass proof, Profiler/GCMonitor 0 B/frame proof, GPU timing capture on low/mid/high quality, black-box dump readback test, and player-build proof.
+Pending proof: Unity import, script compile, shader import, RenderGraph order, Frame Debugger, Profiler/GCMonitor 0 B/frame, GPU timings, dump readback, player build.
 
 Reviewer: pending integrator
 
