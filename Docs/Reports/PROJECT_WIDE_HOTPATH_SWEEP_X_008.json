@@ -1,7 +1,7 @@
 {
   "metadata": {
     "agent": "X_008",
-    "generatedUtc": "2026-05-24T23:57:36.211683+00:00",
+    "generatedUtc": "2026-05-25T00:03:56.987273+00:00",
     "root": "C:\\hades\\Hecton8",
     "evidenceClass": "STATIC_PROJECT_WIDE_TOKEN_SWEEP",
     "domainBoundary": "X_008 may prove and edit Echelon 5 combat routes. Non-combat hits are owner handoff items unless they directly bypass CombatDamageRuntime."
@@ -528,42 +528,42 @@
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/HarvestableOutcrop.cs",
-        "line": 125,
+        "line": 128,
         "text": "public float CurrentHealth => _currentHealth;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/HarvestableOutcrop.cs",
-        "line": 171,
+        "line": 174,
         "text": "TakeDamage(damage, hitPoint, 1f, ResolveFallbackNormal(hitPoint));"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/HarvestableOutcrop.cs",
-        "line": 181,
+        "line": 184,
         "text": "TakeDamage(signal.PowerDelivered, runtimeHitPoint, signal.Source.Power, hitNormal);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/HarvestableOutcrop.cs",
-        "line": 200,
+        "line": 203,
         "text": "TakeDamage(damagePerHit, _cachedTransform.position, 1f, Vector3.up);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/HarvestableOutcrop.cs",
-        "line": 219,
+        "line": 225,
         "text": "public void TakeDamage(float damage, Vector3 hitPoint)"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/HarvestableOutcrop.cs",
-        "line": 221,
+        "line": 227,
         "text": "TakeDamage(damage, hitPoint, 1f, ResolveFallbackNormal(hitPoint));"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/HarvestableOutcrop.cs",
-        "line": 230,
+        "line": 236,
         "text": "TakeDamage(damagePerHit, hitPoint, 1f, ResolveFallbackNormal(hitPoint));"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/HarvestableOutcrop.cs",
-        "line": 233,
+        "line": 239,
         "text": "private void TakeDamage(float damage, Vector3 hitPoint, float toolPower, Vector3 hitNormal)"
       },
       {

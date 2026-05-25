@@ -497,6 +497,7 @@ namespace Hecton8.Physics.Vehicles
             int destroyed = 0;
             int burning = 0;
             int breaches = 0;
+            int signalDrops = 0;
             float ingress = 0f;
             float structuralSum = 0f;
             float quality = math.saturate(math.select(1f, GlobalQualityWeight, math.isfinite(GlobalQualityWeight)));
@@ -525,8 +526,8 @@ namespace Hecton8.Physics.Vehicles
                     flags |= VehicleDamageConstants.CellFlagFlooded;
                     breaches++;
                     ingress += severity * (12f + rootDepth * 0.08f) * math.max(0f, Tuning.IngressKgPerSecond);
-                    if (severity > 0.5f)
-                        EmitHazard(i, cell.ComponentHash, flags, severity, VehicleDamageConstants.HazardFlood);
+                    if (severity > 0.5f && !EmitHazard(i, cell.ComponentHash, flags, severity, VehicleDamageConstants.HazardFlood))
+                        signalDrops++;
                 }
 
                 if ((flags & VehicleDamageConstants.CellFlagFlammable) != 0u && integrity < 0.42f)
@@ -541,11 +542,15 @@ namespace Hecton8.Physics.Vehicles
                 if ((flags & VehicleDamageConstants.CellFlagBurning) != 0u)
                 {
                     burning++;
-                    EmitHazard(i, cell.ComponentHash, flags, 1f - integrity, VehicleDamageConstants.HazardFire);
+                    if (!EmitHazard(i, cell.ComponentHash, flags, 1f - integrity, VehicleDamageConstants.HazardFire))
+                        signalDrops++;
                 }
 
                 if ((flags & VehicleDamageConstants.CellFlagDestroyed) != 0u && integrity <= 0.0001f)
-                    EmitHazard(i, cell.ComponentHash, flags, 1f, VehicleDamageConstants.HazardDestroyed);
+                {
+                    if (!EmitHazard(i, cell.ComponentHash, flags, 1f, VehicleDamageConstants.HazardDestroyed))
+                        signalDrops++;
+                }
 
                 cell.StatusFlags = flags;
                 structuralSum += integrity;
@@ -606,6 +611,7 @@ namespace Hecton8.Physics.Vehicles
             if (breaches > 0) state.Flags |= VehicleDamageConstants.StateFlagHasBreach;
             if (burning > 0) state.Flags |= VehicleDamageConstants.StateFlagHasFire;
             if ((Tuning.Flags & VehicleDamageConstants.TuningFlagCsvLayout) != 0u) state.Flags |= VehicleDamageConstants.StateFlagCsvLayout;
+            if (signalDrops > 0) state.Flags |= VehicleDamageConstants.StateFlagSignalDrop;
 
             if (Signals != null && SignalCount > 0)
             {
@@ -625,7 +631,7 @@ namespace Hecton8.Physics.Vehicles
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void EmitHazard(int cellIndex, uint componentHash, uint flags, float severity, byte hazardType)
+        private bool EmitHazard(int cellIndex, uint componentHash, uint flags, float severity, byte hazardType)
         {
             VehicleHazardSignal signal = default;
             signal.LocalPosition = DecodeLocal(cellIndex);
@@ -637,7 +643,7 @@ namespace Hecton8.Physics.Vehicles
             signal.HazardType = hazardType;
             signal.Flags = 1;
             signal.CellIndex = (ushort)math.min(cellIndex, 65535);
-            SignalBus<VehicleHazardSignal>.TryEnqueueBounded(HazardWriter, HazardWriterBudget, signal);
+            return SignalBus<VehicleHazardSignal>.TryEnqueueBounded(HazardWriter, HazardWriterBudget, signal);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

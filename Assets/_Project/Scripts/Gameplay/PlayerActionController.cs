@@ -326,7 +326,7 @@ namespace Hecton8.Gameplay
             {
                 Progress01 = math.saturate(progress01),
                 ItemHash = ResolveItemHash(item),
-                Frame = unchecked((uint)Time.frameCount),
+                Frame = unchecked((uint)SystemDispatcher.CurrentFrameIndex),
                 ActiveToolSlot = PackActiveToolSlot(_lastToolSlotIndex),
                 ActionKind = ResolveActionKind(item),
                 Flags = item != null ? PlayerActionProgressSignal.FlagHasItem : (byte)0
@@ -344,7 +344,7 @@ namespace Hecton8.Gameplay
             PlayerActionCompletedSignal signal = new PlayerActionCompletedSignal
             {
                 ItemHash = ResolveItemHash(item),
-                Frame = unchecked((uint)Time.frameCount),
+                Frame = unchecked((uint)SystemDispatcher.CurrentFrameIndex),
                 InventoryAnchorX = PackInventoryAnchor(anchorX),
                 InventoryAnchorY = PackInventoryAnchor(anchorY),
                 ActionKind = ResolveActionKind(item),
@@ -359,7 +359,7 @@ namespace Hecton8.Gameplay
             PlayerActionCancelledSignal signal = new PlayerActionCancelledSignal
             {
                 ItemHash = ResolveItemHash(item),
-                Frame = unchecked((uint)Time.frameCount),
+                Frame = unchecked((uint)SystemDispatcher.CurrentFrameIndex),
                 Progress01 = math.saturate(progress01),
                 ActionKind = ResolveActionKind(item),
                 Reason = reason,

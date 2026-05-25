@@ -164,7 +164,7 @@ Singletons are a terminal offense when they own cross-domain state because they 
 
 - no-domain-leak enforcement
 
-A local private cache is not a singleton. A global `Instance` that other domains call is a registry violation unless the class is a pure static math/helper with no runtime state.
+A local private cache is not a singleton. Cross-domain global `Instance` is a registry violation unless the class is pure static math/helper without runtime state.
 
 ## Math LOD Bridge
 

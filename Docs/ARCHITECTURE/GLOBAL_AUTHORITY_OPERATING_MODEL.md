@@ -12,14 +12,16 @@ Compile evidence:
 - Log: `Docs/AgentLogs/Build_EXTERNAL_CODEX_hotpath_cleanup122_tick_registration.log`.
 - Command: `Hecton8.Editor.csproj --no-restore -m:1 /nr:false /p:UseSharedCompilation=false`.
 - Text matches: 0 `: warning `, 0 `: error `.
-- Latest attempt: `Docs/AgentLogs/Build_EXTERNAL_CODEX_hotpath_cleanup147_gi_despawn.log` failed before C# with `NETSDK1004` missing project.assets and `MSB3491` Temp/obj access denied.
-- Latest state: editor DLL output reached; 1 `MSB3101` Temp/obj cache warning; 0 errors; no `CS*`; no final summary/exit line.
+- Latest attempt: `Docs/AgentLogs/Build_EXTERNAL_CODEX_hotpath_cleanup158_world_dispatcher_rebind.log` failed before C# with `NETSDK1004` missing project.assets, 0 warnings, no `CS*`; retry blocked by `BUILD_GUARD cpu=79 compiler_count=2`.
+- Historical loop132 state: editor DLL output reached; 1 `MSB3101` Temp/obj cache warning; 0 errors; no `CS*`; no final summary/exit line.
 - Loop148 source-gated result: non-editor raw `Debug.Log` is zero outside `H8Debug.cs`.
 - Touched scopes zeroed targeted frost/render membership and dispatcher lane `Contains`.
 - Also zeroed HectonVoxelVolume sonar DataVault runtime-poll and context getter mutation.
 - Loop151 handled cadence/context rebind residues.
 - Loop153 handled persistent-world Save/Player/Inventory owner-cache ownership.
-- Loops154-155 handled short UI/audio/construction Dispatcher tails.
+- Loops154-156 handled UI/audio/construction Dispatcher tails.
+- Loop157 handled UI/Construction singleton runtime tails.
+- Loop158 handled world/environment/AI Dispatcher tails.
 - Targeted hot-swap and Save-cache greps pass in touched scopes; broad file-local scan still includes split-line/static-driver/legacy-stub false positives.
 - Build wall remains `NETSDK1004`/`MSB3491` before C# diagnostics.
 - Runtime proof: pending.

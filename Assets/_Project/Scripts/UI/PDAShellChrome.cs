@@ -173,7 +173,7 @@ namespace Hecton8.UI
         private int _appliedLeftFooterVersion = int.MinValue;
         private int _appliedRightFooterVersion = int.MinValue;
         private IDataVault _glitchVault;
-        private LocalizationManager _localization;
+        private ILocalizationStressPresentationReadModel _localization;
         private INativeInputManagerRuntime _nativeInputManager;
         private IPlayerRuntimeContext _cachedPlayerContext;
         private VaultGenerationHandle<byte> _glitchTableHandle;
@@ -325,7 +325,7 @@ namespace Hecton8.UI
 
             if (serviceSlot == GlobalRegistryServiceSlot.LocalizationRuntime)
             {
-                _localization = currentService as LocalizationManager;
+                _localization = currentService as ILocalizationStressPresentationReadModel;
                 RefreshLocalizedTextCache();
                 InvalidateAppliedLabelVersions();
                 return;
@@ -451,7 +451,7 @@ namespace Hecton8.UI
 
         private void CacheRegistryServicesCold()
         {
-            _localization = GlobalRegistry.Localization;
+            _localization = GlobalRegistry.LocalizationStressPresentation;
             _nativeInputManager = GlobalRegistry.NativeInputRuntime;
             _cachedPlayerContext = GlobalRegistry.Player;
         }
@@ -506,7 +506,7 @@ namespace Hecton8.UI
                 return;
             }
 
-            LocalizationManager manager = _localization;
+            ILocalizationStressPresentationReadModel manager = _localization;
             if (_intrusionManager == null)
                 _intrusionManager = PDAIntrusionManager.ActiveRuntimeInstance;
             int stressBucket = manager != null ? manager.GetHullStressCorruptionBucket() : 0;
@@ -795,8 +795,9 @@ namespace Hecton8.UI
             if (_intrusionManager == null)
                 _intrusionManager = PDAIntrusionManager.ActiveRuntimeInstance;
 
-            LocalizationManager manager = _localization;
-            bool rtl = manager != null && LocalizationManager.IsRightToLeftLanguage(manager.CurrentLanguage);
+            ILocalizationStressPresentationReadModel manager = _localization;
+            bool rtl = manager != null &&
+                       LocalizedMeasurementFormatter.IsRightToLeft((GameLanguage)manager.ActiveLanguageId);
             int stressBucket = manager != null ? manager.GetHullStressCorruptionBucket() : 0;
             bool useStressReactiveStrings = stressBucket > 0;
             float stressReactiveIntensity = useStressReactiveStrings && manager != null
@@ -1090,7 +1091,7 @@ namespace Hecton8.UI
 
         private ReadOnlySpan<char> ResolveLocalizedSpan(string key, ReadOnlySpan<char> fallback)
         {
-            LocalizationManager manager = _localization;
+            ILocalizationStressPresentationReadModel manager = _localization;
             if (manager == null)
                 return fallback;
 

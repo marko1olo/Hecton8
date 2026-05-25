@@ -841,12 +841,12 @@ namespace Hecton8.Gameplay
             slotData.BoundGuid = unchecked((ulong)(_residencySlotIndex + 1));
             slotData.AupCell = new int3((int)positionAup.GridX, (int)positionAup.GridY, (int)positionAup.GridZ);
             slotData.LocalOffset = new float3(positionAup.LocalX, positionAup.LocalY, positionAup.LocalZ);
-            slotData.HydrationFrame = unchecked((ushort)Time.frameCount);
+            slotData.HydrationFrame = unchecked((ushort)SystemDispatcher.CurrentFrameIndex);
             slotData.RefCount = 1;
             slotData.StateFlags = markDehydrated
                 ? (byte)(PoolSlotStateFlags.Reserved | PoolSlotStateFlags.Dirty)
                 : (byte)(PoolSlotStateFlags.Reserved | PoolSlotStateFlags.Hydrated);
-            slotData.LastVisibleFrame = unchecked((ushort)Time.frameCount);
+            slotData.LastVisibleFrame = unchecked((ushort)SystemDispatcher.CurrentFrameIndex);
             s_residencySlots[_residencySlotIndex] = slotData;
 
             Vector3 linearVelocity = Vector3.zero;

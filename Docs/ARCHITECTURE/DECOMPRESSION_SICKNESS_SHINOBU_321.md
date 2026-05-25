@@ -7,7 +7,7 @@ Owner: `ShinobuPhysiologyRuntime` in Echelon 5 Combat & Survival Physiology.
 ## Runtime truth route
 
 - Depth source: cached player AUP snapshot in `ShinobuPhysiologyRuntime.WriteEnvironmentSeed`; sea-level `double3` and player `double3` are subtracted before float depth conversion.
-- Tissue truth: `GlobalDataVault` buffer `70221` stores `DecompressionStateDTO` rows with explicit 64-byte layout: fast/medium/slow N2 lanes at offsets `8/16/24`, ambient/risk fields through offset `60`, and warning cadence fields in existing pad slots.
+- Tissue truth: `GlobalDataVault` buffer `70221` stores explicit 64-byte `DecompressionStateDTO`: N2 lanes `8/16/24`, ambient/risk fields through `60`, cadence fields in pad slots.
 - Tissue working rows: `GlobalDataVault` buffer `70235` stores `TissueCompartmentDTO[entityCapacity * 3]`.
 - Coefficients: `GlobalDataVault` buffer `70222` stores `HaldaneTissueCoefficientDTO[3]` loaded from `buhlmann_3tissue_profiles.csv`; legacy `buhlmann_zh16_profiles.csv` is comparison/archive data, not a runtime route.
 - Job route: `IntegrateBloodGasTensionsJob` runs deterministic Burst math across exactly three scalar tissue lanes and applies `ThreeTissueRiskCorrection` before warning/damage evaluation.
@@ -37,7 +37,7 @@ Verification still required:
 - It stopped on unrelated compile-wall files: `RadiationHazardGrid.cs`, `VRSomaticProvider.Comfort.cs`.
 - Final debug M-value fallback patch was static-checked.
 - Repeat build was suppressed because `VBCSCompiler` PID `2036` was active.
-- Data Monolith readiness is not claimed. `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin` exists in the current X_012 scan; route-specific boot proof remains pending; the import/bake/boot pipeline must provide that binary before this route is marked monolith-ready.
+- Data Monolith readiness is not claimed. Current X_012 scan finds `static_data.h8bin`; route boot proof and import/bake/boot validation remain pending before monolith-ready status.
 
 Loop 8 hardening:
 - `IntegrateBloodGasTensionsJob` no longer uses quality-weighted tissue lane reduction. Gameplay truth is always the same three-lane model; quality may scale downstream presentation and telemetry only.

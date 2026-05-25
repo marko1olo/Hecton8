@@ -2640,6 +2640,12 @@ namespace Hecton8.Core
         void RequestExternalPdaCorrosion(float intensity, float duration);
     }
 
+    public interface ILocalizationTransientOverrideSink
+    {
+        void SetTransientLanguageOverride(ushort languageId, bool enableGlyphMode = false);
+        void ClearTransientLanguageOverride();
+    }
+
     public interface ILoreUnlockReadModel
     {
         bool IsLoreUnlocked(uint logHash);

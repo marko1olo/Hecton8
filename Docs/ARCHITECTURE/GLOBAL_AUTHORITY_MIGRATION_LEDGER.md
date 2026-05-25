@@ -82,6 +82,7 @@ Allowed global routes:
   - loop155: `FontStreamingManager`, `LocalizedTextMadnessFx`, PDA tab labels, `PDALoadoutTab`, `SubtitleManager`, and `LoadingScreenController` gained the same Dispatcher unregister/re-register path; three prior UI owners gained null-Dispatcher local reset.
   - loop156: 15 remaining UI/construction owners gained local lane reset or unregister/register rebinds before Dispatcher replacement registration.
   - loop157: UI/Construction runtime singleton tails now route through `GlobalRegistry` cold cache and existing hot-swap state.
+  - loop158: 23 world/environment/AI owners gained local lane reset or unregister/register rebinds before Dispatcher replacement registration; `AmbientBiotaDirector` no longer unregisters service identity during Dispatcher swap.
 - Scope: binary scalability event/tier tails outside Core bridge.
 - Scope: beacon/construction action fanout and BeaconNetwork `GetOrCreate` registry fallback.
 - Scope: SDF/Terrain `?? GlobalRegistry` fallbacks.

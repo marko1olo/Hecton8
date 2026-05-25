@@ -46,11 +46,11 @@ This folder stores stable architecture contracts. Dated reports are evidence onl
 
 - 2026-05-24 EXTERNAL_CODEX:
   - Last zero-warning local dirty-workspace CLI PASS: `Docs/AgentLogs/Build_EXTERNAL_CODEX_hotpath_cleanup122_tick_registration.log`.
-  - Latest compile attempt: `Docs/AgentLogs/Build_EXTERNAL_CODEX_hotpath_cleanup147_gi_despawn.log`; fails before C# with missing project.assets and Temp/obj access denied.
-  - Latest state: editor DLL output reached; 1 `MSB3101` Temp/obj cache warning; 0 errors; no `CS*`; no final summary/exit line.
+  - Latest compile attempt: `Docs/AgentLogs/Build_EXTERNAL_CODEX_hotpath_cleanup158_world_dispatcher_rebind.log`; fails before C# with missing project.assets, 0 warnings, no `CS*`; retry blocked by `BUILD_GUARD cpu=79 compiler_count=2`.
+  - Historical loop132 state: editor DLL output reached; 1 `MSB3101` Temp/obj cache warning; 0 errors; no `CS*`; no final summary/exit line.
 - Loops66-151 fixed warning causes, registry fallbacks, SaveRuntime tails, owner-cache leaks, dispatcher/save/DataVault rebind gaps, interaction scene scan, Atlas read-model tails.
 - Same span also fixed duplicate source inputs, tick-list probes, static-driver residues, release log callsites, sonar polls, and context getter mutation.
-- It also covers loop151 rebind gaps, loop153 owner-cache ownership, loop154-156 Dispatcher tails, loop157 UI/Construction singleton tail removal, duplicate include tail, and FaunaBrain namespace wall.
+- It also covers loop151 rebind gaps, loop153 owner-cache ownership, loop154-156 Dispatcher tails, loop157 UI/Construction singleton tail removal, loop158 world/environment/AI Dispatcher tails, duplicate include tail, and FaunaBrain namespace wall.
 - Targeted hot-swap greps pass in touched scopes; broad file-level scan still includes split-line/static-driver/legacy-stub false positives.
   - Runtime proof remains pending.
 - 2026-05-23 X_012: `Docs/Reports/DOCUMENTATION_CORPUS_INVENTORY_X_012.json`, `Docs/Reports/DOCUMENTATION_OPTIMIZATION_REPORT_X_012.json`, and `Docs/Reports/DOC_STRUCTURE_VALIDATION_X_012.json` are offline documentation scan artifacts.

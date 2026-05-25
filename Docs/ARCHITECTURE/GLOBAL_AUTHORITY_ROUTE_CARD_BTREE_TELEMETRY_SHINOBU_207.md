@@ -107,7 +107,7 @@ Rejected alternatives:
 
 - no global route needed
 
-Why this does not increase global monolith risk: the route exposes only fixed-size forensic data owned by Core/Data, not mutable gameplay truth or request/response state. Missing route disables telemetry, not lookup.
+Why this does not increase global monolith risk: route exposes fixed-size Core/Data forensic data, not gameplay truth or request/response state. Missing route disables telemetry only.
 
 H-Phi impact expected: neutral to slightly positive by removing private ring pressure and documenting BufferID ownership. H-Phi is not acceptance proof.
 

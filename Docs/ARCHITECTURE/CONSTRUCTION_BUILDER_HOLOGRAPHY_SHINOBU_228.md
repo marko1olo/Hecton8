@@ -60,11 +60,11 @@ Successful placement no longer publishes managed `BaseModulePlacedEvent` objects
 
 
 
-Structural validation now has one source route: `HabitatConstructionManager.ScheduleIntegrityValidation(constructionManager, BuildableData, Vector3, Quaternion, gridSize, budget, penalty)`. The older `GameObject candidateGhost` and transform/socket alignment overloads were removed after source scan showed no callers.
+Structural validation has one source route: `HabitatConstructionManager.ScheduleIntegrityValidation(...)`. Older `GameObject candidateGhost` and transform/socket overloads were removed after no-caller source scan.
 
 
 
-The legacy `PlacementGhost` script and `PFB_Ghost_*` prefabs are removed. Existing `BuildableData.ghostPrefab` serialized references in construction data were nulled; the retained schema field is compatibility-only and is not a preview authority route.
+Legacy `PlacementGhost` and `PFB_Ghost_*` prefabs are removed. Existing `BuildableData.ghostPrefab` references were nulled; retained schema field is compatibility-only, not preview authority.
 
 
 
@@ -234,7 +234,7 @@ Quality controls visual shader cost and pipe preview density only. Placement leg
 - The validation job consumes `IntegrityNodeRecord`, `int2` adjacency ranges, flattened adjacency, queue/depth arrays, and result slot through transient `NativeArray` views with `[NoAlias]` fields.
 - Vault-backed: adjacency degree/write scratch lanes, undirected connection pair lane, 48-byte `SocketLookupSlot` lookup lane.
 - Removed from manager ownership: private persistent graph buffers, managed adjacency scratch arrays, graph `List`/`Dictionary` caches.
-- Active `BuildValidationGraph` uses `HasValidationGraphCapacity` and fails closed when the prepared Vault lanes cannot hold the candidate graph; it no longer calls `EnsureNodeCapacity` or any adjacency resize helper from the scheduling path.
+- Active `BuildValidationGraph` uses `HasValidationGraphCapacity` and fails closed when prepared Vault lanes cannot hold the graph; scheduling no longer calls resize helpers.
 
 
 - Cache-miss structural graph rebuilds no longer iterate `ConstructionManager.SpawnedModules` through `IReadOnlyList<GameObject>`.

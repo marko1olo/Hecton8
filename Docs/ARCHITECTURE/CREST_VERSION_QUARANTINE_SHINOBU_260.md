@@ -193,7 +193,7 @@ They create no direct Crest assembly reference. Remap only by owning agents with
 - Remaining vocabulary debt is tracked by `Crest_Dependency_Scanner.py` as non-failing `vocabulary_debt_hits`, not as compile-wall breaches.
 - Loop 21 also tracks policy-only `Crest` / `WaveHarmonic.Crest*` strings in `HectonComplianceValidator.cs` as non-failing `compliance_denylist_hits`, preserving the editor gate while preventing false hidden-coupling reports.
 
-Task 12 status: blocked by dependency. Full suppression of Crest `OceanRenderer.OnEnable`/`Start` requires an invasive vendor-source lifecycle patch by a later Crest-internal agent. This pass does not edit donor lifecycle code.
+Task 12 status: blocked by dependency. Crest `OceanRenderer.OnEnable`/`Start` suppression requires vendor lifecycle patch by Crest-internal agent. This pass does not edit donor code.
 
 ## Static Verification
 
@@ -290,4 +290,4 @@ No-Python proof:
 - `Tools/test_memory_budget_check.py` no longer points at `Packages/com.waveharmonic.crest`; the HDR parser fixture is active `Assets/ScifiFacility/Textures/sky_hdr.hdr`.
 - `Tools/Crest_Dependency_Scanner.py` now includes `generated_project_bridge_source_in_broad_project`; `Tools/Crest_Quarantine_Polish_Audit.py` gates the same condition through `generated_first_party_projects_do_not_compile_bridge_sources` and `dependency_scanner_blocks_bridge_source_in_broad_project`.
 - `Ocean_Crest.prefab`, `Assets/_Project/Data/Ocean/*.asset`, and `Assets/_Project/crest/*.asset` keep selected Crest4 donor bindings. They are active donor route evidence and have baseline backups; this loop does not raw-edit selected donor prefab/settings YAML.
-- `ARCHITECTURE_OPTIMIZATION_REPORT.json` and `CREST_QUARANTINE_POLISH_AUDIT.json` were not regenerated in this loop because `.py` execution was explicitly forbidden. The source gates are updated; report regeneration is deferred until the Python deadlock condition is cleared.
+- `ARCHITECTURE_OPTIMIZATION_REPORT.json` and `CREST_QUARANTINE_POLISH_AUDIT.json` were not regenerated because `.py` execution was forbidden. Source gates updated; report regeneration waits for Python deadlock clearance.

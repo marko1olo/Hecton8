@@ -16,7 +16,7 @@ Route:
 - SHINOBU_235 owns route contract and proof artifacts.
 - GraphicsScalability is the native-memory owner tag.
 
-- Active-frame Vault access uses phase-local `TryResolveHandle` views only; no active Noir input/tuning/constants/telemetry lock/unlock pair is used because one-row mock and parameter math are direct owner-phase scalar methods, not tiny `IJob.Run()` calls.
+- Active-frame Vault access uses phase-local `TryResolveHandle` views only. Noir input/tuning/constants/telemetry math is direct owner-phase scalar code, not tiny `IJob.Run()` calls.
 - GPU upload uses double-buffered `GraphicsBuffer.Target.Constant` with `LockBufferForWrite` and `UnsafeUtility.MemCpy`; RenderGraph imports the active buffer with `ImportBuffer`, declares `UseBuffer(Read)`, and binds it through `SetGlobalConstantBuffer(buffer, nameID, offset, size)`.
 
 - Shader: `Assets/_Project/Art/Shaders/Hecton_VisorGlitchACES.shader`.
@@ -50,7 +50,7 @@ Route:
 - Shared host no longer imports `Hecton8.Physics`.
 - It no longer samples `HectonFluidEngine.TrySampleMaelstromWarp`.
 - Pressure/stress distortion stays a screen-space fake from existing pressure/hull-stress inputs until a contracts-only fluid read model exists.
-- No active Noir one-row math uses Burst job scheduling or `.Run()`; the previous synchronous mock/parameter jobs were collapsed into direct methods to avoid scheduler overhead and false Burst-proof on non-batched work.
+- Active Noir one-row math uses no Burst scheduling or `.Run()`. Previous mock/parameter jobs became direct methods to avoid scheduler overhead and false Burst-proof.
 - `DeepSeaNoirTunerWindow` samples the editor graph into a fixed 128-float ring and updates its managed label only when quantized display values change.
 
 - `Volume_Component_Inquisition` writes a scoped SHINOBU_235 report for `Assets/_Project/Prefabs`, `Assets/_Project/Scripts/Rendering`, and `Assets/_Project/Scripts/Visor`; scenes, URP assets, and UI settings Volume references are explicitly out-of-domain residue, not project-wide eradication proof.

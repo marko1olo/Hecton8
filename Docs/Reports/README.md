@@ -11,8 +11,8 @@ Evidence class: STATIC_DOC / CLI_COMPILE where artifact cited
 
 - Archived root/architecture report set: `Docs/_Archive/Reports_X_012_2026-05-23/`
 - Latest local zero-warning CLI compile slice: `Docs/AgentLogs/Build_EXTERNAL_CODEX_hotpath_cleanup122_tick_registration.log` (`Hecton8.Editor.csproj --no-restore -m:1 /nr:false /p:UseSharedCompilation=false`, 0 `: warning ` / 0 `: error ` text matches, CLI_COMPILE only).
-- Latest CLI compile attempt: `Docs/AgentLogs/Build_EXTERNAL_CODEX_hotpath_cleanup147_gi_despawn.log`; fails before C# with `NETSDK1004` missing project.assets and `MSB3491` Temp/obj access denied. Runtime proof remains pending.
-- Latest source-gated cleanup: EXTERNAL_CODEX loop157 removes UI/Construction runtime singleton tails after loop154-156 Dispatcher unregister/re-register or lane-reset rebinds and cached Player ownership for `PDADeathMemoryDump`; targeted hot-swap and owner-cache greps pass; compile retry remains blocked by CPU/build environment guard and the same Temp/obj/project.assets wall before C# diagnostics.
+- Latest CLI compile attempt: `Docs/AgentLogs/Build_EXTERNAL_CODEX_hotpath_cleanup158_world_dispatcher_rebind.log`; fails before C# with `NETSDK1004` missing project.assets, 0 warnings, no `CS*`; retry blocked by `BUILD_GUARD cpu=79 compiler_count=2`. Runtime proof remains pending.
+- Latest source-gated cleanup: EXTERNAL_CODEX loop158 repairs 23 world/environment/AI Dispatcher unregister/re-register or lane-reset tails after loop154-156 UI/audio/construction Dispatcher cleanup and loop157 UI/Construction singleton tail removal; targeted hot-swap and owner-cache greps pass; compile remains blocked by missing project.assets before C# diagnostics.
 - Archived sanitization report: `Docs/_Archive/Reports_X_012_2026-05-23/2026-05-21_DOCUMENTATION_SANITIZATION_REPORT.md`
 - Current X_012 documentation scan artifacts: `DOCUMENTATION_CORPUS_INVENTORY_X_012.json`, `DOCUMENTATION_OPTIMIZATION_REPORT_X_012.json`, `DOC_STRUCTURE_VALIDATION_X_012.json`
 - Current X_012 binary-payload concision artifact: `BINARY_PAYLOAD_LEDGER_CONCISION_X_012.json`

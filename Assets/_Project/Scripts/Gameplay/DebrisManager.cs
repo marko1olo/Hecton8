@@ -1200,7 +1200,7 @@ namespace Hecton8.Gameplay
 
         private uint ResolveJobSeed()
         {
-            uint seed = (uint)(Time.frameCount + 1);
+            uint seed = unchecked((uint)(SystemDispatcher.CurrentFrameIndex + 1));
             return seed == 0u ? 1u : seed;
         }
 

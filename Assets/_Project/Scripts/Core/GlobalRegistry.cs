@@ -1590,6 +1590,11 @@ namespace Hecton8.Core
         public static IPdaCorrosionPresentationSink PdaCorrosionPresentationSink => _localizationRuntime;
 
         /// <summary>
+        /// Registered localization transient override command sink.
+        /// </summary>
+        public static ILocalizationTransientOverrideSink LocalizationTransientOverrideSink => _localizationRuntime;
+
+        /// <summary>
         /// Registered audio-log runtime owner.
         /// </summary>
         public static AudioLogSystem AudioLogs => _audioLogRuntime;
@@ -7873,6 +7878,7 @@ namespace Hecton8.Core
             if (serviceType == typeof(ILocalizationTextReadModel)) return GlobalRegistryServiceSlot.LocalizationRuntime;
             if (serviceType == typeof(ILocalizationStressPresentationReadModel)) return GlobalRegistryServiceSlot.LocalizationRuntime;
             if (serviceType == typeof(IPdaCorrosionPresentationSink)) return GlobalRegistryServiceSlot.LocalizationRuntime;
+            if (serviceType == typeof(ILocalizationTransientOverrideSink)) return GlobalRegistryServiceSlot.LocalizationRuntime;
             if (serviceType == typeof(LocalizationManager)) return GlobalRegistryServiceSlot.LocalizationRuntime;
             if (serviceType == typeof(IAudioLogRuntime)) return GlobalRegistryServiceSlot.AudioLogRuntime;
             if (serviceType == typeof(AudioLogSystem)) return GlobalRegistryServiceSlot.AudioLogRuntime;
