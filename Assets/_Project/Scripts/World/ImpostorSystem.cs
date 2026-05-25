@@ -375,8 +375,13 @@ namespace Hecton8.World
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
                     _dispatcher = currentService as ITickDispatcher;
-                    TryRegister();
-                    TryRegisterLateFrame();
+                    _registered = false;
+                    _registeredLateFrame = false;
+                    if (currentService != null && isActiveAndEnabled)
+                    {
+                        TryRegister();
+                        TryRegisterLateFrame();
+                    }
                     break;
                 case GlobalRegistryServiceSlot.ObjectPool:
                     _objectPool = currentService as IObjectPoolService;

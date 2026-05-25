@@ -575,7 +575,9 @@ namespace Hecton8.World
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
                     _dispatcher = currentService as ITickDispatcher;
-                    if (isActiveAndEnabled)
+                    _slowTickRegistered = false;
+                    _lateFrameRegistered = false;
+                    if (currentService != null && isActiveAndEnabled)
                     {
                         TryRegisterSlowTick();
                         TryRegisterLateFrameTick();

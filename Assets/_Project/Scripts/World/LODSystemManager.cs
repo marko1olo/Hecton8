@@ -356,7 +356,7 @@ namespace Hecton8.World
                 _impostorSystem = GlobalRegistry.Impostors;
 
             if (_saveService == null)
-                _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+                _saveService = GlobalRegistry.Save;
         }
 
         private void ClearCachedRegistryServices()

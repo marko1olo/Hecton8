@@ -659,3 +659,22 @@ Task count: open-ended product hardening
   - DOD practice: README and Telegram plan now document scoped subject/clinic validation plus linked-chat organization ownership for document/care/contact handoffs; API typecheck, API build, full build, Telegram bot/source/validation, API encoding, Russian fallback, and settings persistence/preference smokes passed.
   - Rejected: claiming multi-tenant readiness while docs only mentioned link/outbox scope and not callback handoff ownership.
   - Estimate: 0 us Unity runtime; Node/Vite verification only. Residual Vite chunk warning remains at 662.01 kB.
+
+## Loop 37
+
+- [x] Scope signed appointment callback data to the selected Telegram bot runtime.
+  - DOD practice: appointment callback HMAC now uses `organizationId + clinicId + botConfigId + appointmentId + action + expiry`; webhook verification receives `clinicId` from the resolved runtime, and schedule/outbox markup signs buttons with the same scope.
+  - Rejected: relying only on active chat-link scope, because a linked same-patient/same-chat record on another bot config could replay a compact callback signed only by global organization.
+  - Estimate: 0 us Unity runtime; Node HMAC input adds two short scope fields per generated/verified appointment button.
+- [x] Add cross-bot replay regression proof.
+  - DOD practice: `smoke:telegram-bot` now links the same patient/chat through primary and secondary clinic-owned bots, sends a primary appointment confirmation button, replays it through the secondary webhook, and asserts rejection plus unchanged appointment/task/event/audit state.
+  - Rejected: source-only proof and token-route checks without a real callback replay attempt.
+  - Estimate: 0 us Unity runtime; synthetic Fastify/Telegram transport only.
+- [x] Guard source and docs for scoped callback behavior.
+  - DOD practice: `smoke:telegram-control-ui-source` now requires scoped callback normalization/HMAC/parse route markers; README and Telegram plan document scoped callback signatures and the cross-bot replay smoke.
+  - Rejected: leaving the fix invisible to future agents and operators.
+  - Estimate: 0 us runtime; source/doc checks only.
+- [x] Verify compile and adjacent Telegram/persistence regressions.
+  - DOD practice: API typecheck/build, full workspace build, Telegram bot/source/validation smokes, Russian fallback/API encoding and settings persistence/preference smokes passed.
+  - Rejected: stopping after the first failed replay smoke; the failure was ordering-related and was fixed before verification.
+  - Estimate: 0 us Unity runtime; Node/Vite verification only. Residual Vite chunk warning remains at 662.01 kB.

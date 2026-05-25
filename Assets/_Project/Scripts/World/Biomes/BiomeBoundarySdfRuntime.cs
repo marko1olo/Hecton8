@@ -217,7 +217,9 @@ namespace Hecton8.World.Biomes
 
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
-                TryRegister();
+                _registeredSlowTick = false;
+                if (currentService != null && isActiveAndEnabled)
+                    TryRegister();
                 return;
             }
 

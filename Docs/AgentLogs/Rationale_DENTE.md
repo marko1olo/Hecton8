@@ -915,3 +915,30 @@ Residual risk:
 - `DENTE_TELEGRAM_CLINIC_BOTS_JSON` remains prototype storage; production still needs encrypted DB-backed bot configs, tenant auth and webhook-secret rotation.
 - Appointment callback HMAC still uses the global organization secret input; runtime chat-link scope blocks unauthorized use, but cross-bot replay should get a dedicated signature scope in a later loop.
 - Vite chunk size warning remains open.
+
+## 2026-05-25 - Telegram Appointment Callback Scope
+
+Problem: Appointment inline-button signatures were compact and time-limited, but the HMAC input did not include `clinicId` or `botConfigId`. After multi-bot chat-link support, the same patient/chat could be legitimately linked to two clinic-owned bot configs; a primary-bot appointment button needed an explicit rejection path when replayed through the secondary webhook.
+Solution: Appointment callback signing and verification now normalize `organizationId`, `clinicId` and `botConfigId` from the runtime settings, then HMAC `organizationId:clinicId:botConfigId:appointmentId:action:expiry`. Webhook callback handling passes the resolved `clinicId`; outbox and linked schedule markup sign buttons with the same runtime scope. The bot smoke creates primary and secondary bot links for the same patient/chat, sends a primary appointment confirmation button, replays it through the secondary webhook, and asserts rejection with no appointment/task/event/audit mutation.
+Rejected Alternatives: Rely only on active chat-link lookup; embed bot config ids directly in callback data; make appointment callbacks global and check transport token later; accept source-only proof. Chat-link lookup is not a signature boundary, explicit bot ids in callback data waste Telegram's 64-byte limit and expose topology, and token-route checks do not prove callback replay behavior.
+Scalability potential: Low tier uses the shared bot path with the same signing contract. Middle tier can run one clinic-owned bot per clinic. High/ultra tier can run multiple bot configs per organization and move bot configs to encrypted DB storage without changing the callback verifier.
+Hardware Impact: 0 us Unity runtime. API impact is one slightly longer HMAC input string per appointment button generation/verification; browser impact is none. Low-end clinic hardware sees no extra web rendering cost.
+
+Evidence:
+- CLI_COMPILE: `npm run typecheck -w @dental/api` passed.
+- CLI_COMPILE: `npm run build -w @dental/api` passed.
+- CLI_COMPILE: `npm run build` passed for shared, api and web; residual Vite warning: web `assets/index-BDxbPAyE.js` 662.01 kB > 500 kB.
+- CLI_TEST: `npm run smoke:telegram-bot` passed with cross-bot appointment callback replay rejection and unchanged appointment/task/event/audit counts.
+- CLI_TEST: `npm run smoke:telegram-control-ui-source` passed with scoped appointment callback source guards.
+- CLI_TEST: `npm run smoke:telegram-validation` passed.
+- CLI_TEST: `npm run smoke:api-text-encoding` passed with `mojibakeHits:0`.
+- CLI_TEST: `npm run smoke:russian-fallback-source` passed.
+- CLI_TEST: `npm run smoke:settings-persistence-file` passed.
+- CLI_TEST: `npm run smoke:settings-preferences` passed.
+- DOC_CHECK: `README.md` and `docs/13-dente-telegram-bot-plan.md` updated with scoped appointment callback behavior.
+
+Residual risk:
+- Existing pre-deploy appointment buttons signed with the older input will reject after deploy; patients can request `/schedule` or wait for the next reminder to get fresh scoped buttons.
+- `DENTE_TELEGRAM_CLINIC_BOTS_JSON` remains prototype storage; production still needs encrypted DB-backed bot configs, tenant auth and webhook-secret rotation.
+- Official outpatient medical-card form `025/у` mapping still needs source-verified field implementation before DENTE can claim exact 274n outpatient card generation.
+- Vite chunk size warning remains open.

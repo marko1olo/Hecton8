@@ -106,6 +106,7 @@ namespace Hecton8.Lighting
 
         private void Awake()
         {
+            CacheDataVaultCold();
             EnsureNativeStorage();
             RefreshColdRuntimeDependencies();
             CaptureBaselineShadowCascades();
@@ -118,6 +119,7 @@ namespace Hecton8.Lighting
                 return;
 #endif
 
+            CacheDataVaultCold();
             EnsureNativeStorage();
             RefreshColdRuntimeDependencies();
             CaptureBaselineShadowCascades();
@@ -411,7 +413,13 @@ namespace Hecton8.Lighting
 
         private IDataVault ResolveDataVault()
         {
-            return _vault ?? GlobalRegistry.DataVault;
+            return _vault;
+        }
+
+        private void CacheDataVaultCold()
+        {
+            if (_vault == null)
+                _vault = GlobalRegistry.DataVault;
         }
 
         private void RefreshColdRuntimeDependencies()

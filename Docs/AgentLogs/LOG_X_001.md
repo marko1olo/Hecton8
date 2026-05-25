@@ -870,3 +870,38 @@ Proof:
 - First-party `HectonEventBus.Publish/Subscribe/Unsubscribe` outside ModdingAPI/Editor/Tests: 0.
 - Core signal payload banned-field scan: 0.
 - `git diff --check`: no errors; LF-to-CRLF warnings only.
+
+## 2026-05-25 - SIGNAL_REFUSAL_TELEMETRY_CLOSURE_X_001
+
+What was wrong:
+- Runtime source still had storm-adjacent `TryEnqueueBounded(...)` calls where the bool result was ignored.
+- The generic lane budget could drop safely, but reactor, hull/fluid, combat, fabrication, equipment, and inventory owners did not always record the local refusal.
+- Some physical-domain wrappers returned `void`, hiding bounded refusal from first-party callers.
+
+What was done:
+- Patched 37 runtime/contract files.
+- Added owner-local signal-overflow/drop flags to reactor, fluid ingress, hull integrity, submarine fluid/structural/atmosphere, thermodynamics hazard, cavitation, exosuit, KCC, vehicle, cable, ballast, and structural warning paths.
+- Patched fabrication completion/tick, modular equipment depleted/overheat, inventory logistics transfer, ballistic damage, and combat deflect paths so bounded refusal increments existing counters or flags.
+- Converted selected physical wrappers to explicit `Try*` surfaces where refusal is caller-visible.
+
+Cinematic cheats used:
+- No new simulation was added. The pass only exposes bounded refusal and preserves existing cheap visual/presentation paths.
+- Cavitation cooldown now retries faster when both haptic/audio presentation signals refuse instead of pretending the full presentation happened.
+- High-volume visual feedback remains scalar/hash packed; no string logs or managed sidecars were added.
+
+Exact microseconds saved:
+- 0us verified. No Unity Play Mode/profiler/GCMonitor capture was run.
+- Static effect only: fewer hidden native queue accepts and owner-visible drop state during 5000-signal reactor/fluid/combat/fabrication/equipment/inventory storms.
+
+Proof:
+- Report: `Docs/Reports/SIGNAL_REFUSAL_TELEMETRY_CLOSURE_X_001.md`.
+- Touched code files: 37.
+- Runtime statement-level `TryEnqueueBounded(...)` outside Core/Signals/Editor/Tests/ModdingAPI: 0.
+- Runtime `GlobalSignals.Publish/Push/TryDequeue/*Writer`: 0 outside allowed zones.
+- `SignalBus<T>.Push`: 0.
+- First-party `HectonEventBus.Publish/Subscribe/Unsubscribe`: 0 outside ModdingAPI/Editor/Tests.
+- `ThreadSafeCommandQueue.Enqueue`: 0.
+- Core signal DTO banned-field scan: 0.
+- Touched-file brace delta: 0.
+
+Build status -> Not launched. Latest guard reported `CPU=99 compiler_count=0`; AGENTS blocks `dotnet build` above 50 percent CPU.

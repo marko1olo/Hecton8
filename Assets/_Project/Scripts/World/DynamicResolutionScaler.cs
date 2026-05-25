@@ -400,7 +400,7 @@ namespace Hecton8.World
         private void CacheRegistryServicesCold()
         {
             if (_saveService == null)
-                _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+                _saveService = GlobalRegistry.Save;
         }
 
         private void TryRegisterHotSwapListener()

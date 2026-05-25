@@ -97,7 +97,7 @@ namespace Hecton8.UI
         private PlayerToolManager _toolManager;
         private PlayerInventory _inventory;
         private IPlayerActionInterruptSink _cachedPlayerActions;
-        private LocalizationManager _cachedLocalization;
+        private ILocalizationTextExpansionReadModel _cachedLocalization;
         private INativeInputManagerRuntime _cachedInputManager;
         private bool _registered;
         private bool _registeredLateFrame;
@@ -621,7 +621,7 @@ namespace Hecton8.UI
 
             if (promptText != null)
             {
-                LocalizationManager localization = _cachedLocalization;
+                ILocalizationTextExpansionReadModel localization = _cachedLocalization;
                 if (localization != null &&
                     !string.IsNullOrEmpty(prompt) &&
                     localization.TryExpandText(prompt.AsSpan(), _promptCharBuffer, out int expandedLength))
@@ -748,7 +748,7 @@ namespace Hecton8.UI
             _cachedPlayerContext = GlobalRegistry.Player;
             _cachedInputManager = GlobalRegistry.NativeInputRuntime;
             _cachedPlayerActions = GlobalRegistry.PlayerActionInterrupts;
-            _cachedLocalization = Hecton8.Core.GlobalRegistry.Localization;
+            _cachedLocalization = Hecton8.Core.GlobalRegistry.LocalizationTextExpansion;
         }
 
         /// <inheritdoc />
@@ -872,9 +872,9 @@ namespace Hecton8.UI
 
         private string ResolveLocalizedExpanded(string key, string fallback)
         {
-            LocalizationManager localization = _cachedLocalization;
+            ILocalizationTextExpansionReadModel localization = _cachedLocalization;
             return localization != null
-                ? localization.GetExpandedOrFallback(localization.CurrentLanguage, key, fallback)
+                ? localization.GetExpandedOrFallback(localization.ActiveLanguageId, key, fallback)
                 : fallback;
         }
 

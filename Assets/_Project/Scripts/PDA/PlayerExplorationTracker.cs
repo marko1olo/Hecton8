@@ -166,7 +166,7 @@ namespace Hecton8.PDA
         {
             InitializeExplorationMask();
             TryRegisterService();
-            _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+            _saveService = GlobalRegistry.Save;
             TryRegisterHotSwapListener();
             TryRegisterWithTickManager();
             TryRegisterWithSlowTickManager();
@@ -2332,7 +2332,7 @@ namespace Hecton8.PDA
                 return;
 
             if (_saveService == null)
-                _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+                _saveService = GlobalRegistry.Save;
 
             if (_saveService == null)
                 return;

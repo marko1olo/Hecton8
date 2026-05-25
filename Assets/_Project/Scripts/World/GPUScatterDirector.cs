@@ -439,7 +439,9 @@ namespace Hecton8.World
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
                     _dispatcher = currentService as ITickDispatcher;
-                    TryRegister();
+                    _registered = false;
+                    if (currentService != null && isActiveAndEnabled)
+                        TryRegister();
                     break;
                 case GlobalRegistryServiceSlot.DataVault:
                     ReleaseScatterTelemetryResources();

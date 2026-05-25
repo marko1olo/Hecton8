@@ -2238,7 +2238,10 @@ namespace Hecton8.Atmosphere
                     RefreshCachedSurfaceSnapshot();
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    if (currentService != null)
+                    _registeredUpdate = false;
+                    _registeredSlow = false;
+                    _registeredLate = false;
+                    if (currentService != null && isActiveAndEnabled)
                     {
                         if (!_registeredUpdate)
                             _registeredUpdate = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);

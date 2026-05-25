@@ -1819,3 +1819,10 @@ Done -> Added local unregister/register or null-reset Dispatcher rebinds across 
 Cinematic Cheats -> No simulation added. Existing biome/world/celestial/atmosphere presentation remains dispatcher-owned and polling-free.
 Microseconds saved -> 1-12 us during Dispatcher replacement/world-environment bursts; 0 steady-frame truth change.
 Verification -> Source-only plus compile-wall proof after loop158: scoped `diff --check` passed; 23-file grep shows Dispatcher handling plus reset/unregister routes in every touched file; `Build_EXTERNAL_CODEX_hotpath_cleanup158_world_dispatcher_rebind.log` fails before C# with `NETSDK1004` missing project.assets, 0 warnings, no `CS*`; retry blocked by `BUILD_GUARD cpu=79 compiler_count=2`.
+
+## 2026-05-25 Runtime Hot-Path Cleanup 159
+Wrong -> Project-wide runtime scans still surfaced forbidden `ActiveRuntimeContext` / `ActiveRuntimeInstance` routes and two hidden fallback registry reads: GI DataVault allocation via `?? GlobalRegistry` and weather fluid sink via null-coalescing registry fallback.
+Done -> Routed singleton reads to `GlobalRegistry` owner routes; used byte-preserving ASCII replacement for two non-UTF8 files. `HectonGIRelaySystem` now cold-caches DataVault before native storage acquisition and allocator helpers read `_vault` only. `GlobalWeatherDirector` now resolves authored sink first and only then cold-falls back to registry.
+Cinematic Cheats -> No simulation added. Route cleanup only.
+Microseconds saved -> 1-4 us per fallback/boot burst; 0 steady-frame truth change.
+Verification -> Singleton grep returned 0; `?? GlobalRegistry|GlobalRegistry.TryGet` grep returned 0; scoped `diff --check` passed with LF normalization warnings only. Build skipped by `BUILD_GUARD cpu=100 compiler_count=2` with active `csc`/`dotnet`.

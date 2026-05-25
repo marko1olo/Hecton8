@@ -195,7 +195,7 @@ namespace Hecton8.Narrative
 
         public bool TryWriteVisibleSubtitleOrFallback(char[] destination, out int length)
         {
-            LocalizationManager localization = Hecton8.Core.GlobalRegistry.Localization;
+            ILocalizationTextExpansionReadModel localization = Hecton8.Core.GlobalRegistry.LocalizationTextExpansion;
             ReadOnlySpan<char> subtitle = localizedSubtitleText.ResolveSpanOrFallback(localization, subtitleText);
             if (localization != null && localization.TryExpandText(subtitle, destination, out int expandedLength))
                 return TryStripTimecodedSubtitleMarkup(destination.AsSpan(0, expandedLength), destination, out length);

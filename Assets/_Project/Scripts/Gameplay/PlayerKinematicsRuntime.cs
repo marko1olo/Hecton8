@@ -978,6 +978,7 @@ namespace Hecton8.Gameplay
         private bool _dumpWrittenForFault;
         private bool _desyncDumpWritten;
         private bool _stateWriteReady;
+        private bool _hasAuthoritativePoseSnapshot;
         private Rigidbody _body;
         private IPlayerKinematicsMovementRuntime _movement;
         private IPlayerKinematicsMotorSyncSink _motor;
@@ -1270,6 +1271,8 @@ namespace Hecton8.Gameplay
             float3 resolvedVelocity3 = SnapMillimeter(_velocities[0]);
             _positions[0] = resolvedPosition3;
             _velocities[0] = resolvedVelocity3;
+            _lastValidPositions[0] = resolvedPosition3;
+            _hasAuthoritativePoseSnapshot = true;
             Vector3 resolvedPosition = ToVector3(resolvedPosition3);
             Vector3 resolvedVelocity = ToVector3(resolvedVelocity3);
             int faultFlags = ReadFaultFlags();
@@ -1602,6 +1605,7 @@ namespace Hecton8.Gameplay
             start = SnapMillimeter(SanitizeFloat3(start, float3.zero));
             _positions[0] = start;
             _lastValidPositions[0] = start;
+            _hasAuthoritativePoseSnapshot = true;
             quaternion rotation = ResolveAuthoritativeRotationSnapshot();
             StageStateWrite(start, float3.zero, rotation, 0u);
             CommitStateWrite();
@@ -1735,6 +1739,7 @@ namespace Hecton8.Gameplay
             _positions[0] = position;
             _velocities[0] = velocity;
             _lastValidPositions[0] = position;
+            _hasAuthoritativePoseSnapshot = true;
             StageStateWrite(position, velocity, ResolveAuthoritativeRotationSnapshot(), 0u);
             CommitStateWrite();
 
@@ -1751,6 +1756,7 @@ namespace Hecton8.Gameplay
             _lastInputStateSignal = default;
             _dumpWrittenForFault = false;
             _desyncDumpWritten = false;
+            _hasAuthoritativePoseSnapshot = false;
             _rollPhaseRadians = 0.0f;
             _lastGpuFlowResolution = Vector4.zero;
             _lastGpuFlowCenter = Vector4.zero;
@@ -3555,6 +3561,12 @@ namespace Hecton8.Gameplay
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private bool TryReadAuthoritativePositionSnapshot(out float3 position)
         {
+            if (!_hasAuthoritativePoseSnapshot)
+            {
+                position = float3.zero;
+                return false;
+            }
+
             if (HasSyncStateReadStorage())
             {
                 position = SanitizeFloat3(_stateRead[0].Position, float3.zero);

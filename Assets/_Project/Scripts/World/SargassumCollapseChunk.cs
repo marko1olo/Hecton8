@@ -489,7 +489,10 @@ namespace Hecton8.World
                         TryRegisterScavengerHost();
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    if (isActiveAndEnabled && _remainingLifetime > 0f)
+                    _registeredTick = false;
+                    _registeredFixedTick = false;
+                    _registeredLateFrameTick = false;
+                    if (currentService != null && isActiveAndEnabled && _remainingLifetime > 0f)
                         TryRegister();
                     break;
             }

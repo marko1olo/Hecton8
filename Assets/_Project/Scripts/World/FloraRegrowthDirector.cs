@@ -463,7 +463,7 @@ namespace Hecton8.World
         private void CacheRegistryServicesCold()
         {
             _persistentWorldRegistry = GlobalRegistry.PersistentWorldRegistry;
-            _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+            _saveService = GlobalRegistry.Save;
         }
 
         private void TryRegisterDispatcherLanes()
@@ -518,7 +518,11 @@ namespace Hecton8.World
                     _saveService = currentService as ISaveService;
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    TryRegisterDispatcherLanes();
+                    _tickRegistered = false;
+                    _slowTickRegistered = false;
+                    _lateFrameRegistered = false;
+                    if (currentService != null && isActiveAndEnabled)
+                        TryRegisterDispatcherLanes();
                     break;
             }
         }

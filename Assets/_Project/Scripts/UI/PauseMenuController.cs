@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
@@ -76,7 +76,7 @@ namespace Hecton8.UI
         private bool _hotSwapListenerRegistered;
         private IPlayerRuntimeContext _cachedPlayerContext;
         private ISaveService _cachedSaveService;
-        private LocalizationManager _cachedLocalization;
+        private ILocalizationLanguageControl _cachedLocalization;
         private const uint PlayerInputSignalSourceHash = 0x504C494Eu;
 
         private RectTransform _root;
@@ -182,8 +182,8 @@ namespace Hecton8.UI
         private void CacheRegistryServicesCold()
         {
             _cachedPlayerContext = Hecton8.Core.GlobalRegistry.Player;
-            _cachedSaveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
-            _cachedLocalization = Hecton8.Core.GlobalRegistry.Localization;
+            _cachedSaveService = Hecton8.Core.GlobalRegistry.Save;
+            _cachedLocalization = Hecton8.Core.GlobalRegistry.LocalizationLanguageControl;
         }
 
         private void TryRegisterHotSwapListener()
@@ -283,7 +283,7 @@ namespace Hecton8.UI
                         RefreshSaveSectionState();
                     break;
                 case GlobalRegistryServiceSlot.LocalizationRuntime:
-                    _cachedLocalization = currentService as LocalizationManager;
+                    _cachedLocalization = currentService as ILocalizationLanguageControl;
                     if (_built)
                     {
                         RefreshSaveSlotButtonLabels();
@@ -1633,7 +1633,7 @@ namespace Hecton8.UI
 
         private void CycleLanguage()
         {
-            LocalizationManager localization = _cachedLocalization;
+            ILocalizationLanguageControl localization = _cachedLocalization;
             if (localization == null)
             {
                 RefreshLanguageSettingsStatus();
@@ -1649,7 +1649,7 @@ namespace Hecton8.UI
             if (_settingsLanguageStatus == null)
                 return;
 
-            LocalizationManager localization = _cachedLocalization;
+            ILocalizationLanguageControl localization = _cachedLocalization;
             if (localization == null)
             {
                 SetSettingsLanguageStatus(ResolveLocalizedSpan(
@@ -1662,7 +1662,7 @@ namespace Hecton8.UI
                 ResolveLocalizedSpan(
                     LocalizationKeys.SETTINGS_CURRENT_LANGUAGE,
                     "CURRENT LANGUAGE: {0}"),
-                GetLanguageDisplayName(localization.CurrentLanguage).AsSpan());
+                GetLanguageDisplayName((GameLanguage)localization.ActiveLanguageId).AsSpan());
         }
 
         private void SetSettingsLanguageStatus(ReadOnlySpan<char> value)
@@ -1721,7 +1721,7 @@ namespace Hecton8.UI
 
         private ReadOnlySpan<char> ResolveLocalizedSpan(string key, string fallback)
         {
-            LocalizationManager manager = _cachedLocalization;
+            ILocalizationLanguageControl manager = _cachedLocalization;
             return manager != null
                 ? manager.GetRawSpanOrFallback(LocHash.Compute(key.AsSpan()), fallback.AsSpan())
                 : fallback.AsSpan();
@@ -1729,7 +1729,7 @@ namespace Hecton8.UI
 
         private ReadOnlySpan<char> ResolveLocalizedSpan(string key, ReadOnlySpan<char> fallback)
         {
-            LocalizationManager manager = _cachedLocalization;
+            ILocalizationLanguageControl manager = _cachedLocalization;
             return manager != null
                 ? manager.GetRawSpanOrFallback(LocHash.Compute(key.AsSpan()), fallback)
                 : fallback;

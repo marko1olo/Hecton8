@@ -64,7 +64,7 @@ Prompt/report values that disagree with source are stale. Current source wins.
 
 | Gap | Required proof artifact |
 |---|---|
-| EXTERNAL_CODEX loop158 source gate | latest wall: `Build_EXTERNAL_CODEX_hotpath_cleanup158_world_dispatcher_rebind.log`; `NETSDK1004` assets missing before C#; 0 warnings; no `CS*`; retry blocked by `BUILD_GUARD cpu=79 compiler_count=2`; targeted greps pass; broad scans retain false positives |
+| EXTERNAL_CODEX loop158 source gate | Latest wall: `Build_EXTERNAL_CODEX_hotpath_cleanup158_world_dispatcher_rebind.log`; `NETSDK1004` before C#; no warnings/`CS*`; retry blocked by `BUILD_GUARD cpu=79 compiler_count=2`; targeted greps pass |
 | EXTERNAL_CODEX loop157 source gate | UI/Construction singleton-tail greps pass; scoped `diff --check` passed; build skipped by `BUILD_GUARD cpu=100 compiler_count=2` |
 | EXTERNAL_CODEX loop143 compile verification | Source-only; guarded build skipped by `BUILD_GUARD cpu=100 compiler_count=0` after targeted hot-swap/getter greps |
 | EXTERNAL_CODEX loop142 compile verification | Source-only after pre-build `BUILD_GUARD cpu=78.3 compiler_count=2` |

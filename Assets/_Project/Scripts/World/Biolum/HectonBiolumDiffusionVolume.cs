@@ -189,7 +189,9 @@ namespace Hecton8.Biolum
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
                     _dispatcher = currentService as ITickDispatcher;
-                    TryRegister();
+                    _registered = false;
+                    if (currentService != null && isActiveAndEnabled)
+                        TryRegister();
                     break;
             }
         }

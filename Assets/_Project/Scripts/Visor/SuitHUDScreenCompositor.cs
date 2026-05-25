@@ -151,7 +151,11 @@ namespace NASAPunk.Visor
             object previousService,
             object currentService)
         {
-            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && isActiveAndEnabled)
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
+                return;
+
+            _tickRegistered = false;
+            if (currentService != null && isActiveAndEnabled)
                 TryRegisterRuntimeTick();
         }
 

@@ -1436,7 +1436,13 @@ namespace Hecton8.Environment
             object previousService,
             object currentService)
         {
-            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && currentService != null && _isInitialized && isActiveAndEnabled)
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
+                return;
+
+            _registeredUpdatable = false;
+            _registeredSlowTickable = false;
+            _registeredLateFrameTickable = false;
+            if (currentService != null && _isInitialized && isActiveAndEnabled)
                 TryRegisterTickLanes();
         }
 

@@ -1580,6 +1580,16 @@ namespace Hecton8.Core
             (_babelLocalizationRuntime as ILocalizationTextReadModel) ?? _localizationRuntime;
 
         /// <summary>
+        /// Registered localization expansion read model.
+        /// </summary>
+        public static ILocalizationTextExpansionReadModel LocalizationTextExpansion => _localizationRuntime;
+
+        /// <summary>
+        /// Registered localization language control command sink.
+        /// </summary>
+        public static ILocalizationLanguageControl LocalizationLanguageControl => _localizationRuntime;
+
+        /// <summary>
         /// Registered localization stress/corrosion presentation read model.
         /// </summary>
         public static ILocalizationStressPresentationReadModel LocalizationStressPresentation => _localizationRuntime;
@@ -7886,6 +7896,8 @@ namespace Hecton8.Core
             if (serviceType == typeof(HectonBiolumController)) return GlobalRegistryServiceSlot.BiolumControllerRuntime;
             if (serviceType == typeof(IBabelLocalization)) return GlobalRegistryServiceSlot.LocalizationRuntime;
             if (serviceType == typeof(ILocalizationTextReadModel)) return GlobalRegistryServiceSlot.LocalizationRuntime;
+            if (serviceType == typeof(ILocalizationTextExpansionReadModel)) return GlobalRegistryServiceSlot.LocalizationRuntime;
+            if (serviceType == typeof(ILocalizationLanguageControl)) return GlobalRegistryServiceSlot.LocalizationRuntime;
             if (serviceType == typeof(ILocalizationStressPresentationReadModel)) return GlobalRegistryServiceSlot.LocalizationRuntime;
             if (serviceType == typeof(ILocalizationMadnessPresentationReadModel)) return GlobalRegistryServiceSlot.LocalizationRuntime;
             if (serviceType == typeof(ILocalizationStressHudRefreshSink)) return GlobalRegistryServiceSlot.LocalizationRuntime;

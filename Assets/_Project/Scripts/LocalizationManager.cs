@@ -51,7 +51,7 @@ namespace Hecton.Localization
     /// Runtime owner for Babel localization compatibility and language switching.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class LocalizationManager : MonoBehaviour, IBabelLocalization, ILocalizationTextReadModel, ILocalizationStressPresentationReadModel, ILocalizationMadnessPresentationReadModel, ILocalizationStressHudRefreshSink, IPdaCorrosionPresentationSink, ILocalizationTransientOverrideSink, IDispatcherSystem
+    public sealed class LocalizationManager : MonoBehaviour, IBabelLocalization, ILocalizationTextReadModel, ILocalizationTextExpansionReadModel, ILocalizationLanguageControl, ILocalizationStressPresentationReadModel, ILocalizationMadnessPresentationReadModel, ILocalizationStressHudRefreshSink, IPdaCorrosionPresentationSink, ILocalizationTransientOverrideSink, IDispatcherSystem
     {
         private const string AnalyzerTechKeyPrefix = "TECH_";
         private const string AnalyzerPrefabToken = "EnvAnalyzer";
@@ -316,6 +316,11 @@ namespace Hecton.Localization
         public string GetExpandedOrFallback(GameLanguage language, string key, string fallback)
         {
             return ExpandRuntimeTokens(GetOrFallback(language, key, fallback));
+        }
+
+        string ILocalizationTextExpansionReadModel.GetExpandedOrFallback(ushort languageId, string key, string fallback)
+        {
+            return GetExpandedOrFallback((GameLanguage)languageId, key, fallback);
         }
 
         /// <summary>

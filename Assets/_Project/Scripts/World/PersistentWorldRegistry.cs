@@ -2889,7 +2889,7 @@ namespace Hecton8.World
 
         private void CacheRegistryServicesCold()
         {
-            _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+            _saveService = GlobalRegistry.Save;
             _playerRuntimeContext = GlobalRegistry.Player;
             _playerInventoryService = GlobalRegistry.PlayerInventory;
         }

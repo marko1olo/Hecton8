@@ -2283,6 +2283,7 @@ def build_report():
     managed_chunk_tracking = line_hits(FILES["delta"], r"Dictionary<ChunkAddress")
     pager = world_pager_limits()
     carve_queue = carve_queue_pressure()
+    voxel_delta_shutdown = voxel_delta_shutdown_completion_proof()
     rle_packet = rle_packet_layout(pager["sector_payload_bytes"])
     damage = damage_volume_pressure()
     dirty_chunk = active_dirty_chunk_memory()
@@ -2352,6 +2353,15 @@ def build_report():
             and carve_queue["scheduled_commit_continuous_quality_scaled"]
             and carve_queue["scheduled_commit_min_writes_per_frame"] >= 64
             and carve_queue["scheduled_commit_max_writes_per_frame"] >= 512
+        ),
+        "voxel_delta_force_complete_shutdown_only": (
+            len(voxel_delta_shutdown["force_complete_hits"]) > 0
+            and len(voxel_delta_shutdown["non_shutdown_force_complete_hits"]) == 0
+            and voxel_delta_shutdown["shutdown_only_method_names_present"]
+            and voxel_delta_shutdown["old_dispose_names_absent"]
+            and voxel_delta_shutdown["on_disable_calls_shutdown_only"]
+            and voxel_delta_shutdown["hot_carve_completion_nonblocking"]
+            and voxel_delta_shutdown["hot_compaction_completion_nonblocking"]
         ),
         "unsafe_utility_malloc_absent_in_voxel_jobs": len(malloc["unsafe_utility_malloc_hits"]) == 0,
         "managed_chunk_tracking_absent": len(managed_chunk_tracking) == 0,
@@ -2709,6 +2719,7 @@ def build_report():
         "world_pager_limits": pager,
         "global_data_vault_pool": global_vault,
         "carve_queue_pressure": carve_queue,
+        "voxel_delta_shutdown_completion": voxel_delta_shutdown,
         "surface_nets_datavault_pool": surface_nets_vault_ledger(),
         "active_dirty_chunk_memory": dirty_chunk,
         "volume_registry": volume_registry,

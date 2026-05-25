@@ -6682,7 +6682,8 @@ namespace Hecton8.World
                         mapMagicBridge = currentService as MapMagicBridge;
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    if (currentService != null)
+                    _isRegistered = false;
+                    if (currentService != null && isActiveAndEnabled)
                         TryRegister();
                     break;
             }

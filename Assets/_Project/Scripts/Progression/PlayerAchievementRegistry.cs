@@ -443,7 +443,7 @@ namespace Hecton8.Progression
 
             _logbookManager = GlobalRegistry.PDALogbook;
             if (_saveService == null)
-                _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+                _saveService = GlobalRegistry.Save;
             _discoveryManager = GlobalRegistry.Discovery;
         }
 
@@ -757,7 +757,7 @@ namespace Hecton8.Progression
                 return;
 
             if (_saveService == null)
-                _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+                _saveService = GlobalRegistry.Save;
 
             if (_saveService == null)
                 return;

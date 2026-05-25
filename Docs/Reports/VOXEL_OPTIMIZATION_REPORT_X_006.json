@@ -215,52 +215,52 @@
         },
         {
           "file": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
-          "line": 4688,
+          "line": 4690,
           "text": "_compactionSourceSdfScratch = new NativeArray<byte>(CompactionSourceSdfCapacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);"
         },
         {
           "file": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
-          "line": 4689,
+          "line": 4691,
           "text": "_compactionDirtyMaskScratch = new NativeArray<uint>(ChunkDirtyMaskWordCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);"
         },
         {
           "file": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
-          "line": 4690,
+          "line": 4692,
           "text": "_compactionDeltaSdfScratch = new NativeArray<ushort>(ChunkCellCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);"
         },
         {
           "file": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
-          "line": 4691,
+          "line": 4693,
           "text": "_compactionMaterialScratch = new NativeArray<byte>(ChunkCellCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);"
         },
         {
           "file": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
-          "line": 4692,
+          "line": 4694,
           "text": "_compactionFlagsScratch = new NativeArray<byte>(ChunkCellCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);"
         },
         {
           "file": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
-          "line": 4693,
+          "line": 4695,
           "text": "_compactionOutputSdfScratch = new NativeArray<ushort>(ChunkCellCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);"
         },
         {
           "file": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
-          "line": 4694,
+          "line": 4696,
           "text": "_compactionOutputMaterialsScratch = new NativeArray<byte>(ChunkCellCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);"
         },
         {
           "file": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
-          "line": 4695,
+          "line": 4697,
           "text": "_compactionOutputFlagsScratch = new NativeArray<byte>(ChunkCellCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);"
         },
         {
           "file": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
-          "line": 4696,
+          "line": 4698,
           "text": "_compactionUniformFlagScratch = new NativeArray<byte>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);"
         },
         {
           "file": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
-          "line": 4796,
+          "line": 4798,
           "text": "_nativeSnapshotScratch = new NativeArray<byte>("
         }
       ],
@@ -313,52 +313,52 @@
       },
       {
         "file": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
-        "line": 4688,
+        "line": 4690,
         "text": "_compactionSourceSdfScratch = new NativeArray<byte>(CompactionSourceSdfCapacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);"
       },
       {
         "file": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
-        "line": 4689,
+        "line": 4691,
         "text": "_compactionDirtyMaskScratch = new NativeArray<uint>(ChunkDirtyMaskWordCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);"
       },
       {
         "file": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
-        "line": 4690,
+        "line": 4692,
         "text": "_compactionDeltaSdfScratch = new NativeArray<ushort>(ChunkCellCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);"
       },
       {
         "file": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
-        "line": 4691,
+        "line": 4693,
         "text": "_compactionMaterialScratch = new NativeArray<byte>(ChunkCellCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);"
       },
       {
         "file": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
-        "line": 4692,
+        "line": 4694,
         "text": "_compactionFlagsScratch = new NativeArray<byte>(ChunkCellCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);"
       },
       {
         "file": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
-        "line": 4693,
+        "line": 4695,
         "text": "_compactionOutputSdfScratch = new NativeArray<ushort>(ChunkCellCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);"
       },
       {
         "file": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
-        "line": 4694,
+        "line": 4696,
         "text": "_compactionOutputMaterialsScratch = new NativeArray<byte>(ChunkCellCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);"
       },
       {
         "file": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
-        "line": 4695,
+        "line": 4697,
         "text": "_compactionOutputFlagsScratch = new NativeArray<byte>(ChunkCellCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);"
       },
       {
         "file": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
-        "line": 4696,
+        "line": 4698,
         "text": "_compactionUniformFlagScratch = new NativeArray<byte>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);"
       },
       {
         "file": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
-        "line": 4796,
+        "line": 4798,
         "text": "_nativeSnapshotScratch = new NativeArray<byte>("
       }
     ],
@@ -482,6 +482,7 @@
     "unsafe_utility_malloc_absent_in_voxel_jobs": true,
     "voxel_carve_queue_and_commit_continuous_quality_scaled": true,
     "voxel_carving_torture_job_present": true,
+    "voxel_delta_force_complete_shutdown_only": true,
     "voxel_job_wait_cancellation_no_live_throw": true,
     "voxel_mesh_pool_runtime_lazy_allocation_absent": true,
     "voxel_rebuild_qualitysettings_lodbias_absent": true,
@@ -979,6 +980,38 @@
     "policy": "VoxelDeltaProcessor live and pending rebuild volume registries use fixed arrays with hard capacity. Overflow fails closed by direct rebuild request or rejected registration instead of growing managed Lists.",
     "registration_overflow_direct_rebuild_present": true,
     "volume_registry_capacity": 64
+  },
+  "voxel_delta_shutdown_completion": {
+    "force_complete_hits": [
+      {
+        "file": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+        "line": 4574,
+        "text": "DispatcherJobFence.TryComplete(ref _scheduledCarveHandle, forceComplete: true);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+        "line": 4677,
+        "text": "DispatcherJobFence.TryComplete(ref _scheduledCompactionHandle, forceComplete: true);"
+      }
+    ],
+    "hot_carve_completion_nonblocking": true,
+    "hot_compaction_completion_nonblocking": true,
+    "non_shutdown_force_complete_hits": [],
+    "old_dispose_names_absent": true,
+    "on_disable_calls_shutdown_only": true,
+    "shutdown_only_force_complete_hits": [
+      {
+        "file": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+        "line": 4574,
+        "text": "DispatcherJobFence.TryComplete(ref _scheduledCarveHandle, forceComplete: true);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+        "line": 4677,
+        "text": "DispatcherJobFence.TryComplete(ref _scheduledCompactionHandle, forceComplete: true);"
+      }
+    ],
+    "shutdown_only_method_names_present": true
   },
   "voxel_job_wait_cancellation": {
     "awaiter_present": true,

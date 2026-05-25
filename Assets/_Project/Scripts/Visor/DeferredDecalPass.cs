@@ -515,7 +515,11 @@ namespace Hecton8.Visor
             }
 
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
-                TryRegisterLateFrame();
+            {
+                _registeredLateFrame = false;
+                if (currentService != null && isActiveAndEnabled)
+                    TryRegisterLateFrame();
+            }
         }
 
         private void RecreateMaterial()

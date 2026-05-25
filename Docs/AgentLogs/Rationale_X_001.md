@@ -511,3 +511,17 @@ Scalability potential: Low tier gets visible refusal on 4/8/16/64/128-entry lane
 Hardware Impact: 0us verified runtime saving; no Unity profiler/GCMonitor capture was run. Static expected effect on i3/MX350-class hardware is less hidden queue pressure and removal of immediate MapMagic tile listener execution from the bridge producer path. The only compile-verified timing is CLI build wall time: 63.15s after a guarded restore.
 
 Verification: selected old producer call-site scan is 0; runtime `GlobalSignals.Publish/Push/TryDequeue/*Writer` scan outside allowed Core/Signals/Editor/Tests/ModdingAPI zones is 0; `SignalBus<T>.Push` source scan is 0; first-party `HectonEventBus.Publish/Subscribe/Unsubscribe` outside ModdingAPI/Editor/Tests is 0; Core signal payload banned-field scan is 0; `git diff --check` reports LF-to-CRLF warnings only; `dotnet build Hecton8.Editor.csproj --no-restore -m:1 /nr:false /p:UseSharedCompilation=false` passed with 0 warnings and 0 errors.
+
+## 2026-05-25 - Signal Refusal Telemetry Closure
+
+Problem: Job-side `SignalBus<T>.TryEnqueueBounded(...)` already had a native budget/drop counter, but several runtime owners still threw away the returned bool. That meant overload was bounded at the lane but not visible to the reactor, hull, fluid, combat, fabrication, equipment, or inventory owner state. A 5000-signal burst would not allocate, but some local black-box/diagnostic routes would miss the fact that presentation or gameplay-adjacent signals were refused.
+
+Solution: Patched 37 runtime/contract files. Reactor, fluid, hull, submarine, thermodynamics, cavitation, exosuit, KCC, vehicle, fabrication, equipment, inventory, ballistics, and combat producers now convert bounded refusal into existing unmanaged owner flags, counters, telemetry fault bits, or transaction result flags. `SargassumGlobalDragManager` first-party callers now use explicit `TryRaise*` routes while the old wrappers remain compile-time-banned compatibility surfaces.
+
+Rejected Alternatives: Increasing lane capacities was rejected because it hides overload. Adding managed logs or dictionaries for refused signals was rejected because hot-route proof must stay zero-GC. Depending only on the generic lane drop counter was rejected because critical owners need local black-box context without querying global state.
+
+Scalability potential: Low tier gets deterministic refusal and owner-visible drops at small fixed capacities. Middle tier keeps current gameplay/presentation behavior with better telemetry. High and Ultra can increase explicit lane capacity or add richer visual consumers, but gameplay truth ownership, DTO layout, and save identity stay unchanged.
+
+Hardware Impact: 0us verified runtime saving; no Unity profiler/GCMonitor capture was run. Static expected effect on i3/MX350-class hardware is less hidden native queue pressure and more useful 300-frame state when reactor/fluid/combat/fabrication/equipment/inventory bursts exceed fixed budgets.
+
+Verification: runtime statement-level `TryEnqueueBounded(...)` scan outside Core/Signals/Editor/Tests/ModdingAPI is 0. Runtime hot-route scan for `GlobalSignals.Publish/Push/TryDequeue/*Writer`, `SignalBus<T>.Push`, first-party `HectonEventBus.Publish/Subscribe/Unsubscribe`, and `ThreadSafeCommandQueue.Enqueue` outside allowed zones is 0. Core signal DTO banned-field scan is 0. Touched-file brace delta is 0. Build was not launched because guard reported CPU 99 percent with 0 compiler processes.

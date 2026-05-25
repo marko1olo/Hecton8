@@ -15,6 +15,7 @@
 //   OnDisable resets state for pooled reuse.
 // ============================================================================
 
+using System;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;

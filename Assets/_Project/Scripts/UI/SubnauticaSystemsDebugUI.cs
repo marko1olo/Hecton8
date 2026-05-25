@@ -21,7 +21,7 @@ namespace Hecton8.UI
     /// Temporary runtime overlay that surfaces the core Subnautica-gap systems during play mode.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class SubnauticaSystemsDebugUI : MonoBehaviour, ITickable, IUpdatable, ISlowTickable, IGlobalRegistryHotSwapListener
+    public sealed class SubnauticaSystemsDebugUI : MonoBehaviour, ITickable, IUpdatable, ISlowTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         // COLD ALLOC: List<SuitHUDV4CanvasOverlay>(4) â€” overlay canvas resolution buffer â€” owner: SubnauticaSystemsDebugUI
         private static readonly List<SuitHUDV4CanvasOverlay> s_overlayResolveBuffer = new List<SuitHUDV4CanvasOverlay>(4);
@@ -148,7 +148,9 @@ namespace Hecton8.UI
         private TextMeshProUGUI _stressValue;
         private bool _registered;
         private bool _slowTickRegistered;
+        private bool _lateFrameRegistered;
         private bool _hotSwapListenerRegistered;
+        private bool _slowVisualRefreshRequested;
         private bool _diagnosticsRefreshPending;
         private bool _stressApplied;
         private float _refreshTimer;
@@ -294,9 +296,15 @@ namespace Hecton8.UI
             }
 
             if (_slowTickRegistered)
+            {
+                if (!_lateFrameRegistered)
+                    _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
                 return;
+            }
 
             _slowTickRegistered = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.UI);
+            if (!_lateFrameRegistered)
+                _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
         }
 
         private void TryUnregister()
@@ -307,11 +315,17 @@ namespace Hecton8.UI
                 _registered = false;
             }
 
-            if (!_slowTickRegistered)
-                return;
+            if (_slowTickRegistered)
+            {
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.UI);
+                _slowTickRegistered = false;
+            }
 
-            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.UI);
-            _slowTickRegistered = false;
+            if (_lateFrameRegistered)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+                _lateFrameRegistered = false;
+            }
         }
 
         public void Tick(float dt)
@@ -332,6 +346,15 @@ namespace Hecton8.UI
             if (!Application.isPlaying)
                 return;
 
+            _slowVisualRefreshRequested = true;
+        }
+
+        public void LateFrameTick()
+        {
+            if (!_slowVisualRefreshRequested)
+                return;
+
+            _slowVisualRefreshRequested = false;
             ProcessPendingBootstrap();
             ResolveManagers(force: false);
             if (_diagnosticsRefreshPending)

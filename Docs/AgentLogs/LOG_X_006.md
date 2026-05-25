@@ -1109,3 +1109,12 @@ Cinematic Cheats used: None; this is quality-authority proof cleanup. Dear Lie s
 Exact Microseconds saved: 0 us measured. Static impact: the test suite no longer enforces a binary carve cadence route.
 Verification: OOP scanner reports `PASS_STATIC_WITH_BUDGETED_UNITY_MESH_UPLOAD_RESIDUAL`, failed_gates=none. `queued_drain_continuous_quality_scaled` now rejects the old tier adapter and tier-debug signature.
 Build: Pending CPU/process gate.
+
+## 2026-05-25 Voxel Delta Shutdown-Only Force-Complete Gate
+
+What was wrong: The codebase still contains two valid `forceComplete:true` calls in `VoxelDeltaProcessor`, but the validator did not prove they are teardown-only and could not detect a future forced wait re-entering the hot deformation path.
+What was done: Wired `voxel_delta_shutdown_completion_proof()` into the scanner gates and report. The gate now requires `forceComplete:true` only inside `ForShutdownOnly` methods with the `[BLOCKING_SYNC_POINT] OnDisable teardown only` marker, called from `OnDisable`, while hot carve and compaction completion stay on nonblocking `TryComplete(..., false)`.
+Cinematic Cheats used: None. This protects the Dear Lie/time-sliced deformation route by preventing hidden same-frame job waits from returning.
+Exact Microseconds saved: 0 us measured. Static impact: regression gate now reports 2 shutdown-only forced completions, 0 non-shutdown forced completions.
+Verification: OOP scanner reports `PASS_STATIC_WITH_BUDGETED_UNITY_MESH_UPLOAD_RESIDUAL`, failed_gates=none. New gate: `voxel_delta_force_complete_shutdown_only=true`.
+Build: Pending CPU/process gate.

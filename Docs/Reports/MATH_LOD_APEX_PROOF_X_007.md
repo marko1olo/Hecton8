@@ -552,3 +552,28 @@ jacobi q=1.0 -> iterations=50, omega=0.92, residualMask=0
 ```
 
 Compile proof: `dotnet build Hecton8.Core.csproj --disable-build-servers -p:UseSharedCompilation=false /m:1 -v:minimal -clp:ErrorsOnly` passed in `00:01:33.90` with `0` warnings and `0` errors.
+## 16. Runtime Quality Step Gate Sweep Proof
+
+The latest sweep removes another quality-threshold layer and makes the proof machine-enforced:
+
+- `PlayerCriticalProceduralAudioRenderer`: reverb DSP tier comes from `round(SmoothQuality01(q) * 2)` instead of step thresholds.
+- `ShinobuBiomimeticArchitectureRuntime`: HZB tap count comes from `ResolveQualityCurve(q)`.
+- `VRSomaticProvider.Comfort`: low-quality pressure gain uses a smooth low-quality curve.
+- `SeedShipAnomalyContracts`: entity budget uses continuous quality and corruption curves, not an active gate.
+- `HomeostasisBrain.ScalabilityDictator`: survival floor is a smooth low-quality floor, not a binary survival step.
+- `SumpPumpPipeGridRuntime`, `MemorySentinelContracts`, and `FabricationAssemblerRuntime`: cadence/upload throttles use smooth curves and rounded budgets.
+- `ChemicalInfluenceGrid`, `TopographicalSonarSynthesizer`, and `UtilityAICognitionJobs`: sampling/work quality is continuous.
+- `FaunaKinematicsRuntime`, `RepairTool`, `PlayerKinematicsRuntime`, and `ModEventProjectionBridge`: legacy flags remain only as near-zero compatibility sentinels.
+- `ReactorThermalGridJobs`, `ShinobuDeltaCrusherJobs`, `MacroEcosystemMathematicianRuntime`, `SaveStateMerkleTree`, `Shinobu38QaWatchdogRuntime`, and `HectonSeismicTideDirector`: bounded integer budgets are driven by smooth curves.
+
+Latest proof from `Docs/Reports/MATH_LOD_OPTIMIZATION_REPORT_X_007.json`:
+
+```text
+scannedCSharpFiles = 2406
+remainingTranscendentalTotal = 0
+hardFailures = []
+runtimeQualityStepGateSweepProof.qualityStepPatternAbsent = true
+physiologyWorstCase.absError = 6.080794978657877e-08
+```
+
+Truth boundary: quality scales cadence, sampling, optional visual flags, and upload/detail budgets. It does not scale decompression tissue count, thermal source amplitude, save identity, authority DTO layout, power topology, or gameplay ownership routes. Build boundary: repeat build is pending because the latest gate sample reported CPU `63`, above the project `>50%` no-build threshold.

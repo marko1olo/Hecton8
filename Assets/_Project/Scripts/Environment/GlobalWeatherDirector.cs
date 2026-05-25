@@ -555,7 +555,11 @@ namespace Hecton8.Environment
         private void ResolveDependencies()
         {
             if (_fluidCurrentSink == null)
-                _fluidCurrentSink = fluidCurrentSinkProvider as IFluidCurrentWriteSink ?? GlobalRegistry.FluidCurrentWriteSink;
+            {
+                _fluidCurrentSink = fluidCurrentSinkProvider as IFluidCurrentWriteSink;
+                if (_fluidCurrentSink == null)
+                    _fluidCurrentSink = GlobalRegistry.FluidCurrentWriteSink;
+            }
         }
 
         private void InitializeRuntimeStateIfNeeded()

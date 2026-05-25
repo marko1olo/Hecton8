@@ -448,7 +448,9 @@ namespace Hecton8.AtlasSignal
                     _playerRuntimeContext = currentService as IPlayerRuntimeContext;
                     return;
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    if (currentService != null)
+                    _registered = false;
+                    _registeredLateFrame = false;
+                    if (currentService != null && isActiveAndEnabled)
                     {
                         TryRegisterTick();
                         TryRegisterLateFrame();

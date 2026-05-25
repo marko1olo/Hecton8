@@ -270,7 +270,11 @@ namespace Hecton8.Ecosystem
             object previousService,
             object currentService)
         {
-            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher || currentService == null || !isActiveAndEnabled)
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
+                return;
+            _registeredToTick = false;
+            _registeredLateFrameTick = false;
+            if (currentService == null || !isActiveAndEnabled)
                 return;
             if (_duplicateServiceSuppressed || (Application.isPlaying && !_serviceRegistered))
                 return;

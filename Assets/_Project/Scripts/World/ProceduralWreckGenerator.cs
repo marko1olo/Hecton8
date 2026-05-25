@@ -1320,10 +1320,15 @@ namespace Hecton8.World
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
                     _dispatcher = currentService as ITickDispatcher;
-                    if (_pendingLootCount > 0)
-                        TryRegisterLootTick();
-                    if (_debrisRecordCount > 0 || _artifactRecordCount > 0)
-                        TryRegisterWreckSlowTick();
+                    _registeredLootTick = false;
+                    _registeredWreckSlowTick = false;
+                    if (currentService != null && isActiveAndEnabled)
+                    {
+                        if (_pendingLootCount > 0)
+                            TryRegisterLootTick();
+                        if (_debrisRecordCount > 0 || _artifactRecordCount > 0)
+                            TryRegisterWreckSlowTick();
+                    }
                     break;
                 case GlobalRegistryServiceSlot.Player:
                     _playerRuntimeContext = currentService as IPlayerRuntimeContext;

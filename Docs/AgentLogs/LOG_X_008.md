@@ -1450,3 +1450,11 @@ Cinematic Cheats used: none; ingress metadata hygiene only.
 Exact Microseconds saved: 0 us measured. The combat LUT/CAS hot path is unchanged; this prevents invalid far AUP metadata from reaching deferred feedback/telemetry.
 Verification: AST pass OK; `python Tools\OOP_Hitbox_Scanner.py` passed in ~143s; JSON query confirmed `damageIngressBufferBoundsProof.verdict=PASS`, `writeHelperUsesSignalCodecAupBounds=true`, branchless LUT `PASS`, combat trig `0`, combat angle API `0`, and project `acos/asin` inventory `0`. `git diff --check` passed clean.
 Compile: not run. Guard sample was CPU `100%` with active `csc` and `dotnet`, so project rule forbids `dotnet build`.
+
+2026-05-25 Loop 83 - Combat damage signal codec AUP bounds at source.
+Wrong: `CombatDamageSignalCodec.FromRuntimePoint()` could return a huge-but-finite resolved AUP and depend on later SignalBus sanitization to zero it. That made codec source semantics weaker than direct armor ingress and left invalid impact metadata alive longer than necessary.
+Done: changed `TryResolveRuntimePointAup()` to require `IsFiniteAup(resolvedAup)` before returning the coordinate. Updated `OOP_Hitbox_Scanner.py` to prove `combatDamageSignalCodecFromRuntimePointUsesAupBounds=true` inside `damageIngressBufferBoundsProof`.
+Cinematic Cheats used: none; AUP metadata hygiene only.
+Exact Microseconds saved: 0 us measured. Combat LUT, CAS health subtraction, and pellet fanout math are unchanged; this prevents invalid far AUP metadata from surviving codec creation.
+Verification: AST pass OK; marker grep confirmed the resolver and scanner proof field; `python Tools\OOP_Hitbox_Scanner.py` passed in ~118s; JSON query confirmed `damageIngressBufferBoundsProof.verdict=PASS`, `combatDamageSignalCodecFromRuntimePointUsesAupBounds=true`, `writeHelperUsesSignalCodecAupBounds=true`, branchless LUT `PASS`, CAS 100-pellet proof `PASS_STATIC_SOURCE`, combat trig `0`, combat angle API `0`, and project `acos/asin` inventory `0`. Scoped `git diff --check` passed clean.
+Compile: not run yet. Build guard still needs a fresh CPU/compiler clearance sample before launching `dotnet build`.

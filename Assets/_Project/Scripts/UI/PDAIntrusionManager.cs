@@ -589,7 +589,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/PDA Intrusion Manager")]
-    public sealed class PDAIntrusionManager : MonoBehaviour, ITickable, IUpdatable, IDirectorAIEventListener, IGlobalRegistryHotSwapListener
+    public sealed class PDAIntrusionManager : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, IDirectorAIEventListener, IGlobalRegistryHotSwapListener
     {
         private enum IntrusionVisualPhase : byte
         {
@@ -652,8 +652,12 @@ namespace Hecton8.UI
         private GameObject _driftPanelRoot;
         private bool _serviceRegistered;
         private bool _registeredToTick;
+        private bool _registeredLateFrame;
         private bool _hotSwapListenerRegistered;
         private bool _isHacked;
+        private bool _visualPhaseDirty;
+        private bool _restoreTextDriftRequested;
+        private bool _clearVisualOverrideRequested;
         private float _leviathanScanTimer;
         private float _visualPhaseTimer;
         private float _rebootHoldTimer;
@@ -719,6 +723,7 @@ namespace Hecton8.UI
             TryUnregisterService();
             ClearInputActionOwner();
             ClearVisualOverride();
+            RestoreTextDriftPositions();
             ResetTransientState();
         }
 
@@ -764,14 +769,38 @@ namespace Hecton8.UI
 
             if (!_isHacked)
             {
-                RestoreTextDriftPositions();
+                _restoreTextDriftRequested = true;
                 TickAmbientIntrusionThreat(dt);
                 return;
             }
 
             TickVisualCadence(dt);
-            TickTextDrift(dt);
             TickRebootHold(dt);
+        }
+
+        public void LateFrameTick()
+        {
+            float dt = Time.unscaledDeltaTime;
+            if (_restoreTextDriftRequested)
+            {
+                _restoreTextDriftRequested = false;
+                RestoreTextDriftPositions();
+            }
+
+            if (_clearVisualOverrideRequested)
+            {
+                _clearVisualOverrideRequested = false;
+                ClearVisualOverride();
+            }
+
+            if (_visualPhaseDirty)
+            {
+                _visualPhaseDirty = false;
+                ApplyVisualPhase();
+            }
+
+            if (_isHacked)
+                TickTextDrift(dt);
         }
 
         private void HandleEquipmentGlitchRequested(float intensity)
@@ -882,7 +911,7 @@ namespace Hecton8.UI
 
             _visualPhaseTimer = math.max(0.1f, visualPhaseDuration);
             _visualPhase = NextVisualPhase(_visualPhase);
-            ApplyVisualPhase();
+            _visualPhaseDirty = true;
         }
 
         private void TickRebootHold(float dt)
@@ -1014,13 +1043,13 @@ namespace Hecton8.UI
             _rebootHoldTimer = 0f;
             _visualPhase = IntrusionVisualPhase.English;
             _visualPhaseTimer = math.max(0.1f, visualPhaseDuration);
-            ApplyVisualPhase();
+            _visualPhaseDirty = true;
         }
 
         private void CompleteReboot()
         {
-            RestoreTextDriftPositions();
-            ClearVisualOverride();
+            _restoreTextDriftRequested = true;
+            _clearVisualOverrideRequested = true;
             ResetTransientState();
             PDAIntrusionEvents.RaiseRebootCompleted(unchecked((uint)EntityId.ToULong(GetEntityId())));
         }
@@ -1058,7 +1087,6 @@ namespace Hecton8.UI
 
         private void ResetTransientState()
         {
-            RestoreTextDriftPositions();
             _isHacked = false;
             _leviathanScanTimer = 0f;
             _visualPhaseTimer = 0f;
@@ -1066,6 +1094,7 @@ namespace Hecton8.UI
             _textDriftRescanTimer = 0f;
             _textDriftWaveTime = 0f;
             _visualPhase = IntrusionVisualPhase.English;
+            _visualPhaseDirty = false;
         }
 
         private bool CanAcceptRebootHold()
@@ -1161,22 +1190,31 @@ namespace Hecton8.UI
 
         private void RegisterToTickManager()
         {
-            if (_registeredToTick || !Application.isPlaying)
+            if ((_registeredToTick && _registeredLateFrame) || !Application.isPlaying)
                 return;
 
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            _registeredToTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
+            if (!_registeredToTick)
+                _registeredToTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
+            if (!_registeredLateFrame)
+                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
         }
 
         private void UnregisterFromTickManager()
         {
-            if (!_registeredToTick)
-                return;
+            if (_registeredToTick)
+            {
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
+                _registeredToTick = false;
+            }
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
-            _registeredToTick = false;
+            if (_registeredLateFrame)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+                _registeredLateFrame = false;
+            }
         }
 
         private static IntrusionVisualPhase NextVisualPhase(IntrusionVisualPhase current)

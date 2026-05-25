@@ -2627,6 +2627,17 @@ namespace Hecton8.Core
         ReadOnlySpan<char> GetRawSpanOrFallback(int keyHash, ReadOnlySpan<char> fallback);
     }
 
+    public interface ILocalizationTextExpansionReadModel : ILocalizationTextReadModel
+    {
+        bool TryExpandText(ReadOnlySpan<char> text, char[] destination, out int length);
+        string GetExpandedOrFallback(ushort languageId, string key, string fallback);
+    }
+
+    public interface ILocalizationLanguageControl : ILocalizationTextReadModel
+    {
+        void CycleLanguage();
+    }
+
     public interface ILocalizationStressPresentationReadModel : ILocalizationTextReadModel
     {
         float GetHullStressCorruptionIntensity();

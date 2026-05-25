@@ -76,7 +76,12 @@ namespace Hecton8.Visor
             object previousService,
             object currentService)
         {
-            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && isActiveAndEnabled)
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
+                return;
+
+            _registeredToTick = false;
+            _registeredToLateFrame = false;
+            if (currentService != null && isActiveAndEnabled)
                 TryRegisterTick();
         }
 

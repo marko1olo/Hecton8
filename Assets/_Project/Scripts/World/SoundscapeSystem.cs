@@ -1019,6 +1019,8 @@ namespace Hecton8.World
 
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && isActiveAndEnabled)
             {
+                _registered = false;
+                _registeredLateFrame = false;
                 TryRegister();
                 TryRegisterLateFrame();
             }

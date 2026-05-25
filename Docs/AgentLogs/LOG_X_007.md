@@ -868,3 +868,19 @@ Exact Microseconds saved:
 
 Verification:
 `dotnet build Hecton8.Core.csproj --disable-build-servers -p:UseSharedCompilation=false /m:1 -v:minimal -clp:ErrorsOnly` passed in `00:01:33.90` with `0` warnings and `0` errors. Full scanner regenerated in `378.9s`: `scannedCSharpFiles = 2406`, `remainingTranscendentalTotal = 0`, `hardFailures = []`, `powerVoltageConductanceMaskBranchless = true`, `powerVoltageBrownoutUsesMathSelect = true`, `powerHotFiniteGuardsUseMathSelect = true`, `physiologyWorstCase.absError = 6.080794978657877e-08`.
+## 2026-05-25 Runtime Quality Step Gate Sweep And Compile Wall Fix
+
+What was wrong:
+A second layer of runtime quality gates still used discrete thresholds or stale self-audit wording after the earlier Math-LOD sweeps. The affected surface included audio reverb tiering, biomimetic HZB taps, VR comfort pressure, SeedShip anomaly budgets, homeostasis survival floor, sump pump cadence, chemical influence sampling/drift, fauna/repair/player compatibility flags, reactor injection diameter, debris caps, carrion self-audit text, macro ecosystem curve, memory sentinel quality skip behavior, fabrication upload budget/stride, sonar sampling, utility AI quality, save Merkle survival pull, QA watchdog normals/recovery, seismic harmonics, and mod projection flags. A repeat build also exposed unrelated compile-wall errors in three late-frame HUD/PDA components and one duplicated localization overload.
+
+What was done:
+Converted the scoped quality gates to continuous smooth curves, rounded continuous integer budgets, cadence throttles, or near-zero compatibility sentinels. Added `runtimeQualityStepGateSweepProof` to `Tools/OOP_MathLOD_Scanner.py`; it strips comments/strings and hard-fails quality-bearing `math.step(...)` calls while allowing semantic geometry masks. Updated carrion self-audit text to report the current smooth blend. Fixed `BeaconHUDElement`, `InteractionUI`, and `PDAMarkerHUDElement` with no-op `IUpdatable.Tick(float)` implementations, and restored the single `ILocalizationTextReadModel` copy overload in `LocalizedTextReference`.
+
+Cinematic Cheats used:
+Continuous cadence, sampling, upload budget, visual flag, and presentation-detail scaling only. Physiology tissue count, thermal source amplitude, save identity, authority DTO layout, and gameplay truth ownership were not quality-scaled.
+
+Exact Microseconds saved:
+0 verified microseconds. Expected effect is removal of discrete low/high work cliffs and stale ultra-route behavior. No hardware profiler capture was run.
+
+Verification:
+`python -B -c "import ast,pathlib; ast.parse(pathlib.Path('Tools/OOP_MathLOD_Scanner.py').read_text(encoding='utf-8'))"` passed. `git diff --check` passed for the scanner and carrion self-audit patch. Full scanner regenerated in `572.7s`: `scannedCSharpFiles = 2406`, `remainingTranscendentalTotal = 0`, `hardFailures = []`, `runtimeQualityStepGateSweepProof.qualityStepPatternAbsent = true`, `physiologyWorstCase.absError = 6.080794978657877e-08`. Build repeat is pending: latest gate sample had CPU `63`, no compiler process, and the project forbids `dotnet build` above 50% CPU.

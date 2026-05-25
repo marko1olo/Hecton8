@@ -958,3 +958,15 @@ Rejected Alternatives: Duplicating the max-extent constant in armor runtime; tru
 Scalability potential: Low/Middle avoid invalid far-coordinate impact metadata corrupting deferred presentation or telemetry. High/Ultra keep richer AUP impact presentation while sharing the same validity contract across ingress routes.
 
 Hardware Impact: 0 us measured. Predicate adds the same simple bound checks already used in SignalBus sanitization; combat LUT and CAS truth math is unchanged. Build proof remains PENDING because CPU/compiler guard is blocked.
+
+## Decision 106 - Combat Damage Signal Codec Enforces AUP Bounds At Source
+
+Problem: `CombatDamageSignalCodec.FromRuntimePoint()` resolved runtime-space impact metadata and returned any finite `double3`, then relied on later SignalBus sanitization to zero coordinates outside the project AUP extent. That left the codec itself with a weaker contract than direct armor ingress and made proof dependent on late cleanup.
+
+Solution: `TryResolveRuntimePointAup()` now requires `IsFiniteAup(resolvedAup)` before returning the resolved coordinate. The same finite-plus-extent predicate now protects runtime-point signal creation, global signal sanitization, and direct armor ingress writes.
+
+Rejected Alternatives: Duplicating AUP extent constants in the private resolver; trusting all callers to publish through SignalBus; accepting late sanitizer-only cleanup; replacing failed AUP with ad hoc world-space fallback metadata.
+
+Scalability potential: Low/Middle avoid propagating invalid far-coordinate impact metadata into deferred feedback or crash telemetry. High/Ultra keep richer AUP impact presentation while every ingress path shares one validity owner.
+
+Hardware Impact: 0 us measured. This adds the same cheap bound predicate already required by the sanitizer; LUT sampling, CAS health subtraction, and pellet fanout math are unchanged. Build proof remains PENDING until CPU/compiler guard clears.

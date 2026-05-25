@@ -164,6 +164,8 @@ namespace Hecton8.Visor
         {
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && isActiveAndEnabled)
             {
+                _registered = false;
+                _registeredLateFrame = false;
                 TryRegisterTickHandler();
                 return;
             }
