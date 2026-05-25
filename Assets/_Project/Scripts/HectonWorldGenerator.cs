@@ -918,7 +918,7 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
 
     void RefreshColdRegistryReferences()
     {
-        _playerRuntimeContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+        _playerRuntimeContext = Hecton8.Core.GlobalRegistry.Player;
     }
 
     public void OnGlobalRegistryServiceReplaced(

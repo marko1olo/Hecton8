@@ -441,7 +441,7 @@ namespace Hecton8.Interaction
         private void RefreshColdRegistryReferences()
         {
             _input = GlobalRegistry.Input;
-            _playerRuntimeContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _playerRuntimeContext = Hecton8.Core.GlobalRegistry.Player;
         }
 
         public void OnGlobalRegistryServiceReplaced(

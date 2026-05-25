@@ -306,7 +306,7 @@ namespace Hecton8.Visor
 
             RecreateMaterial(ref _material, shader);
             TryRegisterHotSwapListener();
-            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _cachedPlayerContext = Hecton8.Core.GlobalRegistry.Player;
         }
 
         /// <inheritdoc />

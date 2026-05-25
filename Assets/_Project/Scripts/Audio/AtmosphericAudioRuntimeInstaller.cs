@@ -31,7 +31,7 @@ namespace Hecton8.Audio
 
         private static void EnsureProceduralAudioRenderer(GameObject playerObject)
         {
-            IPlayerRuntimeContext playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            IPlayerRuntimeContext playerContext = Hecton8.Core.GlobalRegistry.Player;
             Camera playerCamera = playerContext != null ? playerContext.PlayerCamera : null;
 
             AudioListener listener = null;

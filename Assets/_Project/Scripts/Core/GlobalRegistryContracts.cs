@@ -2636,6 +2636,14 @@ namespace Hecton8.Core
         bool TryGetHullStressHudWhisperBuffer(ReadOnlySpan<char> fallback, char[] destination, out int length);
     }
 
+    public interface ILocalizationMadnessPresentationReadModel : ILocalizationStressPresentationReadModel
+    {
+        int ComputeMadnessSourceTokenHash(ReadOnlySpan<char> sourceToken);
+        int ComputeMadnessSourceTokenHash(ReadOnlySpan<char> prefix, ReadOnlySpan<char> separator, ReadOnlySpan<char> suffix);
+        bool TryApplyPdaLoreCorruptionIfNeeded(int sourceTokenHash, ReadOnlySpan<char> text, char[] destination, out int length);
+        bool TryResolveMadnessWhisperPreview(int sourceTokenHash, int cycle, char[] destination, out int length);
+    }
+
     public interface ILocalizationStressHudRefreshSink
     {
         void RefreshHullStressHudCorruptionVisuals();

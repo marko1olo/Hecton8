@@ -51,7 +51,7 @@ namespace Hecton.Localization
     /// Runtime owner for Babel localization compatibility and language switching.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class LocalizationManager : MonoBehaviour, IBabelLocalization, ILocalizationTextReadModel, ILocalizationStressPresentationReadModel, ILocalizationStressHudRefreshSink, IPdaCorrosionPresentationSink, ILocalizationTransientOverrideSink, IDispatcherSystem
+    public sealed class LocalizationManager : MonoBehaviour, IBabelLocalization, ILocalizationTextReadModel, ILocalizationStressPresentationReadModel, ILocalizationMadnessPresentationReadModel, ILocalizationStressHudRefreshSink, IPdaCorrosionPresentationSink, ILocalizationTransientOverrideSink, IDispatcherSystem
     {
         private const string AnalyzerTechKeyPrefix = "TECH_";
         private const string AnalyzerPrefabToken = "EnvAnalyzer";
@@ -1990,6 +1990,19 @@ namespace Hecton.Localization
                 AppendMadnessTokenHash(suffix, ref hash);
                 return hash;
             }
+        }
+
+        int ILocalizationMadnessPresentationReadModel.ComputeMadnessSourceTokenHash(ReadOnlySpan<char> sourceToken)
+        {
+            return ComputeMadnessSourceTokenHash(sourceToken);
+        }
+
+        int ILocalizationMadnessPresentationReadModel.ComputeMadnessSourceTokenHash(
+            ReadOnlySpan<char> prefix,
+            ReadOnlySpan<char> separator,
+            ReadOnlySpan<char> suffix)
+        {
+            return ComputeMadnessSourceTokenHash(prefix, separator, suffix);
         }
 
         private static void AppendMadnessTokenHash(ReadOnlySpan<char> value, ref int hash)

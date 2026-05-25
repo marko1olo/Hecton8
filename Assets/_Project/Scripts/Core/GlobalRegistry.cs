@@ -1585,6 +1585,11 @@ namespace Hecton8.Core
         public static ILocalizationStressPresentationReadModel LocalizationStressPresentation => _localizationRuntime;
 
         /// <summary>
+        /// Registered localization PDA madness presentation read model.
+        /// </summary>
+        public static ILocalizationMadnessPresentationReadModel LocalizationMadnessPresentation => _localizationRuntime;
+
+        /// <summary>
         /// Registered localization stress HUD refresh command sink.
         /// </summary>
         public static ILocalizationStressHudRefreshSink LocalizationStressHudRefreshSink => _localizationRuntime;
@@ -7882,6 +7887,7 @@ namespace Hecton8.Core
             if (serviceType == typeof(IBabelLocalization)) return GlobalRegistryServiceSlot.LocalizationRuntime;
             if (serviceType == typeof(ILocalizationTextReadModel)) return GlobalRegistryServiceSlot.LocalizationRuntime;
             if (serviceType == typeof(ILocalizationStressPresentationReadModel)) return GlobalRegistryServiceSlot.LocalizationRuntime;
+            if (serviceType == typeof(ILocalizationMadnessPresentationReadModel)) return GlobalRegistryServiceSlot.LocalizationRuntime;
             if (serviceType == typeof(ILocalizationStressHudRefreshSink)) return GlobalRegistryServiceSlot.LocalizationRuntime;
             if (serviceType == typeof(IPdaCorrosionPresentationSink)) return GlobalRegistryServiceSlot.LocalizationRuntime;
             if (serviceType == typeof(ILocalizationTransientOverrideSink)) return GlobalRegistryServiceSlot.LocalizationRuntime;

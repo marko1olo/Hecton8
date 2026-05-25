@@ -320,7 +320,7 @@ namespace Hecton8.Dev
 
         private void CachePlayerRuntimeCold()
         {
-            _playerRuntime = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _playerRuntime = Hecton8.Core.GlobalRegistry.Player;
         }
 
         private void TryRegisterHotSwapListener()
