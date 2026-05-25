@@ -49,7 +49,7 @@ The mesh vertex stream is explicitly interleaved:
 
 - UV3: `Float32 x3`, offset 52; AUP-local bake position
 
-`HadalArchVertexDTO` is 64 bytes. `SdfShapeDTO` is 64 bytes. `HadalArchBakeConfigDTO` is 128 bytes with `NoiseSeedJitter` at offset 108 and final `ulong` padding at offset 120. `HadalArchBakeTelemetryEntry` is 64 bytes.
+`HadalArchVertexDTO` is 64 bytes. `SdfShapeDTO` is 64 bytes. `HadalArchBakeConfigDTO` is 128 bytes with `NoiseSeedJitter` at offset 108 and `ulong` padding at offset 120. `HadalArchBakeTelemetryEntry` is 64 bytes.
 
 ## Reports
 

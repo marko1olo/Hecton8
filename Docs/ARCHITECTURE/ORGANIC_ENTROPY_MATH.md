@@ -514,7 +514,7 @@ Persistence contract:
 - `calculate_balance()` validates constants and rejects any mode value except exact boolean `True`.
 - Balance status is undefined for baseline runs or malformed acceptance metadata in this export.
 
-- `build_initial_state()` validates constants and requires an explicit boolean mode before allocating per-cell lists, so direct helper calls cannot bypass the grid cap, byte-lane guards, or helper mode contract.
+- `build_initial_state()` validates constants and requires an explicit boolean mode before allocating per-cell lists, so helper calls cannot bypass the grid cap, byte-lane guards, or helper mode contract.
 
 - Acceptance balance requires required biome recovery evidence; an absent Deep Abyss biome cannot pass total-overharvest from final mature ratio alone.
 
@@ -576,7 +576,7 @@ Post-hardening verification:
 
 - Historical local command text: `python -m unittest Tools.test_world_entropy_sim -v` reported 25 tests passed in 107.456 s.
 
-- Historical local command text: Visual Studio Roslyn C# 9 probe compile against Unity/Hecton8 stubs reported exit code `0`; re-run after config overflow guard tightening remained exit code `0`.
+- Local command text: Visual Studio Roslyn C# 9 probe compile against Unity/Hecton8 stubs reported exit code `0`; re-run after config overflow guard tightening remained exit code `0`.
 
 - Treat command lines above as historical local text unless paired with fresh artifact path and timestamp.
 - Pending proof: Unity import, Burst compile, Play Mode, profiler, GCMonitor, player build.

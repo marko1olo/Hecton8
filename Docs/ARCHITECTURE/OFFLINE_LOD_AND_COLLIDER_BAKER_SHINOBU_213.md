@@ -68,7 +68,7 @@ Owned source folders and scripts ship with checked-in `.meta` files. Unity must 
 
 - Generated mesh/collider assets are only saved under valid `Assets/` project folders.
 
-- If the target folder cannot be proven or created by `AssetDatabase`, transient meshes are destroyed and the bake path returns failure instead of publishing a dangling editor object.
+- If the target folder cannot be proven or created by `AssetDatabase`, transient meshes are destroyed and the bake path returns failure instead of publishing an editor object.
 
 - Main LOD prefab assembly requires non-empty LOD0/LOD1/LOD2 saved asset paths before `AssetDatabase.LoadAssetAtPath`.
 - Failed path or failed reload sets a warning bit.

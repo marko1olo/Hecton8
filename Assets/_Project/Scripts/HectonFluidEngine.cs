@@ -6108,15 +6108,24 @@ namespace Hecton8.Physics
             if (nodeCount <= 0)
                 return;
 
-            if (_gpuSplashdownImpulseBuffer != null &&
-                _gpuSplashdownImpulseBuffer.IsValid() &&
-                _gpuSplashdownImpulseBuffer.count == nodeCount)
+            if (_gpuSplashdownImpulseBufferA != null &&
+                _gpuSplashdownImpulseBufferA.IsValid() &&
+                _gpuSplashdownImpulseBufferA.count == nodeCount &&
+                _gpuSplashdownImpulseBufferB != null &&
+                _gpuSplashdownImpulseBufferB.IsValid() &&
+                _gpuSplashdownImpulseBufferB.count == nodeCount)
             {
+                if (_activeGpuSplashdownImpulseBuffer == null)
+                    _activeGpuSplashdownImpulseBuffer = _gpuSplashdownImpulseBufferA;
                 return;
             }
 
-            ReleaseGraphicsBuffer(ref _gpuSplashdownImpulseBuffer);
-            _gpuSplashdownImpulseBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float4>(nodeCount); // COLD ALLOC: GraphicsBuffer[nodeCount] - lazy splashdown vector-field override, allocated only for non-low impact - owner: HectonFluidEngine
+            ReleaseGraphicsBuffer(ref _gpuSplashdownImpulseBufferA);
+            ReleaseGraphicsBuffer(ref _gpuSplashdownImpulseBufferB);
+            _gpuSplashdownImpulseBufferA = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float4>(nodeCount); // COLD ALLOC: GraphicsBuffer[nodeCount] - lazy splashdown vector-field override A, allocated only for non-low impact - owner: HectonFluidEngine
+            _gpuSplashdownImpulseBufferB = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float4>(nodeCount); // COLD ALLOC: GraphicsBuffer[nodeCount] - lazy splashdown vector-field override B, allocated only for non-low impact - owner: HectonFluidEngine
+            _activeGpuSplashdownImpulseBuffer = _gpuSplashdownImpulseBufferA;
+            _gpuSplashdownImpulseUploadIndex = 1;
             _splashdownImpulseUploaded = false;
         }
 
@@ -6156,13 +6165,15 @@ namespace Hecton8.Physics
                 _gpuAbyssalFlowResultBuffer = null;
             }
 
-            if (_gpuAbyssalHeatSourceBuffer != null)
-            {
-                _gpuAbyssalHeatSourceBuffer.Release();
-                _gpuAbyssalHeatSourceBuffer = null;
-            }
+            ReleaseGraphicsBuffer(ref _gpuAbyssalHeatSourceBufferA);
+            ReleaseGraphicsBuffer(ref _gpuAbyssalHeatSourceBufferB);
+            _activeGpuAbyssalHeatSourceBuffer = null;
+            _gpuAbyssalHeatSourceUploadIndex = 0;
 
-            ReleaseGraphicsBuffer(ref _gpuSplashdownImpulseBuffer);
+            ReleaseGraphicsBuffer(ref _gpuSplashdownImpulseBufferA);
+            ReleaseGraphicsBuffer(ref _gpuSplashdownImpulseBufferB);
+            _activeGpuSplashdownImpulseBuffer = null;
+            _gpuSplashdownImpulseUploadIndex = 0;
             _splashdownImpulseUploaded = false;
             ReleaseAbyssalFlowTextures();
             DeactivateAbyssalFlowPublication();

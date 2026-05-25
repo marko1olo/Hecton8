@@ -84,7 +84,7 @@ Debris is not simulated. Deterministic 2D curl noise scatters scrap matrices; sh
 
 - Optional `wreckage_module_rules.h8bin` is cold-loaded only.
 - Header is 16 bytes: `RuleBinaryMagic` (`H8WR` little-endian read value `0x52573848`), endian marker `0x01020304`, version, and declared rule count.
-- Each row is a 64-byte `WreckageRuleDTO`-compatible record parsed field-by-field with endian swapping through `math.reversebytes`; records are copied into aligned runtime DTOs rather than `Pack=1` file structs.
+- Each row is a 64-byte `WreckageRuleDTO`-compatible record parsed field-by-field with endian swapping through `math.reversebytes`; records are copied into runtime DTOs rather than `Pack=1` file structs.
 - If the binary is absent or invalid, deterministic mock rules remain active.
 
 ## Verification Pending

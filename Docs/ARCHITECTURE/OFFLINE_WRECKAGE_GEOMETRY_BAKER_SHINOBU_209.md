@@ -54,7 +54,7 @@ Excluded from rollback rings and Merkle hashing: mesh vertices, convex hull poin
 
 
 
-- Runtime destruction enforcement is handled by `Runtime_Destruction_Scanner`, which scans requested and actual combat/environment roots outside `Editor/` for runtime mesh mutation, skinned damage, shatter code, and Rigidbody fragment spawning.
+- Runtime destruction enforcement is handled by `Runtime_Destruction_Scanner`, which scans requested combat/environment roots outside `Editor/` for runtime mesh mutation, skinned damage, shatter code, and Rigidbody fragment spawning.
 - Current static reports: `Docs/Reports/PHYSICS_OPTIMIZATION_REPORT.json` and `Docs/Reports/PHYSICS_OPTIMIZATION_REPORT_SHINOBU_209.json`, findingCount `0`.
 - Prior shared canonical report content is preserved as bounded provenance fields plus `Docs/Reports/PHYSICS_OPTIMIZATION_REPORT_PREVIOUS_SHINOBU_209.json`; it is not recursively embedded into the next canonical report.
 - `previousReportBytes` is measured as UTF-8 encoded bytes to match the atomic writer, not UTF-16 character count, and `previousReportHash` hashes raw emitted UTF-8 bytes without name-hash case/whitespace normalization.
@@ -183,7 +183,7 @@ The Forge profile cache is a fixed 16-slot value cache. It is not a Persistent `
 
 - Damage-state mapping `.bytes` files remain exactly 32 bytes and are written little-endian from stack spans.
 - The 16 padding bytes are explicitly zeroed before the four hashes are written, so the serialized DTO is deterministic instead of inheriting stack residue.
-- The writer emits to a unique same-volume `.tmp.<processId>.<ordinal>` path with exclusive access, then publishes with `File.Replace` for existing targets or `File.Move` for first creation before `AssetDatabase.ImportAsset`.
+- The writer emits to a same-volume `.tmp.<processId>.<ordinal>` path with exclusive access, then publishes with `File.Replace` for existing targets or `File.Move` for first creation before `AssetDatabase.ImportAsset`.
 
 
 
@@ -281,7 +281,7 @@ It marks it `HideFlags.HideAndDontSave` and disposes before assembly reload/edit
 
 Black-box ring registration uses `Hecton8.Core.Contracts.NativeMemoryTrackingBridge`, not a direct root Core dependency.
 
-If Core sentinel bridge is installed, it records owner `OfflineWreckageBlackBox`, label `s_ring`, lifetime `Session`, and 300 * 64 bytes. If absent, registration no-ops and disposal still releases the ring.
+If Core sentinel bridge is installed, it records owner `OfflineWreckageBlackBox`, label `s_ring`, lifetime `Session`, and 300 * 64 bytes. If absent, registration no-ops and disposal releases the ring.
 
 
 
@@ -387,7 +387,7 @@ Forge exposes module and blast AUP as six `DoubleField` controls. The baker subt
 
 
 
-Owned mathematical jobs use `[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]`. The outputs are immutable editor assets, not rollback-authoritative state; runtime synchronization remains a small integer damage-state index.
+Owned jobs use `[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]`. The outputs are immutable editor assets, not rollback-authoritative state; runtime synchronization remains a small integer damage-state index.
 
 
 
