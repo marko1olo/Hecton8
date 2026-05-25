@@ -1462,6 +1462,9 @@ def voxel_delta_shutdown_completion_proof():
 
 def rle_packet_layout(sector_payload_bytes):
     rle_text = read(FILES["rle"])
+    try_resolve_start = rle_text.find("internal static bool TryResolveVaultBuffers")
+    generate_schema_start = rle_text.find("public static void GenerateEmergencyMockVoxelSchema", try_resolve_start)
+    try_resolve_block = rle_text[try_resolve_start:generate_schema_start] if try_resolve_start >= 0 and generate_schema_start > try_resolve_start else ""
     native_header = struct_layout(FILES["delta"], "NativeSnapshotHeader")
     native_chunk = struct_layout(FILES["delta"], "NativeSnapshotChunkHeaderDeltaRle")
     save_run = struct_layout(FILES["save_delta"], "SaveVoxelDeltaRun8")
@@ -1487,6 +1490,14 @@ def rle_packet_layout(sector_payload_bytes):
         "architecture_wal_payload_guard_present": (
             "byteCount > MaxVoxelDeltaWalPayloadBytes" in rle_text
             and "required > MaxVoxelDeltaWalPayloadBytes" in rle_text
+        ),
+        "vault_buffer_cell_capacity_fixed_to_chunk": "int safeCells = ChunkCellCount;" in try_resolve_block,
+        "vault_buffer_run_capacity_clamped_to_chunk": (
+            "math.clamp(rleRunCapacity <= 0 ? ChunkCellCount : rleRunCapacity, 1, ChunkCellCount)" in try_resolve_block
+        ),
+        "vault_buffer_staging_capacity_clamped_to_wal_payload": (
+            "stagingCapacityBytes <= 0 ? MaxVoxelDeltaWalPayloadBytes : stagingCapacityBytes" in try_resolve_block
+            and "MaxVoxelDeltaWalPayloadBytes));" in try_resolve_block
         ),
         "chunk_cell_count": chunk_cells,
         "native_snapshot_worst_case_chunk_payload_bytes": native_worst,
@@ -2347,6 +2358,9 @@ def build_report():
         "voxel_rle_architecture_wal_payload_guard": (
             rle_packet["architecture_max_wal_payload_bytes"] == pager["sector_payload_bytes"]
             and rle_packet["architecture_wal_payload_guard_present"]
+            and rle_packet["vault_buffer_cell_capacity_fixed_to_chunk"]
+            and rle_packet["vault_buffer_run_capacity_clamped_to_chunk"]
+            and rle_packet["vault_buffer_staging_capacity_clamped_to_wal_payload"]
         ),
         "voxel_carve_queue_and_commit_continuous_quality_scaled": (
             carve_queue["queued_drain_continuous_quality_scaled"]

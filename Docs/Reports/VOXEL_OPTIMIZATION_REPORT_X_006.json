@@ -686,6 +686,9 @@
       }
     },
     "sector_payload_bytes": 262080,
+    "vault_buffer_cell_capacity_fixed_to_chunk": true,
+    "vault_buffer_run_capacity_clamped_to_chunk": true,
+    "vault_buffer_staging_capacity_clamped_to_wal_payload": true,
     "voxel_delta_architecture_worst_case_payload_bytes": 262176,
     "voxel_delta_header_dto": {
       "bytes": 32,

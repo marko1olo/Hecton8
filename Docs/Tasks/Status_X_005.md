@@ -700,8 +700,9 @@ The whole non-Editor runtime is now clean for the broad hidden PhysX query class
 
 - Direct player movement `_rb.position/_rb.rotation` scan now has only cold `Awake` seed and the emergency fallback inside `ResolveBodyRuntimePosition`.
 - Direct player kinematics `_body.position/_body.rotation` scan now has only emergency fallbacks inside `ResolveBodyRuntimePosition` and `ResolveAuthoritativeRotationSnapshot`.
+- Immediate self-review found and fixed a cold-start bug: new native buffers are now ignored until `_hasAuthoritativePoseSnapshot` is true, so `AllocateNativeState()` cannot seed KCC position from a freshly allocated zeroed buffer.
 - `python -m py_compile Tools/KccApexAudit_X_005.py Tools/OOP_Kcc_Scanner_X_005.py`: passed.
-- `python Tools/OOP_Kcc_Scanner_X_005.py`: `finding_counts = {}` and Hydro KCC forbidden command hits 0.
+- `python Tools/OOP_Kcc_Scanner_X_005.py`: `finding_counts = {}` and Hydro KCC forbidden command hits 0 after the snapshot-validity guard.
 - `python Tools/KccApexAudit_X_005.py`: `broad_forbidden_count = 0`, `scoped_forbidden_count = 0`, `movement_hot_rb_pose_read_count = 0`, `movement_has_no_hot_rigidbody_pose_read = true`, `movement_body_position_is_snapshot_first = true`, `player_kinematics_hot_body_pose_read_count = 0`, `player_kinematics_has_no_hot_body_pose_read = true`, and `player_kinematics_body_position_is_snapshot_first = true`.
 - Exact whole-runtime non-Editor forbidden-symbol scan returned zero sync Physics casts/overlaps/checks, zero PhysX command types/schedules, zero Unity collision/trigger callbacks, zero `Physics.SyncTransforms`, zero `.ClosestPoint`, zero `GetContacts`, and zero `SweepTest*`.
 - Targeted `git diff --check` passed for touched runtime/tool/report files with CRLF warnings only.

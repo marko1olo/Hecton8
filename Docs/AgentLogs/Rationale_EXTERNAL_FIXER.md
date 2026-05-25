@@ -481,3 +481,11 @@ Solution: Publish `SaveManager.ActiveRuntimeInstance` from the save owner and ro
 Rejected Alternatives: Broad save DI rewrite was rejected because save touches many domains and the workspace is dirty. Scene search fallback was rejected because it can allocate/search and hides owner discovery. An `internal` active pointer was rejected after asmdef inspection. Restore/build was rejected because CPU measured 91 percent and restore assets are still absent.
 Scalability potential: Low tier avoids repeated save-owner discovery in registration/cache/helper routes; Middle keeps identical save behavior and null fallbacks; High and Ultra preserve richer meta/narrative/profile systems without service-locator cadence cost.
 Hardware Impact: STATIC estimate only: 75 exact save registry reads removed from 30 staged consumer files; owner publication adds 10 lines to `SaveManager`. No profiler, GCMonitor, Unity Console, or player-build artifact; CLI_COMPILE not run because CPU/restore gate was closed.
+
+## Decision 61
+
+Problem: A second save tranche still had exact save registry reads in PDA, progression, quest, tool, UI, voxel, and world helper routes. These routes had direct owner discovery despite `SaveManager.ActiveRuntimeInstance` now being available.
+Solution: Route 28 selected consumers through the public save owner pointer from exact staged blobs. Fix the PowerShell staging path after detecting that the initial comma-packed `--cacheinfo` call left the index unchanged.
+Rejected Alternatives: Broad save DI rewrite was rejected because save state crosses many active domains. Scene search fallback was rejected because it can allocate/search. Claiming filtered zero was rejected because a broader filtered scan still reports 48 save reads for another slice. Build was rejected because CPU measured 94 percent.
+Scalability potential: Low tier avoids repeated save-owner discovery in PDA/world/tool helper routes; Middle keeps identical save behavior; High and Ultra keep richer PDA/world/progression systems without service-locator cadence cost.
+Hardware Impact: STATIC estimate only: 35 exact save registry reads removed from 28 staged source files. No profiler, GCMonitor, Unity Console, or player-build artifact; CLI_COMPILE not run because CPU gate was closed.

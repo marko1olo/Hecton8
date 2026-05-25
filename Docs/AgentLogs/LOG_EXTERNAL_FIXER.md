@@ -1083,3 +1083,28 @@ Evidence:
 - STATIC_GREP: selected-file staged grep found zero remaining exact `GlobalRegistry.Save`/`GlobalRegistry.SaveRuntime` reads; malformed suffix/namespace grep passed.
 - CLI_COMPILE: not launched; CPU measured 91 percent and `Temp\obj\Hecton8.Core\project.assets.json` remains missing.
 - GIT: committed and pushed `e385a63e5 perf(save): route runtime readers` to `main`.
+
+## 2026-05-24 - Save Active Runtime Sweep 2
+
+What was wrong:
+- 28 tracked PDA, progression, quest, tool, UI, voxel, and world files still had exact save registry reads in helper/cache routes.
+- The first staging attempt generated correct temp blobs but did not update the index because the PowerShell `--cacheinfo` argument was comma-packed.
+
+What was done:
+- Routed exact save registry reads through `Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance`.
+- Restaged the already generated blobs with explicit `git update-index --cacheinfo 100644 <hash> <path>` arguments and `$LASTEXITCODE` checks.
+- Used exact `HEAD` staged blobs and left dirty working-copy edits untouched.
+- Committed and pushed the source tranche as `792236a9b perf(save): route pda world readers`.
+
+Cinematic Cheats used:
+- None. This tranche is runtime service-route hygiene.
+
+Exact Microseconds saved:
+- STATIC estimate only: 35 exact save service-locator reads removed from affected PDA/world/tool helper routes. No profiler capture, no microsecond claim.
+
+Evidence:
+- STATIC_SOURCE: 28 staged source files.
+- CLI_DIFF: `git diff --cached --check` passed; staged stat was 28 files, 42 insertions, 44 deletions.
+- STATIC_GREP: selected-file staged grep found zero remaining exact save registry reads and malformed suffix/namespace grep passed. Broad filtered save scan still reports 48 reads for a later slice.
+- CLI_COMPILE: not launched; CPU measured 94 percent. `Temp\obj\Hecton8.Core\project.assets.json` exists again, but the CPU gate remained closed.
+- GIT: committed and pushed `792236a9b perf(save): route pda world readers` to `main`.

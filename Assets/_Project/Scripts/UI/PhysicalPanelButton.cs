@@ -170,7 +170,7 @@ namespace Hecton8.UI
             if (_pressDispatched)
                 DispatchPanelEvent(DiegeticPanelInputEventType.Up);
 
-            Unregister();
+            Unregister(forceLateFrame: true);
             TryUnregisterHotSwapListener();
             ReleaseAcousticRuntime();
             UnregisterCollider();
@@ -186,7 +186,7 @@ namespace Hecton8.UI
 
         private void OnDestroy()
         {
-            Unregister();
+            Unregister(forceLateFrame: true);
             TryUnregisterHotSwapListener();
             ReleaseAcousticRuntime();
             UnregisterCollider();
@@ -248,6 +248,12 @@ namespace Hecton8.UI
                     _resolvedPressHapticFrequencyHz,
                     MicroHapticPriority,
                     _pendingPressHapticMask);
+            }
+
+            if (_registeredLateFrame && !_registered && !_buttonVisualDirty && !_pendingPressHaptic)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+                _registeredLateFrame = false;
             }
         }
 
@@ -745,11 +751,13 @@ namespace Hecton8.UI
 
         private void TryRegister()
         {
-            if (_registered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if ((_registered && _registeredLateFrame) || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
-            _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+            if (!_registered)
+                _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
+            if (!_registeredLateFrame)
+                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
         }
 
         private void RefreshTickRegistration(bool handInside)
@@ -771,7 +779,7 @@ namespace Hecton8.UI
             Unregister();
         }
 
-        private void Unregister()
+        private void Unregister(bool forceLateFrame = false)
         {
             if (_registered)
             {
@@ -779,7 +787,7 @@ namespace Hecton8.UI
                 _registered = false;
             }
 
-            if (_registeredLateFrame && !_buttonVisualDirty && !_pendingPressHaptic)
+            if (_registeredLateFrame && (forceLateFrame || (!_buttonVisualDirty && !_pendingPressHaptic)))
             {
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
                 _registeredLateFrame = false;

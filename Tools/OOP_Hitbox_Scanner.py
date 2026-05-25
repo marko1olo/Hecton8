@@ -458,6 +458,7 @@ def main() -> int:
     environmental_hazard = SCRIPTS / "Gameplay" / "EnvironmentalHazard.cs"
     manta_emergency_wreck = SCRIPTS / "Gameplay" / "MantaEmergencyWreck.cs"
     submarine_atmosphere_system = SCRIPTS / "SubmarineAtmosphereSystem.cs"
+    submarine_structural_grid = SCRIPTS / "SubmarineStructuralGrid.cs"
     abyssal_thermal_manager = SCRIPTS / "World" / "AbyssalThermalManager.cs"
     sargassum_micro_fauna_boids = SCRIPTS / "World" / "SargassumMicroFaunaBoids.cs"
     fauna_director = SCRIPTS / "FaunaDirector.cs"
@@ -610,6 +611,10 @@ def main() -> int:
     try_queue_damage_block = extract_csharp_block_after(
         combat_damage_text,
         "public static bool TryQueueDamage(in CombatDamageRequest signal, in CombatDamageSignalDetail detail, double3 impactAup)",
+    )
+    try_build_combat_signal_block = extract_csharp_block_after(
+        combat_damage_text,
+        "private static bool TryBuildCombatSignal",
     )
     damage_ingress_slot_block = extract_csharp_block_after(
         combat_damage_text,
@@ -975,6 +980,11 @@ def main() -> int:
     submarine_boiling_fallback_block = extract_csharp_block_after(
         submarine_atmosphere_text,
         "private void ApplyBoilingFaunaOwnerFallbackDamage",
+    )
+    submarine_structural_grid_text = read_source(submarine_structural_grid)
+    submarine_hull_dent_block = extract_csharp_block_after(
+        submarine_structural_grid_text,
+        "private bool EnqueueHullImpactDecal",
     )
     abyssal_thermal_text = read_source(abyssal_thermal_manager)
     abyssal_boiling_block = extract_csharp_block_after(
@@ -1624,6 +1634,40 @@ def main() -> int:
             "contract": (
                 "Damage admission must prove queue detail storage and impact AUP storage before writing ingress "
                 "lanes, otherwise the job preflight can never repair the corrupted queue."
+            ),
+        },
+        "combatSignalLaneSegregationProof": {
+            "visualOnlyFlagDeclared": "public const byte VisualOnlyFlag = 1 << 2;" in global_signal_payloads_text,
+            "centralBuilderRejectsVisualOnlySignals": (
+                "if ((globalSignal.Flags & CombatDamageSignal.VisualOnlyFlag) != 0)" in try_build_combat_signal_block and
+                contains_after(
+                    try_build_combat_signal_block,
+                    "if ((globalSignal.Flags & CombatDamageSignal.VisualOnlyFlag) != 0)",
+                    "return false;",
+                )
+            ),
+            "submarineHullDentUsesVisualOnlyFlag": (
+                "signal.Flags = CombatDamageSignal.DirectRuntimeFlag | CombatDamageSignal.VisualOnlyFlag;" in submarine_hull_dent_block and
+                "SignalBus<CombatDamageSignal>.TryPush(in signal)" in submarine_hull_dent_block
+            ),
+            "submarineHullDentStillUsesTypedVisualProjection": (
+                "SignalBus<HullDeformedSignal>.TryPush(in deformedSignal)" in read_source(SCRIPTS / "Vehicles" / "VFX" / "HullDentShaderController.cs")
+            ),
+            "verdict": (
+                "PASS"
+                if "public const byte VisualOnlyFlag = 1 << 2;" in global_signal_payloads_text
+                and "if ((globalSignal.Flags & CombatDamageSignal.VisualOnlyFlag) != 0)" in try_build_combat_signal_block
+                and contains_after(
+                    try_build_combat_signal_block,
+                    "if ((globalSignal.Flags & CombatDamageSignal.VisualOnlyFlag) != 0)",
+                    "return false;",
+                )
+                and "signal.Flags = CombatDamageSignal.DirectRuntimeFlag | CombatDamageSignal.VisualOnlyFlag;" in submarine_hull_dent_block
+                else "FAIL"
+            ),
+            "contract": (
+                "Visual-only hull dent notifications may share the historical CombatDamageSignal lane for VFX consumers, "
+                "but central CombatDamageRuntime must reject them before LUT/CAS health mutation."
             ),
         },
         "combatTelemetryBoundsProof": {
