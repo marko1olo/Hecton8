@@ -117,8 +117,7 @@ namespace Hecton8.Building
 
         // ─────────────────────── Cache ───────────────────────────
 
-        /// <summary>Keshirovannaya stroka dlya UI.</summary>
-        private string _cachedBuildText;
+        private static readonly char[] BuildPrefix = { 'P', 'o', 's', 't', 'r', 'o', 'i', 't', ' ' };
 
         // ═════════════════════════════════════════════════════════
         //  ScriptableObject Lifecycle
@@ -149,14 +148,23 @@ namespace Hecton8.Building
         // ═════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Vozvraschaet keshirovannuyu stroku "Postroit {moduleName}".
-        /// Zero allocation.
+        /// Legacy string route for cold compatibility. Runtime UI should use <see cref="TryWriteBuildText"/>.
         /// </summary>
         public string GetBuildText()
         {
-            if (string.IsNullOrEmpty(_cachedBuildText))
-                RebuildCache();
-            return _cachedBuildText;
+            return string.IsNullOrWhiteSpace(moduleName) ? "Build" : moduleName;
+        }
+
+        public bool TryWriteBuildText(Span<char> destination, out int length)
+        {
+            length = 0;
+            if (!TryAppend(BuildPrefix, destination, ref length))
+                return false;
+
+            ReadOnlySpan<char> nameSpan = string.IsNullOrWhiteSpace(moduleName)
+                ? "Module".AsSpan()
+                : moduleName.AsSpan();
+            return TryAppend(nameSpan, destination, ref length) && length > BuildPrefix.Length;
         }
 
         /// <summary>
@@ -286,9 +294,8 @@ namespace Hecton8.Building
         //  Private
         // ═════════════════════════════════════════════════════════
 
-        private void RebuildCache()
+        private static void RebuildCache()
         {
-            _cachedBuildText = $"Postroit {moduleName}";
         }
 
         // ══════════════════════════════════════════════════════════

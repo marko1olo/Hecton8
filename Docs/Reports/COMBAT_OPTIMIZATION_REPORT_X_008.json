@@ -1,7 +1,7 @@
 {
   "metadata": {
     "agent": "X_008",
-    "generatedUtc": "2026-05-25T00:10:22.471696+00:00",
+    "generatedUtc": "2026-05-25T00:19:53.629436+00:00",
     "root": "C:\\hades\\Hecton8",
     "evidenceClass": "STATIC_SOURCE_SCAN_AND_SOURCE_LAYOUT_DECLARATIONS",
     "runtimeProof": "PENDING_VERIFICATION_UNITY_IMPORT_BURST_DISASSEMBLY_PROFILER_NOT_RUN"
@@ -678,6 +678,14 @@
     "storageRejectTelemetryHashDeclared": true,
     "verdict": "PASS",
     "contract": "Damage admission must prove queue detail storage and impact AUP storage before writing ingress lanes, otherwise the job preflight can never repair the corrupted queue."
+  },
+  "combatSignalLaneSegregationProof": {
+    "visualOnlyFlagDeclared": true,
+    "centralBuilderRejectsVisualOnlySignals": true,
+    "submarineHullDentUsesVisualOnlyFlag": true,
+    "submarineHullDentStillUsesTypedVisualProjection": true,
+    "verdict": "PASS",
+    "contract": "Visual-only hull dent notifications may share the historical CombatDamageSignal lane for VFX consumers, but central CombatDamageRuntime must reject them before LUT/CAS health mutation."
   },
   "combatTelemetryBoundsProof": {
     "recordChecksRingCreated": true,
@@ -1774,22 +1782,22 @@
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 1121,
+        "line": 1124,
         "text": "MaxQueuedSignals,"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 1125,
+        "line": 1128,
         "text": "PrewarmQueue(ref _damageSignals, MaxQueuedSignals);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 1126,
+        "line": 1129,
         "text": "_signalDetails = AllocateArray<CombatDamageSignalDetail>(MaxQueuedSignals, nameof(_signalDetails));"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 2238,
+        "line": 2245,
         "text": "if (!TryAtomicSubtractHealth(Health, slot, damage, out previousHealth, out float nextHealth))"
       },
       {
@@ -1921,32 +1929,32 @@
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 1409,
+        "line": 1412,
         "text": "private static void PublishQueueRejectAnomaly(uint anomalyHash, float amount)"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 1424,
+        "line": 1427,
         "text": "TelemetryFlagQueueRejected);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 1451,
+        "line": 1454,
         "text": "\"Dump_SHINOBU_318_Combat.bin\");"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 1465,
+        "line": 1468,
         "text": "int start = cursor >= (uint)count && count > 0"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 1472,
+        "line": 1475,
         "text": "WriteTelemetryEntry(writer, _telemetryRing[index]);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 1476,
+        "line": 1479,
         "text": "_telemetryDumpedThisSession = true;"
       },
       {
@@ -2001,17 +2009,17 @@
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 2158,
+        "line": 2165,
         "text": "EmitArmorImpactFeedback("
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 2164,
+        "line": 2171,
         "text": "ArmorImpactSignalFlagDirectionalDeflect);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 2171,
+        "line": 2178,
         "text": "EmitArmorDeflectFeedback("
       },
       {
@@ -2218,7 +2226,7 @@
       },
       {
         "file": "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs",
-        "line": 5193,
+        "line": 5196,
         "argCount": 3,
         "args": [
           "in signal",
@@ -2511,62 +2519,62 @@
       },
       {
         "file": "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs",
-        "line": 5148,
+        "line": 5151,
         "text": "!TryQueueBoilingFaunaDamage(faunaBrain, in hit, worldCenter, damageAmount))"
       },
       {
         "file": "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs",
-        "line": 5155,
+        "line": 5158,
         "text": "private bool TryQueueBoilingFaunaDamage("
       },
       {
         "file": "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs",
-        "line": 5174,
+        "line": 5177,
         "text": "SourceId = DamageSourceIds.SubmarineAtmosphereBoiling,"
       },
       {
         "file": "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs",
-        "line": 5178,
+        "line": 5181,
         "text": "PackedMeta = CombatDamageRuntime.PackSignalMeta("
       },
       {
         "file": "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs",
-        "line": 5179,
+        "line": 5182,
         "text": "CombatDamageTypes.Thermal,"
       },
       {
         "file": "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs",
-        "line": 5180,
+        "line": 5183,
         "text": "CombatStatusBits.Burning,"
       },
       {
         "file": "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs",
-        "line": 5186,
+        "line": 5189,
         "text": "LocalPoint = ResolveTargetLocalPoint(faunaTransform, impactPoint),"
       },
       {
         "file": "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs",
-        "line": 5193,
+        "line": 5196,
         "text": "CombatDamageRuntime.TryQueueDamage(in signal, in detail, impactAup);"
       },
       {
         "file": "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs",
-        "line": 5214,
+        "line": 5217,
         "text": "LocalPoint = ResolveTargetLocalPoint(faunaTransform, impactPoint),"
       },
       {
         "file": "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs",
-        "line": 5215,
+        "line": 5218,
         "text": "DamageType = CombatDamageTypes.Thermal,"
       },
       {
         "file": "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs",
-        "line": 5218,
+        "line": 5221,
         "text": "SourceId = DamageSourceIds.SubmarineAtmosphereBoiling,"
       },
       {
         "file": "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs",
-        "line": 5241,
+        "line": 5244,
         "text": "private static float3 ResolveTargetLocalPoint(Transform targetTransform, Vector3 impactPoint)"
       },
       {
@@ -3791,57 +3799,57 @@
       },
       {
         "file": "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs",
-        "line": 5148,
+        "line": 5151,
         "text": "!TryQueueBoilingFaunaDamage(faunaBrain, in hit, worldCenter, damageAmount))"
       },
       {
         "file": "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs",
-        "line": 5150,
+        "line": 5153,
         "text": "ApplyBoilingFaunaOwnerFallbackDamage(faunaBrain, in hit, worldCenter, damageAmount);"
       },
       {
         "file": "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs",
-        "line": 5155,
+        "line": 5158,
         "text": "private bool TryQueueBoilingFaunaDamage("
       },
       {
         "file": "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs",
-        "line": 5174,
+        "line": 5177,
         "text": "SourceId = DamageSourceIds.SubmarineAtmosphereBoiling,"
       },
       {
         "file": "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs",
-        "line": 5186,
+        "line": 5189,
         "text": "LocalPoint = ResolveTargetLocalPoint(faunaTransform, impactPoint),"
       },
       {
         "file": "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs",
-        "line": 5192,
+        "line": 5195,
         "text": "TryResolveImpactAup(in hit, impactPoint, out double3 impactAup);"
       },
       {
         "file": "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs",
-        "line": 5197,
+        "line": 5200,
         "text": "private void ApplyBoilingFaunaOwnerFallbackDamage("
       },
       {
         "file": "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs",
-        "line": 5214,
+        "line": 5217,
         "text": "LocalPoint = ResolveTargetLocalPoint(faunaTransform, impactPoint),"
       },
       {
         "file": "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs",
-        "line": 5218,
+        "line": 5221,
         "text": "SourceId = DamageSourceIds.SubmarineAtmosphereBoiling,"
       },
       {
         "file": "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs",
-        "line": 5221,
+        "line": 5224,
         "text": "faunaBrain.ReceiveDamage(in packet);"
       },
       {
         "file": "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs",
-        "line": 5256,
+        "line": 5259,
         "text": "private static bool TryResolveImpactAup(in SpatialQueryHit hit, Vector3 impactPoint, out double3 impactAup)"
       }
     ]
@@ -3948,27 +3956,27 @@
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 1104,
+        "line": 1107,
         "text": "_requestedVisualQualityWeight01 = 1f;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 1105,
+        "line": 1108,
         "text": "_visualQualityWeight01 = 1f;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 1980,
+        "line": 1983,
         "text": "float qualityWeight01 = SignalBusRegistry.GlobalQualityWeight01;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 1981,
+        "line": 1984,
         "text": "float requestedWeight01 = SanitizeQualityWeight01(_requestedVisualQualityWeight01);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 1982,
+        "line": 1985,
         "text": "_visualQualityWeight01 = SanitizeQualityWeight01(qualityWeight01) * requestedWeight01;"
       }
     ]
@@ -3993,32 +4001,32 @@
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 1159,
+        "line": 1162,
         "text": "_targetBodies = new Rigidbody[MaxTargets]; // COLD ALLOC: Rigidbody[2048] - cached pushback bodies for combat receivers - owner: CombatDamageRuntime"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 1573,
+        "line": 1576,
         "text": "Rigidbody body = _targetBodies[slot];"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 1672,
+        "line": 1675,
         "text": "return hit.Rigidbody != null &&"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 1673,
+        "line": 1676,
         "text": "TryResolveRegisteredTargetFromTransform(hit.Rigidbody.transform, out targetId, out receiverTransform);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 1836,
+        "line": 1839,
         "text": "private static Rigidbody ResolveReceiverBody(IDamageReceiver receiver)"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 1844,
+        "line": 1847,
         "text": "if (component.TryGetComponent(out Rigidbody body))"
       },
       {
@@ -4048,17 +4056,17 @@
       "sourceEvidence": [
         {
           "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-          "line": 1293,
+          "line": 1296,
           "text": "receiver.ReceiveDamage(in packet);"
         },
         {
           "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-          "line": 1294,
+          "line": 1297,
           "text": "DispatchManagedSideEffects(in result, receiver, slot);"
         },
         {
           "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-          "line": 1508,
+          "line": 1511,
           "text": "private static void DispatchManagedSideEffects(in CombatDamageResult result, IDamageReceiver receiver, int slot)"
         }
       ]
@@ -4095,37 +4103,37 @@
         },
         {
           "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-          "line": 1009,
+          "line": 1012,
           "text": "if (_damageJobScheduled && DispatcherJobSwap.TryComplete(ref _damageJobHandle, forceComplete: false))"
         },
         {
           "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-          "line": 1012,
+          "line": 1015,
           "text": "FinishArmorPenetrationScheduledCompletion();"
         },
         {
           "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-          "line": 1028,
+          "line": 1031,
           "text": "DispatchResults();"
         },
         {
           "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-          "line": 1042,
+          "line": 1045,
           "text": "DispatcherJobSwap.TryComplete(ref _damageJobHandle, forceComplete: true);"
         },
         {
           "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-          "line": 1044,
+          "line": 1047,
           "text": "FinishArmorPenetrationScheduledCompletion();"
         },
         {
           "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-          "line": 1198,
+          "line": 1201,
           "text": "private static bool CanMutateTargets()"
         },
         {
           "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-          "line": 1200,
+          "line": 1203,
           "text": "return !_damageJobScheduled && !_statusJobScheduled;"
         }
       ]

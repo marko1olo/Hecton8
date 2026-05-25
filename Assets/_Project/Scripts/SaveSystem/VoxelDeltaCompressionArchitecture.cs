@@ -189,6 +189,7 @@ namespace Hecton8.SaveSystem
         public const int ChunkResolution = 32;
         public const int ChunkCellCount = ChunkResolution * ChunkResolution * ChunkResolution;
         public const int TelemetryRingFrames = 300;
+        public const int MaxVoxelDeltaSectorStats = 512;
         public const int DefaultBlockCells = 128;
         public const int DefaultSchemaBytes = 256;
         internal const int MaxVoxelDeltaWalPayloadBytes = (256 * 1024) - 64;
@@ -252,7 +253,7 @@ namespace Hecton8.SaveSystem
                 stagingCapacityBytes <= 0 ? MaxVoxelDeltaWalPayloadBytes : stagingCapacityBytes,
                 1024,
                 MaxVoxelDeltaWalPayloadBytes));
-            int safeStats = math.max(1, sectorStatsCapacity);
+            int safeStats = math.clamp(sectorStatsCapacity <= 0 ? 1 : sectorStatsCapacity, 1, MaxVoxelDeltaSectorStats);
             int blockCount = ResolveBlockCount(safeCells, DefaultBlockCells);
 
             buffers.SchemaBytes = ResolveVaultBuffer<byte>(vault, BufferID.SaveVoxelDeltaSchemaBytes, DefaultSchemaBytes, NativeArrayOptions.UninitializedMemory);

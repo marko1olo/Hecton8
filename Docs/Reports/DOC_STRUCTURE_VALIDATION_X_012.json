@@ -1,7 +1,7 @@
 ﻿{
   "schema": "hecton8.doc_structure.v1",
   "repoRoot": "C:\\hades\\Hecton8",
-  "activeDocCount": 591,
+  "activeDocCount": 592,
   "rootTextDocs": [
     "AGENTS.md",
     "BUILD_PLAYTEST_ISSUES.md",
@@ -12,7 +12,10 @@
   "duplicateHeaderFiles": [],
   "brokenLinkFiles": [],
   "fenceIssueFiles": [],
-  "encodingWithoutUtf8Sig": [],
+  "encodingWithoutUtf8Sig": [
+    "Docs/Reports/KCC_APEX_AUDIT_X_005.md",
+    "Docs/Reports/SIGNAL_REFUSAL_TELEMETRY_CLOSURE_X_001.md"
+  ],
   "staleParameterFiles": [],
-  "pass": true
+  "pass": false
 }

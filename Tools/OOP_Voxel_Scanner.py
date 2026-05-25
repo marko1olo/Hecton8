@@ -1499,6 +1499,10 @@ def rle_packet_layout(sector_payload_bytes):
             "stagingCapacityBytes <= 0 ? MaxVoxelDeltaWalPayloadBytes : stagingCapacityBytes" in try_resolve_block
             and "MaxVoxelDeltaWalPayloadBytes));" in try_resolve_block
         ),
+        "vault_buffer_sector_stats_capacity_clamped": (
+            "MaxVoxelDeltaSectorStats = 512" in rle_text
+            and "math.clamp(sectorStatsCapacity <= 0 ? 1 : sectorStatsCapacity, 1, MaxVoxelDeltaSectorStats)" in try_resolve_block
+        ),
         "chunk_cell_count": chunk_cells,
         "native_snapshot_worst_case_chunk_payload_bytes": native_worst,
         "native_snapshot_dense_fallback_present": dense_fallback_present,
@@ -2361,6 +2365,7 @@ def build_report():
             and rle_packet["vault_buffer_cell_capacity_fixed_to_chunk"]
             and rle_packet["vault_buffer_run_capacity_clamped_to_chunk"]
             and rle_packet["vault_buffer_staging_capacity_clamped_to_wal_payload"]
+            and rle_packet["vault_buffer_sector_stats_capacity_clamped"]
         ),
         "voxel_carve_queue_and_commit_continuous_quality_scaled": (
             carve_queue["queued_drain_continuous_quality_scaled"]

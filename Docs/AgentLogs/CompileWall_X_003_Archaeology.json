@@ -132,15 +132,15 @@
     "aiPhysicsPhysiologyDirectPlayerCouplingCount": 2,
     "byDomain": [
       {
-        "count": 176,
+        "count": 178,
         "domain": "Hecton8.Core"
       },
       {
-        "count": 175,
+        "count": 173,
         "domain": "Hecton8.Gameplay"
       },
       {
-        "count": 166,
+        "count": 162,
         "domain": "Hecton8.UI"
       },
       {
@@ -180,8 +180,8 @@
         "domain": "Hecton8.SaveSystem"
       },
       {
-        "count": 13,
-        "domain": "Hecton8.Progression"
+        "count": 12,
+        "domain": "Hecton8.Audio"
       },
       {
         "count": 12,
@@ -192,8 +192,8 @@
         "domain": "Hecton8.Modding"
       },
       {
-        "count": 11,
-        "domain": "Hecton8.Audio"
+        "count": 12,
+        "domain": "Hecton8.Progression"
       },
       {
         "count": 10,
@@ -245,11 +245,11 @@
       },
       {
         "count": 4,
-        "domain": "Hecton8.Inventory"
+        "domain": "Hecton8.Items"
       },
       {
         "count": 4,
-        "domain": "Hecton8.Scavenging"
+        "domain": "Hecton8.Inventory"
       }
     ],
     "directPlayerCouplingCount": 3,
@@ -285,7 +285,7 @@
         "type": "HectonPlayerHealth"
       }
     ],
-    "findingCount": 985,
+    "findingCount": 982,
     "residualRisk": "Static pattern scan of runtime code; interface casts are excluded, concrete/service casts and GetComponent concrete lookups require owner review.",
     "topFindings": [
       {
@@ -352,8 +352,18 @@
         "assembly": "Hecton8.Core",
         "directPlayerCoupling": false,
         "domain": "Hecton8.Audio",
+        "kind": "explicit",
+        "line": 3603,
+        "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+        "text": "return (ReverbDspTier)tier;",
+        "type": "ReverbDspTier"
+      },
+      {
+        "assembly": "Hecton8.Core",
+        "directPlayerCoupling": false,
+        "domain": "Hecton8.Audio",
         "kind": "as",
-        "line": 6368,
+        "line": 6359,
         "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
         "text": "MonoBehaviour lifecycleBehaviour = lifecycleOwner as MonoBehaviour;",
         "type": "MonoBehaviour"
@@ -723,7 +733,7 @@
         "directPlayerCoupling": false,
         "domain": "Hecton8.Construction",
         "kind": "is",
-        "line": 4490,
+        "line": 4492,
         "path": "Assets/_Project/Scripts/Construction/DroneFleetManager.cs",
         "text": "if (!(candidate.Owner is FaunaBrain brain) ||",
         "type": "FaunaBrain"
@@ -1393,7 +1403,7 @@
         "directPlayerCoupling": false,
         "domain": "Hecton8.Core",
         "kind": "explicit",
-        "line": 2205,
+        "line": 2240,
         "path": "Assets/_Project/Scripts/Core/GlobalRegistry.cs",
         "text": "public static Domain CurrentDomain => (Domain)Volatile.Read(ref _currentDomain);",
         "type": "Domain"
@@ -1403,7 +1413,7 @@
         "directPlayerCoupling": false,
         "domain": "Hecton8.Core",
         "kind": "explicit",
-        "line": 2240,
+        "line": 2275,
         "path": "Assets/_Project/Scripts/Core/GlobalRegistry.cs",
         "text": "if ((Domain)Volatile.Read(ref _currentDomain) != domain || !ReferenceEquals(_currentDomainOwner, owner))",
         "type": "Domain"
@@ -1413,7 +1423,7 @@
         "directPlayerCoupling": false,
         "domain": "Hecton8.Core",
         "kind": "explicit",
-        "line": 2251,
+        "line": 2286,
         "path": "Assets/_Project/Scripts/Core/GlobalRegistry.cs",
         "text": "(MathPrecisionLevel)Volatile.Read(ref _mathPrecisionLevel);",
         "type": "MathPrecisionLevel"
@@ -1423,7 +1433,7 @@
         "directPlayerCoupling": false,
         "domain": "Hecton8.Core",
         "kind": "explicit",
-        "line": 2257,
+        "line": 2292,
         "path": "Assets/_Project/Scripts/Core/GlobalRegistry.cs",
         "text": "(MathPrecisionLevel)Volatile.Read(ref _mathPrecisionTargetLevel);",
         "type": "MathPrecisionLevel"
@@ -1433,7 +1443,7 @@
         "directPlayerCoupling": false,
         "domain": "Hecton8.Core",
         "kind": "explicit",
-        "line": 2277,
+        "line": 2312,
         "path": "Assets/_Project/Scripts/Core/GlobalRegistry.cs",
         "text": "MathPrecisionLevel targetLevel = (MathPrecisionLevel)Volatile.Read(ref _mathPrecisionTargetLevel);",
         "type": "MathPrecisionLevel"
@@ -1443,7 +1453,7 @@
         "directPlayerCoupling": false,
         "domain": "Hecton8.Core",
         "kind": "explicit",
-        "line": 2317,
+        "line": 2352,
         "path": "Assets/_Project/Scripts/Core/GlobalRegistry.cs",
         "text": "return overrideTier >= 0 ? (HectonQualityTier)overrideTier : QualityTier;",
         "type": "HectonQualityTier"
@@ -1453,7 +1463,7 @@
         "directPlayerCoupling": false,
         "domain": "Hecton8.Core",
         "kind": "as",
-        "line": 2435,
+        "line": 2470,
         "path": "Assets/_Project/Scripts/Core/GlobalRegistry.cs",
         "text": "service = (_babelLocalizationRuntime ?? _localizationRuntime) as T;",
         "type": "T"
@@ -1463,7 +1473,7 @@
         "directPlayerCoupling": false,
         "domain": "Hecton8.Core",
         "kind": "as",
-        "line": 2443,
+        "line": 2478,
         "path": "Assets/_Project/Scripts/Core/GlobalRegistry.cs",
         "text": "service = ResolveRegisteredServiceObject(serviceSlot) as T;",
         "type": "T"
@@ -1473,7 +1483,7 @@
         "directPlayerCoupling": false,
         "domain": "Hecton8.Core",
         "kind": "explicit",
-        "line": 2782,
+        "line": 2817,
         "path": "Assets/_Project/Scripts/Core/GlobalRegistry.cs",
         "text": "return ScalabilityTierRuntime.FromQualityTier((HectonQualityTier)overrideTier);",
         "type": "HectonQualityTier"
@@ -1483,7 +1493,7 @@
         "directPlayerCoupling": false,
         "domain": "Hecton8.Core",
         "kind": "explicit",
-        "line": 2797,
+        "line": 2832,
         "path": "Assets/_Project/Scripts/Core/GlobalRegistry.cs",
         "text": "HectonQualityTier qualityTier = (HectonQualityTier)overrideTier;",
         "type": "HectonQualityTier"
@@ -1493,7 +1503,7 @@
         "directPlayerCoupling": false,
         "domain": "Hecton8.Core",
         "kind": "explicit",
-        "line": 2820,
+        "line": 2855,
         "path": "Assets/_Project/Scripts/Core/GlobalRegistry.cs",
         "text": "if ((MathPrecisionLevel)Volatile.Read(ref _mathPrecisionTargetLevel) == MathPrecisionLevel.Low)",
         "type": "MathPrecisionLevel"
@@ -1503,7 +1513,7 @@
         "directPlayerCoupling": false,
         "domain": "Hecton8.Core",
         "kind": "as",
-        "line": 2979,
+        "line": 3014,
         "path": "Assets/_Project/Scripts/Core/GlobalRegistry.cs",
         "text": "_sceneRuntime = instance as SceneRuntimeService;",
         "type": "SceneRuntimeService"
@@ -1513,7 +1523,7 @@
         "directPlayerCoupling": false,
         "domain": "Hecton8.Core",
         "kind": "as",
-        "line": 3105,
+        "line": 3140,
         "path": "Assets/_Project/Scripts/Core/GlobalRegistry.cs",
         "text": "_environmentRuntimeContextRuntime = instance as EnvironmentRuntimeContextService;",
         "type": "EnvironmentRuntimeContextService"
@@ -1523,7 +1533,7 @@
         "directPlayerCoupling": false,
         "domain": "Hecton8.Core",
         "kind": "as",
-        "line": 3151,
+        "line": 3186,
         "path": "Assets/_Project/Scripts/Core/GlobalRegistry.cs",
         "text": "_oceanKinematicsRuntime = instance as OceanKinematicsRuntimeService;",
         "type": "OceanKinematicsRuntimeService"
@@ -1533,7 +1543,7 @@
         "directPlayerCoupling": false,
         "domain": "Hecton8.Core",
         "kind": "explicit",
-        "line": 7159,
+        "line": 7194,
         "path": "Assets/_Project/Scripts/Core/GlobalRegistry.cs",
         "text": "return ownerValue <= ushort.MaxValue ? (SystemID)ownerValue : SystemID.External;",
         "type": "SystemID"
@@ -1543,7 +1553,7 @@
         "directPlayerCoupling": false,
         "domain": "Hecton8.Core",
         "kind": "explicit",
-        "line": 7201,
+        "line": 7236,
         "path": "Assets/_Project/Scripts/Core/GlobalRegistry.cs",
         "text": "(GlobalRegistryServiceSlot)payload.ServiceSlot,",
         "type": "GlobalRegistryServiceSlot"
@@ -1553,7 +1563,7 @@
         "directPlayerCoupling": false,
         "domain": "Hecton8.Core",
         "kind": "as",
-        "line": 7400,
+        "line": 7435,
         "path": "Assets/_Project/Scripts/Core/GlobalRegistry.cs",
         "text": "return _noOpInputService as T;",
         "type": "T"
@@ -1563,7 +1573,7 @@
         "directPlayerCoupling": false,
         "domain": "Hecton8.Core",
         "kind": "as",
-        "line": 7402,
+        "line": 7437,
         "path": "Assets/_Project/Scripts/Core/GlobalRegistry.cs",
         "text": "return _noOpVRSomaticProvider as T;",
         "type": "T"
@@ -1573,7 +1583,7 @@
         "directPlayerCoupling": false,
         "domain": "Hecton8.Core",
         "kind": "explicit",
-        "line": 7628,
+        "line": 7663,
         "path": "Assets/_Project/Scripts/Core/GlobalRegistry.cs",
         "text": "ShutdownRegisteredServiceSlot((GlobalRegistryServiceSlot)slot);",
         "type": "GlobalRegistryServiceSlot"
@@ -1583,7 +1593,7 @@
         "directPlayerCoupling": false,
         "domain": "Hecton8.Core",
         "kind": "explicit",
-        "line": 7670,
+        "line": 7705,
         "path": "Assets/_Project/Scripts/Core/GlobalRegistry.cs",
         "text": "object service = ResolveRegisteredServiceObject((GlobalRegistryServiceSlot)slot);",
         "type": "GlobalRegistryServiceSlot"
@@ -2523,7 +2533,7 @@
         "directPlayerCoupling": false,
         "domain": "Hecton8.Ecosystem",
         "kind": "explicit",
-        "line": 1567,
+        "line": 1571,
         "path": "Assets/_Project/Scripts/Ecosystem/MigrationDirector.cs",
         "text": "return (BufferID)unchecked((int)handle.BufferID);",
         "type": "BufferID"
@@ -2713,7 +2723,7 @@
         "directPlayerCoupling": false,
         "domain": "Hecton8.Environment",
         "kind": "explicit",
-        "line": 2150,
+        "line": 2156,
         "path": "Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs",
         "text": "if (!H8StaticDataArena.TryGetSectionSpan((H8DataSectionId)sectionId, out ReadOnlySpan<SeismicEventDTO> records) || records.Length == 0)",
         "type": "H8DataSectionId"
@@ -2723,7 +2733,7 @@
         "directPlayerCoupling": false,
         "domain": "Hecton8.Environment",
         "kind": "as",
-        "line": 5148,
+        "line": 5158,
         "path": "Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs",
         "text": "TectonicEventTunerWindow window = focusedWindow as TectonicEventTunerWindow;",
         "type": "TectonicEventTunerWindow"
@@ -2903,7 +2913,7 @@
         "directPlayerCoupling": false,
         "domain": "Hecton8.Gameplay",
         "kind": "explicit",
-        "line": 1856,
+        "line": 1880,
         "path": "Assets/_Project/Scripts/Gameplay/BaseAirlock.cs",
         "text": "HandleLanguageChanged((GameLanguage)payload.Language);",
         "type": "GameLanguage"
@@ -2913,7 +2923,7 @@
         "directPlayerCoupling": false,
         "domain": "Hecton8.Gameplay",
         "kind": "as",
-        "line": 491,
+        "line": 497,
         "path": "Assets/_Project/Scripts/Gameplay/BatteryCharger.cs",
         "text": "_powerNode = powerNodeReference as PowerNode;",
         "type": "PowerNode"
@@ -2923,7 +2933,7 @@
         "directPlayerCoupling": false,
         "domain": "Hecton8.Gameplay",
         "kind": "explicit",
-        "line": 906,
+        "line": 913,
         "path": "Assets/_Project/Scripts/Gameplay/BatteryCharger.cs",
         "text": "HandleLanguageChanged((GameLanguage)payload.Language);",
         "type": "GameLanguage"
@@ -2933,7 +2943,7 @@
         "directPlayerCoupling": false,
         "domain": "Hecton8.Gameplay",
         "kind": "GetComponent",
-        "line": 400,
+        "line": 407,
         "path": "Assets/_Project/Scripts/Gameplay/BioReactor.cs",
         "text": "_powerNode = GetComponent<PowerNode>();",
         "type": "PowerNode"
@@ -2943,7 +2953,7 @@
         "directPlayerCoupling": false,
         "domain": "Hecton8.Gameplay",
         "kind": "GetComponent",
-        "line": 401,
+        "line": 408,
         "path": "Assets/_Project/Scripts/Gameplay/BioReactor.cs",
         "text": "_hostModule = GetComponent<BaseModule>();",
         "type": "BaseModule"
@@ -2953,7 +2963,7 @@
         "directPlayerCoupling": false,
         "domain": "Hecton8.Gameplay",
         "kind": "GetComponent",
-        "line": 403,
+        "line": 410,
         "path": "Assets/_Project/Scripts/Gameplay/BioReactor.cs",
         "text": "_hostModule = GetComponentInParent<BaseModule>();",
         "type": "BaseModule"
@@ -2963,7 +2973,7 @@
         "directPlayerCoupling": false,
         "domain": "Hecton8.Gameplay",
         "kind": "GetComponent",
-        "line": 409,
+        "line": 416,
         "path": "Assets/_Project/Scripts/Gameplay/BioReactor.cs",
         "text": "fuelIndicator = GetComponent<Renderer>();",
         "type": "Renderer"
@@ -2973,7 +2983,7 @@
         "directPlayerCoupling": false,
         "domain": "Hecton8.Gameplay",
         "kind": "GetComponent",
-        "line": 801,
+        "line": 808,
         "path": "Assets/_Project/Scripts/Gameplay/BioReactor.cs",
         "text": "? playerTransform.GetComponentInParent<HectonSurvivalSystem>()",
         "type": "HectonSurvivalSystem"
@@ -2983,7 +2993,7 @@
         "directPlayerCoupling": false,
         "domain": "Hecton8.Gameplay",
         "kind": "explicit",
-        "line": 1027,
+        "line": 1034,
         "path": "Assets/_Project/Scripts/Gameplay/BioReactor.cs",
         "text": "HandleLanguageChanged((GameLanguage)payload.Language);",
         "type": "GameLanguage"
@@ -3013,7 +3023,7 @@
         "directPlayerCoupling": false,
         "domain": "Hecton8.Gameplay",
         "kind": "explicit",
-        "line": 1282,
+        "line": 1285,
         "path": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
         "text": "Channel = (DamageChannel)result.Channel,",
         "type": "DamageChannel"
@@ -3023,7 +3033,7 @@
         "directPlayerCoupling": false,
         "domain": "Hecton8.Gameplay",
         "kind": "explicit",
-        "line": 1824,
+        "line": 1827,
         "path": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
         "text": "CombatArmorClass armorClass = (CombatArmorClass)(_targetFlags[i] & TargetFlagArmorMask);",
         "type": "CombatArmorClass"
@@ -3033,7 +3043,7 @@
         "directPlayerCoupling": false,
         "domain": "Hecton8.Gameplay",
         "kind": "is",
-        "line": 1831,
+        "line": 1834,
         "path": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
         "text": "return receiver is Component component && component != null",
         "type": "Component"
@@ -3043,7 +3053,7 @@
         "directPlayerCoupling": false,
         "domain": "Hecton8.Gameplay",
         "kind": "is",
-        "line": 1841,
+        "line": 1844,
         "path": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
         "text": "if (!(receiver is Component component) || component == null)",
         "type": "Component"
@@ -3053,7 +3063,7 @@
         "directPlayerCoupling": false,
         "domain": "Hecton8.Gameplay",
         "kind": "is",
-        "line": 1891,
+        "line": 1894,
         "path": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
         "text": "if (receiver is Component component && component != null)",
         "type": "Component"
@@ -3063,7 +3073,7 @@
         "directPlayerCoupling": false,
         "domain": "Hecton8.Gameplay",
         "kind": "is",
-        "line": 1905,
+        "line": 1908,
         "path": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
         "text": "if (receiver is Component component && component != null)",
         "type": "Component"
@@ -3143,7 +3153,7 @@
         "directPlayerCoupling": false,
         "domain": "Hecton8.Gameplay",
         "kind": "explicit",
-        "line": 670,
+        "line": 677,
         "path": "Assets/_Project/Scripts/Gameplay/DeployableBeacon.cs",
         "text": "HandleLanguageChanged((GameLanguage)payload.Language);",
         "type": "GameLanguage"
@@ -3277,16 +3287,6 @@
         "path": "Assets/_Project/Scripts/Gameplay/FirstHourDirector.cs",
         "text": "if (IsFirstHourComplete) return;",
         "type": "IsFirstHourComplete"
-      },
-      {
-        "assembly": "Hecton8.Core",
-        "directPlayerCoupling": false,
-        "domain": "Hecton8.Gameplay",
-        "kind": "GetComponent",
-        "line": 198,
-        "path": "Assets/_Project/Scripts/Gameplay/Floater.cs",
-        "text": "_ownRigidbody = GetComponent<Rigidbody>();",
-        "type": "Rigidbody"
       }
     ]
   },
@@ -3607,7 +3607,7 @@
         ],
         "externalFileCount": 59,
         "kind": "interface",
-        "line": 4210,
+        "line": 4291,
         "name": "IGlobalRegistryHotSwapListener",
         "path": "Assets/_Project/Scripts/Core/GlobalRegistryContracts.cs",
         "recommendation": "MOVE_TO_CONTRACTS_OR_CREATE_LEGACY_WRAPPER"
@@ -3637,7 +3637,7 @@
           "Hecton8.Prologue.Space",
           "Hecton8.Prologue.VFX"
         ],
-        "externalAssemblyCount": 34,
+        "externalAssemblyCount": 35,
         "externalDomainCount": 20,
         "externalDomains": [
           "Hecton8.AI",
@@ -3661,7 +3661,7 @@
           "Hecton8.Vehicles",
           "Hecton8.World"
         ],
-        "externalFileCount": 45,
+        "externalFileCount": 46,
         "kind": "interface",
         "line": 79,
         "name": "ILateFrameTickable",
@@ -3947,7 +3947,7 @@
         ],
         "externalFileCount": 10,
         "kind": "interface",
-        "line": 4227,
+        "line": 4308,
         "name": "IGlobalRegistryHotSwapRefListener",
         "path": "Assets/_Project/Scripts/Core/GlobalRegistryContracts.cs",
         "recommendation": "MOVE_TO_CONTRACTS_OR_CREATE_LEGACY_WRAPPER"
@@ -4676,7 +4676,7 @@
         ],
         "externalFileCount": 5,
         "kind": "interface",
-        "line": 5103,
+        "line": 5184,
         "name": "IEcosystemDirectorService",
         "path": "Assets/_Project/Scripts/Core/GlobalRegistryContracts.cs",
         "recommendation": "MOVE_TO_CONTRACTS_OR_CREATE_LEGACY_WRAPPER"
@@ -4724,7 +4724,7 @@
         ],
         "externalFileCount": 4,
         "kind": "struct",
-        "line": 1741,
+        "line": 1742,
         "name": "HullDeformedSignal",
         "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs",
         "recommendation": "MOVE_TO_CONTRACTS_OR_CREATE_LEGACY_WRAPPER"
@@ -4866,7 +4866,7 @@
         ],
         "externalFileCount": 7,
         "kind": "struct",
-        "line": 1791,
+        "line": 1792,
         "name": "BaseModuleCompromisedSignal",
         "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs",
         "recommendation": "MOVE_TO_CONTRACTS_OR_CREATE_LEGACY_WRAPPER"
@@ -5489,7 +5489,7 @@
         ],
         "externalFileCount": 3,
         "kind": "struct",
-        "line": 201,
+        "line": 202,
         "name": "SubmarineKinematicConfig",
         "path": "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
         "recommendation": "MOVE_TO_CONTRACTS_OR_CREATE_LEGACY_WRAPPER"
@@ -5877,7 +5877,7 @@
         ],
         "externalFileCount": 3,
         "kind": "interface",
-        "line": 3215,
+        "line": 3296,
         "name": "IWorldSeedProvider",
         "path": "Assets/_Project/Scripts/Core/GlobalRegistryContracts.cs",
         "recommendation": "MOVE_TO_CONTRACTS_OR_CREATE_LEGACY_WRAPPER"
@@ -6257,7 +6257,7 @@
         ],
         "externalFileCount": 2,
         "kind": "interface",
-        "line": 2944,
+        "line": 3025,
         "name": "IThermodynamicsService",
         "path": "Assets/_Project/Scripts/Core/GlobalRegistryContracts.cs",
         "recommendation": "MOVE_TO_CONTRACTS_OR_CREATE_LEGACY_WRAPPER"
@@ -6277,7 +6277,7 @@
         ],
         "externalFileCount": 2,
         "kind": "interface",
-        "line": 3704,
+        "line": 3785,
         "name": "IGasDynamicsSolver",
         "path": "Assets/_Project/Scripts/Core/GlobalRegistryContracts.cs",
         "recommendation": "MOVE_TO_CONTRACTS_OR_CREATE_LEGACY_WRAPPER"
@@ -6297,7 +6297,7 @@
         ],
         "externalFileCount": 2,
         "kind": "interface",
-        "line": 4281,
+        "line": 4362,
         "name": "IAbyssalFlowVolumeReadModel",
         "path": "Assets/_Project/Scripts/Core/GlobalRegistryContracts.cs",
         "recommendation": "MOVE_TO_CONTRACTS_OR_CREATE_LEGACY_WRAPPER"
@@ -6317,7 +6317,7 @@
         ],
         "externalFileCount": 2,
         "kind": "interface",
-        "line": 4688,
+        "line": 4769,
         "name": "ITerrainProvider",
         "path": "Assets/_Project/Scripts/Core/GlobalRegistryContracts.cs",
         "recommendation": "MOVE_TO_CONTRACTS_OR_CREATE_LEGACY_WRAPPER"
@@ -6877,7 +6877,7 @@
         ],
         "externalFileCount": 2,
         "kind": "struct",
-        "line": 1770,
+        "line": 1771,
         "name": "HullRepairedSignal",
         "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs",
         "recommendation": "MOVE_TO_CONTRACTS_OR_CREATE_LEGACY_WRAPPER"
@@ -6897,7 +6897,7 @@
         ],
         "externalFileCount": 2,
         "kind": "struct",
-        "line": 1819,
+        "line": 1820,
         "name": "PlayerBaseEnterSignal",
         "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs",
         "recommendation": "MOVE_TO_CONTRACTS_OR_CREATE_LEGACY_WRAPPER"
@@ -6917,7 +6917,7 @@
         ],
         "externalFileCount": 2,
         "kind": "struct",
-        "line": 1834,
+        "line": 1835,
         "name": "PlayerBaseExitSignal",
         "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs",
         "recommendation": "MOVE_TO_CONTRACTS_OR_CREATE_LEGACY_WRAPPER"
@@ -7437,7 +7437,7 @@
         ],
         "externalFileCount": 2,
         "kind": "struct",
-        "line": 91,
+        "line": 92,
         "name": "SubmarineKinematicState",
         "path": "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
         "recommendation": "MOVE_TO_CONTRACTS_OR_CREATE_LEGACY_WRAPPER"
@@ -7457,7 +7457,7 @@
         ],
         "externalFileCount": 2,
         "kind": "struct",
-        "line": 257,
+        "line": 258,
         "name": "AddedMassProfileDTO",
         "path": "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
         "recommendation": "MOVE_TO_CONTRACTS_OR_CREATE_LEGACY_WRAPPER"
@@ -7477,7 +7477,7 @@
         ],
         "externalFileCount": 2,
         "kind": "struct",
-        "line": 265,
+        "line": 266,
         "name": "SubmarineHydrodynamicsTelemetry",
         "path": "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
         "recommendation": "MOVE_TO_CONTRACTS_OR_CREATE_LEGACY_WRAPPER"
@@ -7497,7 +7497,7 @@
         ],
         "externalFileCount": 2,
         "kind": "struct",
-        "line": 307,
+        "line": 308,
         "name": "SubmarineAddedMassTuningDTO",
         "path": "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
         "recommendation": "MOVE_TO_CONTRACTS_OR_CREATE_LEGACY_WRAPPER"
@@ -15687,7 +15687,7 @@
     "topFindings": []
   },
   "hotPathRegistryMutationDetection": {
-    "findingCount": 2,
+    "findingCount": 3,
     "residualRisk": "Self-registration/unregistration from a hot method is not polling, but it still mutates registry state during a dispatcher phase and needs owner review.",
     "topFindings": [
       {
@@ -15709,6 +15709,16 @@
         "path": "Assets/_Project/Scripts/Core/ConnectionSplineBatchRenderer.cs",
         "recommendation": "VERIFY_RARE_SELF_REGISTRATION_ROUTE_OR_DEFER_OUT_OF_HOT_PHASE",
         "text": "GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);"
+      },
+      {
+        "assembly": "Hecton8.Core",
+        "domain": "Hecton8.UI",
+        "kind": "GlobalRegistry",
+        "line": 255,
+        "method": "LateFrameTick",
+        "path": "Assets/_Project/Scripts/UI/PhysicalPanelButton.cs",
+        "recommendation": "VERIFY_RARE_SELF_REGISTRATION_ROUTE_OR_DEFER_OUT_OF_HOT_PHASE",
+        "text": "GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);"
       }
     ]
   },
@@ -15718,7 +15728,7 @@
     "criticalFindingCount": 0,
     "criticalFindings": [],
     "edgeCount": 132,
-    "referenceCount": 1207,
+    "referenceCount": 1201,
     "topEdges": [
       {
         "count": 151,
@@ -15726,7 +15736,7 @@
         "targetDomain": "Hecton8.Core"
       },
       {
-        "count": 109,
+        "count": 106,
         "sourceDomain": "Hecton8.UI",
         "targetDomain": "Hecton8.Core"
       },
@@ -15776,11 +15786,6 @@
         "targetDomain": "Hecton8.Interaction"
       },
       {
-        "count": 22,
-        "sourceDomain": "Hecton8.Construction",
-        "targetDomain": "Hecton8.Core"
-      },
-      {
         "count": 20,
         "sourceDomain": "Hecton8.Modding",
         "targetDomain": "Hecton8.Core"
@@ -15788,6 +15793,11 @@
       {
         "count": 20,
         "sourceDomain": "Hecton8.Tools",
+        "targetDomain": "Hecton8.Core"
+      },
+      {
+        "count": 18,
+        "sourceDomain": "Hecton8.Construction",
         "targetDomain": "Hecton8.Core"
       },
       {
@@ -15802,17 +15812,17 @@
       },
       {
         "count": 15,
+        "sourceDomain": "Hecton8.Narrative",
+        "targetDomain": "Hecton8.Core"
+      },
+      {
+        "count": 15,
         "sourceDomain": "Hecton8.Gameplay",
         "targetDomain": "Hecton8.World"
       },
       {
         "count": 14,
         "sourceDomain": "Hecton8.Atmosphere",
-        "targetDomain": "Hecton8.Core"
-      },
-      {
-        "count": 14,
-        "sourceDomain": "Hecton8.Narrative",
         "targetDomain": "Hecton8.Core"
       },
       {
@@ -15977,11 +15987,6 @@
       },
       {
         "count": 4,
-        "sourceDomain": "Hecton8.Crafting",
-        "targetDomain": "Hecton8.Core"
-      },
-      {
-        "count": 4,
         "sourceDomain": "Hecton8.Habitat",
         "targetDomain": "Hecton8.Core"
       },
@@ -16023,6 +16028,11 @@
       {
         "count": 3,
         "sourceDomain": "Hecton8.Economy",
+        "targetDomain": "Hecton8.Core"
+      },
+      {
+        "count": 3,
+        "sourceDomain": "Hecton8.Crafting",
         "targetDomain": "Hecton8.Core"
       },
       {
@@ -16112,13 +16122,13 @@
       },
       {
         "count": 2,
-        "sourceDomain": "Hecton8.Gameplay",
-        "targetDomain": "Hecton8.Caves"
+        "sourceDomain": "Hecton8.Items",
+        "targetDomain": "Hecton8.Core"
       },
       {
         "count": 2,
-        "sourceDomain": "Hecton8.Environment",
-        "targetDomain": "Hecton8.World"
+        "sourceDomain": "Hecton8.Gameplay",
+        "targetDomain": "Hecton8.Caves"
       }
     ],
     "topFindings": [
@@ -16232,21 +16242,21 @@
       },
       {
         "assembly": "Hecton8.Core",
-        "line": 568,
-        "namespace": "Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext",
+        "line": 577,
+        "namespace": "Hecton8.Core.GlobalRegistry.Player",
         "path": "Assets/_Project/Scripts/AmbientWaterMotionManager.cs",
         "sourceDomain": "Hecton8.Physics",
         "targetDomain": "Hecton8.Core",
-        "text": "_playerRuntimeContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;"
+        "text": "_playerRuntimeContext = Hecton8.Core.GlobalRegistry.Player;"
       },
       {
         "assembly": "Hecton8.Core",
         "line": 410,
-        "namespace": "Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext",
+        "namespace": "Hecton8.Core.GlobalRegistry.Player",
         "path": "Assets/_Project/Scripts/Animation/Locomotion/ProceduralLadderClimbRuntime.cs",
         "sourceDomain": "Hecton8.Animation",
         "targetDomain": "Hecton8.Core",
-        "text": "_cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;"
+        "text": "_cachedPlayerContext = Hecton8.Core.GlobalRegistry.Player;"
       },
       {
         "assembly": "Hecton8.Core",
@@ -16305,11 +16315,11 @@
       {
         "assembly": "Hecton8.Core",
         "line": 1057,
-        "namespace": "Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext",
+        "namespace": "Hecton8.Core.GlobalRegistry.Player",
         "path": "Assets/_Project/Scripts/AtlasSignal/Atlas6DirectiveSystem.cs",
         "sourceDomain": "Hecton8.AtlasSignal",
         "targetDomain": "Hecton8.Core",
-        "text": "_playerRuntimeContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;"
+        "text": "_playerRuntimeContext = Hecton8.Core.GlobalRegistry.Player;"
       },
       {
         "assembly": "Hecton8.Core",
@@ -16341,11 +16351,11 @@
       {
         "assembly": "Hecton8.Core",
         "line": 589,
-        "namespace": "Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext",
+        "namespace": "Hecton8.Core.GlobalRegistry.Player",
         "path": "Assets/_Project/Scripts/AtlasSignal/AtlasSignalSystem.cs",
         "sourceDomain": "Hecton8.AtlasSignal",
         "targetDomain": "Hecton8.Core",
-        "text": "_playerRuntimeContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;"
+        "text": "_playerRuntimeContext = Hecton8.Core.GlobalRegistry.Player;"
       },
       {
         "assembly": "Hecton8.Core",
@@ -16385,39 +16395,39 @@
       },
       {
         "assembly": "Hecton8.Core",
-        "line": 464,
-        "namespace": "Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext",
+        "line": 466,
+        "namespace": "Hecton8.Core.GlobalRegistry.Player",
         "path": "Assets/_Project/Scripts/AtlasSignal/SignalBeacon.cs",
         "sourceDomain": "Hecton8.AtlasSignal",
         "targetDomain": "Hecton8.Core",
-        "text": "_playerRuntimeContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;"
+        "text": "_playerRuntimeContext = Hecton8.Core.GlobalRegistry.Player;"
       },
       {
         "assembly": "Hecton8.Core",
-        "line": 470,
-        "namespace": "Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext",
+        "line": 472,
+        "namespace": "Hecton8.Core.GlobalRegistry.Player",
         "path": "Assets/_Project/Scripts/AtlasSignal/SignalBeacon.cs",
         "sourceDomain": "Hecton8.AtlasSignal",
         "targetDomain": "Hecton8.Core",
-        "text": "_playerRuntimeContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;"
+        "text": "_playerRuntimeContext = Hecton8.Core.GlobalRegistry.Player;"
       },
       {
         "assembly": "Hecton8.Core",
         "line": 393,
-        "namespace": "Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext",
+        "namespace": "Hecton8.Core.GlobalRegistry.Player",
         "path": "Assets/_Project/Scripts/Atmosphere/HectonSurfaceWeatherDirector.cs",
         "sourceDomain": "Hecton8.Atmosphere",
         "targetDomain": "Hecton8.Core",
-        "text": "CachePlayerRuntimeContext(Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext);"
+        "text": "CachePlayerRuntimeContext(Hecton8.Core.GlobalRegistry.Player);"
       },
       {
         "assembly": "Hecton8.Core",
         "line": 401,
-        "namespace": "Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext",
+        "namespace": "Hecton8.Core.GlobalRegistry.Player",
         "path": "Assets/_Project/Scripts/Atmosphere/HectonSurfaceWeatherDirector.cs",
         "sourceDomain": "Hecton8.Atmosphere",
         "targetDomain": "Hecton8.Core",
-        "text": "CachePlayerRuntimeContext(Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext);"
+        "text": "CachePlayerRuntimeContext(Hecton8.Core.GlobalRegistry.Player);"
       },
       {
         "assembly": "Hecton8.Core",
@@ -16485,11 +16495,11 @@
       {
         "assembly": "Hecton8.Core",
         "line": 179,
-        "namespace": "Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext",
+        "namespace": "Hecton8.Core.GlobalRegistry.Player",
         "path": "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs",
         "sourceDomain": "Hecton8.Atmosphere",
         "targetDomain": "Hecton8.Core",
-        "text": "CachePlayerRuntimeContext(Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext);"
+        "text": "CachePlayerRuntimeContext(Hecton8.Core.GlobalRegistry.Player);"
       },
       {
         "assembly": "Hecton8.Core",
@@ -16539,11 +16549,11 @@
       {
         "assembly": "Hecton8.Core",
         "line": 34,
-        "namespace": "Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext",
+        "namespace": "Hecton8.Core.GlobalRegistry.Player",
         "path": "Assets/_Project/Scripts/Audio/AtmosphericAudioRuntimeInstaller.cs",
         "sourceDomain": "Hecton8.Audio",
         "targetDomain": "Hecton8.Core",
-        "text": "IPlayerRuntimeContext playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;"
+        "text": "IPlayerRuntimeContext playerContext = Hecton8.Core.GlobalRegistry.Player;"
       },
       {
         "assembly": "Hecton8.Core",
@@ -16781,7 +16791,7 @@
       },
       {
         "assembly": "Hecton8.Core",
-        "line": 3646,
+        "line": 3637,
         "namespace": "Hecton8.Core.SystemDispatcher.CurrentFrameIndex",
         "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
         "sourceDomain": "Hecton8.Audio",
@@ -16790,7 +16800,7 @@
       },
       {
         "assembly": "Hecton8.Core",
-        "line": 4150,
+        "line": 4141,
         "namespace": "Hecton8.Core.SystemDispatcher.CurrentFrameIndex",
         "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
         "sourceDomain": "Hecton8.Audio",
@@ -16799,7 +16809,7 @@
       },
       {
         "assembly": "Hecton8.Core",
-        "line": 4187,
+        "line": 4178,
         "namespace": "Hecton8.Core.SystemDispatcher.CurrentFrameIndex",
         "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
         "sourceDomain": "Hecton8.Audio",
@@ -16808,7 +16818,7 @@
       },
       {
         "assembly": "Hecton8.Core",
-        "line": 4258,
+        "line": 4249,
         "namespace": "Hecton8.Core.SystemDispatcher.CurrentFrameIndex",
         "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
         "sourceDomain": "Hecton8.Audio",
@@ -16817,7 +16827,7 @@
       },
       {
         "assembly": "Hecton8.Core",
-        "line": 4263,
+        "line": 4254,
         "namespace": "Hecton8.Core.SystemDispatcher.CurrentFrameIndex",
         "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
         "sourceDomain": "Hecton8.Audio",
@@ -16826,7 +16836,7 @@
       },
       {
         "assembly": "Hecton8.Core",
-        "line": 4474,
+        "line": 4465,
         "namespace": "Hecton8.Core.SystemDispatcher.CurrentFrameIndex",
         "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
         "sourceDomain": "Hecton8.Audio",
@@ -16835,7 +16845,7 @@
       },
       {
         "assembly": "Hecton8.Core",
-        "line": 4481,
+        "line": 4472,
         "namespace": "Hecton8.Core.SystemDispatcher.CurrentFrameIndex",
         "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
         "sourceDomain": "Hecton8.Audio",
@@ -16844,7 +16854,7 @@
       },
       {
         "assembly": "Hecton8.Core",
-        "line": 4779,
+        "line": 4770,
         "namespace": "Hecton8.Core.SystemDispatcher.CurrentFrameIndex",
         "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
         "sourceDomain": "Hecton8.Audio",
@@ -16853,7 +16863,7 @@
       },
       {
         "assembly": "Hecton8.Core",
-        "line": 4838,
+        "line": 4829,
         "namespace": "Hecton8.Core.SystemDispatcher.CurrentFrameIndex",
         "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
         "sourceDomain": "Hecton8.Audio",
@@ -16862,7 +16872,7 @@
       },
       {
         "assembly": "Hecton8.Core",
-        "line": 4874,
+        "line": 4865,
         "namespace": "Hecton8.Core.SystemDispatcher.CurrentFrameIndex",
         "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
         "sourceDomain": "Hecton8.Audio",
@@ -16871,7 +16881,7 @@
       },
       {
         "assembly": "Hecton8.Core",
-        "line": 5524,
+        "line": 5515,
         "namespace": "Hecton8.Core.SystemDispatcher.CurrentFrameIndex",
         "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
         "sourceDomain": "Hecton8.Audio",
@@ -16880,7 +16890,7 @@
       },
       {
         "assembly": "Hecton8.Core",
-        "line": 5529,
+        "line": 5520,
         "namespace": "Hecton8.Core.Contracts.Signals.LaserCutterEventPayload",
         "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
         "sourceDomain": "Hecton8.Audio",
@@ -16889,7 +16899,7 @@
       },
       {
         "assembly": "Hecton8.Core",
-        "line": 5530,
+        "line": 5521,
         "namespace": "Hecton8.Core.Contracts.Signals.LaserCutterEventPayload",
         "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
         "sourceDomain": "Hecton8.Audio",
@@ -16898,7 +16908,7 @@
       },
       {
         "assembly": "Hecton8.Core",
-        "line": 5535,
+        "line": 5526,
         "namespace": "Hecton8.Core.Contracts.Signals.LaserCutterEventPayload",
         "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
         "sourceDomain": "Hecton8.Audio",
@@ -16907,7 +16917,7 @@
       },
       {
         "assembly": "Hecton8.Core",
-        "line": 5540,
+        "line": 5531,
         "namespace": "Hecton8.Core.Contracts.Signals.LaserCutterEventType",
         "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
         "sourceDomain": "Hecton8.Audio",
@@ -16916,7 +16926,7 @@
       },
       {
         "assembly": "Hecton8.Core",
-        "line": 5541,
+        "line": 5532,
         "namespace": "Hecton8.Core.Contracts.Signals.LaserCutterEventType.HeatChanged",
         "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
         "sourceDomain": "Hecton8.Audio",
@@ -16925,7 +16935,7 @@
       },
       {
         "assembly": "Hecton8.Core",
-        "line": 5547,
+        "line": 5538,
         "namespace": "Hecton8.Core.Contracts.Signals.LaserCutterEventType.BeamStateChanged",
         "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
         "sourceDomain": "Hecton8.Audio",
@@ -16934,7 +16944,7 @@
       },
       {
         "assembly": "Hecton8.Core",
-        "line": 5556,
+        "line": 5547,
         "namespace": "Hecton8.Core.Contracts.Signals.LaserCutterEventPayload",
         "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
         "sourceDomain": "Hecton8.Audio",
@@ -16943,7 +16953,7 @@
       },
       {
         "assembly": "Hecton8.Core",
-        "line": 5564,
+        "line": 5555,
         "namespace": "Hecton8.Core.Contracts.Signals.LaserCutterEventPayload",
         "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
         "sourceDomain": "Hecton8.Audio",
@@ -16952,7 +16962,7 @@
       },
       {
         "assembly": "Hecton8.Core",
-        "line": 5667,
+        "line": 5658,
         "namespace": "Hecton8.Core.SystemDispatcher.CurrentFrameIndex",
         "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
         "sourceDomain": "Hecton8.Audio",
@@ -16961,7 +16971,7 @@
       },
       {
         "assembly": "Hecton8.Core",
-        "line": 5714,
+        "line": 5705,
         "namespace": "Hecton8.Physics.AcousticImpulseEvent",
         "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
         "sourceDomain": "Hecton8.Audio",
@@ -16970,7 +16980,7 @@
       },
       {
         "assembly": "Hecton8.Core",
-        "line": 5761,
+        "line": 5752,
         "namespace": "Hecton8.Core.SystemDispatcher.CurrentFrameIndex",
         "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
         "sourceDomain": "Hecton8.Audio",
@@ -16979,7 +16989,7 @@
       },
       {
         "assembly": "Hecton8.Core",
-        "line": 6026,
+        "line": 6017,
         "namespace": "Hecton8.Tools.ToolHapticsRuntime.TryEnqueueCommand",
         "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
         "sourceDomain": "Hecton8.Audio",
@@ -16988,7 +16998,7 @@
       },
       {
         "assembly": "Hecton8.Core",
-        "line": 8762,
+        "line": 8753,
         "namespace": "Hecton8.Core.SystemDispatcher.CurrentFrameIndex",
         "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
         "sourceDomain": "Hecton8.Audio",
@@ -16997,7 +17007,7 @@
       },
       {
         "assembly": "Hecton8.Core",
-        "line": 8781,
+        "line": 8772,
         "namespace": "Hecton8.Core.SystemDispatcher.CurrentFrameIndex",
         "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
         "sourceDomain": "Hecton8.Audio",
@@ -17006,7 +17016,7 @@
       },
       {
         "assembly": "Hecton8.Core",
-        "line": 8800,
+        "line": 8791,
         "namespace": "Hecton8.Core.SystemDispatcher.CurrentFrameIndex",
         "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
         "sourceDomain": "Hecton8.Audio",
@@ -17015,7 +17025,7 @@
       },
       {
         "assembly": "Hecton8.Core",
-        "line": 8991,
+        "line": 8982,
         "namespace": "Hecton8.Core.SystemDispatcher.CurrentFrameIndex",
         "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
         "sourceDomain": "Hecton8.Audio",
@@ -17024,7 +17034,7 @@
       },
       {
         "assembly": "Hecton8.Core",
-        "line": 9098,
+        "line": 9089,
         "namespace": "Hecton8.Core.SystemDispatcher.CurrentFrameIndex",
         "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
         "sourceDomain": "Hecton8.Audio",
@@ -17114,6 +17124,15 @@
       },
       {
         "assembly": "Hecton8.Core",
+        "line": 198,
+        "namespace": "Hecton8.Core.GlobalRegistry.LocalizationTextExpansion",
+        "path": "Assets/_Project/Scripts/AudioLog/AudioLogData.cs",
+        "sourceDomain": "Hecton8.Narrative",
+        "targetDomain": "Hecton8.Core",
+        "text": "ILocalizationTextExpansionReadModel localization = Hecton8.Core.GlobalRegistry.LocalizationTextExpansion;"
+      },
+      {
+        "assembly": "Hecton8.Core",
         "line": 394,
         "namespace": "Hecton8.Core.GlobalRegistry.AudioLogRuntime",
         "path": "Assets/_Project/Scripts/AudioLog/AudioLogPickup.cs",
@@ -17142,11 +17161,11 @@
       {
         "assembly": "Hecton8.Core",
         "line": 1334,
-        "namespace": "Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext",
+        "namespace": "Hecton8.Core.GlobalRegistry.Player",
         "path": "Assets/_Project/Scripts/AudioLog/AudioLogSystem.cs",
         "sourceDomain": "Hecton8.Narrative",
         "targetDomain": "Hecton8.Core",
-        "text": "_cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;"
+        "text": "_cachedPlayerContext = Hecton8.Core.GlobalRegistry.Player;"
       },
       {
         "assembly": "Hecton8.Core",
@@ -17196,20 +17215,20 @@
       {
         "assembly": "Hecton8.Core",
         "line": 299,
-        "namespace": "Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext",
+        "namespace": "Hecton8.Core.GlobalRegistry.Player",
         "path": "Assets/_Project/Scripts/BarterRuntimeSmokeTester.cs",
         "sourceDomain": "Hecton8.Dev",
         "targetDomain": "Hecton8.Core",
-        "text": "playerInventory = (Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext != null ? Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext.Inventory : null);"
+        "text": "playerInventory = (Hecton8.Core.GlobalRegistry.Player != null ? Hecton8.Core.GlobalRegistry.Player.Inventory : null);"
       },
       {
         "assembly": "Hecton8.Core",
         "line": 299,
-        "namespace": "Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext.Inventory",
+        "namespace": "Hecton8.Core.GlobalRegistry.Player.Inventory",
         "path": "Assets/_Project/Scripts/BarterRuntimeSmokeTester.cs",
         "sourceDomain": "Hecton8.Dev",
         "targetDomain": "Hecton8.Core",
-        "text": "playerInventory = (Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext != null ? Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext.Inventory : null);"
+        "text": "playerInventory = (Hecton8.Core.GlobalRegistry.Player != null ? Hecton8.Core.GlobalRegistry.Player.Inventory : null);"
       },
       {
         "assembly": "Hecton8.Core",
@@ -17537,16 +17556,16 @@
       },
       {
         "assembly": "Hecton8.Core",
-        "line": 953,
-        "namespace": "Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext",
+        "line": 966,
+        "namespace": "Hecton8.Core.GlobalRegistry.Player",
         "path": "Assets/_Project/Scripts/BiomeMatrixDirector.cs",
         "sourceDomain": "Hecton8.Environment",
         "targetDomain": "Hecton8.Core",
-        "text": "_playerRuntimeContext ??= Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;"
+        "text": "_playerRuntimeContext ??= Hecton8.Core.GlobalRegistry.Player;"
       },
       {
         "assembly": "Hecton8.Core",
-        "line": 957,
+        "line": 970,
         "namespace": "Hecton8.Core.GlobalRegistry.AtmosphereReadModel",
         "path": "Assets/_Project/Scripts/BiomeMatrixDirector.cs",
         "sourceDomain": "Hecton8.Environment",
@@ -17555,7 +17574,7 @@
       },
       {
         "assembly": "Hecton8.Core",
-        "line": 1439,
+        "line": 1452,
         "namespace": "Hecton8.Items.ItemData",
         "path": "Assets/_Project/Scripts/BiomeMatrixDirector.cs",
         "sourceDomain": "Hecton8.Environment",
@@ -18812,15 +18831,6 @@
         "sourceDomain": "Hecton8.Dev",
         "targetDomain": "Hecton8.Core",
         "text": "Camera playerCamera = Hecton8.Core.GlobalRegistry.Player != null && Hecton8.Core.GlobalRegistry.Player.PlayerCamera != null"
-      },
-      {
-        "assembly": "Hecton8.Core",
-        "line": 284,
-        "namespace": "Hecton8.Core.GlobalRegistry.Player.PlayerCamera",
-        "path": "Assets/_Project/Scripts/BuilderRuntimeSmokeTester.cs",
-        "sourceDomain": "Hecton8.Dev",
-        "targetDomain": "Hecton8.Core",
-        "text": "? Hecton8.Core.GlobalRegistry.Player.PlayerCamera"
       }
     ]
   },
@@ -18936,7 +18946,7 @@
         "targetDomain": "Hecton8.World"
       },
       {
-        "count": 29,
+        "count": 30,
         "sourceDomain": "Hecton8.Interaction",
         "targetDomain": "Hecton8.Core"
       },
@@ -21633,6 +21643,6 @@
         "targetDomain": "Hecton8.UI"
       }
     ],
-    "usingCount": 3656
+    "usingCount": 3658
   }
 }

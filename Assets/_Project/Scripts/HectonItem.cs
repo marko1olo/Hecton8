@@ -580,7 +580,7 @@ namespace Hecton8.Items
             }
 
             if (!itemData.TryWriteInteractText(Hecton8.Core.GlobalRegistry.LocalizationText, _cachedInteractTextBuffer, out _cachedInteractTextLength))
-                _cachedInteractTextLength = CopySpanToInteractBuffer(itemData.GetInteractText().AsSpan());
+                _cachedInteractTextLength = CopySpanToInteractBuffer(UnknownInteractText);
         }
 
         private int CopySpanToInteractBuffer(System.ReadOnlySpan<char> source)

@@ -1,13 +1,13 @@
 ﻿{
   "schema": "hecton8.documentation_actuality_scan.x012.v1",
-  "generatedUtc": "2026-05-25T00:16:23.777240+00:00",
+  "generatedUtc": "2026-05-25T00:19:56.434609+00:00",
   "repoRoot": "C:\\hades\\Hecton8",
   "scope": "repository root approved text anchors plus Docs/**/*.md/txt",
   "checks": {
-    "activeFileCount": 591,
-    "activeWordCount": 539756,
-    "inventoryFileCount": 4837,
-    "inventoryWordCount": 33425852,
+    "activeFileCount": 592,
+    "activeWordCount": 540349,
+    "inventoryFileCount": 4838,
+    "inventoryWordCount": 33428901,
     "rootTextDocs": [
       "AGENTS.md",
       "BUILD_PLAYTEST_ISSUES.md",
@@ -33,11 +33,11 @@
     "sourceSyncPass": true,
     "wordReduction": {
       "method": "current active words plus X_012 archived report/root words minus concise replacement anchor words",
-      "activeWordCountAfter": 539756,
-      "reconstructedActiveWordCountBefore": 1196960,
+      "activeWordCountAfter": 540349,
+      "reconstructedActiveWordCountBefore": 1197553,
       "retiredActiveWords": 657204,
-      "reductionRatio": 0.5490609544178586,
-      "reductionPercent": 54.906095441785865,
+      "reductionRatio": 0.5487890723834352,
+      "reductionPercent": 54.87890723834352,
       "reductionPass": true,
       "archivedRootFiles": 2,
       "archivedReportFiles": 160,
@@ -51,7 +51,7 @@
     },
     "architecture": {
       "activeArchitectureFileCount": 192,
-      "activeArchitectureWordCount": 164255,
+      "activeArchitectureWordCount": 164352,
       "markerHits": {
         "docGlobalRefreshMarkers": 0,
         "r51BoundaryBoilerplate": 0,
@@ -67,15 +67,8 @@
       "strictUnstructuredSentencesOverThreshold": [],
       "strictUnstructuredSentenceCount": 0,
       "strictStructuredLineThresholdWords": 30,
-      "strictStructuredLinesOverThreshold": [
-        {
-          "path": "Docs/ARCHITECTURE/README.md",
-          "line": 53,
-          "wordCount": 33,
-          "preview": "- It also covers loop151 rebind gaps, loop153 owner-cache ownership, loop154-156 Dispatcher tails, loop157 UI/Construction singleton tail removal, loop158 world"
-        }
-      ],
-      "strictStructuredLineCount": 1,
+      "strictStructuredLinesOverThreshold": [],
+      "strictStructuredLineCount": 0,
       "strictFileWordThreshold": 2500,
       "strictFilesOverWordThreshold": [],
       "strictFileWordCount": 0,
@@ -83,9 +76,9 @@
       "strictNonContractTextFileCount": 0,
       "tutorialMarkerHits": [],
       "tutorialMarkerHitCount": 0,
-      "pass": false
+      "pass": true
     },
     "activeParameterSyncPass": true,
-    "finalPass": false
+    "finalPass": true
   }
 }
