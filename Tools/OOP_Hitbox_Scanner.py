@@ -472,6 +472,7 @@ def main() -> int:
     leviathan_tentacle_solver = SCRIPTS / "Fauna" / "LeviathanTentacleVerletSolver.cs"
     system_dispatcher = SCRIPTS / "Core" / "SystemDispatcher.cs"
     global_signal_payloads = SCRIPTS / "Core" / "Signals" / "GlobalSignalPayloads.DomainRemainder.cs"
+    signal_bus_runtime = SCRIPTS / "Core" / "Signals" / "SignalBusRuntime.cs"
     camera_juice_burst = SCRIPTS / "VFX" / "CameraJuiceSystem_CameraJuiceBurst.cs"
     soundscape_system = SCRIPTS / "World" / "SoundscapeSystem.cs"
     decal_vault = SCRIPTS / "Visor" / "DynamicDecalVaultRuntime.cs"
@@ -904,6 +905,11 @@ def main() -> int:
     combat_damage_signal_codec_block = extract_csharp_block_after(
         global_signal_payloads_text,
         "private static bool TryResolveRuntimePointAup",
+    )
+    signal_bus_runtime_text = read_source(signal_bus_runtime)
+    combat_damage_coalescing_block = extract_csharp_block_after(
+        signal_bus_runtime_text,
+        "private static bool TryCoalesceCombatDamage",
     )
     cas_torture_block = extract_csharp_block_after(
         armor_runtime_text,
@@ -1653,6 +1659,9 @@ def main() -> int:
             "submarineHullDentStillUsesTypedVisualProjection": (
                 "SignalBus<HullDeformedSignal>.TryPush(in deformedSignal)" in read_source(SCRIPTS / "Vehicles" / "VFX" / "HullDentShaderController.cs")
             ),
+            "signalBusCoalescingKeepsVisualOnlySeparate": (
+                "((existing.Flags ^ incoming.Flags) & CombatDamageSignal.VisualOnlyFlag) != 0" in combat_damage_coalescing_block
+            ),
             "verdict": (
                 "PASS"
                 if "public const byte VisualOnlyFlag = 1 << 2;" in global_signal_payloads_text
@@ -1663,6 +1672,7 @@ def main() -> int:
                     "return false;",
                 )
                 and "signal.Flags = CombatDamageSignal.DirectRuntimeFlag | CombatDamageSignal.VisualOnlyFlag;" in submarine_hull_dent_block
+                and "((existing.Flags ^ incoming.Flags) & CombatDamageSignal.VisualOnlyFlag) != 0" in combat_damage_coalescing_block
                 else "FAIL"
             ),
             "contract": (

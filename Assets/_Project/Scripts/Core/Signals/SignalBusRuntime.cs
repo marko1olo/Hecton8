@@ -1033,7 +1033,8 @@ namespace Hecton8.Core.Contracts.Signals
                 ref CombatDamageSignal existing = ref UnsafeUtility.As<T, CombatDamageSignal>(ref existingGeneric);
                 if (existing.TargetHash != incoming.TargetHash ||
                     existing.DamageType != incoming.DamageType ||
-                    existing.Channel != incoming.Channel)
+                    existing.Channel != incoming.Channel ||
+                    ((existing.Flags ^ incoming.Flags) & CombatDamageSignal.VisualOnlyFlag) != 0)
                 {
                     continue;
                 }

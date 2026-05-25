@@ -155,6 +155,12 @@ namespace Hecton8.Building
             return string.IsNullOrWhiteSpace(moduleName) ? "Build" : moduleName;
         }
 
+        /// <summary>
+        /// Writes the construction prompt into a caller-owned buffer.
+        /// </summary>
+        /// <param name="destination">Destination buffer for the visible prompt.</param>
+        /// <param name="length">Number of characters written.</param>
+        /// <returns>True when the prompt fits in the provided buffer.</returns>
         public bool TryWriteBuildText(Span<char> destination, out int length)
         {
             length = 0;

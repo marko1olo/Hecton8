@@ -471,6 +471,7 @@
     "save_voxel_snapshot_growth_blocked_during_borrow": true,
     "save_voxel_snapshot_per_save_nativearray_absent": true,
     "scheduled_carve_write_buffer_fixed_capacity_present": true,
+    "stamp_graphics_buffer_invalid_fail_closed": true,
     "streaming_scratch_post_lease_growth_absent": true,
     "surface_nets_gpu_initialize_respects_inflight_release": true,
     "surface_nets_gpu_partial_lock_failure_unlocks": true,
@@ -799,7 +800,8 @@
       "overflow_coalescing_expands_coverage_present": true,
       "overflow_policy": "Same-frame stamp queues are bounded; when capacity is saturated, the newest visual stamp expands the final command slot coverage radius instead of overwriting its center, growing the GraphicsBuffer, or allocating.",
       "quality_resize_inactive_gate_present": true,
-      "quality_scaled_runtime_dimensions_present": true
+      "quality_scaled_runtime_dimensions_present": true,
+      "stamp_graphics_buffer_invalid_fail_closed": true
     },
     "duration_seconds": 120,
     "frames": 7200,

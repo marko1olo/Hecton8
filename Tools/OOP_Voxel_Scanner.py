@@ -1143,6 +1143,11 @@ def damage_volume_pressure():
     damage_update_start = sargassum_text.find("private void ProcessQueuedDamageVolumeUpdate")
     damage_update_end = sargassum_text.find("private void QueueGlobalPublish", damage_update_start)
     damage_update_block = sargassum_text[damage_update_start:damage_update_end] if damage_update_start >= 0 and damage_update_end > damage_update_start else ""
+    mask_resolver_start = sargassum_text.find("private GraphicsBuffer ResolveStampCommandWriteBuffer")
+    damage_resolver_start = sargassum_text.find("private GraphicsBuffer ResolveDamageVolumeStampCommandWriteBuffer")
+    mask_resolver_block = sargassum_text[mask_resolver_start:damage_resolver_start] if mask_resolver_start >= 0 and damage_resolver_start > mask_resolver_start else ""
+    damage_resolver_end = sargassum_text.find("private void RefreshMaskWorldRect", damage_resolver_start)
+    damage_resolver_block = sargassum_text[damage_resolver_start:damage_resolver_end] if damage_resolver_start >= 0 and damage_resolver_end > damage_resolver_start else ""
     sargassum_consts = extract_int_constants(FILES["sargassum"])
     damage_stamp_capacity = sargassum_consts.get("DamageVolumeStampCapacity", 0)
     cut_stamp_capacity = sargassum_consts.get("StampCommandCapacity", 0)
@@ -1211,6 +1216,12 @@ def damage_volume_pressure():
         "uploadedDamageVolumeStampCount = safeQueuedDamageVolumeStampCount",
         "_damageVolumeCompute.SetInt(_DamageVolumeStampCountId, uploadedDamageVolumeStampCount)",
     ])
+    stamp_resolvers_invalid_fail_closed = (
+        "return _stampCommandBufferB != null && _stampCommandBufferB.IsValid()" in mask_resolver_block
+        and ": null;" in mask_resolver_block
+        and "return _damageVolumeStampCommandBufferB != null && _damageVolumeStampCommandBufferB.IsValid()" in damage_resolver_block
+        and ": null;" in damage_resolver_block
+    )
     return {
         "damage_stamp_capacity_per_frame": damage_stamp_capacity,
         "cut_mask_stamp_capacity_per_frame": cut_stamp_capacity,
@@ -1228,6 +1239,7 @@ def damage_volume_pressure():
         "overflow_coalescing_expands_coverage_present": overflow_expands_coverage,
         "cut_mask_upload_fail_closed_present": mask_upload_fail_closed,
         "damage_volume_upload_fail_closed_present": damage_upload_fail_closed,
+        "stamp_graphics_buffer_invalid_fail_closed": stamp_resolvers_invalid_fail_closed,
         "binary_qualitysettings_route_absent": "QualitySettings.GetQualityLevel" not in sargassum_text,
         "minimum_survival_damage_volume_resolution_xzy": [min_res, min_depth, min_res],
         "minimum_survival_ping_pong_texture_bytes_per_dispatch": min_texture_bytes * 2,
@@ -2583,6 +2595,7 @@ def build_report():
             and damage["cut_mask_stamp_capacity_per_frame"] > 0
             and damage["cut_mask_upload_fail_closed_present"]
             and damage["damage_volume_upload_fail_closed_present"]
+            and damage["stamp_graphics_buffer_invalid_fail_closed"]
         ),
         "carve_ingress_queue_bounded": (
             carve_queue["queued_carve_event_capacity"] > 0
@@ -2612,6 +2625,7 @@ def build_report():
         "damage_volume_energy_gated": damage["energy_gated_dispatch_present"],
         "damage_volume_gpu_upload_fail_closed": damage["damage_volume_upload_fail_closed_present"],
         "cut_mask_gpu_upload_fail_closed": damage["cut_mask_upload_fail_closed_present"],
+        "stamp_graphics_buffer_invalid_fail_closed": damage["stamp_graphics_buffer_invalid_fail_closed"],
         "damage_volume_binary_quality_route_absent": damage["binary_qualitysettings_route_absent"],
         "global_datavault_dirty_chunk_recycler_proven": dirty_chunk["global_datavault_recycler_proven"],
         "global_datavault_dirty_chunk_hot_swap_rebind_present": dirty_chunk["global_datavault_hot_swap_rebind_present"],

@@ -491,3 +491,5 @@ Rule quote: "Physical simulation is allowed only when gameplay correctness break
 - OOP scanner rerun after RLE vault staging cap: PASS_STATIC_WITH_BUDGETED_UNITY_MESH_UPLOAD_RESIDUAL, failed gates none.
 - Build not launched after RLE vault staging cap: gate sampled CPU 81%, then 100% and 100% over two rechecks, with zero active compiler/build processes. Project rule forbids dotnet build launch above 50% CPU.
 - Build gate rechecked after sector-stat cap extension: CPU 100% with active `dotnet.exe` and `csc.exe`. No build launched.
+- Sargassum stamp GraphicsBuffer resolver patched: cut-mask and damage-volume stamp write-buffer resolvers now return `null` when both double-buffered GraphicsBuffers are invalid, instead of returning an invalid B buffer. Scanner now gates `stamp_graphics_buffer_invalid_fail_closed=true` under the graphics stamp buffer proof.
+- OOP scanner rerun after invalid-buffer resolver patch: PASS_STATIC_WITH_BUDGETED_UNITY_MESH_UPLOAD_RESIDUAL, failed gates none.
