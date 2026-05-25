@@ -3089,7 +3089,7 @@ namespace Hecton8.Crafting
             _resourceScarcityDirector = GlobalRegistry.ResourceScarcity;
             _powerGridService = GlobalRegistry.PowerGrid;
             _persistentWorldRegistry = GlobalRegistry.PersistentWorldRegistry;
-            _audioService = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
+            _audioService = GlobalRegistry.Audio;
             _localizationManager = Hecton8.Core.GlobalRegistry.LocalizationText;
             CacheScanLogSystem(Hecton8.Core.GlobalRegistry.ScanLogService);
         }

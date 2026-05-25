@@ -4247,7 +4247,7 @@ namespace Hecton8.Audio
 
         private void RefreshAudioRuntimeServicesCold()
         {
-            CacheAudioRuntimeService(Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance, Hecton8.Core.SystemDispatcher.CurrentFrameIndex);
+            CacheAudioRuntimeService(GlobalRegistry.Audio, Hecton8.Core.SystemDispatcher.CurrentFrameIndex);
         }
 
         private void RefreshAudioRuntimeServicesIfStale()
@@ -4259,7 +4259,7 @@ namespace Hecton8.Audio
                 return;
             }
 
-            CacheAudioRuntimeService(Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance, frame);
+            CacheAudioRuntimeService(GlobalRegistry.Audio, frame);
         }
 
         private void CacheAudioRuntimeService(IAudioService audioService, int frame)

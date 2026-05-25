@@ -318,7 +318,7 @@ GlobalQualityWeight behavior:
 
 
 
-Quality scales cadence, noise richness, pulse multiplier, and surge gain through `math.lerp`, `math.smoothstep`, and polynomial smoothing. It does not change DTO layout, BufferID identity, ownership, or rollback route.
+Quality scales cadence, noise richness, pulse multiplier, and surge gain through `math.lerp`, `math.smoothstep`, and polynomial smoothing. It does not change DTO layout, BufferID, ownership, or rollback route.
 
 
 

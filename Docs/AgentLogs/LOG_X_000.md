@@ -779,3 +779,37 @@ Verification:
 - Clean build and full Roslyn audit refresh are pending because the current build gate reports CPU 100% with active `dotnet`/`csc`.
 - X_000 targeted removals now total at least 74 persistent native aliases/alias carriers.
 - Project-wide purge remains incomplete.
+
+## T.A.R.S. Override Slice 21 - Hecton World Generator LUT Vault Migration
+
+What was wrong:
+- `HectonWorldGenerator` stored `_westLUT`, `_eastLUT`, and `_biomeLUT` as persistent `NativeArray<float>` fields in a MonoBehaviour.
+- Public read helpers `GetBiomeAt` and `GetWorldHeight` called `EnsureLUTs`, so reads could lazily allocate/grow native buffers.
+
+What was done:
+- Added BufferIDs `74385..74387` for west slope LUT, east slope LUT, and biome remap LUT under `SystemID.WorldStreaming`.
+- Replaced the three native fields with `VaultGenerationHandle<float>` descriptors plus cached `IDataVault`.
+- LUTs are filled under DataVault writer locks in `EnsureLUTs`; scheduled chunk jobs receive method-local LUT views only.
+- DataVault replacement completes pending chunk teardown before releasing old LUT handles.
+- `GetBiomeAt` and `GetWorldHeight` now use read-only LUT handle resolution or direct curve fallback. No read accessor calls `EnsureLUTs`.
+- Editor preview uses local `Allocator.TempJob` LUTs only when DataVault LUTs are unavailable and disposes them in `finally`.
+
+Cinematic cheats used:
+- Kept the existing 1024-sample curve LUTs. This is the cheap visual fake: terrain jobs sample pre-baked curve lanes instead of evaluating managed curves per vertex.
+- Low tier keeps the current chunk cadence and LUT resolution. Middle/High/Ultra can spend budget on chunk density, biome material richness, and presentation, not on changing LUT ownership.
+
+Exact microseconds saved:
+- Profiler proof is not available from shell. Static effect is removal of three persistent MonoBehaviour native aliases and removal of hidden native setup from two public read helpers.
+- Expected GC delta: 0 B/frame. DataVault buffers are fixed native payloads; editor preview temp LUTs are local `Allocator.TempJob` and disposed before command exit.
+
+ARM64 proof:
+- Each LUT is `float[1024]`: 4096 bytes, 4096 % 8 = 0.
+- Combined LUT payload is 12288 bytes, 12288 % 8 = 0.
+- No `double`, `long`, or `ulong` lane exists in the LUT payloads.
+
+Verification:
+- Scoped regex for direct persistent underscore native collection fields in `HectonWorldGenerator.cs` and `CrashTelemetryBuffer.cs`: 0 findings.
+- `git diff --check` for touched code/docs reports no whitespace errors.
+- Clean build and full Roslyn audit refresh are pending because the current build gate reports CPU above 70% with active `dotnet`/`csc`.
+- X_000 targeted removals now total at least 77 persistent native aliases/alias carriers.
+- Project-wide purge remains incomplete.

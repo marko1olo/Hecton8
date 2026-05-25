@@ -43,7 +43,7 @@ Black box:
 
 - Last 300 frames are written to `BufferID.AudioVocalWarningTelemetry`.
 - Fault or overbudget state dumps to `Docs/AgentLogs/Dump_SHINOBU_352.bin`.
-- Dump format is a fixed 32-byte `VwsTelemetryDumpHeader` followed by oldest-to-newest raw `VwsTelemetryEntry` rows. The writer uses `FileStream.Write(ReadOnlySpan<byte>)` from the native ring and does not use `BinaryWriter`.
+- Dump format is a 32-byte `VwsTelemetryDumpHeader` followed by oldest-to-newest raw `VwsTelemetryEntry` rows. The writer uses `FileStream.Write(ReadOnlySpan<byte>)` from the native ring and does not use `BinaryWriter`.
 - Queue/current/dispatch/tuning/profile/telemetry owner writes use raw `NativeArrayUnsafeUtility` pointers plus `UnsafeUtility.AsRef`; heap swaps already use raw refs through `VocalWarningHeapOps`.
 
 Editor proof:

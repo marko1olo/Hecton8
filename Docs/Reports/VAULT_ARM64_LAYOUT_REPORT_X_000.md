@@ -900,3 +900,18 @@ DataVault buffers: `CrashTelemetryRing`, `CrashTelemetryExportSnapshot`, `CrashT
 
 Padding map: primitive `byte` scratch has no DTO padding. The scratch byte count is header 16 + 1000 * 64.
 Size proof: every custom DTO row is 8-byte-clean; total export scratch byte length is also divisible by 8.
+
+## HectonWorldGenerator Primitive LUT Buffers
+
+Source: `Assets/_Project/Scripts/HectonWorldGenerator.cs`
+DataVault buffers: `HectonWorldGeneratorWestSlopeLut`, `HectonWorldGeneratorEastSlopeLut`, `HectonWorldGeneratorBiomeLut`.
+
+| Payload | Element size | Capacity | Byte proof | 8-byte scalar risk |
+| --- | ---: | ---: | --- | --- |
+| `float` west slope LUT | 4 | 1024 | 4096 bytes; 4096 % 8 = 0 | none; 4-byte float lanes |
+| `float` east slope LUT | 4 | 1024 | 4096 bytes; 4096 % 8 = 0 | none; 4-byte float lanes |
+| `float` biome remap LUT | 4 | 1024 | 4096 bytes; 4096 % 8 = 0 | none; 4-byte float lanes |
+
+Padding map: primitive float LUTs have no DTO padding.
+Size proof: each LUT payload and the 12288-byte combined payload are divisible by 8.
+8-byte field proof: no `double`, `long`, or `ulong` field exists in these payloads.

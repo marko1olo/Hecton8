@@ -414,7 +414,7 @@ namespace Hecton8.Audio.Prologue
 
         private void RefreshRuntimeServicesCold()
         {
-            CacheAudioService(Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance);
+            CacheAudioService(GlobalRegistry.Audio);
             _tickDispatcher = GlobalRegistry.TickDispatcher;
         }
 

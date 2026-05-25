@@ -66,7 +66,7 @@ Rejected range: `71860..71869`, already occupied by `SHINOBU_160` telemetry expo
 
 The manager stores generation handles and audio-thread raw pointers derived from Vault views.
 
-It owns no private persistent `NativeArray` allocations. MMF release is fenced by an audio-callback in-flight counter, so hot-swap/teardown cannot release a mapped view during the Burst function pointer.
+It owns no persistent `NativeArray` allocations. MMF release is fenced by an audio-callback in-flight counter, so hot-swap/teardown cannot release a mapped view during the Burst function pointer.
 
 ## Dear Lie Radio Filter
 
@@ -82,7 +82,7 @@ It owns no private persistent `NativeArray` allocations. MMF release is fenced b
 
 ## Rollback Boundary
 
-Voice playback is presentation-only. It must not enter StateRingBuffer, save Merkle, WAL, deterministic gameplay authority, or network rollback truth. Critical proof is the 300-frame black-box dump at `Docs/AgentLogs/Dump_SHINOBU_260.bin`.
+Voice playback is presentation-only. It must not enter StateRingBuffer, save Merkle, WAL, deterministic gameplay authority, or network rollback truth. Proof is the 300-frame black-box dump at `Docs/AgentLogs/Dump_SHINOBU_260.bin`.
 
 ## Static Verification
 

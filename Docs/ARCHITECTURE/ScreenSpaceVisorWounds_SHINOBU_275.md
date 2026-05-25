@@ -27,10 +27,10 @@ Owner: Echelon 8 Presentation & UX / Screen-Space Wounds & Decals
 - Runtime public wound ingress fails closed unless cold storage exists from feature `Create()` or DataVault hot-swap rebind.
 - Affected APIs: `TryEnqueueRuntimeImpact`, `TryEnqueueAupImpact`.
 - It cannot poll `GlobalRegistry`, allocate/prewarm queues, or request Vault handles from damage producer calls.
-- Public/mock wound ingress fails closed while a visual-sync job is pending, increments dropped-ingress telemetry, and does not query or enqueue into the `NativeQueue` during the scheduled dequeue window.
+- Public/mock wound ingress fails closed while a visual-sync job is pending, increments dropped-ingress telemetry, and does not query or enqueue into the `NativeQueue` during the dequeue window.
 - Signal-snapshot ingestion resolves material-profile Vault array and tuning DTO once per visual-sync pass, then reuses immutable values for all high-speed/combat signals.
 - Existing visor noir postprocessing consumes the same visual language through `Hecton_VisorGlitchACES.shader`: torn-edge serration and procedural crack masks are active in the serialized PC renderer route.
-- Noir integration is pre-tonemap. URP Volume Tonemapping owns final ACES; the active Noir shader performs grade/glitch/crack shaping without a local fragment tonemap curve or `saturate(color)` HDR clamp.
+- Noir integration is pre-tonemap. URP Volume Tonemapping owns final ACES; the Noir shader performs grade/glitch/crack shaping without a local fragment tonemap curve or `saturate(color)` HDR clamp.
 - Active Noir constant generation/upload is dispatcher-owned through `HectonVisorUberPostFeature.LateFrameTick`.
 - `AddRenderPasses()` only checks last valid `GraphicsBuffer` and enqueues the RenderGraph pass.
 - One-row mock/parameter math is direct scalar code, not tiny `IJob.Run()`.
@@ -91,7 +91,7 @@ Owner: Echelon 8 Presentation & UX / Screen-Space Wounds & Decals
 - cameraPosition.y)` rather than a hard `step`.
 - Loop 31 removes hard crack reveal thresholds: procedural and texture-driven crack reveals use narrow `smoothstep` bands against `damage01`.
 - Loop 32 removes the radial falloff exponent-family snap: `FastRadialFalloff01()` blends low/high polynomial approximations with `smoothstep(1.85, 2.15, e)`.
-- No active Noir synchronous Burst job route remains; batched visor wound work still uses Burst, while the one-record Noir CBuffer math stays owner-local to avoid a scheduler tax.
+- No Noir synchronous Burst job route remains; batched visor wound work still uses Burst, while the one-record Noir CBuffer math stays owner-local to avoid a scheduler tax.
 - No runtime damage ingress path may call `EnsureInitialized()`; cold initialization is confined to `TryInitializeColdStorage`, hot-swap rebind, CSV/profile/editor tuning, mock generation, and fault dump/bootstrap lanes.
 - Active wounds scale continuously from 8 to 128 via `HomeostasisBrain.GlobalQualityWeight`; thermal pressure accelerates fade.
 - `DecalTuningDTO.NormalRefractionIntensity` is cold/editor-tunable and feeds `_GlobalVisorWoundRefractionParams.x`.

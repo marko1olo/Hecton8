@@ -4880,7 +4880,7 @@ namespace Hecton8.Gameplay
         {
             _atmosphereRuntime = Hecton8.Core.GlobalRegistry.AtmosphereReadModel;
             _cachedPlayerInventoryService = Hecton8.Core.GlobalRegistry.PlayerInventory;
-            _cachedAudioService = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
+            _cachedAudioService = Hecton8.Core.GlobalRegistry.Audio;
             _cachedSpatialAudioSfxRoute = _cachedAudioService as ISpatialAudioSfxMixerRouteReadModel;
             _cachedObjectPool = Hecton8.Core.GlobalRegistry.ObjectPoolService;
             _cachedPlayerRuntime = Hecton8.Core.GlobalRegistry.Player;

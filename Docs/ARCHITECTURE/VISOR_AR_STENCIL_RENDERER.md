@@ -84,7 +84,7 @@ Player/runtime builds must not load human-readable visor profiles from `Streamin
 - The AR shader uses hard-coded `Ref 1` and `ReadMask 1`.
 - HUD params, digit params, and the compacted 16-row target buffer are uploaded through double-buffered `GraphicsBuffer.LockBufferForWrite` plus `UnsafeUtility.MemCpy`; unused target rows are cleared with `UnsafeUtility.MemClear`.
 - The shader loops only over the uploaded active target count.
-- Chroma uses a branchless `smoothstep` admission weight: survival-tier quality collapses chroma contribution toward neutral, middle/high quality ramps continuously, and no binary quality branch selects a separate shader path.
+- Chroma uses a branchless `smoothstep` admission weight: survival-tier quality collapses chroma contribution toward neutral, middle/high quality ramps continuously, and no binary quality branch selects a shader path.
 - 7. Non-finite projection faults dump a 32-byte little-endian header plus raw `VisorTelemetryEntry` rows to `Docs/AgentLogs/Dump_SHINOBU_270.bin`.
 - Over-budget frames remain telemetry flags and do not perform render-side disk I/O.
 - 8.

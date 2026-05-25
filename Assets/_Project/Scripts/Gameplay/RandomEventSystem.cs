@@ -1386,7 +1386,7 @@ namespace Hecton8.Gameplay
         private void CacheRegistryServicesCold()
         {
             _cachedLocalization = GlobalRegistry.LocalizationText;
-            _cachedSpatialAudioManager = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance as IMeteorShowerAudioSink;
+            _cachedSpatialAudioManager = GlobalRegistry.Audio as IMeteorShowerAudioSink;
             _cachedObjectPool = GlobalRegistry.ObjectPoolService;
             _cachedPlayerContext = GlobalRegistry.Player;
             _cachedVoxelEngine = GlobalRegistry.VoxelEngine;

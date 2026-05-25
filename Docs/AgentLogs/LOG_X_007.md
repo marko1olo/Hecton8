@@ -952,3 +952,20 @@ Exact Microseconds saved:
 
 Verification:
 Full scanner regenerated in `553.5s`: `scannedCSharpFiles = 2406`, `remainingTranscendentalTotal = 0`, `hardFailures = []`, `powerDestinationMaskEquivalenceProof.checkedCases = 245`, `mismatchCount = 0`, `maxWeightedPotentialAbsDiff = 0`, `maxConductanceSumAbsDiff = 0`, `maxBatteryCurrentAbsDiff = 0`. Build repeat blocked by CPU `96`, active `csc` PID `55824`, and active `dotnet` PID `54420`.
+
+## 2026-05-25 Runtime Atmosphere Power FloatMode Determinism Gate
+
+What was wrong:
+Six runtime atmosphere/power Burst files in the X_007 math lane still used `FloatMode.Fast`: `BaseAtmosphereMath`, `GasDynamicsSolver`, `ShinobuOceanSurfaceAtmosphereContracts`, `SurfaceWeatherMath`, `ToxicOutgassingChemistryRuntime`, and `WfcOutpostGraphTranslationJob`. That is not acceptable for deterministic proof of physical/ecological solver lanes.
+
+What was done:
+Changed those Burst attributes to `FloatMode.Deterministic` and extended `Tools/OOP_MathLOD_Scanner.py` audited branch files to include them. The scanner now hard-fails if any of these files regains Fast mode.
+
+Cinematic Cheats used:
+None. This is deterministic contract hardening. Quality scaling remains cadence, iteration, sampling, and visual/detail budget only.
+
+Exact Microseconds saved:
+0 verified microseconds. Deterministic float mode can cost cycles; no speed claim is made without profiler data.
+
+Verification:
+`python -B -c "import ast, pathlib; ast.parse(pathlib.Path('Tools/OOP_MathLOD_Scanner.py').read_text(encoding='utf-8'))"` passed. Full scanner regenerated in `417.4s`: `scannedCSharpFiles = 2406`, `remainingTranscendentalTotal = 0`, `hardFailures = []`. Every audited atmosphere/power file reports `floatModeFastCount = 0`. Focused `git diff --check` passed for the six runtime files, scanner, and generated JSON.

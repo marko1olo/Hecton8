@@ -32,7 +32,7 @@ Unsupported mobile/GLES-era targets release PDA graphics buffers and fail closed
 - `348735` `PdaInterfaceProfileDTO[64]`, explicit 32-byte atlas UV profiles.
 - `348736` `byte[16384]`, cold CSV scratch mirror for `pda_interface_profiles.csv`.
 
-- On file platforms, the CSV ingestor reads packaged `Assets/StreamingAssets/Hecton8/PDA/pda_interface_profiles.csv` directly into the `348736` Vault scratch row through `FileStream.Read(Span<byte>)`, then parses `ReadOnlySpan<byte>` over the unmanaged scratch.
+- On file platforms, the CSV ingestor reads `Assets/StreamingAssets/Hecton8/PDA/pda_interface_profiles.csv` directly into the `348736` Vault scratch row through `FileStream.Read(Span<byte>)`, then parses `ReadOnlySpan<byte>` over the unmanaged scratch.
 - URI-backed StreamingAssets targets, including Android/Quest APK paths, do not attempt gameplay `FileStream` or `UnityWebRequest` staging.
 - They fail closed to owner-seeded deterministic default row until DataMonolith/binary import route is baked and boot-validated.
 - Repo-root `pda_interface_profiles.csv` remains an editor/development fallback only.

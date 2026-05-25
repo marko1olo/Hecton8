@@ -573,3 +573,21 @@ Scalability potential: Low/Middle/High/Ultra all share one crash DTO/export cont
 Hardware Impact: Confirms the three CrashTelemetryBuffer payloads removed from MonoBehaviour fields have 8-byte-clean DTO or byte-lane storage. Targeted removals remain at least 74 persistent aliases/alias carriers pending clean build and full Roslyn refresh.
 
 Status: BUILD PENDING / CRASH TELEMETRY BUFFER VAULT MIGRATION STATIC-PROOFED / PROJECT-WIDE PURGE INCOMPLETE
+
+## Decision 069 - HectonWorldGenerator LUT Handle Migration
+
+Problem: `HectonWorldGenerator` retained three persistent `NativeArray<float>` fields for west slope, east slope, and biome remap LUTs. These LUTs cross chunk job scheduling and public terrain read helpers, so retaining raw MonoBehaviour fields violated the native collection purge.
+Solution: Added WorldStreaming BufferIDs 74385..74387, replaced the three fields with `VaultGenerationHandle<float>` descriptors plus cached `IDataVault`, and fill the fixed LUT buffers under DataVault writer locks in `EnsureLUTs`. `HectonVertexJob` receives method-local LUT views at schedule time.
+Rejected Alternatives: Keeping the LUTs local because they are only 1024 floats each was rejected; small persistent native aliases still become stale under relocation. Converting jobs to call `AnimationCurve.Evaluate` was rejected because Burst jobs cannot use managed curve objects.
+Scalability potential: Low keeps the same 1024-sample LUTs and bounded chunk cadence. Middle/High/Ultra can increase chunk density or visual terrain detail without changing LUT ownership or terrain authority.
+Hardware Impact: Removes three persistent native aliases from a world-streaming MonoBehaviour. LUT payload total is 3 * 1024 * 4 = 12288 bytes, byte count divisible by 8, and contains no 8-byte scalar lane.
+
+## Decision 070 - HectonWorldGenerator Read Accessor De-Lazification
+
+Problem: `GetBiomeAt` and `GetWorldHeight` called `EnsureLUTs`, so read accessors could lazily allocate/grow native buffers.
+Solution: Removed `EnsureLUTs` from both read helpers. They now use `TryReadOnlyHandle` for existing LUTs and fall back to direct `AnimationCurve.Evaluate` when no LUT handle exists. Scheduling and preview generation remain explicit mutation/setup paths.
+Rejected Alternatives: Returning a hard zero when LUTs are unavailable was rejected because it would corrupt terrain queries before streaming setup. Keeping lazy `EnsureLUTs` was rejected because `Get*` paths must not allocate or mutate global state.
+Scalability potential: Low gets deterministic fallback without allocation. Middle/High/Ultra still use the fixed LUTs once owner setup has run; quality scaling is not tied to read accessor side effects.
+Hardware Impact: Removes hidden native allocation/regeneration from public terrain reads. Build proof remains pending under the CPU/compiler gate.
+
+Status: BUILD PENDING / HECTON WORLD GENERATOR LUT VAULT MIGRATION STATIC-PROOFED / PROJECT-WIDE PURGE INCOMPLETE

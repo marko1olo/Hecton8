@@ -444,3 +444,22 @@ Defragmentation implication: `CrashTelemetryBuffer` no longer stores `NativeArra
 ## Residual Project Truth - After CrashTelemetryBuffer Static Proof
 
 Scoped regex for direct persistent native collection fields in `CrashTelemetryBuffer.cs` returns 0 findings. Clean compile and full Roslyn ledger refresh are still pending because the current build gate reports CPU 100% with active `dotnet`/`csc` processes.
+
+## HectonWorldGenerator.cs
+
+Read-like/native ownership routes checked:
+- `GetBiomeAt` no longer calls `EnsureLUTs`. It tries `TryReadOnlyHandle` for the biome LUT and falls back to direct `AnimationCurve.Evaluate` if no DataVault handle exists.
+- `GetWorldHeight` no longer calls `EnsureLUTs`. It reads west/east/biome LUTs through `TryReadOnlyHandle` only and otherwise evaluates the configured curves directly.
+- `TryReadLut` validates the cached vault/handle and resolves a read-only native view only. It does not allocate/grow buffers, acquire writer locks, complete jobs, publish signals, or search scene state.
+
+Non-read ownership/write routes:
+- `EnsureLUTs` is an explicit owner setup path. It creates the three fixed 1024-float DataVault LUT buffers and fills them under writer locks.
+- `ScheduleChunkJob` resolves method-local LUT views immediately before scheduling `HectonVertexJob`; no LUT view is stored on the MonoBehaviour.
+- `DisposeLUTs(JobHandle)` force-completes the teardown dependency before releasing LUT handles, so chunk jobs cannot retain pointers into released DataVault storage.
+- `GenerateWorldPreview` is an explicit editor command. It uses DataVault LUT views when available or local `Allocator.TempJob` LUTs that are disposed in the command's `finally` block.
+
+Defragmentation implication: `HectonWorldGenerator` no longer stores `_westLUT`, `_eastLUT`, or `_biomeLUT` native array fields. Runtime state is descriptor-only, and public terrain read helpers no longer lazily allocate native buffers.
+
+## Residual Project Truth - After HectonWorldGenerator Static Proof
+
+Scoped regex for direct underscore-prefixed persistent native collection fields in `HectonWorldGenerator.cs` and `CrashTelemetryBuffer.cs` returns 0 findings. Clean compile and full Roslyn ledger refresh are pending because CPU and active compiler processes still block the project build gate.

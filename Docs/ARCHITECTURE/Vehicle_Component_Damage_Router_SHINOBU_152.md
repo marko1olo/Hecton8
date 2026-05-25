@@ -99,7 +99,7 @@ Canonical component hashes are lowercase FNV-1a values:
 | `sensors` | `0x5FD70E98` |
 | `power` | `0xF54F2346` |
 
-CSV bridge folds common aliases (`sensor`, `sonar`, `engines`, `reactor`, `battery`) into canonical hashes and ORs component-derived critical/flammable flags with initialized flags. Omitted flags cannot erase `OuterHull` breach semantics.
+CSV bridge folds aliases (`sensor`, `sonar`, `engines`, `reactor`, `battery`) into canonical hashes and ORs component-derived critical/flammable flags with initialized flags. Omitted flags cannot erase `OuterHull` breach semantics.
 
 ## Debug And Tools
 

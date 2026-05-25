@@ -676,3 +676,41 @@ powerDestinationMaskEquivalenceProof.maxBatteryCurrentAbsDiff = 0
 ```
 
 The remaining ternary in `PowerVoltageSolverJob` is the `DemandRate.IsCreated` native-array safety read. It is not an approximation kernel and not inside the CSR edge accumulation loop. Build repeat is still blocked by the project guard: CPU `96`, active `csc` PID `55824`, active `dotnet` PID `54420`.
+
+## 20. Runtime Atmosphere Power FloatMode Determinism Gate
+
+The X_007 deterministic Burst gate now covers the adjacent runtime atmosphere and power jobs, not only the central Math-LOD kernel files.
+
+Files added to the audited gate:
+
+```text
+Assets/_Project/Scripts/Atmosphere/BaseAtmosphereMath.cs
+Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs
+Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereContracts.cs
+Assets/_Project/Scripts/Atmosphere/SurfaceWeatherMath.cs
+Assets/_Project/Scripts/Atmosphere/ToxicOutgassingChemistryRuntime.cs
+Assets/_Project/Scripts/Power/WfcOutpostGraphTranslationJob.cs
+```
+
+Contract:
+
+```text
+FloatMode.Fast is forbidden in the audited X_007 solver file set.
+Manual grep is not sufficient; the scanner report is the proof artifact.
+```
+
+Latest proof from `Docs/Reports/MATH_LOD_OPTIMIZATION_REPORT_X_007.json`:
+
+```text
+scannedCSharpFiles = 2406
+remainingTranscendentalTotal = 0
+hardFailures = []
+branchAudit[BaseAtmosphereMath].floatModeFastCount = 0
+branchAudit[GasDynamicsSolver].floatModeFastCount = 0
+branchAudit[ShinobuOceanSurfaceAtmosphereContracts].floatModeFastCount = 0
+branchAudit[SurfaceWeatherMath].floatModeFastCount = 0
+branchAudit[ToxicOutgassingChemistryRuntime].floatModeFastCount = 0
+branchAudit[WfcOutpostGraphTranslationJob].floatModeFastCount = 0
+```
+
+Boundary: this is a scoped deterministic proof, not a project-wide claim. Remaining external `FloatMode.Fast` sites are visible debt for their owners; X_007 only changed runtime atmosphere/power solver lanes in this domain.

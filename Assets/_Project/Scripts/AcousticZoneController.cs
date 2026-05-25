@@ -1040,7 +1040,7 @@ namespace Hecton8.Audio
 
         private void CacheRegistryServicesCold()
         {
-            CacheAudioService(Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance);
+            CacheAudioService(GlobalRegistry.Audio);
             CacheSoundscapeReadModel(GlobalRegistry.SoundscapeTierReadModel);
             _atmosphereReadModel = GlobalRegistry.AtmosphereReadModel;
         }
