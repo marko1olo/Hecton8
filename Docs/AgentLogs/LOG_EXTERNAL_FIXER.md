@@ -1154,3 +1154,28 @@ Evidence:
 - STATIC_GREP: filtered tracked runtime scan now reports 0 exact `GlobalRegistry.Save`/`GlobalRegistry.SaveRuntime` reads outside excluded bootstrap/core/editor/owner paths.
 - CLI_COMPILE: not launched; CPU measured 93 percent with active `dotnet` and `csc`, even though `Temp\obj\Hecton8.Core\project.assets.json` exists again.
 - GIT: committed and pushed `e06f3f316 perf(save): close active reader sweep` to `main`.
+
+## 2026-05-25 - Audio Active Runtime Sweep 3
+
+What was wrong:
+- 71 filtered exact audio registry reads remained in tracked runtime source after prior sweeps.
+- The next coherent slice was 30 files in audio/gameplay/runtime helper paths, with many files dirty in the working tree.
+
+What was done:
+- Applied an LF-only zero-context staged patch from exact `HEAD` lines.
+- Routed exact `GlobalRegistry.Audio` and `Hecton8.Core.GlobalRegistry.Audio` reads through `Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance`.
+- Left dirty working-copy edits untouched.
+- Committed and pushed source tranche as `48860a8c9 perf(audio): route gameplay service readers`.
+
+Cinematic Cheats used:
+- None. This tranche is runtime service-route hygiene.
+
+Exact Microseconds saved:
+- STATIC estimate only: 35 exact audio service-locator reads removed from affected runtime/gameplay/helper routes. No profiler capture, no microsecond claim.
+
+Evidence:
+- STATIC_SOURCE: 30 staged source files.
+- CLI_DIFF: `git diff --cached --check` passed; staged stat was 30 files, 35 insertions, 35 deletions.
+- STATIC_GREP: malformed namespace/suffix grep found no `Hecton8.Core.Hecton8.Audio` or `SpatialAudioManager.ActiveRuntimeInstance*` corruption. Post-commit filtered counts: audio 36, localization 2, save 0.
+- CLI_COMPILE: not launched; `Temp\obj\Hecton8.Core\project.assets.json` exists, no compiler process was active, but CPU measured 55 percent then 94 percent after wait.
+- GIT: committed and pushed `48860a8c9 perf(audio): route gameplay service readers` to `main`.

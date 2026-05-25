@@ -1432,3 +1432,41 @@ Verification:
 Residual risk:
 - Internal preflight is not FNS XSD validation.
 - No XSD checksum pinning, KEP signature, ТКС/ЭДО submission or receipt lifecycle yet.
+
+## 2026-05-25 - Loop 41 - FNS KND Source Pinning
+
+What was wrong:
+- KND 1151156 metadata/docs had official URLs, but no pinned proof of the actual FNS appendices and XSD bytes checked by DENTE.
+- The issue passport could show the form PDF source, but not the XSD 5.01 source URL.
+- Regression coverage would not fail if the XSD source URL disappeared from metadata.
+
+What was done:
+- Added `docs/legal-sources/fns-knd-1151156.json` with FNS Order EA-7-11/824@ source facts, appendices 1-4, XSD 5.01 URL, byte sizes and SHA-256 hashes.
+- Added the official XSD URL to `tax_deduction_certificate.sourceUrls`.
+- Added `scripts/smoke-official-document-sources.mjs` and `npm run smoke:official-document-sources`.
+- Extended `smoke:documents-catalog` to require the XSD source URL for KND 1151156.
+- Updated README and `docs/12-document-generation-forms.md` with the source manifest and explicit non-claim: this still is not XSD/EDO submission readiness.
+
+Cinematic Cheats used:
+- None. This is cold legal-source evidence, not simulation or presentation.
+
+Exact Microseconds saved:
+- 0 us Unity runtime.
+- 0 us browser hot path. Shared metadata only adds one source URL.
+- New smoke is cold Node verification; no runtime performance claim.
+
+Verification:
+- `npm run typecheck -w @dental/shared` passed.
+- `npm run build -w @dental/shared` passed.
+- `npm run build` passed; residual Vite chunk warning remains at 683.60 kB.
+- `npm run smoke:official-document-sources` passed with 5 pinned FNS attachments and XSD SHA-256 `c6f4b26841436853add552324a690c8cee0d9f66072d750cb502098839a1ec83`.
+- `npm run smoke:documents-catalog` passed with 31 rendered kinds.
+- `npm run smoke:tax-knd-xml` passed.
+- `npm run smoke:api-text-encoding` passed with `mojibakeHits:0`.
+- `npm run smoke:document-payloads` passed.
+- `npm run smoke:russian-fallback-source` passed.
+
+Residual risk:
+- Pinned source files do not validate generated XML against the XSD.
+- No KEP signature, EDO/TKS submission, operator protocol or receipt lifecycle yet.
+- FNS source refresh remains manual; default smoke is offline by design.

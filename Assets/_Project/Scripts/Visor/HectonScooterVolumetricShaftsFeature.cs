@@ -220,8 +220,11 @@ namespace Hecton8.Visor
             private GraphicsBuffer _histogramBuffer;
             private GraphicsBuffer _exposureStateBuffer;
             private GraphicsBuffer _shaftGlobalsBuffer;
+            private GraphicsBuffer _shaftGlobalsBufferA;
+            private GraphicsBuffer _shaftGlobalsBufferB;
             private GraphicsBuffer _lastExposureStateBuffer;
             private MaterialParameterState _shaftGlobalsCache;
+            private int _shaftGlobalsWriteIndex;
             private bool _hasShaftGlobalsCache;
             private int _clearHistogramKernel = -1;
             private int _buildHistogramKernel = -1;
@@ -270,12 +273,16 @@ namespace Hecton8.Visor
             {
                 _histogramBuffer?.Release();
                 _exposureStateBuffer?.Release();
-                _shaftGlobalsBuffer?.Release();
+                _shaftGlobalsBufferA?.Release();
+                _shaftGlobalsBufferB?.Release();
                 _histogramBuffer = null;
                 _exposureStateBuffer = null;
+                _shaftGlobalsBufferA = null;
+                _shaftGlobalsBufferB = null;
                 _shaftGlobalsBuffer = null;
                 _lastExposureStateBuffer = null;
                 _shaftGlobalsCache = default;
+                _shaftGlobalsWriteIndex = 0;
                 _hasShaftGlobalsCache = false;
                 _underwaterVisuals = null;
                 _playerContext = null;
@@ -615,17 +622,30 @@ namespace Hecton8.Visor
                 if (!SystemInfo.supportsSetConstantBuffer)
                     return false;
 
-                if (_shaftGlobalsBuffer == null || !_shaftGlobalsBuffer.IsValid())
+                if (_shaftGlobalsBufferA != null && _shaftGlobalsBufferA.IsValid() &&
+                    _shaftGlobalsBufferB != null && _shaftGlobalsBufferB.IsValid())
                 {
-                    _shaftGlobalsBuffer = new GraphicsBuffer(
-                        GraphicsBuffer.Target.Constant,
-                        GraphicsBuffer.UsageFlags.LockBufferForWrite,
-                        1,
-                        ShaftGlobalsStrideBytes); // COLD ALLOC: GraphicsBuffer[176B] - URP noir shaft global CBuffer - owner: ShaftsPass
-                    _hasShaftGlobalsCache = false;
+                    if (_shaftGlobalsBuffer == null)
+                        _shaftGlobalsBuffer = _shaftGlobalsBufferA;
+                    return true;
                 }
 
-                return _shaftGlobalsBuffer != null && _shaftGlobalsBuffer.IsValid();
+                _shaftGlobalsBufferA?.Release();
+                _shaftGlobalsBufferB?.Release();
+                _shaftGlobalsBufferA = new GraphicsBuffer(
+                    GraphicsBuffer.Target.Constant,
+                    GraphicsBuffer.UsageFlags.LockBufferForWrite,
+                    1,
+                    ShaftGlobalsStrideBytes); // COLD ALLOC: GraphicsBuffer[176B] - URP noir shaft global CBuffer A - owner: ShaftsPass
+                _shaftGlobalsBufferB = new GraphicsBuffer(
+                    GraphicsBuffer.Target.Constant,
+                    GraphicsBuffer.UsageFlags.LockBufferForWrite,
+                    1,
+                    ShaftGlobalsStrideBytes); // COLD ALLOC: GraphicsBuffer[176B] - URP noir shaft global CBuffer B - owner: ShaftsPass
+                _shaftGlobalsBuffer = _shaftGlobalsBufferA;
+                _shaftGlobalsWriteIndex = 1;
+                _hasShaftGlobalsCache = false;
+                return _shaftGlobalsBufferA.IsValid() && _shaftGlobalsBufferB.IsValid();
             }
 
             private bool UpdateShaftGlobals(in MaterialParameterState parameters)
@@ -639,16 +659,22 @@ namespace Hecton8.Visor
                     return true;
                 }
 
-                NativeArray<ShaftGlobalsDTO> mapped = _shaftGlobalsBuffer.LockBufferForWrite<ShaftGlobalsDTO>(0, 1);
+                GraphicsBuffer writeBuffer = (_shaftGlobalsWriteIndex & 1) == 0 ? _shaftGlobalsBufferA : _shaftGlobalsBufferB;
+                if (writeBuffer == null || !writeBuffer.IsValid())
+                    return false;
+
+                NativeArray<ShaftGlobalsDTO> mapped = writeBuffer.LockBufferForWrite<ShaftGlobalsDTO>(0, 1);
                 try
                 {
                     mapped[0] = ShaftGlobalsDTO.FromParameters(in parameters);
                 }
                 finally
                 {
-                    _shaftGlobalsBuffer.UnlockBufferAfterWrite<ShaftGlobalsDTO>(1);
+                    writeBuffer.UnlockBufferAfterWrite<ShaftGlobalsDTO>(1);
                 }
 
+                _shaftGlobalsBuffer = writeBuffer;
+                _shaftGlobalsWriteIndex ^= 1;
                 Shader.SetGlobalConstantBuffer(ShaderConstants.ShaftGlobalsBufferId, _shaftGlobalsBuffer, 0, ShaftGlobalsStrideBytes);
                 _shaftGlobalsCache = parameters;
                 _hasShaftGlobalsCache = true;

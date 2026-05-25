@@ -1562,3 +1562,11 @@ Cinematic Cheats used: kept hull dent as visual-only feedback, explicitly not co
 Exact Microseconds saved: 0 us measured. Static work removed: three `Quaternion.Inverse` call sites across hull dent feedback projection.
 Verification: AST pass OK; `python Tools\OOP_Hitbox_Scanner.py` passed in ~143.4s; JSON proof assert passed. Report confirms `hullDentVisualRotationProof.verdict=PASS`, `submarineStructuralGridQuaternionInverseCalls=0`, `hullDentShaderQuaternionInverseCalls=0`, vehicle root rotation proof `PASS`, ballistics primitive proof `PASS`, armor inverse proof `PASS`, combat trig `0`, combat angle API `0`, and project `acos/asin` inventory `0`. Scoped `git diff --check` passed with line-ending warnings only.
 Compile: not run. Latest guard sample was CPU `100%`; project rule forbids `dotnet build` while CPU is above `50%`.
+
+2026-05-25 Loop 97 - Vehicle hydrodynamic tensor inverse removal.
+Wrong: `SubmarineAddedMassMath.ResolveLinearAcceleration()` and `ResolveAngularAcceleration()` used general `math.determinant(float4x4)` plus `math.inverse(float4x4)` for a 3x3 added-mass tensor solve. The fourth lane is packing identity; force and torque application only need `M^-1 * vector`.
+Done: added `TryMulInverse3x3()` with direct 3x3 cofactor/adjugate solve. Linear and angular acceleration keep the same diagonal fallback on invalid determinant/result.
+Cinematic Cheats used: none; this preserves vehicle hydrodynamic truth and avoids changing force accumulation or AUP routes.
+Exact Microseconds saved: 0 us measured. Static work removed per tensor-blended solve: one general 4x4 determinant and one general 4x4 inverse, replaced by a direct 3x3 solve. Profiler proof pending.
+Verification: AST pass OK; scoped inverse grep over Combat/Vehicle/Hull routes found no `math.inverse` or `Quaternion.Inverse`; `python Tools\OOP_Hitbox_Scanner.py` passed in ~64.1s after correcting stale `TryPushTracked` proof markers. JSON proof assert confirmed `vehicleHydrodynamicTensorInverseProof.verdict=PASS`, `remainingMathInverseMatrixCalls=0`, `submarineHullDentUsesVisualOnlyFlag=true`, `submarineHullDentStillUsesTypedVisualProjection=true`, lane segregation `PASS`, combat trig `0`, combat angle API `0`, and project `acos/asin` inventory `0`.
+Compile: pending build guard.

@@ -43,8 +43,10 @@ SCOOTER_SHAFTS = ROOT / "Assets" / "_Project" / "Scripts" / "Visor" / "HectonSco
 SUBMARINE_FLUID = ROOT / "Assets" / "_Project" / "Scripts" / "SubmarineFluidDynamics.cs"
 TRANSPORT_REGISTRY = ROOT / "Assets" / "_Project" / "Scripts" / "Gameplay" / "PlayerTransportLifecycleRegistry.cs"
 MANTA_SCOOTER = ROOT / "Assets" / "_Project" / "Scripts" / "Gameplay" / "MantaScooter.cs"
+MANTA_EMERGENCY_WRECK = ROOT / "Assets" / "_Project" / "Scripts" / "Gameplay" / "MantaEmergencyWreck.cs"
 VEHICLE_MOTOR = ROOT / "Assets" / "_Project" / "Scripts" / "Gameplay" / "VehicleMotor.cs"
 MOUNTABLE_TRANSPORT = ROOT / "Assets" / "_Project" / "Scripts" / "Gameplay" / "MountablePlayerTransport.cs"
+SARGASSUM_COLLAPSE_CHUNK = ROOT / "Assets" / "_Project" / "Scripts" / "World" / "SargassumCollapseChunk.cs"
 H8_MEMORY = ROOT / "Assets" / "_Project" / "Scripts" / "Core" / "Memory" / "H8Memory.cs"
 VAULT_MEMORY_CONTRACTS = ROOT / "Assets" / "_Project" / "Scripts" / "Core" / "Memory" / "VaultMemoryContracts.cs"
 
@@ -505,6 +507,8 @@ def legacy_bridge_report() -> dict:
     interaction_target_text = "\n".join(read(path) for path in INTERACTION_TARGET_FILES)
     vehicle = read(VEHICLE_MOTOR)
     mountable = read(MOUNTABLE_TRANSPORT)
+    manta_emergency = read(MANTA_EMERGENCY_WRECK)
+    sargassum_chunk = read(SARGASSUM_COLLAPSE_CHUNK)
     memory_text = read(H8_MEMORY) + "\n" + read(VAULT_MEMORY_CONTRACTS)
     motor_capsule_bridge_symbols = len(re.findall(r"\b(?:ScheduleCapsuleSweepBatch|TryConsumeScheduledCapsuleSweep|TrySweepGatedMove|ScheduledSweepState|_scheduledSweep)", motor))
     motor_native_state_symbols = len(re.findall(r"\bHectonPlayerMotorNativeState\b", motor + "\n" + state))
@@ -519,6 +523,12 @@ def legacy_bridge_report() -> dict:
         r"CacheRaycastRequesterId|StageDodRaycastRequest|ResolveCuttableRaycastMask|"
         r"raycastOriginHeight|_rayOrigin|DefaultRaycastLayerMask)\b",
         interaction_target_text,
+    ))
+    manta_collision_damage_symbols = len(re.findall(r"\bcollisionDamage[A-Za-z0-9_]*\b", manta_emergency))
+    sargassum_dead_snag_symbols = len(re.findall(
+        r"\b(?:TryConfigureSnag|ShouldStopSiltTrail|_cascadeImpactConsumed|snagImpactSpeedThreshold|"
+        r"snagLayers|snagSearchRadius|snagSurfaceOffset|_snagContacts)\b",
+        sargassum_chunk,
     ))
     return {
         "player_motor_capsule_sweep_bridge_symbol_count": motor_capsule_bridge_symbols,
@@ -569,6 +579,11 @@ def legacy_bridge_report() -> dict:
             and "ResolveHoveredTarget()" in interaction_target_text
             and "_surfaceRequesterId" in interaction_target_text
             and "ResolveCuttableSurfaceMask()" in interaction_target_text,
+        "manta_legacy_collision_damage_symbol_count": manta_collision_damage_symbols,
+        "manta_legacy_collision_damage_route_removed": manta_collision_damage_symbols == 0
+            and "bailoutVelocityCapMaxSpeed" in manta_emergency,
+        "sargassum_dead_collision_snag_symbol_count": sargassum_dead_snag_symbols,
+        "sargassum_dead_collision_snag_route_removed": sargassum_dead_snag_symbols == 0,
         "vehicle_motor_capsule_sweep_bridge_symbol_count": vehicle_capsule_bridge_symbols,
         "vehicle_motor_capsule_sweep_bridge_removed": vehicle_capsule_bridge_symbols == 0,
         "vehicle_motor_raycast_hit_symbol_count": len(re.findall(r"\bRaycastHit\b", vehicle)),

@@ -505,3 +505,11 @@ Solution: Apply the same LF-only zero-context cached patch to the final 28 files
 Rejected Alternatives: Leaving residual filtered save reads was rejected. Full-file staging was rejected because prior staged blobs proved re-encoding-prone. Build was rejected because CPU was 93 percent with active `dotnet` and `csc`.
 Scalability potential: Low tier avoids repeated save-owner discovery in PDA/world/tool routes; Middle keeps identical null fallback and save behavior; High and Ultra preserve richer PDA/world/progression systems without service-locator cadence cost.
 Hardware Impact: STATIC estimate only: 35 exact save registry reads removed from 28 staged source files; filtered tracked runtime save scan now reports 0 outside excluded paths. No CLI_COMPILE proof because CPU/compiler gate was closed.
+
+## Decision 64
+
+Problem: A third audio tranche remained in tracked runtime/gameplay/helper files after prior audio sweeps. Exact `GlobalRegistry.Audio` reads were still present in cache refreshes, scene transition audio bridge, gameplay feedback, and helper routes.
+Solution: Apply an LF-only zero-context staged patch from exact `HEAD` lines and route only exact audio registry reads to `Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance` for 30 tracked files. Verify diff check, line stats, malformed namespace/suffix guards, and post-commit filtered counts.
+Rejected Alternatives: Broad audio DI rewrite was rejected because the active owner pointer already exists and the workspace is dirty. Full-file staging was rejected because many selected files have unrelated working-tree edits. Scene search fallback was rejected because it can allocate/search and hides owner discovery. Build execution was rejected because CPU stayed above 50 percent.
+Scalability potential: Low tier avoids repeated audio-owner discovery in gameplay/helper routes; Middle keeps identical audio behavior; High and Ultra preserve richer spatial, transition, and gameplay feedback without adding service-locator cadence cost.
+Hardware Impact: STATIC estimate only: 35 exact audio registry reads removed from 30 staged source files; filtered audio count dropped from 71 to 36. No profiler, GCMonitor, Unity Console, player-build, or CLI_COMPILE artifact; CPU gate blocked compile.

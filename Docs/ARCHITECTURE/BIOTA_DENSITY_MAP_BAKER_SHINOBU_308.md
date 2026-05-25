@@ -30,7 +30,7 @@ Forge preview route: non-authoritative preview resolution scales continuously fr
 - Header float/double lanes are written with `math.asuint` / `math.asulong` and fixed little-endian byte shifts, not host-endian `BitConverter.GetBytes`.
 - Primary rule DTO: `BiotaSpawnRuleDTO`, explicit 32 bytes.
 - Density payload: RLE stream of 8-byte `BiotaDensityRleRunDTO` records.
-- Async write lifetime: completed TempJob working buffers are disposed before Unity `Awaitable` background file I/O; only method-local Persistent RLE/telemetry buffers survive the await and are disposed in `finally`.
+- Async write lifetime: completed TempJob buffers are disposed before Unity `Awaitable` background file I/O; only method-local Persistent RLE/telemetry buffers survive the await and are disposed in `finally`.
 - RLE storage is exact-capacity after a Burst count pass, not raw-byte upper-bound preallocation.
 - Emitted RLE count is clamped to allocated `runs.Length` before header/payload serialization.
 - The temp writer uses asynchronous/write-through FileStream flags, `Flush(true)`, and temp cleanup on failure.
@@ -40,7 +40,7 @@ Forge preview route: non-authoritative preview resolution scales continuously fr
 - Checked DTOs: `BiotaSpawnRuleDTO=32`, `BiotaRuleWeightDTO=32`, `BiotaDensityBakeConfigDTO=128`.
 - Checked DTOs: `BiotaThermalVentDTO=32`, `BiotaDensityRleRunDTO=8`, `BiotaDensityBakeTelemetryEntry=64`.
 - Gate includes padding and late-field offsets for 128-byte config and 64-byte telemetry lanes.
-- Rule staging: `SanitizeConfig` honors nonzero public `config.RuleCount`, falls back to source row count only when `RuleCount == 0`, and then falls back to `DefaultRuleCount=5` for empty public calls.
+- Rule staging: `SanitizeConfig` honors nonzero public `config.RuleCount`, falls back to source row count only when `RuleCount == 0`, and falls back to `DefaultRuleCount=5` for empty public calls.
 - It also clamps non-finite or impossible AUP origin coordinates to the default sector origin before jobs run.
 - Scalar bake controls use finite-select defaults and broad clamps for cell size, noise, density, thermal falloff, base temperature, depth scale, slope, temperature, and `GlobalQualityWeight`.
 - Public Editor API calls with `requestedCount > source.Length` are hardened by populating default rule/weight tables before fallback rows are copied into NativeArrays.

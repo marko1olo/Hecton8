@@ -104,7 +104,7 @@ No simulation system can publish a signal before `GlobalSignals.InitializeAllQue
 
 | "FileStream everywhere" | false for Data Monolith; `H8StaticDataArena` uses MMF-first desktop reads, Android/Quest URI staging to cache, then direct `FileStream` into Vault-owned bytes. No managed whole-file runtime staging. |
 
-| "Five artery event bus" | stale; R43 scan: `73` direct queue slots, `135` typed lanes, `271` configure/ensure hits, `116` `NativeQueue` refs, `1328` script-level typed-lane matches; rerun before exact use |
+| "Five artery event bus" | stale; R43 scan: `73` direct queue slots, `135` typed lanes, `271` configure/ensure hits, `116` `NativeQueue` refs, `1328` script-level typed-lane matches; rerun before use |
 
 ## Verification Required
 

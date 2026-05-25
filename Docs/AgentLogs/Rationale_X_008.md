@@ -1126,3 +1126,15 @@ Rejected Alternatives: Leaving the generic inverse because the lane is visual-on
 Scalability potential: Low/Middle keep cheap visual hull feedback without extra inverse math. High/Ultra keep the same dent fidelity and can spend the saved budget on richer decal/shader response.
 
 Hardware Impact: 0 us measured. Static work removed from visual damage feedback: three `Quaternion.Inverse` call sites across producer/projector routes. Profiler proof remains pending because the build guard is blocked.
+
+## Decision 120 - Vehicle Added-Mass Tensor Uses Direct 3x3 Solve
+
+Problem: `SubmarineAddedMassMath.ResolveLinearAcceleration()` and `ResolveAngularAcceleration()` built a hydrodynamic tensor as a `float4x4`, then used `math.determinant(matrix)` and `math.inverse(matrix)` only to compute `M^-1 * forceWorld` or `M^-1 * torqueWorld`. The tensor authority is 3x3 added mass/inertia; the fourth row/column is identity packing, so a general 4x4 inverse is unnecessary in the vehicle force application path.
+
+Solution: Added `TryMulInverse3x3(in float4x4 matrix, float3 vector, out float3 result)` using the 3x3 cofactor/adjugate determinant formula. Both linear and angular acceleration paths now call this helper and keep the existing diagonal fallback if determinant validity or finite result checks fail. The edit does not alter gameplay ownership, AUP, force packet order, or quality tiers.
+
+Rejected Alternatives: Leaving the general 4x4 inverse because the route is not armor penetration; replacing added-mass physics with a visual fake; adding another cached inverse tensor lane and increasing memory bandwidth; changing force accumulation order in the multithreaded vehicle solver.
+
+Scalability potential: Low/Middle remove avoidable general matrix inverse work from submarine force and torque application. High/Ultra keep the same hydrodynamic truth and can spend saved CPU on presentation-only vehicle stress, spray, and hull feedback.
+
+Hardware Impact: 0 us measured. Static work removed per tensor-blended linear/angular solve: one general `math.determinant(float4x4)` and one general `math.inverse(float4x4)` replaced by a direct 3x3 adjugate solve. Profiler proof remains pending until build/runtime guard clears.
