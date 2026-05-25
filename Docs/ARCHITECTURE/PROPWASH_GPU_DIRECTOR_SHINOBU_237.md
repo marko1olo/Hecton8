@@ -22,7 +22,7 @@ Authority route:
 
 - CPU upload to `_PropwashEvents` is double-buffered (`_propwashEventBufferA/B`) through `LockBufferForWrite`; the inactive buffer receives the next frame before becoming the compute read buffer.
 
-- Upload consumes `PropwashRingCursorDTO.WriteCursor` and `EventCount`, computes the wrapped oldest slot, and writes a contiguous GPU snapshot. The Vault ring remains circular; the shader sees a dense linear buffer.
+- Upload consumes `PropwashRingCursorDTO.WriteCursor` and `EventCount`, computes the wrapped oldest slot, and writes a GPU snapshot. The Vault ring remains circular; the shader sees a dense linear buffer.
 
 - `Hecton_MarineSnow.compute` owns SDF/depth proximity, particle injection, propwash advection, AUP rebase, and indirect-visible count mutation.
 

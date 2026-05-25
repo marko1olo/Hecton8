@@ -279,7 +279,7 @@ It checks exact size/offset contracts for state, avoidance, feeler, waypoint, ro
 
 
 
-`OnDisable` forces pending job completion through the owner-local job completion helper, unlocks only acquired Vault buffer bits, dumps black-box data if faulted, and unregisters all GlobalRegistry tick lanes.
+`OnDisable` forces pending job completion through the owner-local job completion helper, unlocks only acquired Vault buffer bits, dumps black-box data if faulted, and unregisters GlobalRegistry tick lanes.
 
 
 

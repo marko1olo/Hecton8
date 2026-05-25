@@ -120,7 +120,7 @@ Durability damage is continuous per `SlowTick` and marks items degraded below th
 
 - Quality below 20%: reclaim becomes scrap metal. The resolver prefers `Data_ScrapMetal`; if absent, it falls back to `Data_TitaniumScrap`.
 
-This is a bounded reverse-topological expansion over recipe result hashes. Cycles or over-cap graphs collapse to the current item as raw cost instead of allocating or recursing unbounded.
+Bounded reverse-topological expansion over recipe result hashes. Cycles or over-cap graphs collapse to the current item as raw cost instead of allocating or recursing unbounded.
 
 ## Physics Hooks
 
@@ -136,7 +136,7 @@ Heavy mass reduces tumble through `1 / max(1, mass)`. Light, high-volume items t
 
 Direct `Rigidbody.AddRelativeTorque` in gameplay code is rejected by the project physics mandate. The implementation routes equivalent torque through the existing deterministic force/torque application path owned by `PhysicsApplySystem`.
 
-`GravityTetherTool` uses `Physics.SphereCastNonAlloc` with a fixed hit buffer and routes all pull impulses through `PhysicsForceRouter.QueueForce(..., ForceMode.VelocityChange)`. Close hits call `IInventoryPickupSource.TryHandleInventoryPickup`, keeping pickup routing on the existing zero-GC contract.
+`GravityTetherTool` uses `Physics.SphereCastNonAlloc` with a fixed hit buffer and routes pull impulses through `PhysicsForceRouter.QueueForce(..., ForceMode.VelocityChange)`. Close hits call `IInventoryPickupSource.TryHandleInventoryPickup`, keeping pickup routing on the existing zero-GC contract.
 
 ## Crafting Thermodynamics
 

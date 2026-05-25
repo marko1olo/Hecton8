@@ -257,6 +257,8 @@
     "legacy_batch_physx_calls": 0,
     "legacy_batch_query_result_arrays": 0,
     "legacy_batch_unity_raycast_hit_count": 0,
+    "manta_legacy_collision_damage_route_removed": true,
+    "manta_legacy_collision_damage_symbol_count": 0,
     "player_footstep_audio_raycast_hit_count": 0,
     "player_footstep_audio_uses_surface_hit": true,
     "player_hand_probe_raycast_hit_lane_count": 0,
@@ -287,6 +289,8 @@
     "player_spawner_try_raycast_ground_count": 0,
     "player_spawner_uses_ground_probe_origin": true,
     "player_spawner_uses_spawn_ground_hit": true,
+    "sargassum_dead_collision_snag_route_removed": true,
+    "sargassum_dead_collision_snag_symbol_count": 0,
     "vehicle_motor_capsule_sweep_bridge_removed": true,
     "vehicle_motor_capsule_sweep_bridge_symbol_count": 0,
     "vehicle_motor_raycast_hit_symbol_count": 0

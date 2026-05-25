@@ -371,7 +371,7 @@ Status: STATIC_SOURCE / COMPILE BLOCKED BY CPU GATE.
 - Local harness writes deterministic 10 MB WAL plus `.bak`, truncates primary mid-payload, rejects by byte count/XXHash3, validates `.bak`, and promotes backup via temp file.
 - Local `.h8log` harness headers use explicit little-endian scalar lanes; no native struct-copy file ABI is accepted for the SHINOBU proof path.
 - Production branch routes the same synthetic payload through `SaveStateMerkleTree.ScheduleVaultDeltaWalPipeline`, `TryAppendCompressedWalMmf`, `TryValidateWalAndRollback`, and `TryReplayWalToDeltaArena`; truth/replay comparison is XXHash3 over the delta arena.
-- A 5,000-sector seek test derives hashes from double-precision +/-49.9 km AUP coordinates quantized to 100 m sectors, then verifies targeted sector reads instead of full directory hydration.
+- A 5,000-sector seek test derives hashes from double-precision +/-49.9 km AUP coordinates quantized to 100 m sectors, then verifies sector reads instead of full directory hydration.
 - Failure artifacts: `Docs/Reports/HEADLESS_WAL_FAILURES.csv` and versioned `Docs/AgentLogs/Dump_SHINOBU_256.bin`. Success artifact: `Docs/Reports/QA_OPTIMIZATION_REPORT.json`.
 - Batchmode artifact paths resolve against the Unity project root through editor `Application.dataPath` or an upward `Assets` + `ProjectSettings` root scan, not the process launch directory alone.
 - Runtime proof remains pending.

@@ -6243,7 +6243,12 @@ namespace Hecton8.Physics
             DisposeNativeArray(ref _splashdownImpulseUpload, dependency);
             DisposeNativeArray(ref _splashdownImpulseStats, dependency);
             if (releaseGraphicsImmediately)
-                ReleaseGraphicsBuffer(ref _gpuSplashdownImpulseBuffer);
+            {
+                ReleaseGraphicsBuffer(ref _gpuSplashdownImpulseBufferA);
+                ReleaseGraphicsBuffer(ref _gpuSplashdownImpulseBufferB);
+                _activeGpuSplashdownImpulseBuffer = null;
+                _gpuSplashdownImpulseUploadIndex = 0;
+            }
             else
                 QueueFluidGraphicsRelease(FluidGraphicsReleaseSplashdownImpulse);
             _splashdownImpulseJobHandle = default;
@@ -6473,7 +6478,9 @@ namespace Hecton8.Physics
 
             EnsureGpuAbyssalFlowBuffers();
             if (_gpuAbyssalFlowResultBuffer == null ||
-                _gpuAbyssalHeatSourceBuffer == null ||
+                _gpuAbyssalHeatSourceBufferA == null ||
+                _gpuAbyssalHeatSourceBufferB == null ||
+                _activeGpuAbyssalHeatSourceBuffer == null ||
                 _gpuAbyssalFlowReadTexture == null ||
                 _gpuAbyssalFlowWriteTexture == null)
             {
@@ -6491,7 +6498,17 @@ namespace Hecton8.Physics
             _debugAbyssalHeatSourceCount = heatSourceCount;
 
             if (heatSourceCount > 0)
-                GraphicsBufferUploadUtility.UploadNativeArray(_gpuAbyssalHeatSourceBuffer, _gpuAbyssalHeatSourceUpload, heatSourceCount);
+            {
+                GraphicsBuffer heatSourceWriteBuffer = (_gpuAbyssalHeatSourceUploadIndex & 1) == 0
+                    ? _gpuAbyssalHeatSourceBufferA
+                    : _gpuAbyssalHeatSourceBufferB;
+                if (heatSourceWriteBuffer != null && heatSourceWriteBuffer.IsValid())
+                {
+                    GraphicsBufferUploadUtility.UploadNativeArray(heatSourceWriteBuffer, _gpuAbyssalHeatSourceUpload, heatSourceCount);
+                    _activeGpuAbyssalHeatSourceBuffer = heatSourceWriteBuffer;
+                    _gpuAbyssalHeatSourceUploadIndex ^= 1;
+                }
+            }
 
             int nodeCount = GetAbyssalFlowNodeCount();
             int groupCount = math.max(1, (nodeCount + GpuThreadGroupSize - 1) >> GpuThreadGroupShift);
@@ -6503,7 +6520,7 @@ namespace Hecton8.Physics
             Vector4 splashdownParams = ResolveSplashdownImpulseParams();
 
             abyssalFlowFieldCompute.SetBuffer(_gpuAbyssalUpdateKernel, _AbyssalFlowFieldResultId, _gpuAbyssalFlowResultBuffer);
-            abyssalFlowFieldCompute.SetBuffer(_gpuAbyssalUpdateKernel, _AbyssalHeatSourcesId, _gpuAbyssalHeatSourceBuffer);
+            abyssalFlowFieldCompute.SetBuffer(_gpuAbyssalUpdateKernel, _AbyssalHeatSourcesId, _activeGpuAbyssalHeatSourceBuffer);
             abyssalFlowFieldCompute.SetBuffer(_gpuAbyssalUpdateKernel, _AbyssalSplashdownImpulseBufferId, splashdownImpulseBuffer);
 
             float3 resolvedWeatherCurrent =
@@ -6578,7 +6595,7 @@ namespace Hecton8.Physics
 
             abyssalFlowFieldCompute.SetTexture(_gpuAbyssalTextureUpdateKernel, _AbyssalFlowTextureReadId, _gpuAbyssalFlowReadTexture);
             abyssalFlowFieldCompute.SetTexture(_gpuAbyssalTextureUpdateKernel, _AbyssalFlowTextureWriteId, _gpuAbyssalFlowWriteTexture);
-            abyssalFlowFieldCompute.SetBuffer(_gpuAbyssalTextureUpdateKernel, _AbyssalHeatSourcesId, _gpuAbyssalHeatSourceBuffer);
+            abyssalFlowFieldCompute.SetBuffer(_gpuAbyssalTextureUpdateKernel, _AbyssalHeatSourcesId, _activeGpuAbyssalHeatSourceBuffer);
             abyssalFlowFieldCompute.SetBuffer(_gpuAbyssalTextureUpdateKernel, _AbyssalSplashdownImpulseBufferId, splashdownImpulseBuffer);
             abyssalFlowFieldCompute.SetVector(_AbyssalSplashdownParamsId, splashdownParams);
             abyssalFlowFieldCompute.Dispatch(_gpuAbyssalTextureUpdateKernel, textureGroupCount, textureGroupCount, textureGroupCount);
@@ -7196,7 +7213,12 @@ namespace Hecton8.Physics
 
             _pendingFluidGraphicsReleaseMask = 0;
             if ((releaseMask & FluidGraphicsReleaseSplashdownImpulse) != 0)
-                ReleaseGraphicsBuffer(ref _gpuSplashdownImpulseBuffer);
+            {
+                ReleaseGraphicsBuffer(ref _gpuSplashdownImpulseBufferA);
+                ReleaseGraphicsBuffer(ref _gpuSplashdownImpulseBufferB);
+                _activeGpuSplashdownImpulseBuffer = null;
+                _gpuSplashdownImpulseUploadIndex = 0;
+            }
             if ((releaseMask & FluidGraphicsReleaseGpuBuoyancy) != 0)
                 ReleaseGpuBuoyancyBuffers();
             if ((releaseMask & FluidGraphicsReleaseAbyssalFlow) != 0)

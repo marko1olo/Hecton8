@@ -58,6 +58,10 @@
 - Kinematic IK/VR/buoyancy uses typed surface hits: True
 - Interaction target legacy raycast API symbols: 0
 - Interaction target uses spatial-target contract: True
+- Manta emergency legacy collision damage symbols: 0
+- Manta emergency legacy collision damage route removed: True
+- Sargassum dead collision-snag symbols: 0
+- Sargassum dead collision-snag route removed: True
 - Vehicle motor capsule sweep bridge removed: True
 - Vehicle motor capsule sweep bridge symbol count: 0
 - Vehicle motor `RaycastHit` symbol count: 0

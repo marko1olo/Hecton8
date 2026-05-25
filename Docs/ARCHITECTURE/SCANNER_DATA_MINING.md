@@ -38,7 +38,7 @@ Scope: cited local paths exist at capture time. No compile/import/Play/profiler/
 
 - Black-box dump path writes both `Docs/AgentLogs/Dump_SHINOBU_24.bin` and `Docs/AgentLogs/Dump_SHINOBU_24.h8dump` on NaN/budget breach.
 
-- Continuous CSV disk monitoring is not a player hot-path responsibility; the scanner exposes a zero-GC metadata line parser and expects file IO to arrive through a cold/background bridge.
+- CSV disk monitoring is not a player hot-path responsibility; the scanner exposes a zero-GC metadata line parser and expects file IO to arrive through a cold/background bridge.
 
 ## 2026-05-11 Historical Override + 2026-05-17 Actuality Pointer
 

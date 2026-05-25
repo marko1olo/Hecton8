@@ -103,7 +103,7 @@ internal struct QuestBitAddress
 
 ## Hash Contract
 
-All narrative, quest, item, and marker target IDs must resolve through the stable FNV-1a kernel in `QuestFlagHashKernel`. The runtime does not use string comparisons in the signal lane.
+Narrative, quest, item, and marker target IDs must resolve through the stable FNV-1a kernel in `QuestFlagHashKernel`. The runtime does not use string comparisons in the signal lane.
 
 ```csharp
 

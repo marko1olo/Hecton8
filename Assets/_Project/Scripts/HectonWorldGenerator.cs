@@ -22,6 +22,7 @@ using UnityEngine.Rendering;
 using System.Collections.Generic;
 using System.Diagnostics;
 using Hecton8.Core;
+using Hecton8.Core.Memory;
 using Hecton8.World;
 using Unity.Jobs;
 using Unity.Burst;

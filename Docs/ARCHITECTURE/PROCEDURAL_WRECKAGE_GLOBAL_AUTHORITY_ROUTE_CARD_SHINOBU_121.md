@@ -56,7 +56,7 @@ Producer/consumer phase: owner-local boot resolves Vault handles; generation job
 
 Renderer, physics, inventory, save/rollback, and QA consumers read staged snapshots in owned phases.
 
-Cadence/capacity: generation/event driven, editor CSV poll 1 Hz editor-only, GPU upload dirty-output only; bounded Vault lanes for nodes, matrices, args, loot requests, collision proxies, and 300 telemetry rows.
+Cadence/capacity: generation/event driven, editor CSV poll 1 Hz editor-only, GPU upload dirty-output only; Vault lanes for nodes, matrices, args, loot requests, collision proxies, and 300 telemetry rows.
 
 Producer phase:
 
@@ -70,7 +70,7 @@ Cadence: generation/event driven, not per-frame by default. Editor CSV poll is 1
 
 Expected max events/reads per frame: one active wreck generation batch per sector trigger; `MaxRenderMatrices = 5120`; `MaxCollisionProxies = 1024`; `MaxLootRequests = 512`.
 
-GlobalQualityWeight behavior: continuous quality drives WFC target node count, debris count, visibility distance, culling probability, and shader scalar richness. No low/high binary switch exists in the generation jobs.
+GlobalQualityWeight: continuous quality drives WFC target node count, debris count, visibility distance, culling probability, and shader scalar richness. No low/high binary switch exists in the generation jobs.
 
 Payload/data shape: explicit unmanaged DTOs only. Primary node DTO is 128 bytes; counters are 64 bytes. No managed fields. No UnityEngine.Object fields.
 

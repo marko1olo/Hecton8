@@ -25,7 +25,7 @@ Status: STATIC_SOURCE_POLISHED, targeted Core build attempted and blocked by unr
 - No new signal lane was added. Existing `EntityDeathSignal` remains the death truth corridor.
 - Fauna presentation never writes carrion state directly; it only publishes the shared death signal once at the death edge.
 - `GlobalRegistry` is only read in cold/owner calls already owned by `NutrientDriftRuntime`; Burst jobs receive raw pointers and DTO tuning.
-- `GlobalQualityWeight` scales decay approximation continuously: below `0.4`, `math.step` gates out `math.exp`; above it, `math.smoothstep(0.4, 0.95)` blends toward exact exponential. Gameplay identity and DTO layout do not change.
+- `GlobalQualityWeight` scales decay approximation continuously: below `0.4`, `math.step` gates out `math.exp`; above it, `math.smoothstep(0.4, 0.95)` blends toward exponential. Gameplay identity and DTO layout do not change.
 - Spatial hash records are a Dear Lie presentation/query attractor. They are not authoritative save state.
 - Scanner proof writes a stable SHINOBU_314 report and upserts `shinobu314CarrionDecay` into the aggregate AI report; it does not erase other agents.
 - DataMonolith runtime readiness is not claimed: `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin` exists in the current X_012 scan; route-specific boot proof remains pending.
