@@ -513,3 +513,43 @@ Solution: Apply an LF-only zero-context staged patch from exact `HEAD` lines and
 Rejected Alternatives: Broad audio DI rewrite was rejected because the active owner pointer already exists and the workspace is dirty. Full-file staging was rejected because many selected files have unrelated working-tree edits. Scene search fallback was rejected because it can allocate/search and hides owner discovery. Build execution was rejected because CPU stayed above 50 percent.
 Scalability potential: Low tier avoids repeated audio-owner discovery in gameplay/helper routes; Middle keeps identical audio behavior; High and Ultra preserve richer spatial, transition, and gameplay feedback without adding service-locator cadence cost.
 Hardware Impact: STATIC estimate only: 35 exact audio registry reads removed from 30 staged source files; filtered audio count dropped from 71 to 36. No profiler, GCMonitor, Unity Console, player-build, or CLI_COMPILE artifact; CPU gate blocked compile.
+
+## Decision 65
+
+Problem: Checkpoint commits after `48860a8c9` reintroduced the same audio registry-reader layer into current `HEAD`, making the earlier post-commit zero/reduction notes stale for the live branch tip.
+Solution: Re-scan current `HEAD`, reapply exact staged patches on top of the latest commits, and close the whole audio residue in `933da80d5` after `c2fd862cb` was superseded by another checkpoint.
+Rejected Alternatives: Trusting stale scan results was rejected. Splitting the reintroduced 64-file audio layer into more small commits was rejected after repeated checkpoint overwrites. Full-file staging was rejected.
+Scalability potential: Low tier avoids repeated audio-owner discovery in helper/playback routes; Middle keeps identical audio behavior; High and Ultra preserve richer soundscape feedback without service-locator cadence cost.
+Hardware Impact: STATIC estimate only: 71 exact audio registry reads removed in the final live-head closure. No profiler or CLI_COMPILE artifact.
+
+## Decision 66
+
+Problem: Current `HEAD` restored save consumers and also lost the public `SaveManager.ActiveRuntimeInstance` owner pointer needed by cross-asmdef save consumers.
+Solution: Restore the public active owner pointer in `SaveManager`, assign it only after successful save service registration, clear it on shutdown, then route 58 save consumer files through it in two commits.
+Rejected Alternatives: An internal accessor was rejected because narrative/campaign code can live in a separate asmdef. Replacing consumers before restoring the owner route was rejected. Scene search fallback was rejected because it can allocate/search and hides owner discovery.
+Scalability potential: Low tier avoids save-owner lookup in PDA/world/narrative/progression helper paths; Middle keeps identical save behavior; High and Ultra preserve richer profile/narrative/world state features without service-locator cadence.
+Hardware Impact: STATIC estimate only: 83 exact save registry reads removed; owner pointer has no hot-path allocation. No profiler or CLI_COMPILE artifact.
+
+## Decision 67
+
+Problem: Two localization consumers still had exact `GlobalRegistry.Localization` reads after checkpoint churn.
+Solution: Route both through `Hecton.Localization.LocalizationManager.ActiveRuntimeInstance` and verify filtered localization count is 0.
+Rejected Alternatives: Leaving the residue because it was only two files was rejected. Changing localization language ownership was rejected.
+Scalability potential: Low tier avoids owner discovery in static/localized helper paths; Middle keeps identical text behavior; High and Ultra preserve richer localized presentation without service-locator cadence.
+Hardware Impact: STATIC estimate only: 2 exact localization registry reads removed. No profiler or CLI_COMPILE artifact.
+
+## Decision 68
+
+Problem: Current `HEAD` still had 120 exact `GlobalRegistry.Player` reads in runtime `.cs` consumers after excluding owner/editor/dev/bootstrap/comment paths.
+Solution: Route exact player-context reads through `Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext` in four staged batches, preserving non-player slots such as `PlayerInventory`, `PlayerCriticalAudio`, movement, sensory, actions, expression, and exploration.
+Rejected Alternatives: Broad player DI rewrite was rejected. Regex replacement without prefix guards was rejected. Editing `.md` progress notes and dev/editor text was rejected.
+Scalability potential: Low tier avoids repeated player owner discovery in UI/visor/world/audio/gameplay helper paths; Middle keeps identical player truth and camera/tool fallback behavior; High and Ultra keep richer presentation without service-locator cadence.
+Hardware Impact: STATIC estimate only: 120 exact player registry reads removed. No profiler or CLI_COMPILE artifact.
+
+## Decision 69
+
+Problem: Source filters now report zero for audio/save/localization/player registry-reader surfaces, but compile proof is not available under the project CPU/process gate.
+Solution: Record evidence as STATIC_SOURCE/STATIC_GREP and block CLI_COMPILE explicitly because CPU measured 100 percent with seven active `dotnet` processes.
+Rejected Alternatives: Killing unrelated compiler processes was rejected. Running build under CPU >50 percent was rejected. Claiming runtime, GC, Unity Console, or profiler proof from grep was rejected.
+Scalability potential: Process integrity only; avoids starving concurrent agents while preserving source-control progress.
+Hardware Impact: 0 us runtime measured; verification is gated, not green.

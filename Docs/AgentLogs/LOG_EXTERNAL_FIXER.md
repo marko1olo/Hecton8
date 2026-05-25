@@ -1179,3 +1179,30 @@ Evidence:
 - STATIC_GREP: malformed namespace/suffix grep found no `Hecton8.Core.Hecton8.Audio` or `SpatialAudioManager.ActiveRuntimeInstance*` corruption. Post-commit filtered counts: audio 36, localization 2, save 0.
 - CLI_COMPILE: not launched; `Temp\obj\Hecton8.Core\project.assets.json` exists, no compiler process was active, but CPU measured 55 percent then 94 percent after wait.
 - GIT: committed and pushed `48860a8c9 perf(audio): route gameplay service readers` to `main`.
+
+## 2026-05-25 - Checkpoint Recovery Registry Closure
+
+What was wrong:
+- Later checkpoint commits restored previously removed direct `GlobalRegistry` readers into the live branch tip.
+- Current `HEAD` had exact filtered counts: audio 71, save 83, localization 2, player 120 in runtime source surfaces before this recovery closure.
+- `SaveManager.ActiveRuntimeInstance` was absent again, so save consumers needed the owner pointer restored before re-routing.
+
+What was done:
+- Closed audio on current `HEAD`: `c2fd862cb` re-applied first 30 files; `933da80d5` closed the full current 64-file audio residue with 71 exact replacements.
+- Restored save owner route and consumers: `aea559a60` added `SaveManager.ActiveRuntimeInstance` plus 30 save consumers; `372612f6c` patched the remaining 28 save consumers.
+- Closed localization residue: `885858312` patched the final two localization consumers.
+- Closed player context readers: `1e04a9a7f`, `c37b66807`, `e087b197f`, `7e76229c3` patched 110 player-context files and 120 exact reads.
+- Left dirty working-copy edits from other agents untouched; every source change was staged from exact `HEAD` lines.
+
+Cinematic Cheats used:
+- None. This tranche is runtime service-route hygiene.
+
+Exact Microseconds saved:
+- STATIC estimate only: 71 audio + 83 save + 2 localization + 120 player exact service-locator reads removed from filtered runtime source surfaces. No profiler capture, no microsecond claim.
+
+Evidence:
+- STATIC_SOURCE: source commits pushed to `main`: `933da80d5`, `aea559a60`, `372612f6c`, `885858312`, `1e04a9a7f`, `c37b66807`, `e087b197f`, `7e76229c3`.
+- CLI_DIFF: every staged source batch passed `git diff --cached --check`; malformed namespace/suffix guards passed for audio, save, localization, and player replacements.
+- STATIC_GREP: current `HEAD` filtered scans report audio 0, save 0, localization 0, player 0.
+- CLI_COMPILE: not launched; CPU measured 100 percent and seven `dotnet` processes were active. `Temp\obj\Hecton8.Core\project.assets.json` exists.
+- GIT: all listed source commits were pushed to `origin/main`.
