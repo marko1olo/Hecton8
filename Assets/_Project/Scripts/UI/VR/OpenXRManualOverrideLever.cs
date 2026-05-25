@@ -22,7 +22,7 @@ namespace Hecton8.UI.VR
     [DisallowMultipleComponent]
     [RequireComponent(typeof(BoxCollider))]
     [AddComponentMenu("Hecton8/UI/VR/OpenXR Manual Override Lever")]
-    public sealed class OpenXRManualOverrideLever : MonoBehaviour, IUpdatable, IPhysicalPanelButtonReceiver, IManualOverrideLeverReadModel, IGlobalRegistryHotSwapListener
+    public sealed class OpenXRManualOverrideLever : MonoBehaviour, IUpdatable, ILateFrameTickable, IPhysicalPanelButtonReceiver, IManualOverrideLeverReadModel, IGlobalRegistryHotSwapListener
     {
         private const int LeverCount = 1;
         private const int BlackBoxFrameCount = 300;
@@ -97,6 +97,7 @@ namespace Hecton8.UI.VR
         private uint _inputSequence;
         private ushort _signalSequence;
         private bool _registeredTick;
+        private bool _registeredLateFrame;
         private bool _registeredHotSwapListener;
         private bool _receiverRegistered;
         private bool _dispatcherAvailable;
@@ -108,6 +109,12 @@ namespace Hecton8.UI.VR
         private bool _projectionSingular;
         private bool _xrActiveThisFrame;
         private bool _blackBoxDumped;
+        private bool _leverVisualDirty;
+        private bool _ratchetHapticDirty;
+        private bool _latchHapticDirty;
+        private bool _pendingLatchShutdown;
+        private float _pendingLeverVisualAngle;
+        private float _pendingRatchetHapticAngle;
         private byte _latchedHandSide;
 
         /// <inheritdoc />
@@ -209,12 +216,42 @@ namespace Hecton8.UI.VR
 
             IntegrateSpring(dt);
             float currentAngle = _leverAngle;
-            ApplyLeverVisual(currentAngle);
-            UpdateIkTarget(dt);
-            EmitRatchetHaptic(currentAngle);
+            QueueLeverPresentation(currentAngle);
             TryLatch(currentAngle);
             currentAngle = _leverAngle;
             WriteBlackBoxFrame(currentAngle);
+        }
+
+        public void LateFrameTick()
+        {
+            float dt = Time.unscaledDeltaTime;
+            if (_leverVisualDirty)
+            {
+                _leverVisualDirty = false;
+                ApplyLeverVisual(_pendingLeverVisualAngle);
+            }
+
+            UpdateIkTarget(dt);
+
+            if (_ratchetHapticDirty)
+            {
+                _ratchetHapticDirty = false;
+                EmitRatchetHaptic(_pendingRatchetHapticAngle);
+            }
+
+            if (_latchHapticDirty)
+            {
+                _latchHapticDirty = false;
+                PublishLatchHaptic();
+            }
+
+            if (_pendingLatchShutdown)
+            {
+                _pendingLatchShutdown = false;
+                TryUnregisterReceiver();
+                TryUnregisterTick();
+                TryUnregisterHotSwapListener();
+            }
         }
 
         /// <summary>
@@ -423,16 +460,14 @@ namespace Hecton8.UI.VR
             _leverAngle = maxAngleDegrees;
             _leverTarget = maxAngleDegrees;
             _leverVelocity = 0f;
-            ApplyLeverVisual(maxAngleDegrees);
+            QueueLeverPresentation(maxAngleDegrees);
             PublishManualOverrideSignal(latchVelocityDegreesPerSecond);
-            PublishLatchHaptic();
+            _latchHapticDirty = true;
 
             if (emitPrologueComplete)
                 PublishPrologueCompleteSignal();
 
-            TryUnregisterReceiver();
-            TryUnregisterTick();
-            TryUnregisterHotSwapListener();
+            _pendingLatchShutdown = true;
         }
 
         private void PublishManualOverrideSignal(float latchVelocityDegreesPerSecond)
@@ -452,6 +487,14 @@ namespace Hecton8.UI.VR
                 ? ManualOverridePulledSignal.FlagVrGrip
                 : ManualOverridePulledSignal.FlagNonVrFallback;
             SignalBus<ManualOverridePulledSignal>.TryPush(in signal);
+        }
+
+        private void QueueLeverPresentation(float angleDegrees)
+        {
+            _pendingLeverVisualAngle = angleDegrees;
+            _pendingRatchetHapticAngle = angleDegrees;
+            _leverVisualDirty = true;
+            _ratchetHapticDirty = true;
         }
 
         private float3 ResolveHandleLocalPosition()
@@ -880,12 +923,22 @@ namespace Hecton8.UI.VR
                 return;
 
             _registeredTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
+            _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
         }
 
         private void TryUnregisterTick()
         {
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
-            _registeredTick = false;
+            if (_registeredTick)
+            {
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
+                _registeredTick = false;
+            }
+
+            if (_registeredLateFrame)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);
+                _registeredLateFrame = false;
+            }
         }
 
         private void TryRegisterHotSwapListener()

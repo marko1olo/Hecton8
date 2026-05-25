@@ -68,8 +68,7 @@ namespace Hecton.Localization
         /// </summary>
         public string Resolve()
         {
-            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
-            return Resolve(manager);
+            return ResolveOrFallback(GlobalRegistry.LocalizationTextExpansion, fallbackText);
         }
 
         /// <summary>
@@ -152,7 +151,7 @@ namespace Hecton.Localization
             {
                 ReadOnlySpan<char> resolved = manager.GetRawSpanOrFallback(LocHash.Compute(tableKey.AsSpan()), ReadOnlySpan<char>.Empty);
                 if (!resolved.IsEmpty)
-                    return !string.IsNullOrWhiteSpace(fallback) ? fallback : tableKey;
+                    return new string(resolved);
             }
 
             if (!string.IsNullOrWhiteSpace(fallback))
