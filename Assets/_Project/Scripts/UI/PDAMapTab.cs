@@ -288,7 +288,9 @@ namespace Hecton8.UI
                     _streamingBackpressureService = currentService as IStreamingBackpressureService;
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    TryRegisterLateFrame();
+                    _registeredLateFrame = false;
+                    if (currentService != null && isActiveAndEnabled)
+                        TryRegisterLateFrame();
                     break;
             }
         }

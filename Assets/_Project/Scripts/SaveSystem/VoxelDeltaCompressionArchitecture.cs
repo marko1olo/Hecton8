@@ -246,9 +246,12 @@ namespace Hecton8.SaveSystem
             if (vault == null)
                 return false;
 
-            int safeCells = math.max(ChunkCellCount, cellCapacity);
-            int safeRuns = math.max(1, rleRunCapacity);
-            int safeBytes = Align16(math.max(1024, stagingCapacityBytes));
+            int safeCells = ChunkCellCount;
+            int safeRuns = math.clamp(rleRunCapacity <= 0 ? ChunkCellCount : rleRunCapacity, 1, ChunkCellCount);
+            int safeBytes = Align16(math.clamp(
+                stagingCapacityBytes <= 0 ? MaxVoxelDeltaWalPayloadBytes : stagingCapacityBytes,
+                1024,
+                MaxVoxelDeltaWalPayloadBytes));
             int safeStats = math.max(1, sectorStatsCapacity);
             int blockCount = ResolveBlockCount(safeCells, DefaultBlockCells);
 

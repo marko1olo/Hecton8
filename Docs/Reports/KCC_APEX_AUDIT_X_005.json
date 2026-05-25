@@ -312,11 +312,11 @@
     "movement_rb_pose_read_count": 2,
     "movement_rb_pose_reads": [
       {
-        "line": 4143,
+        "line": 4147,
         "text": "_playerState.SyncKinematic(_rb.position, ResolveAuthoritativeLinearVelocity(Vector3.zero));"
       },
       {
-        "line": 8649,
+        "line": 8653,
         "text": "return _rb != null ? HectonPlayerMotor.SafeVelocity(_rb.position) : Vector3.zero;"
       }
     ],
@@ -326,11 +326,11 @@
     "player_kinematics_body_pose_read_count": 2,
     "player_kinematics_body_pose_reads": [
       {
-        "line": 1018,
+        "line": 1019,
         "text": "return _body.position;"
       },
       {
-        "line": 3592,
+        "line": 3607,
         "text": "return CanonicalizeRotation(ToQuaternion(_body.rotation));"
       }
     ],

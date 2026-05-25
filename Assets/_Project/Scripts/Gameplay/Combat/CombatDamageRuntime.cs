@@ -901,6 +901,9 @@ namespace Hecton8.Gameplay
             detail = default;
             impactAup = globalSignal.ImpactAup;
 
+            if ((globalSignal.Flags & CombatDamageSignal.VisualOnlyFlag) != 0)
+                return false;
+
             float magnitude = math.max(0f, globalSignal.Magnitude);
             uint targetId = math.select(globalSignal.TargetId, globalSignal.TargetHash, globalSignal.TargetHash != 0u);
             if (targetId == 0u || !(magnitude > 0f))

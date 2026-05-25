@@ -415,7 +415,10 @@ namespace Hecton8.Core
                     RebindDataVault(currentService as IDataVault);
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    TryRegisterDispatcherRoutes();
+                    _registeredToDispatcher = false;
+                    _registeredLateFrame = false;
+                    if (currentService != null && isActiveAndEnabled)
+                        TryRegisterDispatcherRoutes();
                     break;
             }
         }

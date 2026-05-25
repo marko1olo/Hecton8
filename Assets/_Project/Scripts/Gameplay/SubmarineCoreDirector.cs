@@ -522,8 +522,12 @@ namespace Hecton8.Gameplay
             object previousService,
             object currentService)
         {
-            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && currentService != null && isActiveAndEnabled)
-                TryRegister();
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                _registeredFixedTick = false;
+                if (currentService != null && isActiveAndEnabled)
+                    TryRegister();
+            }
 
             if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
             {

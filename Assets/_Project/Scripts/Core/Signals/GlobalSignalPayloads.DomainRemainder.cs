@@ -1657,6 +1657,7 @@ namespace Hecton8.Core.Contracts.Signals
         public const uint LaneHash = 3474161304u; // FNV32("CombatDamageSignal")
         public const byte LegacyMirrorFlag = 1 << 0;
         public const byte DirectRuntimeFlag = 1 << 1;
+        public const byte VisualOnlyFlag = 1 << 2;
 
         [FieldOffset(0)] public double3 ImpactAup;
         [FieldOffset(24)] public float3 Direction;

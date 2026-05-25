@@ -376,7 +376,8 @@ namespace Hecton8.Gameplay
                     _pdaCorrosionSink = currentService as IPdaCorrosionPresentationSink;
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    if (currentService != null)
+                    _registeredSlowTick = false;
+                    if (currentService != null && isActiveAndEnabled)
                         TryRegister();
                     break;
             }

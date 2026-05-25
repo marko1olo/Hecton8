@@ -340,7 +340,12 @@ namespace Hecton8.Gameplay
             object previousService,
             object currentService)
         {
-            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && currentService != null)
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
+                return;
+
+            _registered = false;
+            _registeredLateFrame = false;
+            if (currentService != null && isActiveAndEnabled)
                 TryRegister();
         }
     }

@@ -959,7 +959,7 @@ namespace Hecton8.Physics
             signal.SourceId = 0;
             signal.TargetId = 0;
             signal.Channel = 0;
-            signal.Flags = CombatDamageSignal.DirectRuntimeFlag;
+            signal.Flags = CombatDamageSignal.DirectRuntimeFlag | CombatDamageSignal.VisualOnlyFlag;
             signal.IntegrityDelta = (byte)math.clamp(math.round(math.saturate(severity01) * 255f), 0f, 255f);
             bool accepted = SignalBus<CombatDamageSignal>.TryPush(in signal);
             if (!accepted)

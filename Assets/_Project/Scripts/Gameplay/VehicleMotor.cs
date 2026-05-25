@@ -1256,6 +1256,8 @@ namespace Hecton8.Gameplay
             if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher || currentService == null)
                 return;
 
+            _registeredLateFrameTick = false;
+            _registeredPostFixedTick = false;
             if (headlessVisualRoot != null)
                 TryRegisterLateFrameTickable();
             if (_safeTeleportCollisionGuardActive)

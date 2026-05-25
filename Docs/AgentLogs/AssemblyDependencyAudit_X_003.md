@@ -3,18 +3,18 @@
 Evidence class: STATIC_SOURCE. No Unity import, compile, player build, or runtime proof was executed.
 
 - Schema: `hecton8.assembly_dependency_audit.v2`
-- Source root: `Assets/_Project/Scripts`
-- Asmdefs: `162`
-- First-party asmdefs: `162`
-- Runtime first-party asmdefs: `102`
-- Editor first-party asmdefs: `60`
+- Source root: `Assets/_Project`
+- Asmdefs: `167`
+- First-party asmdefs: `167`
+- Runtime first-party asmdefs: `103`
+- Editor first-party asmdefs: `64`
 - First-party `noEngineReferences=true`: `6`
-- First-party `autoReferenced=false`: `162`
+- First-party `autoReferenced=false`: `167`
 
 ## DAG
 
-- Nodes: `162`
-- Edges: `381`
+- Nodes: `167`
+- Edges: `404`
 - Acyclic: `True`
 - First-party asmdef cycles: `0`
 - Unresolved first-party/GUID refs: `0`

@@ -760,7 +760,7 @@
   "cycleCount": 0,
   "cycles": [],
   "dag": {
-    "edgeCount": 381,
+    "edgeCount": 404,
     "edges": [
       {
         "from": "Hecton8.AI.Ambient",
@@ -1157,6 +1157,54 @@
       {
         "from": "Hecton8.Ecosystem.NutrientDrift.Editor",
         "to": "Hecton8.Core.Memory"
+      },
+      {
+        "from": "Hecton8.EditModeTests",
+        "to": "Hecton8.Core"
+      },
+      {
+        "from": "Hecton8.EditModeTests",
+        "to": "Hecton8.Core.Contracts"
+      },
+      {
+        "from": "Hecton8.EditModeTests",
+        "to": "Hecton8.Core.Memory"
+      },
+      {
+        "from": "Hecton8.EditModeTests",
+        "to": "Hecton8.Editor"
+      },
+      {
+        "from": "Hecton8.EditModeTests",
+        "to": "Hecton8.Lighting"
+      },
+      {
+        "from": "Hecton8.EditModeTests",
+        "to": "Hecton8.Physics.KCC.Editor"
+      },
+      {
+        "from": "Hecton8.EditModeTests",
+        "to": "Hecton8.Power.Generators"
+      },
+      {
+        "from": "Hecton8.EditModeTests",
+        "to": "Hecton8.Power.Generators.Contracts"
+      },
+      {
+        "from": "Hecton8.EditModeTests",
+        "to": "Hecton8.QA.Headless"
+      },
+      {
+        "from": "Hecton8.EditModeTests",
+        "to": "Hecton8.Rendering.OceanSinglePass"
+      },
+      {
+        "from": "Hecton8.EditModeTests",
+        "to": "Hecton8.SeedShipAnomaly.Runtime"
+      },
+      {
+        "from": "Hecton8.EditModeTests",
+        "to": "Hecton8.Thermodynamics"
       },
       {
         "from": "Hecton8.Editor",
@@ -1579,6 +1627,18 @@
         "to": "Hecton8.Physiology"
       },
       {
+        "from": "Hecton8.PlayModeTests",
+        "to": "Hecton8.Core"
+      },
+      {
+        "from": "Hecton8.PlayModeTests",
+        "to": "Hecton8.Core.Contracts"
+      },
+      {
+        "from": "Hecton8.PlayModeTests",
+        "to": "Hecton8.Core.Memory"
+      },
+      {
         "from": "Hecton8.Plugins",
         "to": "Hecton8.Bootstrap.Contracts"
       },
@@ -1625,6 +1685,34 @@
       {
         "from": "Hecton8.Power.Generators",
         "to": "Hecton8.Power.Generators.Contracts"
+      },
+      {
+        "from": "Hecton8.Project.Editor",
+        "to": "Hecton8.Core"
+      },
+      {
+        "from": "Hecton8.Project.Editor",
+        "to": "Hecton8.Core.Contracts"
+      },
+      {
+        "from": "Hecton8.Project.Editor",
+        "to": "Hecton8.Core.Memory"
+      },
+      {
+        "from": "Hecton8.Project.Editor",
+        "to": "Hecton8.Crest.Bridge.Editor"
+      },
+      {
+        "from": "Hecton8.Project.Editor",
+        "to": "Hecton8.Dev.SpaceEngine098"
+      },
+      {
+        "from": "Hecton8.Project.Editor",
+        "to": "Hecton8.Plugins"
+      },
+      {
+        "from": "Hecton8.Project.Editor",
+        "to": "Hecton8.Rendering.OceanSinglePass"
       },
       {
         "from": "Hecton8.Prologue.Space",
@@ -1745,6 +1833,10 @@
       {
         "from": "Hecton8.Rendering.WaterOptics.Editor",
         "to": "Hecton8.Rendering.WaterOptics"
+      },
+      {
+        "from": "Hecton8.SaveSystem.EditModeTests",
+        "to": "Hecton8.Core"
       },
       {
         "from": "Hecton8.SaveSystem.Editor",
@@ -2288,7 +2380,7 @@
       }
     ],
     "isAcyclic": true,
-    "nodeCount": 162,
+    "nodeCount": 167,
     "topologicalOrder": [
       "Hecton8.AI.Ambient",
       "Hecton8.AI.Cognition.Editor",
@@ -2311,16 +2403,12 @@
       "Hecton8.Core.Memory.Defrag",
       "Hecton8.Core.Persistence",
       "Hecton8.Core.Time",
-      "Hecton8.Crest.Bridge.Editor",
-      "Hecton8.Crest.Bridge",
       "Hecton8.DataMonolith.Editor",
       "Hecton8.Ecosystem.NutrientDrift.Editor",
+      "Hecton8.EditModeTests",
       "Hecton8.Editor",
-      "Hecton8.Dev.SpaceEngine098",
       "Hecton8.Editor.ProceduralGen",
       "Hecton8.Environment.Editor",
-      "Hecton8.Environment.Fluids",
-      "Hecton8.Environment.Fluids.Contracts",
       "Hecton8.Gameplay.Loot",
       "Hecton8.Gameplay.Loot.Contracts",
       "Hecton8.Gameplay.Mining",
@@ -2332,12 +2420,12 @@
       "Hecton8.Graphics.Culling",
       "Hecton8.Graphics.Materials.Editor",
       "Hecton8.Graphics.Materials",
-      "Hecton8.Graphics.Scalability",
       "Hecton8.Habitat.Deformation.DamageBake.Editor",
       "Hecton8.Habitat.Deformation.Editor",
       "Hecton8.Habitat.Deformation",
       "Hecton8.HabitatInteriorClutterForge.Editor",
       "Hecton8.Input.Determinism",
+      "Hecton8.Input.Generated",
       "Hecton8.InventoryRouting.Editor",
       "Hecton8.Lighting.Editor",
       "Hecton8.Lighting",
@@ -2359,11 +2447,19 @@
       "Hecton8.Physics.Vehicles.Editor",
       "Hecton8.Physiology.Editor",
       "Hecton8.Physiology",
-      "Hecton8.Plugins",
+      "Hecton8.PlayModeTests",
       "Hecton8.Power.BatteryChargerLogistics.Editor",
       "Hecton8.Power.BatteryChargerLogistics.Runtime",
       "Hecton8.Power.Generators",
       "Hecton8.Power.Generators.Contracts",
+      "Hecton8.Project.Editor",
+      "Hecton8.Crest.Bridge.Editor",
+      "Hecton8.Crest.Bridge",
+      "Hecton8.Dev.SpaceEngine098",
+      "Hecton8.Environment.Fluids",
+      "Hecton8.Environment.Fluids.Contracts",
+      "Hecton8.Graphics.Scalability",
+      "Hecton8.Plugins",
       "Hecton8.Prologue.Space",
       "Hecton8.Prologue.VFX",
       "Hecton8.QA.Editor",
@@ -2376,6 +2472,7 @@
       "Hecton8.Rendering.TexturePacker.Editor",
       "Hecton8.Rendering.WaterOptics.Editor",
       "Hecton8.Rendering.WaterOptics",
+      "Hecton8.SaveSystem.EditModeTests",
       "Hecton8.SaveSystem.Editor",
       "Hecton8.SeedShipAnomaly.Editor",
       "Hecton8.SeedShipAnomaly.Runtime",
@@ -2940,14 +3037,14 @@
     }
   ],
   "schema": "hecton8.assembly_dependency_audit.v2",
-  "sourceRoot": "Assets/_Project/Scripts",
+  "sourceRoot": "Assets/_Project",
   "summary": {
-    "assemblyCount": 162,
-    "autoReferencedFalseCount": 162,
-    "editorFirstPartyAssemblyCount": 60,
-    "firstPartyAssemblyCount": 162,
+    "assemblyCount": 167,
+    "autoReferencedFalseCount": 167,
+    "editorFirstPartyAssemblyCount": 64,
+    "firstPartyAssemblyCount": 167,
     "noEngineReferencesCount": 6,
-    "runtimeFirstPartyAssemblyCount": 102,
+    "runtimeFirstPartyAssemblyCount": 103,
     "topReferenceCounts": [
       {
         "assembly": "Hecton8.Editor",
@@ -2966,6 +3063,18 @@
         "firstPartyReferences": 14,
         "path": "Assets/_Project/Scripts/Hecton8.Core.asmdef",
         "references": 27
+      },
+      {
+        "assembly": "Hecton8.Project.Editor",
+        "firstPartyReferences": 7,
+        "path": "Assets/_Project/Editor/Hecton8.Project.Editor.asmdef",
+        "references": 25
+      },
+      {
+        "assembly": "Hecton8.EditModeTests",
+        "firstPartyReferences": 12,
+        "path": "Assets/_Project/Tests/Editor/Hecton8.EditModeTests.asmdef",
+        "references": 18
       },
       {
         "assembly": "Hecton8.Crest.Bridge",
@@ -3055,18 +3164,6 @@
         "assembly": "Hecton8.Power.Generators",
         "firstPartyReferences": 4,
         "path": "Assets/_Project/Scripts/Power/Generators/Hecton8.Power.Generators.asmdef",
-        "references": 8
-      },
-      {
-        "assembly": "Hecton8.Tools.ToolKinematics",
-        "firstPartyReferences": 4,
-        "path": "Assets/_Project/Scripts/Tools/ToolKinematics/Hecton8.Tools.ToolKinematics.asmdef",
-        "references": 8
-      },
-      {
-        "assembly": "Hecton8.UI.Navigation",
-        "firstPartyReferences": 3,
-        "path": "Assets/_Project/Scripts/UI/Navigation/Hecton8.UI.Navigation.asmdef",
         "references": 8
       }
     ]

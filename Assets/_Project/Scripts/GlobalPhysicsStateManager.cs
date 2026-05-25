@@ -1513,7 +1513,10 @@ namespace Hecton8.Physics
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
                     _tickDispatcher = currentService as ITickDispatcher;
-                    if (_isInitialized)
+                    _registeredFixedTick = false;
+                    _registeredLateFrameTick = false;
+                    _registeredPostFixedTick = false;
+                    if (currentService != null && _isInitialized)
                     {
                         TryRegisterFixedTick();
                         TryRegisterLateFrameTick();

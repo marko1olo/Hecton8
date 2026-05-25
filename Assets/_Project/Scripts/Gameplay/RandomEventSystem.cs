@@ -1334,8 +1334,14 @@ namespace Hecton8.Gameplay
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.Dispatcher:
+                    _registered = false;
+                    _registeredLateFrame = false;
                     if (currentService != null && isActiveAndEnabled)
+                    {
                         TryRegister();
+                        if (HasQueuedRandomEventVisuals())
+                            TryRegisterLateFrame();
+                    }
                     break;
                 case GlobalRegistryServiceSlot.LocalizationRuntime:
                     _cachedLocalization = currentService as ILocalizationTextReadModel;

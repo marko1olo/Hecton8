@@ -15,7 +15,7 @@ namespace Hecton8.UI
     [DisallowMultipleComponent]
     [RequireComponent(typeof(BoxCollider))]
     [AddComponentMenu("Hecton8/UI/Physical Panel Button")]
-    public sealed class PhysicalPanelButton : MonoBehaviour, ITickable, IUpdatable, IInteractionSignalConsumer, IPhysicalPanelButtonReceiver, IGlobalRegistryHotSwapListener
+    public sealed class PhysicalPanelButton : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, IInteractionSignalConsumer, IPhysicalPanelButtonReceiver, IGlobalRegistryHotSwapListener
     {
         private const uint PhysicalPanelToolId = 0x50414E4Cu;
         private const byte LeftMotorMask = 0b0001;
@@ -118,10 +118,15 @@ namespace Hecton8.UI
         private IAudioService _cachedAudioService;
         private IPlayerRuntimeContext _cachedPlayerContext;
         private bool _registered;
+        private bool _registeredLateFrame;
         private bool _receiverRegistered;
         private bool _hotSwapListenerRegistered;
         private bool _pressDispatched;
         private bool _acousticRuntimeAcquired;
+        private bool _buttonVisualDirty;
+        private bool _pendingPressHaptic;
+        private float _pendingVisualPressed01;
+        private byte _pendingPressHapticMask;
         private Collider _registeredActivationVolume;
 
         /// <summary>Collider volume used by the physical hand overlap probe.</summary>
@@ -205,10 +210,7 @@ namespace Hecton8.UI
             _pressed01 = math.lerp(currentPressed, target, alpha);
 
             if (buttonMesh != null && (pressedWasInvalid || math.abs(_pressed01 - currentPressed) > VisualWriteEpsilon))
-            {
-                Vector3 offset = new Vector3(0f, 0f, -_resolvedPressDepthMeters * _pressed01);
-                buttonMesh.localPosition = _baseLocalPosition + offset;
-            }
+                QueueButtonVisual(_pressed01);
 
             if (!handInside && _pressDispatched)
             {
@@ -226,6 +228,27 @@ namespace Hecton8.UI
             }
 
             RefreshTickRegistration(handInside);
+        }
+
+        public void LateFrameTick()
+        {
+            if (_buttonVisualDirty)
+            {
+                _buttonVisualDirty = false;
+                ApplyButtonVisual(_pendingVisualPressed01);
+            }
+
+            if (_pendingPressHaptic)
+            {
+                _pendingPressHaptic = false;
+                ToolHapticsRuntime.TryEnqueueSinusoidalCommand(
+                    _resolvedPressHapticLowFrequency,
+                    _resolvedPressHapticHighFrequency,
+                    _resolvedPressHapticDurationSeconds,
+                    _resolvedPressHapticFrequencyHz,
+                    MicroHapticPriority,
+                    _pendingPressHapticMask);
+            }
         }
 
         private static float FastDecayBlend(float speed, float deltaTime)
@@ -382,14 +405,24 @@ namespace Hecton8.UI
             if (!emitPressHaptics)
                 return;
 
-            byte motorMask = ResolveHapticMotorMask(handSourceCollider, fallbackHandSide);
-            ToolHapticsRuntime.TryEnqueueSinusoidalCommand(
-                _resolvedPressHapticLowFrequency,
-                _resolvedPressHapticHighFrequency,
-                _resolvedPressHapticDurationSeconds,
-                _resolvedPressHapticFrequencyHz,
-                MicroHapticPriority,
-                motorMask);
+            _pendingPressHapticMask = ResolveHapticMotorMask(handSourceCollider, fallbackHandSide);
+            _pendingPressHaptic = true;
+            TryRegister();
+        }
+
+        private void QueueButtonVisual(float pressed01)
+        {
+            _pendingVisualPressed01 = math.saturate(pressed01);
+            _buttonVisualDirty = true;
+        }
+
+        private void ApplyButtonVisual(float pressed01)
+        {
+            if (buttonMesh == null)
+                return;
+
+            Vector3 offset = new Vector3(0f, 0f, -_resolvedPressDepthMeters * math.saturate(pressed01));
+            buttonMesh.localPosition = _baseLocalPosition + offset;
         }
 
         private byte ResolveHapticMotorMask(Collider handSourceCollider, PhysicalHandSide fallbackHandSide)
@@ -716,6 +749,7 @@ namespace Hecton8.UI
                 return;
 
             _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
+            _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
         }
 
         private void RefreshTickRegistration(bool handInside)
@@ -729,8 +763,7 @@ namespace Hecton8.UI
             if (_pressed01 != 0f)
             {
                 _pressed01 = 0f;
-                if (buttonMesh != null)
-                    buttonMesh.localPosition = _baseLocalPosition;
+                QueueButtonVisual(0f);
             }
 
             _signalCooldownRemaining = 0f;
@@ -740,8 +773,17 @@ namespace Hecton8.UI
 
         private void Unregister()
         {
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
-            _registered = false;
+            if (_registered)
+            {
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
+                _registered = false;
+            }
+
+            if (_registeredLateFrame && !_buttonVisualDirty && !_pendingPressHaptic)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+                _registeredLateFrame = false;
+            }
         }
 
 #if UNITY_EDITOR

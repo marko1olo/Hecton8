@@ -458,7 +458,12 @@ namespace Hecton8.Networking
             }
 
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
-                TryRegisterDispatch();
+            {
+                _registeredFixedDispatcher = 0;
+                _registeredLateFrame = 0;
+                if (currentService != null && isActiveAndEnabled)
+                    TryRegisterDispatch();
+            }
         }
 
         public uint GetFixedSystemIdHash()
