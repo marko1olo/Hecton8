@@ -12,10 +12,7 @@
   "duplicateHeaderFiles": [],
   "brokenLinkFiles": [],
   "fenceIssueFiles": [],
-  "encodingWithoutUtf8Sig": [
-    "Docs/Reports/KCC_APEX_AUDIT_X_005.md",
-    "Docs/Reports/SIGNAL_REFUSAL_TELEMETRY_CLOSURE_X_001.md"
-  ],
+  "encodingWithoutUtf8Sig": [],
   "staleParameterFiles": [],
-  "pass": false
+  "pass": true
 }

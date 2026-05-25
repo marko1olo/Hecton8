@@ -302,28 +302,14 @@ namespace Hecton8.Building
         //  ZERO-GC STRING CACHING
         // ══════════════════════════════════════════════════════════
 
-        private static readonly string[] _cachedUpperStrings = new string[16];
-
-        /// <summary>
-        /// Keshirovannyy ToUpperInvariant dlya izbezhaniya povtornyh allokatsiy strok.
-        /// Hranit do 16 poslednih preobrazovaniy dlya povtornogo ispolzovaniya.
-        /// </summary>
-        private static string CachedToUpperInvariant(string input)
+        private static bool TryAppend(ReadOnlySpan<char> source, Span<char> destination, ref int length)
         {
-            if (string.IsNullOrEmpty(input))
-                return input;
+            if (destination.Length - length < source.Length)
+                return false;
 
-            // Prostoy hash dlya keshirovaniya (ne kriptograficheskiy)
-            int hash = input.GetHashCode() & 0xF; // Maska dlya indeksa 0-15
-
-            string cached = _cachedUpperStrings[hash];
-            if (cached != null && string.Equals(cached, input, System.StringComparison.OrdinalIgnoreCase))
-                return cached;
-
-            // Sozdaem novuyu stroku i keshiruem
-            string upper = input.ToUpperInvariant();
-            _cachedUpperStrings[hash] = upper;
-            return upper;
+            source.CopyTo(destination.Slice(length));
+            length += source.Length;
+            return true;
         }
     }
 }
