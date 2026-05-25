@@ -48,4 +48,4 @@ Loop 8 hardening:
 X_009 hardening:
 - DCS warnings are edge-or-1Hz gated with no managed cooldown/timer; damage truth remains on the 10 Hz SlowTick.
 - Narcosis/gas toxicity no longer emits `CauseDecompression`; gas warnings use a separate cadence field in `GasPhysiologyStateDTO`.
-- `StatusEffectStateDTO` is explicit 64 bytes with `ulong StatusEffectMask@0`; poison, burn, stun, radiation, hypoxia, bleeding, crushed, brittle, and crippled routes enter via combat/status masks and SHINOBU physiology bridges.
+- `StatusEffectStateDTO` is explicit 64 bytes with `ulong StatusEffectMask@0`; poison, burn, stun, radiation, hypoxia, bleeding, crushed, brittle, and crippled enter via combat/status masks and SHINOBU physiology bridges.

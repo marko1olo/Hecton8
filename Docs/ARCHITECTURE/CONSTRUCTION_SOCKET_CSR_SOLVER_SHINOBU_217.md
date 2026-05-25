@@ -71,7 +71,7 @@ Current migration boundary:
 - Pending and cached snap results additionally require a query hash over ghost root, yaw, blueprint hash, and ghost socket layout before a pose can be reused.
 - Builder validation pending results require a separate query hash over module hash, preview pose/rotation, proxy bounds center/size, and snap/DearLie flags.
 - Blueprint hash uses `ResolveShinobuModuleHash()`, so `ModuleHashId == 0` falls back to `TemplateHashId`; the same fallback is used for `ConstructionPreviewSignal.ModuleHash`, construction validation payloads, acoustic source fallback, and `FloraExclusionSignal.ModuleHash`.
-- Cached Dear Lie pose state is invalidated on query mismatch, no-snap reducer results, failed result application, unsnap, placement reset, and builder reset; `float.MaxValue` cached distance is rejected explicitly.
+- Cached Dear Lie pose state is invalidated on query mismatch, no-snap reducer results, failed result application, unsnap, placement reset, and builder reset; `float.MaxValue` cached distance is rejected.
 - `HectonBlueprintPreviewBatch` derives alpha, telemetry SDF sign, and `_lastPreviewAllowed` from current-row validation flags.
 - It ignores previous-frame `_lastPreviewAllowed` and pre-sanitized signal flags.
 - All preview scale axes must be positive before valid flags survive.
@@ -104,7 +104,7 @@ Current migration boundary:
 
 
 - The authored semantic placement-rule cache no longer owns a reusable `List<MonoBehaviour>` buffer or active `IBuildPlacementRule` interface dispatch.
-- `CacheActivePlacementRule()` performs cold direct sealed-component lookup for the known `DeepDrillModule` and `AutonomousExtractorModule` providers, stores a byte rule-kind tag, and active preview validation calls `ValidatePlacementWithService()` / `ValidatePlacementWithRuntime()` with cached dependencies.
+- `CacheActivePlacementRule()` performs cold direct sealed-component lookup for the `DeepDrillModule` and `AutonomousExtractorModule` providers, stores a byte rule-kind tag, and active preview validation calls `ValidatePlacementWithService()` / `ValidatePlacementWithRuntime()` with cached dependencies.
 - Deep-drill validation no longer builds `InteractionPacket`, stamps Unity time, or polls `GlobalRegistry.InteractionSignals`. Active providers use fixed `DeepDrillModule[128]` plus `s_ActiveModuleCount`.
 - Extractor validation no longer creates its runtime owner during validation and no longer scores candidates through transform-position fallback.
 - The remaining extractor `Physics.OverlapSphereNonAlloc` is a documented semantic-rule residue until the resource-node owner publishes an unmanaged spatial snapshot.
@@ -224,7 +224,7 @@ Current migration boundary:
 
 - The target direction CSR contains open finite sockets only; occupied, blocked, non-finite, and invalid-direction rows are excluded during cold CSR rebuild.
 
-- The runtime budget is consumed when a CSR target row is read, before radius/compatibility/alignment rejection, so low quality bounds memory bandwidth even when all open sockets are far.
+- The runtime budget is consumed when a CSR target row is read, before radius/compatibility/alignment rejection, so low quality bounds memory bandwidth even when open sockets are far.
 
 - Direction CSR removes incompatible buckets before that quality budget is spent.
 

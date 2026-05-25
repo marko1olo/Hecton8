@@ -1067,3 +1067,11 @@ Residual risk:
 - No FNS XSD download/checksum pinning yet.
 - No KEP signature, ТКС/ЭДО submission, operator protocol or receipt lifecycle yet.
 - Web chunk warning remains open at 683.60 kB.
+
+## 2026-05-25 - FNS KND 1151156 Source Pinning - Bottom Index
+
+Problem: Rationale for source pinning is recorded above after the prior official-source residual-risk block. This bottom index exists so the latest DENTE loop is visible from tail reads.
+Solution: Loop 41 pinned FNS Order EA-7-11/824@ appendices 1-4 and XSD in `docs/legal-sources/fns-knd-1151156.json`, added the XSD metadata URL, and added `smoke:official-document-sources`.
+Rejected Alternatives: Duplicating the full rationale block here; treating the source manifest as real XSD validation.
+Scalability potential: Same as Loop 41 source pinning above.
+Hardware Impact: 0 us Unity runtime; cold source/docs/smoke work only.

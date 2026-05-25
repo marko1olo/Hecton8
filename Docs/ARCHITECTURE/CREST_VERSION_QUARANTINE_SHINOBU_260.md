@@ -225,7 +225,7 @@ Task 12 status: blocked by dependency. Crest `OceanRenderer.OnEnable`/`Start` su
 - Assembly sidecar exact scans: no non-bridge active `.asmdef` or `.asmref` references to Crest assembly names or Crest asmdef GUIDs `5b35af79ebbe89647a157055d52c59d3` / `59cd48da98d9e4a80917b613abe9416e`.
 - Archived asset GUID exact scan: no active references under `Assets`, `ProjectSettings`, or `Packages` to `ed12880d16f3f2f4e80ceee64594101d`, `149ebcba5c729ad49911b1ea4b8456fd`, `0ef7bde4d259c9d4abcc93f41b0903a0`, or `a73ab923bdc811242bdca5f288eb3877`.
 - Auto-reference exact check: active Crest donor runtime/editor asmdefs and Crest bridge runtime/editor asmdefs all retain `autoReferenced=false`.
-- Scripting define exact check: `CREST_OCEAN` and `CREST_URP` appear in Standalone PlayerSettings and active Crest donor code; no first-party non-bridge `.cs`, `.asmdef`, `.asmref`, or `.rsp` file uses those symbols.
+- Scripting define check: `CREST_OCEAN` and `CREST_URP` appear in Standalone PlayerSettings and active Crest donor code; no first-party non-bridge `.cs`, `.asmdef`, `.asmref`, or `.rsp` file uses those symbols.
 - Donor optional reference exact check: no active `Unity.RenderPipelines.HighDefinition.Runtime` or `Unity.Postprocessing.Runtime` reference remains in `Assets/Crest/Crest/Scripts/Crest.asmdef`.
 - Generated report exact check: no active `Assets/profilermarkers.csv(.meta)` remains; archived `Docs/Archive/Crest_Version_Quarantine/Assets/profilermarkers.csv` retains the stale Crest rows for forensic trace only.
 - Exact shader scan: Crest HLSL include hits exist only under `Assets/_Project/Scripts/Plugins/Crest/Shaders/`.

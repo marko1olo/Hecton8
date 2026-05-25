@@ -17,7 +17,7 @@ Route:
 - GraphicsScalability is the native-memory owner tag.
 
 - Active-frame Vault access uses phase-local `TryResolveHandle` views only. Noir input/tuning/constants/telemetry math is direct owner-phase scalar code, not tiny `IJob.Run()` calls.
-- GPU upload uses double-buffered `GraphicsBuffer.Target.Constant` with `LockBufferForWrite` and `UnsafeUtility.MemCpy`; RenderGraph imports the active buffer with `ImportBuffer`, declares `UseBuffer(Read)`, and binds it through `SetGlobalConstantBuffer(buffer, nameID, offset, size)`.
+- GPU upload uses double-buffered `GraphicsBuffer.Target.Constant` with `LockBufferForWrite` and `UnsafeUtility.MemCpy`; RenderGraph imports the active buffer with `ImportBuffer`, declares `UseBuffer(Read)`, and binds through `SetGlobalConstantBuffer(buffer, nameID, offset, size)`.
 
 - Shader: `Assets/_Project/Art/Shaders/Hecton_VisorGlitchACES.shader`.
 
@@ -46,7 +46,7 @@ Route:
 - Shared `HectonVisorUberPostFeature` uses dispatcher frame source for reconstruction telemetry and depthless-TBDR cache cadence.
 - Previous concrete fluid runtime rebind was removed from this host.
 - No touched active visor/noir route code uses `Time.frameCount`.
-- The shared host player-context path no longer calls `PlayerRuntimeContextService.TryGetActiveRuntimeContext()` and no longer imports `Hecton8.Gameplay`; it uses the cached `IPlayerRuntimeContext` snapshot route already owned by the registry replacement phase.
+- The shared host player-context path no longer calls `PlayerRuntimeContextService.TryGetActiveRuntimeContext()` and no longer imports `Hecton8.Gameplay`; it uses the cached `IPlayerRuntimeContext` snapshot route owned by the registry replacement phase.
 - Shared host no longer imports `Hecton8.Physics`.
 - It no longer samples `HectonFluidEngine.TrySampleMaelstromWarp`.
 - Pressure/stress distortion stays a screen-space fake from existing pressure/hull-stress inputs until a contracts-only fluid read model exists.
