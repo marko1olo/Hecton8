@@ -851,7 +851,10 @@ namespace Hecton8.Prologue.Space
         {
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
-                TryRegisterUpdateLane();
+                _registeredUpdate = false;
+                _registeredLateFrame = false;
+                if (currentService != null && isActiveAndEnabled)
+                    TryRegisterUpdateLane();
                 return;
             }
 

@@ -1149,7 +1149,10 @@ namespace Hecton8.UI
                     CachePlayerRuntimeContext(currentService as IPlayerRuntimeContext);
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    TryRegister();
+                    _registered = false;
+                    _registeredLateFrame = false;
+                    if (currentService != null && isActiveAndEnabled)
+                        TryRegister();
                     break;
             }
         }

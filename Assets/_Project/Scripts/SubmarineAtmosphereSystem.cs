@@ -3630,7 +3630,10 @@ namespace Hecton8.Atmosphere
                     _thermodynamicsService = currentService as IThermodynamicsService;
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    TryRegister();
+                    _registered = false;
+                    _lateFrameRegistered = false;
+                    if (currentService != null && isActiveAndEnabled)
+                        TryRegister();
                     break;
             }
         }

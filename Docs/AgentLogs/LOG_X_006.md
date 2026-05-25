@@ -1118,3 +1118,12 @@ Cinematic Cheats used: None. This protects the Dear Lie/time-sliced deformation 
 Exact Microseconds saved: 0 us measured. Static impact: regression gate now reports 2 shutdown-only forced completions, 0 non-shutdown forced completions.
 Verification: OOP scanner reports `PASS_STATIC_WITH_BUDGETED_UNITY_MESH_UPLOAD_RESIDUAL`, failed_gates=none. New gate: `voxel_delta_force_complete_shutdown_only=true`.
 Build: Not launched. Gate sampled CPU 100%, then 100%, 99%, and 100% over three rechecks, with zero active compiler/build processes. Project rule forbids dotnet build launch above 50% CPU.
+
+## 2026-05-25 Voxel RLE Vault Staging Cap
+
+What was wrong: `VoxelDeltaCompressionArchitecture.TryResolveVaultBuffers` accepted caller-sized capacities before requesting `GlobalDataVault` handles. The WAL payload guard rejected oversized writes later, but the staging resolver itself could still ask for buffers above fixed chunk/sector geometry.
+What was done: Fixed cell staging to `ChunkCellCount`, clamped RLE run staging to 1..32768, and clamped byte staging to `MaxVoxelDeltaWalPayloadBytes = 262080` before vault handle resolution. The scanner gate now requires all three caps.
+Cinematic Cheats used: None. This is memory containment for the persistence route behind the visual Dear Lie delay.
+Exact Microseconds saved: 0 us measured. Static impact: voxel RLE staging cannot grow above one chunk and one pager-sector payload by caller request.
+Verification: OOP scanner reports `PASS_STATIC_WITH_BUDGETED_UNITY_MESH_UPLOAD_RESIDUAL`, failed_gates=none. `voxel_rle_architecture_wal_payload_guard=true` now requires the vault staging caps.
+Build: Pending CPU/process gate.

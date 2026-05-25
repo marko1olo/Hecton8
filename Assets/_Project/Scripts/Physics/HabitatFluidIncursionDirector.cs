@@ -146,12 +146,26 @@ namespace Hecton8.Physics
                 return;
             }
 
-            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && isActiveAndEnabled)
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
-                if (!_registeredFixed)
-                    _registeredFixed = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Environment);
-                if (!_registeredPostFixed)
-                    _registeredPostFixed = GlobalRegistry.TryRegisterPostFixedTickable(this, PriorityLayer.Environment);
+                _registeredFixed = false;
+                _registeredPostFixed = false;
+                if (currentService != null && isActiveAndEnabled)
+                {
+                    bool fixedRegistered = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Environment);
+                    bool postFixedRegistered = GlobalRegistry.TryRegisterPostFixedTickable(this, PriorityLayer.Environment);
+                    if (!fixedRegistered || !postFixedRegistered)
+                    {
+                        if (fixedRegistered)
+                            GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Environment);
+                        if (postFixedRegistered)
+                            GlobalRegistry.UnregisterPostFixedTickable(this, PriorityLayer.Environment);
+                        return;
+                    }
+
+                    _registeredFixed = true;
+                    _registeredPostFixed = true;
+                }
             }
         }
 

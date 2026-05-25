@@ -181,6 +181,83 @@ def approx_acos_fast_f32(value: float) -> float:
     return f32(min(max(angle, 0.0), math.pi))
 
 
+def approx_pow01_curve_f32(value01: float, exponent: float) -> float:
+    x_raw = value01 if math.isfinite(value01) else 0.0
+    x = f32(min(max(x_raw, 0.0), 1.0))
+    e_raw = exponent if math.isfinite(exponent) else 1.0
+    e = f32(min(max(e_raw, 0.25), 4.0))
+    sqrt1 = f32(math.sqrt(max(x, 0.0)))
+    sqrt2 = f32(math.sqrt(max(sqrt1, 0.0)))
+    x2 = f32(x * x)
+    x3 = f32(x2 * x)
+    x4 = f32(x2 * x2)
+    r025_to_05 = f32(sqrt2 + (sqrt1 - sqrt2) * min(max((e - 0.25) * 4.0, 0.0), 1.0))
+    r05_to_1 = f32(sqrt1 + (x - sqrt1) * min(max((e - 0.5) * 2.0, 0.0), 1.0))
+    r1_to_2 = f32(x + (x2 - x) * min(max(e - 1.0, 0.0), 1.0))
+    r2_to_3 = f32(x2 + (x3 - x2) * min(max(e - 2.0, 0.0), 1.0))
+    r3_to_4 = f32(x3 + (x4 - x3) * min(max(e - 3.0, 0.0), 1.0))
+    result = r3_to_4
+    result = r2_to_3 if e < 3.0 else result
+    result = r1_to_2 if e < 2.0 else result
+    result = r05_to_1 if e < 1.0 else result
+    result = r025_to_05 if e < 0.5 else result
+    return f32(min(max(result if math.isfinite(result) else 0.0, 0.0), 1.0))
+
+
+def scan_extreme_kernel_finiteness() -> dict:
+    samples = [
+        float("nan"),
+        float("inf"),
+        float("-inf"),
+        -1000000.0,
+        1000000.0,
+        -1000.0,
+        1000.0,
+        -273.15,
+        37.0,
+        0.0,
+        0.1,
+        1.0,
+        4.0,
+        40.0,
+    ]
+    rows = []
+    non_finite = 0
+    max_abs = 0.0
+    for value in samples:
+        pressure = value
+        temperature = value
+        outputs = {
+            "expNegReduced": approx_exp_neg_pade33_reduced_f32(value),
+            "expNegWide": approx_exp_neg_pade33_wide40_f32(value),
+            "expPositiveReduced": approx_exp_positive_pade33_reduced_f32(value),
+            "sinBhaskara": approx_sin_bhaskara_f32(value),
+            "cosBhaskara": approx_cos_bhaskara_f32(value),
+            "tanClamped": approx_tan_clamped_f32(value, 4096.0),
+            "atanFast": approx_atan_fast_f32(value),
+            "atan2Fast": approx_atan2_fast_f32(temperature * 0.000001 if math.isfinite(temperature) else temperature, pressure * 0.001 if math.isfinite(pressure) else pressure),
+            "acosFast": approx_acos_fast_f32((pressure * 0.001 if math.isfinite(pressure) else pressure) - 1.0),
+            "pow01Curve": approx_pow01_curve_f32(value, abs(value) if math.isfinite(value) else value),
+        }
+        bad = [name for name, output in outputs.items() if not math.isfinite(float(output))]
+        non_finite += len(bad)
+        for output in outputs.values():
+            if math.isfinite(float(output)):
+                max_abs = max(max_abs, abs(float(output)))
+        rows.append({
+            "input": str(value),
+            "nonFiniteKernels": bad,
+            "maxAbsOutput": max(abs(float(output)) for output in outputs.values() if math.isfinite(float(output))),
+        })
+    return {
+        "sampleCount": len(samples),
+        "kernelCountPerSample": 10,
+        "nonFiniteOutputCount": non_finite,
+        "maxAbsFiniteOutput": max_abs,
+        "rows": rows,
+    }
+
+
 def scan_exp_residual(max_x: float, step: float) -> dict:
     max_abs = 0.0
     max_rel = 0.0
@@ -463,6 +540,25 @@ def extract_function_body(text: str, signature: str) -> str:
     return ""
 
 
+def extract_struct_body(text: str, struct_name: str) -> str:
+    match = re.search(r"\bstruct\s+" + re.escape(struct_name) + r"\b", text)
+    if not match:
+        return ""
+    brace = text.find("{", match.end())
+    if brace < 0:
+        return ""
+    depth = 0
+    for index in range(brace, len(text)):
+        char = text[index]
+        if char == "{":
+            depth += 1
+        elif char == "}":
+            depth -= 1
+            if depth == 0:
+                return text[brace:index + 1]
+    return ""
+
+
 def branch_audit() -> dict:
     result = {}
     for relative in AUDITED_BRANCH_FILES:
@@ -713,11 +809,36 @@ def code_anchor_audit() -> dict:
     directional_clamp_scalar_body = extract_function_body(core_text, "ClampFiniteWithDirectionalInfinity(float value")
     directional_clamp_vector_body = extract_function_body(core_text, "ClampFiniteWithDirectionalInfinity(float4 value")
     approx_body = extract_function_body(core_text, "ApproxExpNegPade33Reduced(float4 value)")
+    exp_wide_body = extract_function_body(core_text, "ApproxExpNegPade33Wide40(float value)")
+    exp_signed_body = extract_function_body(core_text, "ApproxExpSignedPade33Wide40(float value)")
+    exp_positive_body = extract_function_body(core_text, "ApproxExpPositivePade33Reduced(float value)")
     bhaskara_body = extract_function_body(core_text, "ApproxSinBhaskara(float radians)")
     tan_body = extract_function_body(core_text, "ApproxTanClamped(float radians")
     atan_body = extract_function_body(core_text, "ApproxAtanFast(float value)")
     atan2_body = extract_function_body(core_text, "ApproxAtan2Fast(float y, float x)")
     acos_body = extract_function_body(core_text, "ApproxAcosFast(float value)")
+    pow01_body = extract_function_body(core_text, "ApproxPow01Curve(float value01, float exponent)")
+    approximation_kernel_text = "".join([
+        directional_clamp_scalar_body,
+        directional_clamp_vector_body,
+        approx_body,
+        exp_wide_body,
+        exp_signed_body,
+        exp_positive_body,
+        bhaskara_body,
+        tan_body,
+        atan_body,
+        atan2_body,
+        acos_body,
+        pow01_body,
+    ])
+    math_lod_torture_body = extract_struct_body(core_text, "MathLodTortureJob")
+    power_voltage_solver_body = extract_struct_body(power_jacobi_text, "PowerVoltageSolverJob")
+    integrate_battery_body = extract_struct_body(power_jacobi_text, "IntegrateBatteryChargeJob")
+    equipment_drain_body = extract_struct_body(power_jacobi_text, "ApplyEquipmentPowerDrainJob")
+    power_voltage_execute_body = extract_function_body(power_voltage_solver_body, "public void Execute(int index)")
+    power_voltage_loop_match = re.search(r"for\s*\(int\s+edgeCursor\s*=.*?conductanceSum\s*\+=\s*conductance;\s*}", power_voltage_execute_body, re.DOTALL)
+    power_voltage_edge_loop = power_voltage_loop_match.group(0) if power_voltage_loop_match else ""
     math_lod_read_body = extract_function_body(core_text, "TryReadLatestConfig(out MathLodConfigDTO config)")
     anxiety_approx_body = extract_function_body(anxiety_text, "ApproxExpNegPade33Reduced(float value)")
     battery_cadence_body = extract_function_body(battery_charger_text, "ResolveCadenceHzStatic(float quality)")
@@ -889,6 +1010,17 @@ def code_anchor_audit() -> dict:
         "atan2CoreIfCount": len(re.findall(r"\bif\s*\(", atan2_body)),
         "acosCoreIfCount": len(re.findall(r"\bif\s*\(", acos_body)),
         "atanCoreUsesMathSelect": "math.select" in atan_body and "math.select" in atan2_body and "math.select" in acos_body,
+        "approximationKernelTotalIfCount": len(re.findall(r"\bif\s*\(", approximation_kernel_text)),
+        "approximationKernelTotalTernaryCount": approximation_kernel_text.count("?"),
+        "approximationKernelUsesMathSelect": "math.select" in approximation_kernel_text,
+        "mathLodTortureSafetyIfCount": len(re.findall(r"\bif\s*\(", math_lod_torture_body)),
+        "mathLodTortureTernaryCount": math_lod_torture_body.count("?"),
+        "powerVoltageSolverSafetyIfCount": len(re.findall(r"\bif\s*\(", power_voltage_solver_body)),
+        "powerVoltageSolverTernaryCount": power_voltage_solver_body.count("?"),
+        "powerVoltageEdgeLoopIfCount": len(re.findall(r"\bif\s*\(", power_voltage_edge_loop)),
+        "powerVoltageEdgeLoopContinueCount": len(re.findall(r"\bcontinue\s*;", power_voltage_edge_loop)),
+        "integrateBatterySafetyIfCount": len(re.findall(r"\bif\s*\(", integrate_battery_body)),
+        "equipmentDrainSafetyIfCount": len(re.findall(r"\bif\s*\(", equipment_drain_body)),
         "jacobiContinuousIterationsPresent": "MinPropagationIterations = 2" in power_text and "MaxPropagationIterations = 50" in power_text,
         "jacobiRuntimeUsesGlobalQualityParameter": "float qualityWeight = MathLodApproximation.SaturateFinite(globalQualityWeight" in power_text,
         "powerVoltageConductanceMaskBranchless": "conductance *= math.select(1f, 0f, conductance <= PowerGridJacobiConstants.MinimumConductance);" in power_jacobi_text and re.search(r"\bif\s*\(\s*conductance\s*<=\s*PowerGridJacobiConstants\.MinimumConductance", power_jacobi_text) is None,

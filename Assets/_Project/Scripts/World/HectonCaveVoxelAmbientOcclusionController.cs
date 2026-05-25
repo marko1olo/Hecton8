@@ -11,7 +11,7 @@ namespace Hecton8.World
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-6750)]
-    public sealed class HectonCaveVoxelAmbientOcclusionController : MonoBehaviour, ITickable, IUpdatable, ISlowTickable, IGlobalRegistryHotSwapListener
+    public sealed class HectonCaveVoxelAmbientOcclusionController : MonoBehaviour, ITickable, IUpdatable, ISlowTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const float BaselineEpsilon = 0.0005f;
         private const float ViewerFallbackRetryIntervalSeconds = 2f;
@@ -42,7 +42,9 @@ namespace Hecton8.World
 
         private bool _registeredUpdatable;
         private bool _registeredSlowTickable;
+        private bool _registeredLateFrame;
         private bool _registeredHotSwapListener;
+        private bool _occlusionVisualDirty;
         private WorldCaveDirector _worldCaveDirector;
         private IPlayerRuntimeContext _cachedPlayerContext;
         // COLD ALLOC: List<HectonVoxelVolume>[32] - active cave-volume cache pulled from WorldCaveDirector without scene scans - owner: HectonCaveVoxelAmbientOcclusionController
@@ -106,8 +108,6 @@ namespace Hecton8.World
         /// </summary>
         public void Tick(float deltaTime)
         {
-            RebaseIfUpstreamChanged();
-
             float nextOcclusion = MoveTowardsFast(
                 _appliedOcclusion,
                 _targetOcclusion,
@@ -116,10 +116,20 @@ namespace Hecton8.World
             if (math.abs(nextOcclusion - _appliedOcclusion) > BaselineEpsilon)
             {
                 _appliedOcclusion = nextOcclusion;
-                ApplyCurrentOcclusion();
+                _occlusionVisualDirty = true;
             }
 
             _debugAppliedOcclusion = _appliedOcclusion;
+        }
+
+        public void LateFrameTick()
+        {
+            RebaseIfUpstreamChanged();
+            if (!_occlusionVisualDirty)
+                return;
+
+            _occlusionVisualDirty = false;
+            ApplyCurrentOcclusion();
         }
 
         private static float MoveTowardsFast(float current, float target, float maxDelta)
@@ -152,10 +162,11 @@ namespace Hecton8.World
                 _registeredUpdatable = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
             }
 
-            if (_registeredSlowTickable)
-                return;
+            if (!_registeredLateFrame)
+                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
 
-            _registeredSlowTickable = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
+            if (!_registeredSlowTickable)
+                _registeredSlowTickable = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregister()
@@ -166,11 +177,17 @@ namespace Hecton8.World
                 _registeredUpdatable = false;
             }
 
-            if (!_registeredSlowTickable)
-                return;
+            if (_registeredSlowTickable)
+            {
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+                _registeredSlowTickable = false;
+            }
 
-            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
-            _registeredSlowTickable = false;
+            if (_registeredLateFrame)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                _registeredLateFrame = false;
+            }
         }
 
         private void TryResolveViewerReferences()

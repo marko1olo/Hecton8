@@ -334,7 +334,9 @@ namespace Hecton8.Gameplay
                     RebuildLocalizedTextCache();
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    if (currentService != null)
+                    _registered = false;
+                    _registeredLateFrame = false;
+                    if (currentService != null && isActiveAndEnabled)
                         TryRegister();
                     break;
             }

@@ -287,11 +287,13 @@ namespace Hecton8.Thermodynamics
                 return;
             }
 
-            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher &&
-                currentService != null &&
-                isActiveAndEnabled)
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
-                TryRegister();
+                _registeredTick = false;
+                _registeredSlowTick = false;
+                _registeredLateFrame = false;
+                if (currentService != null && isActiveAndEnabled)
+                    TryRegister();
             }
         }
 

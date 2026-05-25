@@ -1457,9 +1457,9 @@ namespace Hecton8.Physics
 
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
+                _registered = false;
                 if (currentService != null &&
                     isActiveAndEnabled &&
-                    !_registered &&
                     HasActiveHydrodynamicsConfiguration())
                 {
                     TryRegister();

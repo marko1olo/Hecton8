@@ -166,7 +166,9 @@ namespace Hecton8.Core
         {
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
-                TryRegisterLateFrameTickable();
+                _registeredLateFrame = false;
+                if (currentService != null && isActiveAndEnabled)
+                    TryRegisterLateFrameTickable();
                 return;
             }
 

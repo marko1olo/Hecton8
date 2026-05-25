@@ -154,7 +154,10 @@ namespace Hecton8.Caves
                     _persistentWorldRegistry = currentService as PersistentWorldRegistry;
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    TryRegister();
+                    _registeredTick = false;
+                    _registeredFixedTick = false;
+                    if (currentService != null && isActiveAndEnabled)
+                        TryRegister();
                     break;
             }
         }

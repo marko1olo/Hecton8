@@ -1002,3 +1002,11 @@ Solution: Wired `voxel_delta_shutdown_completion_proof()` into the automated gat
 Rejected Alternatives: Removing shutdown forced completion was rejected because persistent DataVault carve-write and compaction scratch memory must not be released while a scene-shutdown writer can still touch it. Relying on comments alone was rejected because future regressions need a machine-readable gate.
 Scalability potential: Low/Middle/High/Ultra behavior is unchanged. The proof preserves the same time-sliced carve and compaction cadence while preventing a hidden same-frame wait from re-entering runtime deformation.
 Hardware Impact: Measured microseconds saved: 0. Expected i3/MX350 impact is regression containment: forced job completion cannot silently return to the 60 Hz drill path without failing `Tools/OOP_Voxel_Scanner.py`.
+
+## Decision 126: Voxel RLE Vault Staging Must Not Accept Caller-Sized Growth
+
+Problem: `VoxelDeltaCompressionArchitecture.TryResolveVaultBuffers` accepted caller-provided `cellCapacity`, `rleRunCapacity`, and `stagingCapacityBytes` directly into `GlobalDataVault.EnsureGenerationHandle`. The WAL packer rejected oversized payloads later, but the buffer resolver could still request memory above chunk/WAL geometry before compression work began.
+Solution: Capped the resolver at the architecture limits: cell capacity is fixed to `ChunkCellCount` (32768), RLE runs clamp to 1..32768, and staging bytes clamp to `MaxVoxelDeltaWalPayloadBytes` (262080) before any vault handle is requested. The scanner now requires those caps as part of `voxel_rle_architecture_wal_payload_guard`.
+Rejected Alternatives: Trusting callers was rejected because the stress case is about bounded memory under sustained drilling. Growing the WAL/page sector was rejected because it changes storage geometry. Silently truncating after vault allocation was rejected because it still wastes memory and hides the real overflow.
+Scalability potential: Low/Middle/High/Ultra use the same chunk and WAL payload geometry. Quality can change compression effort and write cadence, not the maximum staging allocation or save identity.
+Hardware Impact: Measured microseconds saved: 0. Expected i3/MX350 impact is memory-pressure containment: a malformed or future caller cannot enlarge voxel RLE staging beyond one pager-sector payload.
