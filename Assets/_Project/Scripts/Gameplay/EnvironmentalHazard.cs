@@ -572,12 +572,6 @@ namespace Hecton8.Gameplay
 
             IPlayerRuntimeContext playerContext = _playerRuntime;
             playerHealth = playerContext != null ? playerContext.PlayerHealth : null;
-            if (playerHealth == null && _playerTransform != null)
-            {
-                if (!_playerTransform.TryGetComponent(out playerHealth))
-                    playerHealth = _playerTransform.GetComponentInParent<HectonPlayerHealth>();
-            }
-
             _playerHealth = playerHealth;
             return playerHealth;
         }

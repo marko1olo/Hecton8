@@ -6005,9 +6005,10 @@ namespace Hecton8.AI
             if (target == null || damage <= 0f)
                 return false;
 
-            HectonPlayerHealth playerHealth = target.GetComponentInParent<HectonPlayerHealth>();
-            GameObject targetObject = playerHealth != null ? playerHealth.gameObject : target.gameObject;
-            Transform targetTransform = playerHealth != null ? playerHealth.transform : target;
+            IDamageReceiver damageReceiver = target.GetComponentInParent<IDamageReceiver>();
+            Component receiverComponent = damageReceiver as Component;
+            GameObject targetObject = receiverComponent != null ? receiverComponent.gameObject : target.gameObject;
+            Transform targetTransform = receiverComponent != null ? receiverComponent.transform : target;
             int targetId = CombatDamageRuntime.ResolveTargetId(targetObject);
             if (!CombatDamageRuntime.IsTargetRegistered(targetId))
                 return false;
@@ -6065,11 +6066,12 @@ namespace Hecton8.AI
             if (target == null || damage <= 0f || !math.isfinite(damage))
                 return;
 
-            HectonPlayerHealth playerHealth = target.GetComponentInParent<HectonPlayerHealth>();
-            if (playerHealth == null)
+            IDamageReceiver damageReceiver = target.GetComponentInParent<IDamageReceiver>();
+            Component receiverComponent = damageReceiver as Component;
+            if (damageReceiver == null || receiverComponent == null)
                 return;
 
-            Transform targetTransform = playerHealth.transform != null ? playerHealth.transform : target;
+            Transform targetTransform = receiverComponent.transform != null ? receiverComponent.transform : target;
             Vector3 targetPosition = targetTransform.position;
             float3 fallbackImpactPoint = IsFiniteVector(targetPosition)
                 ? new float3(targetPosition.x, targetPosition.y, targetPosition.z)
@@ -6094,7 +6096,7 @@ namespace Hecton8.AI
                 SourceId = IsApexPredator() ? DamageSourceIds.FaunaLeviathanBite : DamageSourceIds.FaunaBite,
                 TraumaLevel = 0
             };
-            playerHealth.ReceiveDamage(in packet);
+            damageReceiver.ReceiveDamage(in packet);
         }
 
         private static bool TryPushProceduralAudioPing(

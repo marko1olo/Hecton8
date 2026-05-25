@@ -490,3 +490,4 @@ Rule quote: "Physical simulation is allowed only when gameplay correctness break
 - Voxel RLE vault staging caps patched: `VoxelDeltaCompressionArchitecture.TryResolveVaultBuffers` now fixes cell capacity to `ChunkCellCount`, clamps RLE run capacity to 1..32768, clamps staging bytes to `MaxVoxelDeltaWalPayloadBytes = 262080`, and clamps sector stats to `MaxVoxelDeltaSectorStats = 512` before requesting GlobalDataVault handles. Scanner proof tightened under `voxel_rle_architecture_wal_payload_guard=true`.
 - OOP scanner rerun after RLE vault staging cap: PASS_STATIC_WITH_BUDGETED_UNITY_MESH_UPLOAD_RESIDUAL, failed gates none.
 - Build not launched after RLE vault staging cap: gate sampled CPU 81%, then 100% and 100% over two rechecks, with zero active compiler/build processes. Project rule forbids dotnet build launch above 50% CPU.
+- Build gate rechecked after sector-stat cap extension: CPU 100% with active `dotnet.exe` and `csc.exe`. No build launched.

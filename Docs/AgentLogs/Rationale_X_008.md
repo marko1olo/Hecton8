@@ -970,3 +970,15 @@ Rejected Alternatives: Duplicating AUP extent constants in the private resolver;
 Scalability potential: Low/Middle avoid propagating invalid far-coordinate impact metadata into deferred feedback or crash telemetry. High/Ultra keep richer AUP impact presentation while every ingress path shares one validity owner.
 
 Hardware Impact: 0 us measured. This adds the same cheap bound predicate already required by the sanitizer; LUT sampling, CAS health subtraction, and pellet fanout math are unchanged. Build proof remains PENDING until CPU/compiler guard clears.
+
+## Decision 107 - Visual Hull Dent Signals Cannot Mutate Combat Health
+
+Problem: `SubmarineStructuralGrid.EnqueueHullImpactDecal()` used `CombatDamageSignal` as a historical VFX dent notification lane. `CombatDamageRuntime.DrainGlobalDamageSignals()` drains the same lane into authoritative LUT/CAS damage. If a dent signal's `TargetHash` matched a registered target, a visual-only impact could become real health damage.
+
+Solution: Added `CombatDamageSignal.VisualOnlyFlag`. The submarine dent producer now sets `DirectRuntimeFlag | VisualOnlyFlag`, and `CombatDamageRuntime.TryBuildCombatSignal()` rejects visual-only signals before constructing `CombatDamageRequest`. The VFX consumer path remains intact because `HullDentShaderController` still consumes `CombatDamageSignal` and projects accepted dents to `HullDeformedSignal`.
+
+Rejected Alternatives: Moving hull dent VFX to a new lane in one pass and risking missed existing consumers; checking `SourceHash == HullDentVisualSourceHash` inside combat runtime; zeroing magnitude and degrading dent visuals; leaving visual damage type `3u` as a tacit exception in central damage.
+
+Scalability potential: Low/Middle avoid accidental health mutation from presentation traffic while retaining cheap dent feedback. High/Ultra keep overkill dent visuals through typed projection without polluting combat truth.
+
+Hardware Impact: 0 us measured. Central damage ingress adds one flag check per global damage signal before existing magnitude/target work. The hot armor LUT and CAS apply math are unchanged. Build proof remains PENDING because CPU guard is blocked.

@@ -1311,4 +1311,4 @@ Verification:
 - Targeted `git diff --check`: passed.
 
 Residual truth:
-- Full C# compile still needs a rerun. Build gate retry stayed closed for 18 samples, ending at CPU `100` with zero active compiler processes.
+- Full C# compile still needs a rerun. Latest build gate sample is CPU `100/100/100` with 2 active compiler/runtime processes.
