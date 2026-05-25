@@ -361,7 +361,7 @@ namespace Hecton8.Interaction
 
         private void RefreshCachedRegistryServices()
         {
-            _audioService = GlobalRegistry.Audio;
+            _audioService = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
             _playerInventoryService = GlobalRegistry.PlayerInventory;
         }
 

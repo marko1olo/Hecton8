@@ -442,7 +442,7 @@ namespace Hecton8.UI
         {
             _playerRuntimeContext = GlobalRegistry.Player;
             _nativeInputManager = GlobalRegistry.NativeInputRuntime;
-            _audioService = GlobalRegistry.Audio;
+            _audioService = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
         }
 
         private void ClearCachedRegistryServices()

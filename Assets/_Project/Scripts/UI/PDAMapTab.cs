@@ -591,7 +591,7 @@ namespace Hecton8.UI
             _explorationTracker = GlobalRegistry.PlayerExploration as IPdaCartographyReadModel;
             _markerRegistry = GlobalRegistry.PDAMarkers;
             _encounterDirector = GlobalRegistry.EncounterDirector;
-            _audioService = GlobalRegistry.Audio;
+            _audioService = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
             _worldSeedProvider = GlobalRegistry.WorldSeedProvider;
             _playerContext = GlobalRegistry.Player;
             _streamingBackpressureService = GlobalRegistry.StreamingBackpressure;

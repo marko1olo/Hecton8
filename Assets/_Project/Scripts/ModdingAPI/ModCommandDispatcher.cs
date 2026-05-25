@@ -1119,7 +1119,7 @@ namespace Hecton8.Modding
             }
 
             float normalizedIntensity = math.saturate(intensity01);
-            IAudioService audioManager = GlobalRegistry.Audio;
+            IAudioService audioManager = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
             if (audioManager == null || !audioManager.TryEmitModAcousticPing(runtimePosition, normalizedIntensity))
             {
                 RejectCommand(command.ModHash, command.RequestId, command.Opcode, command.TargetSystem, ModCommandRejectReason.AcousticUnavailable);

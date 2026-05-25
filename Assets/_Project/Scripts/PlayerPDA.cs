@@ -1160,7 +1160,7 @@ namespace Hecton8.UI
         private void RefreshColdRegistryReferences()
         {
             _inputService = GlobalRegistry.Input;
-            _audioService = GlobalRegistry.Audio;
+            _audioService = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
             _renderTexturePool = GlobalRegistry.RenderTexturePoolService;
             CachePlayerRuntimeContext(GlobalRegistry.Player);
         }

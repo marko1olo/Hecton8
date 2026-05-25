@@ -720,7 +720,7 @@ namespace Hecton8.UI
         private void CacheRegistryServicesCold()
         {
             _cachedPlayerContext = GlobalRegistry.Player;
-            _cachedAudioManager = GlobalRegistry.Audio as ISpatialAudioImpactEmitterReadModel;
+            _cachedAudioManager = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance as ISpatialAudioImpactEmitterReadModel;
         }
 
         private static Canvas ResolveTargetCanvas(bool allowComponentFallback)

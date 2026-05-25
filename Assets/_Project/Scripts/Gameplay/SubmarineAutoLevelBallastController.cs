@@ -702,7 +702,7 @@ namespace Hecton8.Gameplay
         private void RegisterRuntime()
         {
             _powerGrid = GlobalRegistry.PowerGrid;
-            _audio = GlobalRegistry.Audio;
+            _audio = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
             _analyticalFlowReadModel = GlobalRegistry.AnalyticalFlow;
             RefreshDynamicFloodServicesFromRegistry();
             RefreshOwnerPhaseSnapshotsCold();

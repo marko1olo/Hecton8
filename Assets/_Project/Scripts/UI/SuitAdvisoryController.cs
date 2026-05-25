@@ -79,13 +79,13 @@ namespace Hecton8.UI
 
         private void Awake()
         {
-            _cachedAudioService = GlobalRegistry.Audio;
+            _cachedAudioService = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
             ResolveReferences();
         }
 
         private void OnEnable()
         {
-            _cachedAudioService = GlobalRegistry.Audio;
+            _cachedAudioService = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
             TryRegisterHotSwapListener();
             ResolveReferences();
             RefreshSurvivalSignalBinding();

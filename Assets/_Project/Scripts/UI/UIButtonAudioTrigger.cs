@@ -54,13 +54,13 @@ namespace Hecton8.UI
         private void Awake()
         {
             TryGetComponent(out _button);
-            _audioManager = GlobalRegistry.Audio;
+            _audioManager = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
             _cachedClickAction = OnButtonClicked; // COLD ALLOC: UnityAction[1] — cached UI click audio listener — owner: UIButtonAudioTrigger
         }
 
         private void OnEnable()
         {
-            _audioManager = GlobalRegistry.Audio;
+            _audioManager = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
             TryRegisterHotSwapListener();
             if (_button != null)
                 _button.onClick.AddListener(_cachedClickAction);

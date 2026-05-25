@@ -241,7 +241,7 @@ namespace Hecton8.UI
         private void CacheRegistryServicesCold()
         {
             RefreshQualityPolicy();
-            _cachedAudioManager = GlobalRegistry.Audio as ISpatialAudioImpactEmitterReadModel;
+            _cachedAudioManager = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance as ISpatialAudioImpactEmitterReadModel;
             IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
             if (!ReferenceEquals(_cachedPlayerContext, playerContext))
             {

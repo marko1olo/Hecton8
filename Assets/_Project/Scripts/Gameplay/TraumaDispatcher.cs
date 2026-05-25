@@ -341,7 +341,7 @@ namespace Hecton8.Gameplay
 
         private void CacheRegistryServicesCold()
         {
-            _spatialAudioSink = GlobalRegistry.Audio as ISpatialAudioEnvironmentModulationSink;
+            _spatialAudioSink = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance as ISpatialAudioEnvironmentModulationSink;
             _pdaCorrosionSink = GlobalRegistry.PdaCorrosionPresentationSink;
         }
 

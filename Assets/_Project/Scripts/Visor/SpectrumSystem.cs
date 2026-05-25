@@ -2060,7 +2060,7 @@ namespace Hecton8.Visor
         private void CacheRegistryServicesCold()
         {
             _dataVault = GlobalRegistry.DataVault;
-            CacheAudioService(GlobalRegistry.Audio);
+            CacheAudioService(Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance);
         }
 
         private void CacheAudioService(IAudioService audioService)

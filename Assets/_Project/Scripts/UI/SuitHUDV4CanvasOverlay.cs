@@ -2043,7 +2043,7 @@ namespace Hecton8.UI
             ILocalizationStressPresentationReadModel localizationRuntime = GlobalRegistry.LocalizationStressPresentation;
             bool localizationChanged = !ReferenceEquals(_localizationRuntime, localizationRuntime);
             _localizationRuntime = localizationRuntime;
-            _spatialAudioManager = GlobalRegistry.Audio;
+            _spatialAudioManager = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
             _playerRuntimeContext = GlobalRegistry.Player;
             if (_vegetationBridge == null)
                 _vegetationBridge = GlobalRegistry.MapMagicVegetation;

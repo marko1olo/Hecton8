@@ -1006,7 +1006,7 @@ namespace Hecton8.Gameplay
         {
             _playerRuntimeContext = GlobalRegistry.Player;
             _modularEquipmentService = GlobalRegistry.ModularEquipment;
-            _audioService = GlobalRegistry.Audio;
+            _audioService = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
         }
 
         private void TryRegisterHotSwap()

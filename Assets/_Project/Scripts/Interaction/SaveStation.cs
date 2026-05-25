@@ -206,7 +206,7 @@ namespace Hecton8.Interaction
         private void CacheRegistryServicesCold()
         {
             _saveService = GlobalRegistry.Save;
-            _audioService = GlobalRegistry.Audio;
+            _audioService = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
             _localization = GlobalRegistry.LocalizationText;
         }
 

@@ -1062,7 +1062,7 @@ namespace Hecton8.Gameplay
 
         private void CacheColdDependencies()
         {
-            _cachedAudioService = GlobalRegistry.Audio;
+            _cachedAudioService = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
             _cachedAudioResidencyService = _cachedAudioService as IAudioResidencyService;
             _cachedCutAudioMixerGroup = _cachedAudioService != null ? _cachedAudioService.AmbientGroup : null;
             _cachedInputService = GlobalRegistry.Input;

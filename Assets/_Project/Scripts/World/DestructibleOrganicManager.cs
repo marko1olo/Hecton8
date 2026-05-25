@@ -1265,7 +1265,7 @@ namespace Hecton8.World
             _playerInventoryService = GlobalRegistry.PlayerInventory;
             _persistentWorldRegistry = GlobalRegistry.PersistentWorldRegistry;
             _dearLieVault = GlobalRegistry.DataVault;
-            CacheAudioService(GlobalRegistry.Audio);
+            CacheAudioService(Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance);
             CacheDearLieFallbackQualityWeightCold();
         }
 
