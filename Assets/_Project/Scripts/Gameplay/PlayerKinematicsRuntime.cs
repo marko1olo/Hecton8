@@ -1272,11 +1272,11 @@ namespace Hecton8.Gameplay
             _positions[0] = resolvedPosition3;
             _velocities[0] = resolvedVelocity3;
             _lastValidPositions[0] = resolvedPosition3;
-            _hasAuthoritativePoseSnapshot = true;
             Vector3 resolvedPosition = ToVector3(resolvedPosition3);
             Vector3 resolvedVelocity = ToVector3(resolvedVelocity3);
             int faultFlags = ReadFaultFlags();
             StageStateWrite(resolvedPosition3, resolvedVelocity3, ResolveAuthoritativeRotationSnapshot(), (uint)faultFlags);
+            _hasAuthoritativePoseSnapshot = true;
             PublishKccVelocitySignal(
                 resolvedPosition3,
                 resolvedVelocity3,
@@ -1605,10 +1605,10 @@ namespace Hecton8.Gameplay
             start = SnapMillimeter(SanitizeFloat3(start, float3.zero));
             _positions[0] = start;
             _lastValidPositions[0] = start;
-            _hasAuthoritativePoseSnapshot = true;
             quaternion rotation = ResolveAuthoritativeRotationSnapshot();
             StageStateWrite(start, float3.zero, rotation, 0u);
             CommitStateWrite();
+            _hasAuthoritativePoseSnapshot = true;
         }
 
         private void DisposeNativeState()
@@ -1739,9 +1739,9 @@ namespace Hecton8.Gameplay
             _positions[0] = position;
             _velocities[0] = velocity;
             _lastValidPositions[0] = position;
-            _hasAuthoritativePoseSnapshot = true;
             StageStateWrite(position, velocity, ResolveAuthoritativeRotationSnapshot(), 0u);
             CommitStateWrite();
+            _hasAuthoritativePoseSnapshot = true;
 
             ClearFaultFlags();
             _dumpWrittenForFault = false;
@@ -3453,7 +3453,6 @@ namespace Hecton8.Gameplay
                 _positions[0] = position;
                 _velocities[0] = velocity;
                 _lastValidPositions[0] = position;
-                _hasAuthoritativePoseSnapshot = true;
             }
 
             quaternion rotation = ResolveAuthoritativeRotationSnapshot();
@@ -3470,6 +3469,7 @@ namespace Hecton8.Gameplay
                     StateHash = hash
                 };
             }
+            _hasAuthoritativePoseSnapshot = true;
 
             _accumulatorState.LastSyncFenceHash = hash;
             _accumulatorState.LastSyncFenceFrame = signal.Frame;
@@ -3597,7 +3597,7 @@ namespace Hecton8.Gameplay
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private quaternion ResolveAuthoritativeRotationSnapshot()
         {
-            if (HasSyncStateReadStorage())
+            if (_hasAuthoritativePoseSnapshot && HasSyncStateReadStorage())
                 return CanonicalizeRotation(_stateRead[0].Rotation);
 
             if (_cachedTransform != null)

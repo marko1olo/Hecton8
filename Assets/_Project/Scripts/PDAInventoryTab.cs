@@ -1691,7 +1691,7 @@ namespace Hecton8.UI
             if (_detailDesc != null)
                 SetSelectedDescriptionText(_detailDesc);
 
-            LocalizationManager localizationManager = Hecton8.Core.GlobalRegistry.Localization;
+            ILocalizationMadnessPresentationReadModel localizationManager = Hecton8.Core.GlobalRegistry.LocalizationMadnessPresentation;
             if (_detailDescMadnessFx != null)
                 _detailDescMadnessFx.SetEffectActive(localizationManager != null && localizationManager.IsMadnessWhisperVisualActive());
 
@@ -3072,7 +3072,7 @@ namespace Hecton8.UI
                 return;
             }
 
-            LocalizationManager localization = GlobalRegistry.Localization;
+            ILocalizationMadnessPresentationReadModel localization = GlobalRegistry.LocalizationMadnessPresentation;
             ReadOnlySpan<char> descSpan = _selectedItem.GetDescriptionSpan(localization);
             if (descSpan.IsEmpty)
                 descSpan = ResolveLocalizedSpan(LocalizationKeys.ITEM_DESCRIPTION_FALLBACK, "No description available.");
@@ -3538,7 +3538,7 @@ namespace Hecton8.UI
 
         private static ReadOnlySpan<char> ResolveLocalizedSpan(string key, string fallback)
         {
-            LocalizationManager manager = GlobalRegistry.Localization;
+            ILocalizationMadnessPresentationReadModel manager = GlobalRegistry.LocalizationMadnessPresentation;
             return manager != null
                 ? manager.GetRawSpanOrFallback(LocHash.Compute(key.AsSpan()), fallback.AsSpan())
                 : fallback.AsSpan();
@@ -3547,7 +3547,7 @@ namespace Hecton8.UI
         private ReadOnlySpan<char> ResolveStressReactiveItemDescriptionSpan(
             Hecton8.Items.ItemData item,
             ReadOnlySpan<char> text,
-            LocalizationManager manager)
+            ILocalizationMadnessPresentationReadModel manager)
         {
             if (text.IsEmpty)
                 return ReadOnlySpan<char>.Empty;

@@ -150,6 +150,7 @@ Evidence boundary:
 - UI/audio/construction Dispatcher unregister/re-register or lane-reset tails covered through loop156.
 - UI/Construction runtime `PlayerRuntimeContextService.ActiveRuntimeContext` and `LocalizationManager.ActiveRuntimeInstance` tails removed in loop157.
 - World/environment/AI Dispatcher unregister/re-register or lane-reset tails covered in loop158.
+- Project-wide `PlayerRuntimeContextService.ActiveRuntimeContext`, `LocalizationManager.ActiveRuntimeInstance`, `?? GlobalRegistry`, and `GlobalRegistry.TryGet` greps are zero after loop159; GI relay and weather fallbacks now resolve through cold owner-cache routes.
 - Targeted greps pass; broad scans retain known false positives.
 - Loop130: old non-editor runtime register/probe grep zeroed.
 - Loop131: one duplicate include target tail removed.

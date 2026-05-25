@@ -1117,4 +1117,4 @@ What was done: Wired `voxel_delta_shutdown_completion_proof()` into the scanner 
 Cinematic Cheats used: None. This protects the Dear Lie/time-sliced deformation route by preventing hidden same-frame job waits from returning.
 Exact Microseconds saved: 0 us measured. Static impact: regression gate now reports 2 shutdown-only forced completions, 0 non-shutdown forced completions.
 Verification: OOP scanner reports `PASS_STATIC_WITH_BUDGETED_UNITY_MESH_UPLOAD_RESIDUAL`, failed_gates=none. New gate: `voxel_delta_force_complete_shutdown_only=true`.
-Build: Pending CPU/process gate.
+Build: Not launched. Gate sampled CPU 100%, then 100%, 99%, and 100% over three rechecks, with zero active compiler/build processes. Project rule forbids dotnet build launch above 50% CPU.
