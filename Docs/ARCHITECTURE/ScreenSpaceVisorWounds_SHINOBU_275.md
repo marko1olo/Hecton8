@@ -28,7 +28,7 @@ Owner: Echelon 8 Presentation & UX / Screen-Space Wounds & Decals
 - Affected APIs: `TryEnqueueRuntimeImpact`, `TryEnqueueAupImpact`.
 - It cannot poll `GlobalRegistry`, allocate/prewarm queues, or request Vault handles from damage producer calls.
 - Public/mock wound ingress fails closed while a visual-sync job is pending, increments dropped-ingress telemetry, and does not query or enqueue into the `NativeQueue` during the scheduled dequeue window.
-- Signal-snapshot ingestion resolves the material-profile Vault array and live tuning DTO once per owner visual-sync pass, then reuses those immutable snapshot values for all high-speed and combat signals in that pass.
+- Signal-snapshot ingestion resolves material-profile Vault array and tuning DTO once per visual-sync pass, then reuses immutable values for all high-speed/combat signals.
 - Existing visor noir postprocessing consumes the same visual language through `Hecton_VisorGlitchACES.shader`: torn-edge serration and procedural crack masks are active in the serialized PC renderer route.
 - Noir integration is pre-tonemap. URP Volume Tonemapping owns final ACES; the active Noir shader performs grade/glitch/crack shaping without a local fragment tonemap curve or `saturate(color)` HDR clamp.
 - Active Noir constant generation/upload is dispatcher-owned through `HectonVisorUberPostFeature.LateFrameTick`.

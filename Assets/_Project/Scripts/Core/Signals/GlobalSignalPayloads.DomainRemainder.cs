@@ -1728,7 +1728,7 @@ namespace Hecton8.Core.Contracts.Signals
                 return false;
 
             double3 resolvedAup = originAup + new double3(runtimePoint.x, runtimePoint.y, runtimePoint.z);
-            if (!math.all(math.isfinite(resolvedAup)))
+            if (!IsFiniteAup(resolvedAup))
                 return false;
 
             impactAup = resolvedAup;

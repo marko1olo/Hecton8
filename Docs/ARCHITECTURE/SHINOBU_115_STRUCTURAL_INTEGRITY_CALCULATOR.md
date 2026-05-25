@@ -34,7 +34,7 @@ Scope: cited local paths exist at capture time. No compile/import/Play/profiler/
 
 ## Authority
 
-Structural collapse truth is `IntegrityStateDTO` in `GlobalDataVault`, not Unity joints, GameObject recursion, or rigidbody mass. The solver writes scalar stress, pressure, flags, and buckling. Presentation consumes `_HectonStructuralIntegrityStateBuffer` for shader vertex deformation.
+Structural collapse truth is `IntegrityStateDTO` in `GlobalDataVault`, not Unity joints or GameObject recursion. Solver writes stress/pressure/flags/buckling; presentation consumes `_HectonStructuralIntegrityStateBuffer`.
 
 - `StructuralTuningDTO.GlobalQualityWeight` is rollback-visible quality truth.
 - It controls structural cadence, SDF tap blending, telemetry, and signal profile bridging.

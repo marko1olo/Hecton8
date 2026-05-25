@@ -2635,6 +2635,11 @@ namespace Hecton8.Core
         bool TryApplyHullStressCorruptionIfNeeded(ReadOnlySpan<char> text, char[] destination, out int length);
     }
 
+    public interface ILocalizationStressHudRefreshSink
+    {
+        void RefreshHullStressHudCorruptionVisuals();
+    }
+
     public interface IPdaCorrosionPresentationSink
     {
         void RequestExternalPdaCorrosion(float intensity, float duration);

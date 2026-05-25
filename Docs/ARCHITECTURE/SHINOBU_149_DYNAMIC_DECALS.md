@@ -46,7 +46,7 @@ Impact producers publish existing Core signal lanes:
 
 - `CombatDamageSignal` for hull dents and combat residue with AUP, inverse impact direction, damage type, magnitude, and frame.
 
-`DynamicDecalVaultRuntime` consumes typed `SignalBus<T>` snapshots from Core, converts them into `DecalRequestSignal`, and writes `DecalInstanceDTO` records into a Vault-owned ring. Physics, Gameplay, and Ballistics do not call Visor concrete runtime code.
+`DynamicDecalVaultRuntime` consumes Core `SignalBus<T>` snapshots, converts them to `DecalRequestSignal`, and writes `DecalInstanceDTO` into Vault ring. Physics/Gameplay/Ballistics do not call Visor concrete code.
 
 ## Vault Buffers
 
@@ -113,7 +113,7 @@ Telemetry and runtime-state DTOs are explicit 64-byte records to keep ring write
 
 ## Render Path
 
-`DeferredDecalPass` uploads active decals through double-buffered `GraphicsBuffer` objects. The pass uses `LockBufferForWrite`, copies the Vault upload scratch through `DynamicDecalMappedUploadJob`, unlocks, and renders from the previous readable buffer. `GraphicsBuffer.SetData` is not used.
+`DeferredDecalPass` uploads decals through double-buffered `GraphicsBuffer`. It uses `LockBufferForWrite`, `DynamicDecalMappedUploadJob`, unlocks, and renders previous readable buffer. No `GraphicsBuffer.SetData`.
 
 The pass validates required buffer capacity before capturing the previous readable buffer.
 

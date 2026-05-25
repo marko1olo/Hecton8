@@ -10,7 +10,7 @@ Runtime file: Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutop
 
 
 
-Review disposition: YELLOW - static source route only; guarded dotnet compile is blocked by unrelated stale project includes before SHINOBU_157 source; no Unity import, Burst compile, profiler, or Play Mode evidence attached.
+Review disposition: YELLOW - static source route only. Guarded dotnet compile is blocked by unrelated stale includes; Unity import, Burst compile, profiler, and Play Mode evidence are absent.
 
 
 
@@ -246,7 +246,7 @@ The autopilot only writes desired velocity and route state. It does not move Tra
 
 
 
-- NaN desired velocity or estimated solver time above 1.0 ms sets telemetry fault flags and requests dual planned/generated-on-fault binary dumps: `Docs/AgentLogs/Dump_SHINOBU_157.bin` for AGENTS compliance and `Docs/AgentLogs/Dump_NAVIGATION_SURGEON.bin` for the XML task alias.
+- NaN desired velocity or solver time above 1.0 ms sets telemetry faults and requests dual dumps: `Dump_SHINOBU_157.bin` and `Dump_NAVIGATION_SURGEON.bin`.
 - No existing dump artifact is implied unless a timestamped runtime trigger and output are linked.
 - If Vault locks fail, the owner skips scheduling for that tick instead of blocking the main thread.
 - Lock rollback is transactional: `_lockMask` releases only buffers acquired by this navigator transaction, never the whole route blindly.

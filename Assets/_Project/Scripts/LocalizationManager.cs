@@ -51,7 +51,7 @@ namespace Hecton.Localization
     /// Runtime owner for Babel localization compatibility and language switching.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class LocalizationManager : MonoBehaviour, IBabelLocalization, ILocalizationTextReadModel, ILocalizationStressPresentationReadModel, IPdaCorrosionPresentationSink, ILocalizationTransientOverrideSink, IDispatcherSystem
+    public sealed class LocalizationManager : MonoBehaviour, IBabelLocalization, ILocalizationTextReadModel, ILocalizationStressPresentationReadModel, ILocalizationStressHudRefreshSink, IPdaCorrosionPresentationSink, ILocalizationTransientOverrideSink, IDispatcherSystem
     {
         private const string AnalyzerTechKeyPrefix = "TECH_";
         private const string AnalyzerPrefabToken = "EnvAnalyzer";
@@ -456,6 +456,11 @@ namespace Hecton.Localization
         {
             EvaluateMadnessOverrideState();
             LocalizationEvents.TryPublishCorruptionVisualStateChanged(CurrentLanguage, _lastPublishedVisualBucket);
+        }
+
+        void ILocalizationStressHudRefreshSink.RefreshHullStressHudCorruptionVisuals()
+        {
+            RefreshHullStressHudCorruptionVisuals();
         }
 
         /// <summary>

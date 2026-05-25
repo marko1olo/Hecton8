@@ -104,7 +104,7 @@ For Titanium (`Data_TitaniumScrap`), accessible count above 500 units forces a `
 
 Durability damage is continuous per `SlowTick` and marks items degraded below the shared degraded threshold. At zero quality, the anchor is destroyed.
 
-`PressurizedContainer` is the runtime protection bridge. Active modules call `PlayerInventory.AddPressurizedContainerProtection` on enable and release it on disable. `PlayerInventory.ResolveInventoryPressurizedContainerProtection` then makes pressure-crush degradation a zero-alloc count check instead of a scene search.
+`PressurizedContainer` is the runtime protection bridge. Modules add/release protection on enable/disable. `ResolveInventoryPressurizedContainerProtection` makes pressure-crush degradation a zero-alloc count check.
 
 ## Deconstruction Yield
 
