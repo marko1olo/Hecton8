@@ -159,7 +159,7 @@ Ambient overlay ABI proof:
 - Final displacement gate: `smoothstep(0.1, 0.4, GlobalQualityWeight)`.
 - Zero gate returns before `FastSinApprox`; weak devices fade to static silhouettes.
 - Middle tier keeps cheap global sway; high tier keeps stronger spatial phase; ultra tier keeps the same route and spends saved CPU elsewhere.
-- Non-finite quality input fail-closes to `0.0` in C# before CBuffer packing and again in shader-side quality resolvers, so corrupt thermal/scalability data cannot accidentally open the expensive shader path.
+- Non-finite quality input fail-closes to `0.0` in C# before CBuffer packing and again in shader-side quality resolvers, so corrupt thermal/scalability data cannot open the expensive shader path.
 - The existing 3D interaction field remains additive in the vertex path, so submarine wake impulses and ambient current sway blend without changing gameplay authority.
 
 

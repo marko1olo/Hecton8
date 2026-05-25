@@ -20,7 +20,7 @@ Route:
 - `EvaluateSlopeFrictionJob` runs after capsule hit extraction and before kinematic resolution.
 - `KinematicResolutionJob` similarly guards mandatory state, previous-AUP, proposed-velocity, debug, and fault lanes before pointer/ref row mutation.
 - `KccEnvironmentTelemetryAggregateJob` writes the last 300 frames to `ShinobuKccEnvironmentTelemetryRing`.
-- KCC editor-only scanner/tuner code is isolated under `Hecton8.Physics.KCC.Editor.asmdef` with explicit Roslyn precompiled references, so scanner source changes stop widening the `Hecton8.Core` compile wall after Unity regenerates Bee/project files.
+- KCC editor-only scanner/tuner code is isolated under `Hecton8.Physics.KCC.Editor.asmdef` with Roslyn precompiled references, so scanner source changes stop widening the `Hecton8.Core` compile wall after Unity regenerates Bee/project files.
 
 Rules:
 

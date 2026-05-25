@@ -445,7 +445,7 @@ Do not solve this by allowlisting CSV files in `StreamingAssets`. That would kee
 
 
 
-Runtime source loader findings are fatal even if the text file is absent. Otherwise a future check-in can reintroduce a parallel source of truth without touching the validator.
+Runtime source loader findings are fatal even if the text file is absent. Otherwise a check-in can reintroduce a parallel source of truth without touching the validator.
 
 
 

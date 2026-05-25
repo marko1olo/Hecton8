@@ -47,7 +47,7 @@ Forbidden: gameplay truth, rollback Merkle state, inventory state, quest state, 
 - Built-in fallback strings resolve through static switch dispatch.
 - Runtime `Dictionary<string,string>` language tables are no longer owned.
 
-- Legacy mod localization injection is disabled. `ModLocalizationBridge` ignores discovered JSON language files, and `HectonAPI.Localization` exposes only a rejected future `InjectBabelEnvelope(ReadOnlySpan<byte>)` seam until binary/hash mod envelopes exist.
+- Legacy mod localization injection is disabled. `ModLocalizationBridge` ignores discovered JSON language files, and `HectonAPI.Localization` exposes only a rejected `InjectBabelEnvelope(ReadOnlySpan<byte>)` seam until binary/hash mod envelopes exist.
 
 - Legacy JSON parsing for key generation and CJK validation lives only in `Assets/_Project/Scripts/Editor/LocalizationEditorJsonTableParser.cs`; it is Editor-only tooling and is not a runtime localization authority.
 
@@ -71,7 +71,7 @@ Forbidden: gameplay truth, rollback Merkle state, inventory state, quest state, 
 
 - `LocRegistry` missing-key suppression uses a fixed 256-bit bloom mask (`ulong * 4`), not `HashSet<int>`. It is diagnostic-only and cannot grow managed memory during missing-token storms.
 
-- `SubtitleManager` legacy string subtitle requests use the same fixed 8-slot ring discipline as the Babel command and buffered-span queues. The previous managed `List<SubtitleRequest>` queue has been removed.
+- `SubtitleManager` legacy string subtitle requests use the same fixed 8-slot ring discipline as the Babel command and buffered-span queues. The managed `List<SubtitleRequest>` queue has been removed.
 
 ## Subtitle Clock
 

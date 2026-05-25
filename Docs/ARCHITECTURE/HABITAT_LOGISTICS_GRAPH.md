@@ -67,7 +67,7 @@ Out of scope:
 
 - `Assets/_Project/Scripts/BaseModuleTemplate.cs` is the authored source of truth for module socket layout, proxy bounds, integrity defaults, and stable template hash IDs.
 
-- `Assets/_Project/Scripts/ModuleSocket.cs` owns strict directional compatibility. A snap is valid only when the candidate socket direction is the inverse of the target socket direction and the compatibility lanes match.
+- `Assets/_Project/Scripts/ModuleSocket.cs` owns directional compatibility. A snap is valid only when the candidate socket direction is the inverse of the target socket direction and the compatibility lanes match.
 
 - `Assets/_Project/Scripts/PlayerBuilder.cs` and `Assets/_Project/Scripts/Construction/ConstructionRuntimeProxyFactory.cs` must generate ghost/final proxy cubes when a buildable has no authored prefab. Proxy geometry is derived from `BaseModuleTemplate.proxyBounds*` and `socketDefinitions`.
 
@@ -135,7 +135,7 @@ It keeps the graph in DataVault-backed flat buffers and solves power/oxygen pres
 
 - `LogisticsFlowPrepareJob` identifies connected components with Vault-owned int scratch lanes inside `ShinobuLogisticsCounters`; no private persistent `NativeQueue` or `NativeList` owns BFS/reachable state.
 
-- `LogisticsFlowSolverJob` is the parallel Jacobi kernel (`IJobParallelFor`) over node pressure lanes. It ping-pongs `PressureFront` / `PressureBack`; `LogisticsPressureCopyJob` copies odd-iteration results back before `LogisticsFlowFinalizeJob` performs exact milli-unit conservation and telemetry.
+- `LogisticsFlowSolverJob` is the parallel Jacobi kernel (`IJobParallelFor`) over node pressure lanes. It ping-pongs `PressureFront` / `PressureBack`; `LogisticsPressureCopyJob` copies odd-iteration results back before `LogisticsFlowFinalizeJob` performs milli-unit conservation and telemetry.
 
 - `HomeostasisBrain.GlobalQualityWeight` maps through a smoothstep curve to 1..10 Jacobi iterations and 5..1 oxygen cadence; no binary tier switch owns accuracy.
 

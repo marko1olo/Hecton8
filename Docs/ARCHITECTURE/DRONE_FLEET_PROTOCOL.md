@@ -165,7 +165,7 @@ bool claimed = priorOwner == 0 || priorOwner == droneId;
 
 ```
 
-Before scheduling, `DroneFleetManager.ClearHeadlessTaskClaims()` clears the claim-owner array and seeds it with active drones that already hold a valid `TargetTaskIndex`. New idle drones can only claim still-unowned task indices.
+Before scheduling, `DroneFleetManager.ClearHeadlessTaskClaims()` clears the claim-owner array and seeds it with active drones holding a valid `TargetTaskIndex`. New idle drones can only claim unowned task indices.
 
 Emergency rule:
 

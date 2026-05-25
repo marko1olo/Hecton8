@@ -19,7 +19,7 @@ Verification: PENDING VERIFICATION
 
 - Rendering route is GPU-buffer first. Harpoon tracer no longer instantiates a `LineRenderer`; it writes two procedural tether points into `GraphicsBuffer` and uses the existing tether line-strip shader.
 
-- Cable material tuning is byte-span parsed and written into `Shinobu143CableMaterials` as deterministic FNV open-addressed Vault slots; no persistent private material hash map is owned by the tether domain.
+- Cable material tuning is byte-span parsed and written into `Shinobu143CableMaterials` as deterministic FNV open-addressed Vault slots; no private material hash map is owned by the tether domain.
 
 - Data sovereignty: SHINOBU_143 mock buffers are claimed from `GlobalDataVault`.
 - Claimed lanes: tether AUP nodes, constraints, endpoints, spline vertices, force packets, telemetry, materials, CSV scratch.

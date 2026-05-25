@@ -11,6 +11,7 @@ using Hecton8.Core.Memory;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Environment;
 using Hecton8.Gameplay;
+using Hecton8.Physics;
 using Hecton8.Systems.AI;
 using Hecton8.VFX.Wakes;
 using Hecton.Localization;

@@ -88,7 +88,7 @@ boot -> world load -> safe exit -> swim -> oxygen/depth pressure
 
 | Resource | Player finds the selected copper source in the route, not through a console grant. |
 
-| Tool | Actual starter interaction can acquire the resource. If copper requires Drill and the player lacks a real starter Drill route, this is a blocker, not a pass. |
+| Tool | Actual starter interaction can acquire the resource. If copper requires Drill and the player lacks a starter Drill route, this is a blocker, not a pass. |
 
 | Inventory | `InteractionEvents.ItemCollected` or equivalent route event is observed and inventory contains cataloged `Data_Copper`. |
 

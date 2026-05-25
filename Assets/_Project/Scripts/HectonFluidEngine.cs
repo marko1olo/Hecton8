@@ -1436,7 +1436,10 @@ namespace Hecton8.Physics
         private bool _hasGpuBuoyancyData;
         private int _gpuBuoyancyKernel = -1;
         private GraphicsBuffer _gpuAbyssalFlowResultBuffer;
-        private GraphicsBuffer _gpuAbyssalHeatSourceBuffer;
+        private GraphicsBuffer _gpuAbyssalHeatSourceBufferA;
+        private GraphicsBuffer _gpuAbyssalHeatSourceBufferB;
+        private GraphicsBuffer _activeGpuAbyssalHeatSourceBuffer;
+        private int _gpuAbyssalHeatSourceUploadIndex;
         private RenderTexture _gpuAbyssalFlowTextureA;
         private RenderTexture _gpuAbyssalFlowTextureB;
         private RenderTexture _gpuAbyssalFlowReadTexture;
@@ -1471,7 +1474,10 @@ namespace Hecton8.Physics
         private int _dynamicWakeUploadBufferIndex;
         private VaultGenerationHandle<float4> _dynamicWakeBufferHandle;
         private VaultGenerationHandle<float4> _dynamicWakeVectorBufferHandle;
-        private GraphicsBuffer _gpuSplashdownImpulseBuffer;
+        private GraphicsBuffer _gpuSplashdownImpulseBufferA;
+        private GraphicsBuffer _gpuSplashdownImpulseBufferB;
+        private GraphicsBuffer _activeGpuSplashdownImpulseBuffer;
+        private int _gpuSplashdownImpulseUploadIndex;
         private Texture3D _emptyFluidAdvectionTexture;
         private RTHandle _emptyFluidAdvectionTextureHandle;
         private Texture _cachedFluidAdvectionFlowHandleSource;
@@ -3403,8 +3409,10 @@ namespace Hecton8.Physics
         private bool UploadSplashdownImpulseBuffer()
         {
             EnsureSplashdownImpulseGpuBuffer();
-            if (_gpuSplashdownImpulseBuffer == null ||
-                !_gpuSplashdownImpulseBuffer.IsValid() ||
+            if (_gpuSplashdownImpulseBufferA == null ||
+                !_gpuSplashdownImpulseBufferA.IsValid() ||
+                _gpuSplashdownImpulseBufferB == null ||
+                !_gpuSplashdownImpulseBufferB.IsValid() ||
                 !_splashdownImpulseUpload.IsCreated)
             {
                 _splashdownImpulseUploaded = false;
@@ -3413,14 +3421,26 @@ namespace Hecton8.Physics
 
             int nodeCount = GetAbyssalFlowNodeCount();
             if (nodeCount <= 0 ||
-                _gpuSplashdownImpulseBuffer.count < nodeCount ||
+                _gpuSplashdownImpulseBufferA.count < nodeCount ||
+                _gpuSplashdownImpulseBufferB.count < nodeCount ||
                 _splashdownImpulseUpload.Length < nodeCount)
             {
                 _splashdownImpulseUploaded = false;
                 return false;
             }
 
-            GraphicsBufferUploadUtility.UploadNativeArray(_gpuSplashdownImpulseBuffer, _splashdownImpulseUpload, nodeCount);
+            GraphicsBuffer writeBuffer = (_gpuSplashdownImpulseUploadIndex & 1) == 0
+                ? _gpuSplashdownImpulseBufferA
+                : _gpuSplashdownImpulseBufferB;
+            if (writeBuffer == null || !writeBuffer.IsValid() || writeBuffer.count < nodeCount)
+            {
+                _splashdownImpulseUploaded = false;
+                return false;
+            }
+
+            GraphicsBufferUploadUtility.UploadNativeArray(writeBuffer, _splashdownImpulseUpload, nodeCount);
+            _activeGpuSplashdownImpulseBuffer = writeBuffer;
+            _gpuSplashdownImpulseUploadIndex ^= 1;
             _splashdownImpulseUploaded = true;
             return true;
         }
@@ -3455,8 +3475,8 @@ namespace Hecton8.Physics
 
         private GraphicsBuffer ResolveSplashdownImpulseBuffer()
         {
-            return _gpuSplashdownImpulseBuffer != null && _gpuSplashdownImpulseBuffer.IsValid()
-                ? _gpuSplashdownImpulseBuffer
+            return _activeGpuSplashdownImpulseBuffer != null && _activeGpuSplashdownImpulseBuffer.IsValid()
+                ? _activeGpuSplashdownImpulseBuffer
                 : _emptyAbyssalFlowBuffer;
         }
 
@@ -6000,7 +6020,10 @@ namespace Hecton8.Physics
             {
                 ReleaseGpuAbyssalFlowBuffers();
                 _gpuAbyssalFlowResultBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float4>(nodeCount); // COLD ALLOC: GraphicsBuffer[nodeCount] — GPU abyssal flow-vector field storage — owner: HectonFluidEngine
-                _gpuAbyssalHeatSourceBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<GpuHeatSourceData>(MaxAbyssalHeatSourceCount); // COLD ALLOC: GraphicsBuffer[8] — inferred hydrothermal heat-source upload staging — owner: HectonFluidEngine
+                _gpuAbyssalHeatSourceBufferA = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<GpuHeatSourceData>(MaxAbyssalHeatSourceCount); // COLD ALLOC: GraphicsBuffer[8] - inferred hydrothermal heat-source upload staging A - owner: HectonFluidEngine
+                _gpuAbyssalHeatSourceBufferB = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<GpuHeatSourceData>(MaxAbyssalHeatSourceCount); // COLD ALLOC: GraphicsBuffer[8] - inferred hydrothermal heat-source upload staging B - owner: HectonFluidEngine
+                _activeGpuAbyssalHeatSourceBuffer = _gpuAbyssalHeatSourceBufferA;
+                _gpuAbyssalHeatSourceUploadIndex = 1;
             }
 
             if (_gpuAbyssalFlowTextureA == null || _gpuAbyssalFlowTextureB == null)

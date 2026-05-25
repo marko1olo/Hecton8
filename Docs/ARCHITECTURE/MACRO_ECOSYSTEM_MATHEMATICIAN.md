@@ -183,7 +183,7 @@ It is a Vault-owned open-address table in `ShinobuMacroEcosystemIndexEntries`. B
 
 
 
-- Cold boot seeds default biome specs into `ShinobuMacroEcosystemBiomeSpecs` so player builds do not need CSV file probing to get carrying capacity, migration resistance, temperature optimum, or toxin penalty.
+- Boot seeds default biome specs into `ShinobuMacroEcosystemBiomeSpecs` so player builds do not need CSV file probing to get carrying capacity, migration resistance, temperature optimum, or toxin penalty.
 - Editor builds hot-reload `Assets/_Project/Data/macro_ecosystem_coefficients.csv` through `ShinobuMacroEcosystemCsvScratch`, with `biome_ecosystem_specs.csv` retained only as a legacy fallback.
 - CSV columns: `biome, prey_capacity, predator_capacity, migration_resistance, temperature_optimum, toxin_penalty, alpha, beta, delta, gamma`; last four are optional; invalid coefficients fall back to Vault tuning.
 
