@@ -1,7 +1,7 @@
 ﻿{
   "schema": "HECTON8_DATA_MONOLITH_PLAYER_PARSER_ABSENCE_CLI_V1",
   "agent": "X_002",
-  "generated": "2026-05-24T23:52:02.2787040Z",
+  "generated": "2026-05-25T00:27:56.3709222Z",
   "status": "PASS_PLAYER_STATIC_CONFIG_PARSER_ABSENCE",
   "proofBoundary": "Standalone CLI source/preprocessor scan. It proves no active release/development player static-config CSV/text parser routes under Assets/_Project/Scripts, except documented user save/profile/mod persistence. It is not a Unity player profiler trace.",
   "modes": {
@@ -11,7 +11,7 @@
       "filesScanned": 2406,
       "productionFilesScanned": 1773,
       "editorOrTestFilesSkipped": 633,
-      "inactiveLinesSkipped": 91729,
+      "inactiveLinesSkipped": 91738,
       "missingRoots": 0,
       "blockingFindingCount": 0,
       "directFileStreamReadByteCount": 0,
@@ -43,7 +43,7 @@
       "filesScanned": 2406,
       "productionFilesScanned": 1773,
       "editorOrTestFilesSkipped": 633,
-      "inactiveLinesSkipped": 81641,
+      "inactiveLinesSkipped": 81650,
       "missingRoots": 0,
       "blockingFindingCount": 0,
       "directFileStreamReadByteCount": 0,

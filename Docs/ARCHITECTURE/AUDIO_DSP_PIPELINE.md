@@ -272,7 +272,9 @@ RT60 = 0.161 * (V_approx / TotalAbsorption)
 
 ```
 
-`TotalAbsorption` is the equivalent absorption area accumulated from the six surfaces. The result is clamped to authored floor/ceiling limits before being pushed into the listener reverb mixer decay parameter.
+`TotalAbsorption` is equivalent absorption area from six surfaces.
+
+The result is clamped to authored floor/ceiling limits before updating listener reverb decay.
 
 ## Procedural Bubble Synthesis
 

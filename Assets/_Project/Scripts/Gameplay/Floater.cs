@@ -696,7 +696,7 @@ namespace Hecton8.Gameplay
         // ══════════════════════════════════════════════════════════
         private void CacheRegistryServicesCold()
         {
-            _audioService = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
+            _audioService = GlobalRegistry.Audio;
             _localizationManager = GlobalRegistry.LocalizationText;
         }
 
@@ -732,6 +732,8 @@ namespace Hecton8.Gameplay
                     RebuildLocalizedTextCache();
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
+                    _isRegistered = false;
+                    _lateFrameRegistered = false;
                     if (currentService != null)
                     {
                         if (_state == FloaterState.Attached)

@@ -13,10 +13,11 @@ Runtime assembly: `Hecton8.Physics.Buoyancy.Runtime` under `Assets/_Project/Scri
 - The owner subtracts `cameraAup` in double precision and stores only `float2 LocalXZ` in `ReadbackRequestDTO`.
 - The runtime listens to `IOriginShiftListener` and caches the latest origin snapshot. Hot `PreSimulation` uses the cached origin, not `GlobalRegistry` or `HectonFloatingOrigin.CurrentTotalOffsetDouble`.
 - `PreSimulation` issues one compute dispatch and one `AsyncGPUReadback.Request` for the whole batch.
-- Dispatch status is four-state: no work, dispatched, unavailable, or ring backlog. Mock readback is used only for unavailable GPU/compute, not for a full async ring; backlog keeps cached/dead-reckoned real rows.
+- Dispatch status: no work, dispatched, unavailable, or ring backlog.
+- Mock readback covers unavailable GPU/compute only; backlog keeps cached/dead-reckoned real rows.
 - `Simulation` consumes only completed old requests. No `WaitForCompletion` route exists.
-- A ready `AsyncGPUReadbackRequest` slot is retained if the completed-results Vault write lock is unavailable; the slot is cleared only for GPU error, zero-count payload, or after successful payload copy.
-- Simulation timing consumes `DispatcherTimingDTO.FixedDelta` through a last-valid cached fallback. The readback/mock time accumulator advances by fixed delta, not frame delta. Owned async runtime/job/contract files do not read Unity `Time`.
+- A ready `AsyncGPUReadbackRequest` slot is retained if the results Vault write lock is unavailable; GPU error, zero payload, or successful copy clears it.
+- Timing uses cached `DispatcherTimingDTO.FixedDelta`; readback/mock accumulation advances by fixed delta. Owned async files do not read Unity `Time`.
 - `ApplyDelayedBuoyancyReadbackJob` reconstructs absolute water height with `cameraAup.y + ResultHeight` and writes `ReadbackResolvedHeightDTO`.
 - `ApplyDelayedBuoyancyReadbackJob` is not scheduled on empty frames. When samples exist, the scheduled lane count is the actual `max(dispatchCount, completedCount)`, capped to the fixed request capacity.
 - `PostSimulation` records the 300-frame black-box telemetry ring and raises a dump request if latency exceeds four frames.
@@ -97,7 +98,9 @@ Sample count follows `GlobalQualityWeight` through a smoothstep curve:
 - high tier: dense hull profile
 - ultra tier: maximum configured sample grid plus wake/shoreline response from the final displaced water texture
 
-Apply workload follows the same continuum because job lanes are bounded by the active sample count. A no-sample frame returns the inbound dispatcher handle and schedules no tiny job.
+Apply workload scales with active sample count.
+
+A no-sample frame returns the inbound dispatcher handle and schedules no tiny job.
 
 Shader direction precompute is deferred because it requires a derived wave-lane payload or ABI repack. Current quality scaling still reduces active wave lanes and sample count continuously.
 

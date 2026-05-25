@@ -623,7 +623,7 @@ namespace Hecton8.Inventory
 
         private static void PrepareDedupFrame()
         {
-            int frame = Time.frameCount;
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (_dedupFrame == frame)
                 return;
 

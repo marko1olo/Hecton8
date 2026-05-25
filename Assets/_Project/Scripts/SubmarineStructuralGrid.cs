@@ -1,4 +1,4 @@
-﻿using System.IO;
+using System.IO;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Hecton8.Atmosphere;
@@ -17,6 +17,7 @@ using Unity.Mathematics;
 using Unity.Profiling;
 using UnityEngine;
 using UnityEngine.Rendering;
+using UnityEngine.Serialization;
 
 namespace Hecton8.Physics
 {
@@ -75,6 +76,8 @@ namespace Hecton8.Physics
     [AddComponentMenu("Hecton/Physics/Submarine Structural Grid")]
     public sealed class SubmarineStructuralGrid : MonoBehaviour, IFixedTickable, IPostFixedTickable, ILateFrameTickable, Hecton8.Gameplay.IDamageSignalReceiver, ISubmarineHullBreachReadModel, ISubmarineDamageControlTarget, ISubmarineRepairRoomResolver, IGlobalRegistryHotSwapListener
     {
+        private static int s_x001DirectSignalPushDropCount_SubmarineStructuralGrid;
+
         private static readonly ProfilerMarker _fixedTickProfilerMarker = new ProfilerMarker("H8.Submarine.StructuralGrid.FixedTick");
         private static readonly ProfilerMarker _damageScheduleProfilerMarker = new ProfilerMarker("H8.Submarine.StructuralGrid.Damage.Schedule");
         private static readonly ProfilerMarker _damageConsumeProfilerMarker = new ProfilerMarker("H8.Submarine.StructuralGrid.Damage.Consume");
@@ -469,7 +472,7 @@ namespace Hecton8.Physics
         [Tooltip("Optional authored submarine fluid owner consuming published breach areas.")]
         [SerializeField] private SubmarineFluidDynamics fluidDynamics;
         [Tooltip("Optional authored atmosphere owner used for pressure-cycle fatigue.")]
-        [SerializeField] private SubmarineAtmosphereSystem atmosphereSystem;
+        [SerializeField, FormerlySerializedAs("atmosphereSystem")] private MonoBehaviour atmosphereSystemSource;
         [Tooltip("Compute kernel that expands the packed hull breach buffer into GPU leak plume particles.")]
         [SerializeField] private ComputeShader leakPlumeCompute;
         [Tooltip("Material using HECTON/VFX/LeakPlume. Required to draw GPU leak plume points emitted by the compute kernel.")]
@@ -516,6 +519,7 @@ namespace Hecton8.Physics
         private bool _damageReceiverRegistered;
         private bool _damageJobRunning;
         private bool _nativeStateReady;
+        private ISubmarineAtmosphereRoomReadModel _atmosphereSystem;
         private int _queuedImpactCount;
         private int _scheduledImpactCount;
         private int _mappedCompartmentCount;
@@ -955,13 +959,13 @@ namespace Hecton8.Physics
             uint targetHash = Hecton8.Core.RuntimeOriginRoute.FoldEntityIdToSourceId(EntityId.ToULong(GetEntityId()));
             signal.TargetHash = targetHash != 0u ? targetHash : 1u;
             signal.SourceHash = HullDentVisualSourceHash;
-            signal.Frame = unchecked((uint)Time.frameCount);
+            signal.Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             signal.SourceId = 0;
             signal.TargetId = 0;
             signal.Channel = 0;
             signal.Flags = CombatDamageSignal.DirectRuntimeFlag | CombatDamageSignal.VisualOnlyFlag;
             signal.IntegrityDelta = (byte)math.clamp(math.round(math.saturate(severity01) * 255f), 0f, 255f);
-            bool accepted = SignalBus<CombatDamageSignal>.TryPush(in signal);
+            bool accepted = SignalBus<CombatDamageSignal>.TryPushTracked(in signal, ref s_x001DirectSignalPushDropCount_SubmarineStructuralGrid);
             if (!accepted)
                 IncrementDroppedSignalCount();
             return accepted;
@@ -1487,7 +1491,7 @@ namespace Hecton8.Physics
                 SecondaryMaterialId = 0,
                 Flags = LeakImpactFlags
             };
-            bool accepted = SignalBus<ImpactSignal>.TryPush(in signal);
+            bool accepted = SignalBus<ImpactSignal>.TryPushTracked(in signal, ref s_x001DirectSignalPushDropCount_SubmarineStructuralGrid);
             if (!accepted)
                 IncrementDroppedSignalCount();
             return accepted;
@@ -1518,7 +1522,7 @@ namespace Hecton8.Physics
                 Priority = (byte)VocalWarningId.HullBreach,
                 Flags = VocalWarningSignalFlags.HabitatIntegrityCompromised
             };
-            bool accepted = SignalBus<VocalWarningSignal>.TryPush(in warning);
+            bool accepted = SignalBus<VocalWarningSignal>.TryPushTracked(in warning, ref s_x001DirectSignalPushDropCount_SubmarineStructuralGrid);
             if (!accepted)
                 IncrementDroppedSignalCount();
             return accepted;
@@ -1758,7 +1762,7 @@ namespace Hecton8.Physics
                 SeveritySum = math.isfinite(_activeBreachSeveritySum) ? _activeBreachSeveritySum : 0f,
                 ActiveBreachCount = (ushort)math.clamp(_activeBreachCount, 0, ushort.MaxValue),
                 VisibleBreachCount = (ushort)math.clamp(_visibleBreachCount, 0, ushort.MaxValue),
-                Frame = unchecked((uint)Time.frameCount),
+                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 Flags = flags,
                 StateHash = BuildDamageControlTelemetryHash(first, _activeBreachSeveritySum, _activeBreachCount, flags)
             };
@@ -1875,7 +1879,8 @@ namespace Hecton8.Physics
             if (!IsFiniteVector(relativeWorld))
                 return false;
 
-            Vector3 localVector = Quaternion.Inverse(cachedTransform.rotation) * relativeWorld;
+            Quaternion inverseRotation = ConjugateUnitRotation(cachedTransform.rotation);
+            Vector3 localVector = inverseRotation * relativeWorld;
             Vector3 lossyScale = cachedTransform.lossyScale;
             localVector.x /= ResolveSafeScale(lossyScale.x);
             localVector.y /= ResolveSafeScale(lossyScale.y);
@@ -1898,7 +1903,8 @@ namespace Hecton8.Physics
             if (cachedTransform == null || !IsFiniteQuaternion(cachedTransform.rotation))
                 return false;
 
-            Vector3 localVector = Quaternion.Inverse(cachedTransform.rotation) * worldDirection;
+            Quaternion inverseRotation = ConjugateUnitRotation(cachedTransform.rotation);
+            Vector3 localVector = inverseRotation * worldDirection;
             if (!IsFiniteVector(localVector))
                 return false;
 
@@ -1924,6 +1930,11 @@ namespace Hecton8.Physics
         private static bool IsFiniteVector(Vector3 value)
         {
             return math.isfinite(value.x) && math.isfinite(value.y) && math.isfinite(value.z);
+        }
+
+        private static Quaternion ConjugateUnitRotation(Quaternion rotation)
+        {
+            return new Quaternion(-rotation.x, -rotation.y, -rotation.z, rotation.w);
         }
 
         private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out double3 aup)
@@ -1995,8 +2006,12 @@ namespace Hecton8.Physics
             if (fluidDynamics == null)
                 TryGetComponent(out fluidDynamics);
 
-            if (atmosphereSystem == null)
-                TryGetComponent(out atmosphereSystem);
+            if (_atmosphereSystem == null || !_atmosphereSystem.IsAtmosphereRuntimeActive)
+            {
+                _atmosphereSystem = atmosphereSystemSource as ISubmarineAtmosphereRoomReadModel;
+                if (_atmosphereSystem == null || !_atmosphereSystem.IsAtmosphereRuntimeActive)
+                    _atmosphereSystem = ComponentReferenceUtility.ResolveParentService<ISubmarineAtmosphereRoomReadModel>(this);
+            }
 
             if (hullCollider == null)
                 TryGetComponent(out hullCollider);
@@ -2362,7 +2377,8 @@ namespace Hecton8.Physics
                 !_cellFatigue.IsCreated ||
                 !_fatigueCompartmentFlags.IsCreated ||
                 _fatigueJobRunning ||
-                atmosphereSystem == null ||
+                _atmosphereSystem == null ||
+                !_atmosphereSystem.IsAtmosphereRuntimeActive ||
                 fluidDynamics == null)
             {
                 return;
@@ -2374,13 +2390,13 @@ namespace Hecton8.Physics
             for (int compartmentIndex = 0; compartmentIndex < compartmentCount; compartmentIndex++)
             {
                 float previousPressure = _previousCompartmentPressuresKPa[compartmentIndex];
-                float currentPressure = atmosphereSystem.GetRoomPressureKPa(compartmentIndex);
+                float currentPressure = _atmosphereSystem.GetRoomPressureKPa(compartmentIndex);
                 _previousCompartmentPressuresKPa[compartmentIndex] = currentPressure;
 
                 if (previousPressure >= thresholdKPa || currentPressure < thresholdKPa)
                     continue;
 
-                float thermalMultiplier = atmosphereSystem.ResolveThermalFatigueMultiplier(compartmentIndex);
+                float thermalMultiplier = _atmosphereSystem.ResolveThermalFatigueMultiplier(compartmentIndex);
                 _fatigueCompartmentFlags[compartmentIndex] = 1;
                 _fatigueIntegrityLossPerCycle[compartmentIndex] = math.max(0f, fatigueIntegrityLossPerCycle * thermalMultiplier);
                 scheduledAny = true;
@@ -2532,8 +2548,13 @@ namespace Hecton8.Physics
             object previousService,
             object currentService)
         {
-            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && currentService != null && isActiveAndEnabled)
-                TryRegister();
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                _registered = false;
+                _registeredLateFrame = false;
+                if (currentService != null && isActiveAndEnabled)
+                    TryRegister();
+            }
         }
 
         private void TryRegisterDamageReceiver()

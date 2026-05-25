@@ -26,6 +26,7 @@ namespace Hecton8.Physics
     [DisallowMultipleComponent]
     public sealed class TetherInstance : MonoBehaviour
     {
+        private static int s_x001TetherInstanceSignalPushDropCount;
         private const int MaxSupportedBendPoints = 4;
         private const int MaxSegments = MaxSupportedBendPoints + 1;
         private const int MaxAnchors = MaxSegments + 1;
@@ -2211,7 +2212,7 @@ namespace Hecton8.Physics
                 SecondaryMaterialId = 0,
                 Flags = (byte)(peakTension >= snapThreshold * ReactiveVfxThreshold01 ? 3 : 1)
             };
-            SignalBus<ImpactSignal>.TryPush(in signal);
+            SignalBus<ImpactSignal>.TryPushTracked(in signal, ref s_x001TetherInstanceSignalPushDropCount);
             _lastTensionCreakFrame = frame;
         }
 
@@ -2273,7 +2274,7 @@ namespace Hecton8.Physics
                 SecondaryMaterialId = 0,
                 Flags = 2
             };
-            SignalBus<ImpactSignal>.TryPush(in signal);
+            SignalBus<ImpactSignal>.TryPushTracked(in signal, ref s_x001TetherInstanceSignalPushDropCount);
         }
 
         private void ApplyVerletEndpointForces(Vector3 anchorPosition, Vector3 payloadPosition, float peakTension)

@@ -9,6 +9,8 @@ namespace Hecton8.Physics
 {
     public static class TetherSignals
     {
+        private static int s_x001DirectSignalPushDropCount_TetherSignals;
+
         private static uint _snapSnapshotReadFrameIndex;
         private static int _snapSnapshotReadLength;
         private static int _snapSnapshotReadCursor;
@@ -81,7 +83,7 @@ namespace Hecton8.Physics
                 Flags = 0
             };
 
-            return SignalBus<CoreTetherFiredSignal>.TryPush(in signal);
+            return SignalBus<CoreTetherFiredSignal>.TryPushTracked(in signal, ref s_x001DirectSignalPushDropCount_TetherSignals);
         }
 
         [Obsolete("Use TryPublishSnap(in TetherSnappedSignal) so SignalBus enqueue refusal is visible.", true)]
@@ -93,7 +95,7 @@ namespace Hecton8.Physics
         public static bool TryPublishSnap(in TetherSnappedSignal signal)
         {
             EnsureInitialized();
-            return SignalBus<TetherSnappedSignal>.TryPush(in signal);
+            return SignalBus<TetherSnappedSignal>.TryPushTracked(in signal, ref s_x001DirectSignalPushDropCount_TetherSignals);
         }
 
         [Obsolete("Use TryPublishTension(in TetherTensionSignal) so SignalBus enqueue refusal is visible.", true)]
@@ -105,7 +107,7 @@ namespace Hecton8.Physics
         public static bool TryPublishTension(in TetherTensionSignal signal)
         {
             EnsureInitialized();
-            return SignalBus<TetherTensionSignal>.TryPush(in signal);
+            return SignalBus<TetherTensionSignal>.TryPushTracked(in signal, ref s_x001DirectSignalPushDropCount_TetherSignals);
         }
 
         public static bool TryDequeueSnap(out TetherSnappedSignal signal)

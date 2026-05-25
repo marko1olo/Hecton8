@@ -1040,7 +1040,7 @@ namespace Hecton8.Core
             _inputJournal[index] = new DodReplayInputEvent
             {
                 PrecisionTimestamp = precisionTimestamp,
-                FrameIndex = unchecked((uint)Time.frameCount),
+                FrameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 Sequence = unchecked((uint)sequence),
                 DeviceHash = deviceHash,
                 ControlHash = controlHash,
@@ -1060,7 +1060,7 @@ namespace Hecton8.Core
             int sequence = Interlocked.Increment(ref _jobProfileSequence) - 1;
             _jobProfiles[sequence & (SidecarCapacity - 1)] = new DodReplayJobProfileRecord
             {
-                FrameIndex = unchecked((uint)Time.frameCount),
+                FrameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 SubjectHash = subjectHash,
                 CompletionMicroseconds = completionMicroseconds,
                 WorkerIndex = workerIndex,
@@ -1091,7 +1091,7 @@ namespace Hecton8.Core
 
             _panicRecords[sequence & (SidecarCapacity - 1)] = new DodReplayBurstPanicRecord
             {
-                FrameIndex = unchecked((uint)Time.frameCount),
+                FrameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 SubjectHash = subjectHash,
                 ErrorCode = errorCode != 0u ? errorCode : ErrorCodeBurstPanic,
                 PayloadOffsetBytes = unchecked((uint)payloadOffset),
@@ -1216,7 +1216,7 @@ namespace Hecton8.Core
             int sequence = Interlocked.Increment(ref _ghostSequence) - 1;
             _ghostRecords[sequence & (GhostCapacity - 1)] = new DodReplayEntityGhostRecord
             {
-                FrameIndex = unchecked((uint)Time.frameCount),
+                FrameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 EntityHash = entityHash,
                 Position = position,
                 Flags = flags,
@@ -1239,7 +1239,7 @@ namespace Hecton8.Core
             int sequence = Interlocked.Increment(ref _logisticSequence) - 1;
             _logisticFlowRecords[sequence & (SidecarCapacity - 1)] = new DodReplayLogisticFlowRecord
             {
-                FrameIndex = unchecked((uint)Time.frameCount),
+                FrameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 EdgeHash = edgeHash,
                 From = from,
                 To = to,
@@ -1270,7 +1270,7 @@ namespace Hecton8.Core
             int sequence = Interlocked.Increment(ref _atmosphereSequence) - 1;
             _atmosphereRecords[sequence & (SidecarCapacity - 1)] = new DodReplayAtmosphereCellRecord
             {
-                FrameIndex = unchecked((uint)Time.frameCount),
+                FrameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 CellHash = cellHash,
                 X = x,
                 Y = y,
@@ -1290,7 +1290,7 @@ namespace Hecton8.Core
             int sequence = Interlocked.Increment(ref _vramSequence) - 1;
             _vramRecords[sequence & (SidecarCapacity - 1)] = new DodReplayVramAllocationRecord
             {
-                FrameIndex = unchecked((uint)Time.frameCount),
+                FrameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 OwnerHash = ownerHash,
                 LabelHash = labelHash,
                 Bytes = bytes,
@@ -1322,7 +1322,7 @@ namespace Hecton8.Core
                 : 0u;
             _physicsSmokeRecords[sequence & (SidecarCapacity - 1)] = new DodReplayPhysicsSmokeRecord
             {
-                FrameIndex = unchecked((uint)Time.frameCount),
+                FrameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 TestHash = testHash,
                 RunAHash = runAHash,
                 RunBHash = runBHash,

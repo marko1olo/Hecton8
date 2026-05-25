@@ -13,6 +13,7 @@ namespace Hecton8.Core
 {
     public sealed unsafe partial class InputDispatcher
     {
+        private static int s_x001HectonInputRuntimeHapticSynthSignalPushDropCount;
 #if UNITY_EDITOR
         private const string HapticProfilesRelativePath = "Hecton8/haptic_response_profiles.csv";
 #endif
@@ -113,7 +114,7 @@ namespace Hecton8.Core
             if (!EnsureHapticSynthesisNativeBuffers())
                 return dependsOn;
 
-            uint frame = frameId != 0u ? frameId : unchecked((uint)Mathf.Max(0, Time.frameCount));
+            uint frame = frameId != 0u ? frameId : Hecton8.Core.SystemDispatcher.CurrentFrameId;
             if (!TryResolvePlayerHapticAup(out double3 playerAup))
             {
                 RecordHapticSynthesisManagedTelemetry(HapticSynthesisFaultFlags.MissingPlayerAup, default, 0u, 0u, 0u);
@@ -239,7 +240,7 @@ namespace Hecton8.Core
                 return;
             }
 
-            SignalBus<HapticPulseSignal>.TryPush(in pulse);
+            SignalBus<HapticPulseSignal>.TryPushTracked(in pulse, ref s_x001HectonInputRuntimeHapticSynthSignalPushDropCount);
             float safeDeltaTime = math.isfinite(deltaTime) && deltaTime > 0f
                 ? math.min(deltaTime, 0.1f)
                 : (float)StandardInputTickIntervalSeconds;
@@ -309,11 +310,11 @@ namespace Hecton8.Core
             if ((inputProfile.Flags & InputProfileFlagEnableMockCollision) != 0u &&
                 TryResolveInputBuffer(in _hapticSynthesisMockImpulsesHandle, HapticSynthesisMath.MockImpulseCapacity, out NativeArray<HapticPhysicalImpulseDTO> mockImpulses))
             {
-                uint seed = math.hash(new uint2(InputMockSignalSourceHash, unchecked((uint)Mathf.Max(0, Time.frameCount))));
+                uint seed = math.hash(new uint2(InputMockSignalSourceHash, Hecton8.Core.SystemDispatcher.CurrentFrameId));
                 GenerateMockHapticStormJob mockJob = default;
                 mockJob.Impulses = mockImpulses;
                 mockJob.PlayerAup = playerAup;
-                mockJob.Frame = unchecked((uint)Mathf.Max(0, Time.frameCount));
+                mockJob.Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
                 mockJob.Seed = seed;
                 mockJob.Run();
                 mockCount = math.min(51, mockImpulses.Length);
@@ -339,7 +340,7 @@ namespace Hecton8.Core
             evaluateJob.Pulses = pulses;
             evaluateJob.TelemetryRing = telemetryRing;
             evaluateJob.PlayerAup = playerAup;
-            evaluateJob.Frame = unchecked((uint)Mathf.Max(0, Time.frameCount));
+            evaluateJob.Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             evaluateJob.GlobalQualityWeight = quality;
             evaluateJob.MockImpulseCount = mockCount;
             evaluateJob.TelemetryCursor = telemetryIndex;
@@ -382,7 +383,7 @@ namespace Hecton8.Core
                 return false;
             }
 
-            SignalBus<HapticPulseSignal>.TryPush(in pulse);
+            SignalBus<HapticPulseSignal>.TryPushTracked(in pulse, ref s_x001HectonInputRuntimeHapticSynthSignalPushDropCount);
             return true;
         }
 
@@ -566,7 +567,7 @@ namespace Hecton8.Core
 
             int index = AdvanceHapticTelemetryCursor();
             HapticTelemetryEntry entry = default;
-            entry.Frame = unchecked((uint)Mathf.Max(0, Time.frameCount));
+            entry.Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             entry.FinalLowFrequency01 = lastPulse.LowFrequencyMotor01;
             entry.FinalHighFrequency01 = lastPulse.HighFrequencyMotor01;
             entry.RawSignalCount = rawCount;

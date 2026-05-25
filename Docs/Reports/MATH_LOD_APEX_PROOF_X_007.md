@@ -577,3 +577,102 @@ physiologyWorstCase.absError = 6.080794978657877e-08
 ```
 
 Truth boundary: quality scales cadence, sampling, optional visual flags, and upload/detail budgets. It does not scale decompression tissue count, thermal source amplitude, save identity, authority DTO layout, power topology, or gameplay ownership routes. Build boundary: repeat build is pending because the latest gate sample reported CPU `63`, above the project `>50%` no-build threshold.
+
+## 17. Branch Boundary And Extreme Kernel Finiteness Proof
+
+The branch claim is now strict and limited to what is actually true:
+
+- Approximation kernels are branchless at source level: `approximationKernelTotalIfCount = 0`, `approximationKernelTotalTernaryCount = 0`.
+- `PowerVoltageSolverJob` is not branchless as a whole: it keeps setup/topology branches for null pointer, native-array bounds, and offline/damaged nodes.
+- The power voltage CSR edge accumulation loop now has `powerVoltageEdgeLoopIfCount = 0` and `powerVoltageEdgeLoopContinueCount = 0`; invalid destinations are converted to zero-conductance safe-index reads.
+- `IntegrateBatteryChargeJob` and `ApplyEquipmentPowerDrainJob` keep capacity, hash-map, and writer-bound branches. These are not quality branches.
+
+The scanner also evaluates the approximation kernels on critical inputs:
+
+```text
+extreme samples = NaN, +Infinity, -Infinity, -1000000, +1000000, -1000, +1000, -273.15, 37, 0, 0.1, 1, 4, 40
+kernels = expNegReduced, expNegWide, expPositiveReduced, sinBhaskara, cosBhaskara, tanClamped, atanFast, atan2Fast, acosFast, pow01Curve
+nonFiniteOutputCount = 0
+maxAbsFiniteOutput = 54.60041427612305
+```
+
+Latest proof from `Docs/Reports/MATH_LOD_OPTIMIZATION_REPORT_X_007.json`:
+
+```text
+hardFailures = []
+remainingTranscendentalTotal = 0
+exp [0,4] maxAbsError = 7.629343333620531e-07
+physiologyWorstCase.absError = 6.080794978657877e-08
+```
+
+Conclusion: no false branchless claim remains. Arithmetic approximation kernels and the power voltage edge accumulation lane are branchless and finite under critical values; whole jobs still contain explicit setup/topology branches where removing them would risk invalid native memory access or corrupted graph authority.
+
+## 18. Torture Job Ternary Reduction
+
+`MathLodTortureJob` now uses `math.select` for non-finite count and flag writes:
+
+```text
+result.NonFiniteCount += math.select(1u, 0u, finite)
+entry.Flags = math.select(1u, 0u, finite)
+result.Flags = math.select(1u, 0u, result.NonFiniteCount == 0u)
+```
+
+The remaining ternary is the telemetry cursor read:
+
+```text
+TelemetryCursor.IsCreated && TelemetryCursor.Length > 0 ? TelemetryCursor[0] : 0
+```
+
+This is intentionally retained as a native-array safety guard. Removing it would either require an `if` or an unsafe unconditional read.
+
+Latest proof:
+
+```text
+hardFailures = []
+remainingTranscendentalTotal = 0
+mathLodTortureTernaryCount = 1
+extremeKernelFinitenessProof.nonFiniteOutputCount = 0
+runtimeQualityStepGateSweepProof.topographicalSonarSamplingContinuous = true
+```
+
+## 19. Power Destination Branch Mask Closure
+
+The hot power voltage and battery destination checks were converted from branch/continue to safe-index masked arithmetic.
+
+Code contract:
+
+```text
+PowerVoltageSolverJob:
+potentialReadLimit = min(NodeCount, FrontPotential.Length)
+validDestination = destination < potentialReadLimit
+safeDestination = clamp(destination, 0, potentialReadLimit - 1)
+conductance *= select(0, 1, validDestination)
+weightedPotential += conductance * FrontPotential[safeDestination]
+
+IntegrateBatteryChargeJob:
+validDestination = destination < NodeCount
+safeDestination = clamp(destination, 0, NodeCount - 1)
+conductance *= select(0, 1, validDestination)
+current = (sourcePotential - destinationPotential) * conductance
+```
+
+Latest proof:
+
+```text
+hardFailures = []
+remainingTranscendentalTotal = 0
+powerVoltageEdgeLoopIfCount = 0
+powerVoltageEdgeLoopContinueCount = 0
+powerVoltageDestinationMaskBranchless = true
+integrateBatteryDestinationMaskBranchless = true
+powerVoltageSolverSafetyIfCount = 2
+powerVoltageSolverTernaryCount = 1
+integrateBatterySafetyIfCount = 6
+powerDestinationMaskEquivalenceProof.checkedCases = 245
+powerDestinationMaskEquivalenceProof.mismatchCount = 0
+powerDestinationMaskEquivalenceProof.maxWeightedPotentialAbsDiff = 0
+powerDestinationMaskEquivalenceProof.maxConductanceSumAbsDiff = 0
+powerDestinationMaskEquivalenceProof.maxBatteryCurrentAbsDiff = 0
+```
+
+The remaining ternary in `PowerVoltageSolverJob` is the `DemandRate.IsCreated` native-array safety read. It is not an approximation kernel and not inside the CSR edge accumulation loop. Build repeat is still blocked by the project guard: CPU `96`, active `csc` PID `55824`, active `dotnet` PID `54420`.

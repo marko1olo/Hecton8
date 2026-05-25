@@ -1,7 +1,7 @@
 ﻿{
   "schema": "HECTON8_DATA_MONOLITH_FAIL_CLOSED_RUNTIME_SIM_V1",
   "agent": "X_002",
-  "generated": "2026-05-24T23:51:53.9314099Z",
+  "generated": "2026-05-25T00:27:50.3923587Z",
   "status": "PASS_FAIL_CLOSED_NO_POISON_PUBLISH",
   "setupError": "",
   "proofBoundary": "CLI resident-pointer simulation of the H8StaticDataArena publish gate. It proves corrupt candidates fail before publish and validation allocates zero bytes; Unity player profiler proof is still separate.",
@@ -10,7 +10,7 @@
   "publishedChecksumHex": "0x0D49885F30E5DF35",
   "validationIterations": 256,
   "validationPasses": 256,
-  "validationMeanMicroseconds": 1099.610,
+  "validationMeanMicroseconds": 453.367,
   "validationAllocatedBytes": 0,
   "failureCodeLegend": {
     "0": "None",

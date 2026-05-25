@@ -30,6 +30,7 @@ namespace Hecton8.Gameplay.Mining
         IGlobalRegistryHotSwapListener,
         IGlobalRegistryHotSwapRefListener
     {
+        private int _signalPushDropCount;
         private const int InventorySlotCount = 4;
         private const int BlackBoxCapacity = 300;
         private const int MaxVaultDrillInstances = 256;
@@ -1272,7 +1273,7 @@ namespace Hecton8.Gameplay.Mining
                 Channel = AcousticChannelThumper,
                 Flags = AcousticFlagThreat
             };
-            SignalBus<AcousticPingSignal>.TryPush(in signal);
+            SignalBus<AcousticPingSignal>.TryPushTracked(in signal, ref _signalPushDropCount);
         }
 
         private void PublishItemAcquired(in DeployableSdfDrillExtractionResult result)
@@ -1296,9 +1297,9 @@ namespace Hecton8.Gameplay.Mining
                 Quantity = quantity,
                 SourceKind = 7,
                 Flags = 0,
-                Frame = unchecked((uint)Time.frameCount)
+                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId
             };
-            SignalBus<ItemAcquiredSignal>.TryPush(in signal);
+            SignalBus<ItemAcquiredSignal>.TryPushTracked(in signal, ref _signalPushDropCount);
         }
 
         private void PublishCombatDamage(float damage, Vector3 hitPoint, uint sourceHash)
@@ -1313,14 +1314,15 @@ namespace Hecton8.Gameplay.Mining
                 DamageType = DrillDamageTypeHash,
                 TargetHash = _sourceId,
                 SourceHash = sourceHash,
-                Frame = unchecked((uint)Time.frameCount),
+                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 SourceId = unchecked((ushort)(sourceHash & 0xFFFFu)),
                 TargetId = unchecked((ushort)(_sourceId & 0xFFFFu)),
                 Channel = 7,
-                Flags = Hecton8.Core.Contracts.Signals.CombatDamageSignal.DirectRuntimeFlag,
+                Flags = Hecton8.Core.Contracts.Signals.CombatDamageSignal.DirectRuntimeFlag |
+                        Hecton8.Core.Contracts.Signals.CombatDamageSignal.VisualOnlyFlag,
                 IntegrityDelta = (byte)math.clamp((int)math.ceil(damage * math.rcp(math.max(1f, maxHealth)) * 255f), 1, 255)
             };
-            SignalBus<CombatDamageSignal>.TryPush(in signal);
+            SignalBus<CombatDamageSignal>.TryPushTracked(in signal, ref _signalPushDropCount);
         }
 
         private void MarkBroken(Vector3 hitPoint)
@@ -1347,7 +1349,7 @@ namespace Hecton8.Gameplay.Mining
                 Flags = DebrisSpawnSignal.FlagComputeShard | DebrisSpawnSignal.FlagToolSparks,
                 Quantity = 7
             };
-            SignalBus<DebrisSpawnSignal>.TryPush(in signal);
+            SignalBus<DebrisSpawnSignal>.TryPushTracked(in signal, ref _signalPushDropCount);
         }
 
         private int ResolveBiomeId()
@@ -1490,7 +1492,7 @@ namespace Hecton8.Gameplay.Mining
                 LocalX = _anchorAup.LocalX,
                 LocalY = _anchorAup.LocalY,
                 LocalZ = _anchorAup.LocalZ,
-                Frame = unchecked((uint)Time.frameCount),
+                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 ActiveDrills = unchecked((uint)math.max(0, s_activeDrills)),
                 OresExtracted = _oresExtracted,
                 FillPermille = (ushort)ResolveFillPermille(),

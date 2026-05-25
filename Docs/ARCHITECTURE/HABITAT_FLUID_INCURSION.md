@@ -32,7 +32,8 @@ Facts:
 
 - `FluidIngressJob` applies Torricelli ingress from `IntegrityStateDTO` breach area and AUP-local water depth.
 - `FluidBfsPressureEqualizationJob` traverses CSR topology and moves conserved scalar volume across unsealed conductive edges using surface-head difference: AUP-local compartment Y delta plus fill-height delta.
-- Edge conductance is a scalar Vault lane, sealed edges resolve to zero conductance, and transfer volume is quantized to signed milliliters with a per-edge remainder lane to prevent closed-loop drift.
+- Edge conductance is scalar Vault lane; sealed edges resolve to zero conductance.
+- Transfer volume is signed milliliters with per-edge remainder lane to prevent closed-loop drift.
 - `GlobalQualityWeight` drives solver iterations continuously from 1 to 5 and BFS visit budget from 16 to 128 nodes.
 
 Runtime cadence is continuous.

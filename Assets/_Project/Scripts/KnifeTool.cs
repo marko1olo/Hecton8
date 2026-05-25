@@ -195,17 +195,17 @@ namespace Hecton8.Gameplay
                     CombatDamageTypes.Impact);
                 if (applied && TryConsumeFeedbackGate())
                 {
-                    PublishInfoMessage(ResolveLocalized(LocalizationKeys.KNIFE_HUD_CONTACT, "SURVIVAL BLADE - CONTACT"));
+                    PublishInfoMessage(StableText(LocalizationKeys.KNIFE_HUD_CONTACT, "SURVIVAL BLADE - CONTACT"));
                     RecordContactLog(bestDistance);
                 }
             }
             else if (TryConsumeFeedbackGate())
             {
-                PublishWarningMessage(ResolveLocalized(LocalizationKeys.KNIFE_HUD_NO_CONTACT, "SURVIVAL BLADE - NO CONTACT"));
+                PublishWarningMessage(StableText(LocalizationKeys.KNIFE_HUD_NO_CONTACT, "SURVIVAL BLADE - NO CONTACT"));
                 FieldOperationLogSystem.RecordOperation(
-                    ResolveLocalized(LocalizationKeys.KNIFE_CATEGORY, KnifeCategory),
-                    ResolveLocalized(LocalizationKeys.KNIFE_LOG_CLEAR_TITLE, "MELEE SWING RETURNED CLEAR"),
-                    ResolveLocalized(LocalizationKeys.KNIFE_LOG_CLEAR_MESSAGE, "No valid target entered the blade envelope during the last swing."),
+                    StableText(LocalizationKeys.KNIFE_CATEGORY, KnifeCategory),
+                    StableText(LocalizationKeys.KNIFE_LOG_CLEAR_TITLE, "MELEE SWING RETURNED CLEAR"),
+                    StableText(LocalizationKeys.KNIFE_LOG_CLEAR_MESSAGE, "No valid target entered the blade envelope during the last swing."),
                     "WARN");
             }
 
@@ -231,9 +231,7 @@ namespace Hecton8.Gameplay
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public override string BuildLegacyOperationalSummaryString()
         {
-            s_legacySummaryBuffer.Clear();
-            WriteOperationalSummary(ref s_legacySummaryBuffer);
-            return CreateLegacyString(in s_legacySummaryBuffer);
+            return KnifeCategory;
         }
 
         public override void WriteOperationalSummary(ref FixedCharBuffer buffer)
@@ -254,22 +252,20 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            AppendText(ref buffer, ResolveLocalized(LocalizationKeys.KNIFE_OPERATIONAL_READY, "SURVIVAL BLADE // READY"));
+            AppendText(ref buffer, StableText(LocalizationKeys.KNIFE_OPERATIONAL_READY, "SURVIVAL BLADE // READY"));
         }
 
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public override string BuildLegacyOperationalDirectiveString()
         {
-            s_legacySummaryBuffer.Clear();
-            WriteOperationalDirective(ref s_legacySummaryBuffer);
-            return CreateLegacyString(in s_legacySummaryBuffer);
+            return "Primary swings. Secondary reads the contact before you commit.";
         }
 
         public override void WriteOperationalDirective(ref FixedCharBuffer buffer)
         {
             if (_cooldown > 0f)
             {
-                AppendText(ref buffer, ResolveLocalized(LocalizationKeys.KNIFE_DIRECTIVE_RECOVERING, "Reset your stance before the next strike."));
+                AppendText(ref buffer, StableText(LocalizationKeys.KNIFE_DIRECTIVE_RECOVERING, "Reset your stance before the next strike."));
                 return;
             }
 
@@ -281,11 +277,11 @@ namespace Hecton8.Gameplay
                     return;
                 }
 
-                AppendText(ref buffer, ResolveLocalized(LocalizationKeys.KNIFE_DIRECTIVE_CONTACT, "Target is inside blade range. Strike or switch tools if the contact is armored."));
+                AppendText(ref buffer, StableText(LocalizationKeys.KNIFE_DIRECTIVE_CONTACT, "Target is inside blade range. Strike or switch tools if the contact is armored."));
                 return;
             }
 
-            AppendText(ref buffer, ResolveLocalized(LocalizationKeys.KNIFE_DIRECTIVE_READY, "Primary swings. Secondary reads the contact before you commit."));
+            AppendText(ref buffer, StableText(LocalizationKeys.KNIFE_DIRECTIVE_READY, "Primary swings. Secondary reads the contact before you commit."));
         }
 
         public override void UseSecondary(float deltaTime)
@@ -297,7 +293,7 @@ namespace Hecton8.Gameplay
 
             if (!TryFindBestHit(out Collider target, out Vector3 point, out float distance, out Vector3 direction))
             {
-                WarnNoContact(ResolveLocalized(LocalizationKeys.KNIFE_HUD_NO_TARGET_READ, "SURVIVAL BLADE - NO TARGET READ"));
+                WarnNoContact(StableText(LocalizationKeys.KNIFE_HUD_NO_TARGET_READ, "SURVIVAL BLADE - NO TARGET READ"));
                 _cooldown = ResolveCooldownSeconds(0.5f, false);
                 return;
             }
@@ -337,7 +333,7 @@ namespace Hecton8.Gameplay
             if (queryRange <= 0f)
                 return false;
 
-            if (!TryQueuePrimaryRaycast(origin, direction, queryRange, hitMask, QueryTriggerInteraction.Ignore, out RaycastHit hit))
+            if (!TryResolvePrimarySurfaceHit(origin, direction, queryRange, hitMask, QueryTriggerInteraction.Ignore, out InteractionSurfaceHit hit))
                 return false;
 
             Collider candidate = hit.collider;
@@ -393,7 +389,7 @@ namespace Hecton8.Gameplay
 
             if (TryConsumeFeedbackGate())
             {
-                PublishInfoMessage(ResolveLocalized(LocalizationKeys.KNIFE_HUD_PRECISION_STRIKE, "SURVIVAL BLADE - PRECISION STRIKE"));
+                PublishInfoMessage(StableText(LocalizationKeys.KNIFE_HUD_PRECISION_STRIKE, "SURVIVAL BLADE - PRECISION STRIKE"));
                 RecordPrecisionLog(distance);
             }
 
@@ -435,7 +431,7 @@ namespace Hecton8.Gameplay
 
             if (TryConsumeFeedbackGate())
             {
-                PublishInfoMessage(ResolveLocalized(LocalizationKeys.KNIFE_HUD_TARGET_PROFILE_UNKNOWN, "SURVIVAL BLADE - TARGET PROFILE UNKNOWN"));
+                PublishInfoMessage(StableText(LocalizationKeys.KNIFE_HUD_TARGET_PROFILE_UNKNOWN, "SURVIVAL BLADE - TARGET PROFILE UNKNOWN"));
                 RecordUnknownProfileLog();
             }
         }
@@ -572,9 +568,9 @@ namespace Hecton8.Gameplay
 
             PublishWarningMessage(message);
             FieldOperationLogSystem.RecordOperation(
-                ResolveLocalized(LocalizationKeys.KNIFE_CATEGORY, KnifeCategory),
+                StableText(LocalizationKeys.KNIFE_CATEGORY, KnifeCategory),
                 message,
-                ResolveLocalized(LocalizationKeys.KNIFE_LOG_NO_TARGET_READ_MESSAGE, "No valid target entered the blade envelope during the tactical read."),
+                StableText(LocalizationKeys.KNIFE_LOG_NO_TARGET_READ_MESSAGE, "No valid target entered the blade envelope during the tactical read."),
                 "WARN");
         }
 
@@ -631,13 +627,13 @@ namespace Hecton8.Gameplay
             if (node.IsDepleted)
             {
                 return new KnifeAssessment(
-                    ResolveLocalized(LocalizationKeys.KNIFE_HEADLINE_NODE_DEPLETED, "BLADE READ - NODE DEPLETED 0%"),
+                    StableText(LocalizationKeys.KNIFE_HEADLINE_NODE_DEPLETED, "BLADE READ - NODE DEPLETED 0%"),
                     CreateStringFloatText(
-                        ResolveLocalized(LocalizationKeys.KNIFE_SUMMARY_NODE_DEPLETED, "{0} is exhausted at {1:0.0} m and will not pay back another strike."),
+                        StableText(LocalizationKeys.KNIFE_SUMMARY_NODE_DEPLETED, "{0} is exhausted at {1:0.0} m and will not pay back another strike."),
                         GenericResourceNodeLabel,
                         distance,
                         1),
-                    ResolveLocalized(LocalizationKeys.KNIFE_RECOMMEND_NODE_DEPLETED, "Leave it and move to a fresh resource lane."),
+                    StableText(LocalizationKeys.KNIFE_RECOMMEND_NODE_DEPLETED, "Leave it and move to a fresh resource lane."),
                     "WARN");
             }
 
@@ -646,15 +642,15 @@ namespace Hecton8.Gameplay
             {
                 return new KnifeAssessment(
                     CreateSingleFloatText(
-                        ResolveLocalized(LocalizationKeys.KNIFE_HEADLINE_NODE_READY, "BLADE READ - NODE READY TO BREAK {0:0}%"),
+                        StableText(LocalizationKeys.KNIFE_HEADLINE_NODE_READY, "BLADE READ - NODE READY TO BREAK {0:0}%"),
                         nodePercent,
                         0),
                     CreateStringFloatText(
-                        ResolveLocalized(LocalizationKeys.KNIFE_SUMMARY_NODE_READY, "{0} is one clean strike away from opening at {1:0.0} m."),
+                        StableText(LocalizationKeys.KNIFE_SUMMARY_NODE_READY, "{0} is one clean strike away from opening at {1:0.0} m."),
                         GenericResourceNodeLabel,
                         distance,
                         1),
-                    ResolveLocalized(LocalizationKeys.KNIFE_RECOMMEND_NODE_READY, "Finish it now if you want a fast recovery window."),
+                    StableText(LocalizationKeys.KNIFE_RECOMMEND_NODE_READY, "Finish it now if you want a fast recovery window."),
                     "INFO");
             }
 
@@ -662,27 +658,27 @@ namespace Hecton8.Gameplay
             {
                 return new KnifeAssessment(
                     CreateSingleFloatText(
-                        ResolveLocalized(LocalizationKeys.KNIFE_HEADLINE_NODE_WEAKENED, "BLADE READ - NODE WEAKENED {0:0}%"),
+                        StableText(LocalizationKeys.KNIFE_HEADLINE_NODE_WEAKENED, "BLADE READ - NODE WEAKENED {0:0}%"),
                         nodePercent,
                         0),
                     CreateSingleStringText(
-                        ResolveLocalized(LocalizationKeys.KNIFE_SUMMARY_NODE_WEAKENED, "{0} is partially cracked and reacting to tool pressure."),
+                        StableText(LocalizationKeys.KNIFE_SUMMARY_NODE_WEAKENED, "{0} is partially cracked and reacting to tool pressure."),
                         GenericResourceNodeLabel),
-                    ResolveLocalized(LocalizationKeys.KNIFE_RECOMMEND_NODE_WEAKENED, "Another strike or a dedicated extraction tool is worthwhile."),
+                    StableText(LocalizationKeys.KNIFE_RECOMMEND_NODE_WEAKENED, "Another strike or a dedicated extraction tool is worthwhile."),
                     "INFO");
             }
 
             return new KnifeAssessment(
                 CreateSingleFloatText(
-                    ResolveLocalized(LocalizationKeys.KNIFE_HEADLINE_NODE_DENSE, "BLADE READ - NODE DENSE {0:0}%"),
+                    StableText(LocalizationKeys.KNIFE_HEADLINE_NODE_DENSE, "BLADE READ - NODE DENSE {0:0}%"),
                     nodePercent,
                     0),
                 CreateStringFloatText(
-                    ResolveLocalized(LocalizationKeys.KNIFE_SUMMARY_NODE_DENSE, "{0} still has a dense shell at {1:0.0} m."),
+                    StableText(LocalizationKeys.KNIFE_SUMMARY_NODE_DENSE, "{0} still has a dense shell at {1:0.0} m."),
                     GenericResourceNodeLabel,
                     distance,
                     1),
-                ResolveLocalized(LocalizationKeys.KNIFE_RECOMMEND_NODE_DENSE, "Use repeated strikes only if no better extraction tool is available."),
+                StableText(LocalizationKeys.KNIFE_RECOMMEND_NODE_DENSE, "Use repeated strikes only if no better extraction tool is available."),
                 "INFO");
         }
 
@@ -693,15 +689,15 @@ namespace Hecton8.Gameplay
             {
                 return new KnifeAssessment(
                     CreateSingleFloatText(
-                        ResolveLocalized(LocalizationKeys.KNIFE_HEADLINE_MODULE_BREACHED, "BLADE READ - MODULE BREACHED {0:0}%"),
+                        StableText(LocalizationKeys.KNIFE_HEADLINE_MODULE_BREACHED, "BLADE READ - MODULE BREACHED {0:0}%"),
                         normalized * 100f,
                         0),
                     CreateStringFloatText(
-                        ResolveLocalized(LocalizationKeys.KNIFE_SUMMARY_MODULE_BREACHED, "{0} is already compromised and unsafe at {1:0.0} m."),
+                        StableText(LocalizationKeys.KNIFE_SUMMARY_MODULE_BREACHED, "{0} is already compromised and unsafe at {1:0.0} m."),
                         GenericBaseModuleLabel,
                         distance,
                         1),
-                    ResolveLocalized(LocalizationKeys.KNIFE_RECOMMEND_MODULE_BREACHED, "Repair, salvage, or leave it. The blade is not the main tool here."),
+                    StableText(LocalizationKeys.KNIFE_RECOMMEND_MODULE_BREACHED, "Repair, salvage, or leave it. The blade is not the main tool here."),
                     "WARN");
             }
 
@@ -709,25 +705,25 @@ namespace Hecton8.Gameplay
             {
                 return new KnifeAssessment(
                     CreateSingleFloatText(
-                        ResolveLocalized(LocalizationKeys.KNIFE_HEADLINE_MODULE_SALVAGEABLE, "BLADE READ - MODULE SALVAGEABLE {0:0}%"),
+                        StableText(LocalizationKeys.KNIFE_HEADLINE_MODULE_SALVAGEABLE, "BLADE READ - MODULE SALVAGEABLE {0:0}%"),
                         normalized * 100f,
                         0),
                     CreateSingleStringText(
-                        ResolveLocalized(LocalizationKeys.KNIFE_SUMMARY_MODULE_SALVAGEABLE, "{0} exposes reclaim paths, but not for blade work."),
+                        StableText(LocalizationKeys.KNIFE_SUMMARY_MODULE_SALVAGEABLE, "{0} exposes reclaim paths, but not for blade work."),
                         GenericBaseModuleLabel),
-                    ResolveLocalized(LocalizationKeys.KNIFE_RECOMMEND_MODULE_SALVAGEABLE, "Swap to the cutter if recovery is the goal."),
+                    StableText(LocalizationKeys.KNIFE_RECOMMEND_MODULE_SALVAGEABLE, "Swap to the cutter if recovery is the goal."),
                     "INFO");
             }
 
             return new KnifeAssessment(
                 CreateSingleFloatText(
-                    ResolveLocalized(LocalizationKeys.KNIFE_HEADLINE_MODULE_SEALED, "BLADE READ - MODULE SEALED {0:0}%"),
+                    StableText(LocalizationKeys.KNIFE_HEADLINE_MODULE_SEALED, "BLADE READ - MODULE SEALED {0:0}%"),
                     normalized * 100f,
                     0),
                 CreateSingleStringText(
-                    ResolveLocalized(LocalizationKeys.KNIFE_SUMMARY_MODULE_SEALED, "{0} is structurally sealed and not a valid blade target."),
+                    StableText(LocalizationKeys.KNIFE_SUMMARY_MODULE_SEALED, "{0} is structurally sealed and not a valid blade target."),
                     GenericBaseModuleLabel),
-                ResolveLocalized(LocalizationKeys.KNIFE_RECOMMEND_MODULE_SEALED, "Use repair, builder, or cutter tools instead."),
+                StableText(LocalizationKeys.KNIFE_RECOMMEND_MODULE_SEALED, "Use repair, builder, or cutter tools instead."),
                 "INFO");
         }
 
@@ -753,7 +749,7 @@ namespace Hecton8.Gameplay
             s_logSummaryBuffer.Clear();
             if (!TryAppendStringFloatTemplate(
                     ref s_logSummaryBuffer,
-                    ResolveLocalized(LocalizationKeys.KNIFE_LOG_CONTACT_MESSAGE, "{0} engaged at {1:0.0} m."),
+                    StableText(LocalizationKeys.KNIFE_LOG_CONTACT_MESSAGE, "{0} engaged at {1:0.0} m."),
                     GenericBladeTargetLabel,
                     distance,
                     1))
@@ -766,8 +762,8 @@ namespace Hecton8.Gameplay
             }
 
             FieldOperationLogSystem.RecordOperation(
-                ResolveLocalized(LocalizationKeys.KNIFE_CATEGORY, KnifeCategory),
-                ResolveLocalized(LocalizationKeys.KNIFE_LOG_CONTACT_TITLE, "MELEE CONTACT REGISTERED"),
+                StableText(LocalizationKeys.KNIFE_CATEGORY, KnifeCategory),
+                StableText(LocalizationKeys.KNIFE_LOG_CONTACT_TITLE, "MELEE CONTACT REGISTERED"),
                 in s_logSummaryBuffer,
                 "INFO");
         }
@@ -777,7 +773,7 @@ namespace Hecton8.Gameplay
             s_logSummaryBuffer.Clear();
             if (!TryAppendStringFloatTemplate(
                     ref s_logSummaryBuffer,
-                    ResolveLocalized(LocalizationKeys.KNIFE_LOG_PRECISION_MESSAGE, "{0} finished or weakened at {1:0.0} m."),
+                    StableText(LocalizationKeys.KNIFE_LOG_PRECISION_MESSAGE, "{0} finished or weakened at {1:0.0} m."),
                     GenericBladeTargetLabel,
                     distance,
                     1))
@@ -790,8 +786,8 @@ namespace Hecton8.Gameplay
             }
 
             FieldOperationLogSystem.RecordOperation(
-                ResolveLocalized(LocalizationKeys.KNIFE_CATEGORY, KnifeCategory),
-                ResolveLocalized(LocalizationKeys.KNIFE_LOG_PRECISION_TITLE, "PRECISION STRIKE CONFIRMED"),
+                StableText(LocalizationKeys.KNIFE_CATEGORY, KnifeCategory),
+                StableText(LocalizationKeys.KNIFE_LOG_PRECISION_TITLE, "PRECISION STRIKE CONFIRMED"),
                 in s_logSummaryBuffer,
                 "INFO");
         }
@@ -804,7 +800,7 @@ namespace Hecton8.Gameplay
             assessment.TryWriteHeadline(ref s_assessmentTitleBuffer);
 
             FieldOperationLogSystem.RecordOperation(
-                ResolveLocalized(LocalizationKeys.KNIFE_CATEGORY, KnifeCategory),
+                StableText(LocalizationKeys.KNIFE_CATEGORY, KnifeCategory),
                 in s_assessmentTitleBuffer,
                 in s_logSummaryBuffer,
                 assessment.Severity);
@@ -815,7 +811,7 @@ namespace Hecton8.Gameplay
             s_logSummaryBuffer.Clear();
             if (!TryAppendSingleStringTemplate(
                     ref s_logSummaryBuffer,
-                    ResolveLocalized(LocalizationKeys.KNIFE_LOG_UNKNOWN_PROFILE_MESSAGE, "{0} does not expose a tactical vitality profile."),
+                    StableText(LocalizationKeys.KNIFE_LOG_UNKNOWN_PROFILE_MESSAGE, "{0} does not expose a tactical vitality profile."),
                     GenericBladeTargetLabel))
             {
                 s_logSummaryBuffer.Clear();
@@ -824,8 +820,8 @@ namespace Hecton8.Gameplay
             }
 
             FieldOperationLogSystem.RecordOperation(
-                ResolveLocalized(LocalizationKeys.KNIFE_CATEGORY, KnifeCategory),
-                ResolveLocalized(LocalizationKeys.KNIFE_LOG_UNKNOWN_PROFILE_TITLE, "UNKNOWN TARGET PROFILE"),
+                StableText(LocalizationKeys.KNIFE_CATEGORY, KnifeCategory),
+                StableText(LocalizationKeys.KNIFE_LOG_UNKNOWN_PROFILE_TITLE, "UNKNOWN TARGET PROFILE"),
                 in s_logSummaryBuffer,
                 "WARN");
         }
@@ -856,19 +852,9 @@ namespace Hecton8.Gameplay
                 ToolHitUtility.ShowWarning(in s_hudBuffer);
         }
 
-        private string ResolveLocalized(string key, string fallback)
+        private string StableText(string key, string fallback)
         {
-            ILocalizationTextReadModel manager = _localization;
-            return manager != null
-                ? manager.GetOrFallback(key, fallback)
-                : fallback;
-        }
-
-        private static string CreateLegacyString(in FixedCharBuffer buffer)
-        {
-            return buffer.Length > 0
-                ? new string(buffer.Buffer, 0, buffer.Length)
-                : string.Empty;
+            return fallback ?? string.Empty;
         }
 
         private static KnifeText CreateSingleFloatText(string template, float value, int decimals)

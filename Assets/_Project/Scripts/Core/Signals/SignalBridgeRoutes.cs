@@ -20,7 +20,7 @@ namespace Hecton8.Core
             if (guardCode != 0)
                 GlobalTelemetryBus.PublishMathGuardInvalidNumber(guardCode);
 
-            uint shiftFrameId = sanitizedSignal.ShiftFrameId != 0u ? sanitizedSignal.ShiftFrameId : unchecked((uint)Time.frameCount);
+            uint shiftFrameId = sanitizedSignal.ShiftFrameId != 0u ? sanitizedSignal.ShiftFrameId : Hecton8.Core.SystemDispatcher.CurrentFrameId;
             SystemDispatcher dispatcher = SystemDispatcher.ActiveRuntimeInstance;
             if (dispatcher != null)
                 dispatcher.RequestAupPreShiftPause(shiftFrameId);

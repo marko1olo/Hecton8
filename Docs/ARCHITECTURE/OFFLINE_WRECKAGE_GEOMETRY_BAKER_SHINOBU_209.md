@@ -157,7 +157,9 @@ This replaces adjacent tiny `NativeArray<int>` count buffers in the bake depende
 
 
 
-Forge preview, Forge batch bake, and the mock benchmark allocate this single counter row with `NativeArrayOptions.UninitializedMemory`. `BuildTornTrianglesJob` fully overwrites `Counters[0]` before hull generation, reporting, or preview reads it.
+Forge preview, batch bake, and mock benchmark allocate one counter row with `NativeArrayOptions.UninitializedMemory`.
+
+`BuildTornTrianglesJob` fully overwrites `Counters[0]` before hull generation, reporting, or preview reads it.
 
 
 

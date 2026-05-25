@@ -22,6 +22,8 @@ namespace Hecton8.Thermodynamics
     [AddComponentMenu("Hecton8/Thermodynamics/Thermodynamics Hazard Grid Runtime")]
     public sealed unsafe partial class ThermodynamicsHazardGridRuntime : MonoBehaviour, IUpdatable, ISlowTickable, ILateFrameTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener
     {
+        private static int s_x001DirectSignalPushDropCount_ThermodynamicsHazardGridRuntime;
+
         public const int HighResolution = 32;
         public const int LowResolution = 16;
         public const int MaxCellCount = HighResolution * HighResolution * HighResolution;
@@ -1116,7 +1118,7 @@ namespace Hecton8.Thermodynamics
             {
                 ThermalUpdraftSignal signal = updraftSignals[i];
                 if (math.isfinite(signal.TemperatureCelsius) &&
-                    !SignalBus<ThermalUpdraftSignal>.TryPush(in signal))
+                    !SignalBus<ThermalUpdraftSignal>.TryPushTracked(in signal, ref s_x001DirectSignalPushDropCount_ThermodynamicsHazardGridRuntime))
                 {
                     IncrementDroppedSignalCount();
                 }

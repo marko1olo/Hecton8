@@ -1028,3 +1028,43 @@ Solution: Added `_hasAuthoritativePoseSnapshot` and made `TryReadAuthoritativePo
 Rejected Alternatives: Rejecting zero vectors was rejected because world origin is a valid coordinate. Keeping unguarded snapshot-first reads was rejected because it creates a deterministic teleport risk. Forcing all cold startup through AUP state was rejected because the first scene seed still needs the authored shell pose.
 Scalability potential: All tiers use the same validity gate. Higher-quality presentation can consume the guarded snapshot without changing authority or adding allocations.
 Hardware Impact: 0 us claimed. This prevents a correctness regression from the split-authority cleanup; no new jobs or managed allocations were added.
+
+## Decision 124 - Build Gate Retry Must Not Become A Second Compiler Load
+
+Problem: The UI compile-wall patch requires a fresh C# build, but the workstation stayed saturated for a full 24-attempt gate retry. CPU samples exceeded 50% on every attempt and attempts 9-19 also had active `dotnet`/compiler processes.
+Solution: Do not launch `dotnet build` under the forbidden conditions. Record the failed gate window and keep using static proof tools until CPU/process conditions allow one clean build.
+Rejected Alternatives: Running `dotnet build` anyway was rejected because project law explicitly forbids adding compiler load above 50% CPU or during another compiler/runtime dotnet wave. Reporting the UI fix as compiled was rejected because the post-fix build has not run.
+Scalability potential: Runtime tiers unchanged. This protects the shared workstation while preserving the compiler proof as the next mandatory acceptance gate.
+Hardware Impact: Runtime impact 0 us. Verification remains pending; no KCC runtime savings are claimed from an uncompiled post-wall patch.
+
+## Decision 125 - Tool Surface Hits Must Not Use Unity RaycastHit DTOs
+
+Problem: The shared tool-primary route had already stopped scheduling PhysX commands, but its service contract, cache, and consumers still returned Unity `RaycastHit`. That kept a PhysX-shaped DTO and public `TryRaycastPrimary`/`TryQueuePrimaryRaycast` names in the interaction surface path.
+Solution: Added explicit 64-byte `InteractionSurfaceHitDTO` plus managed `InteractionSurfaceHit` in the core contract layer. Routed `IInteractionSignalService`, `EquipmentInteractionHandler`, `PlayerTool`, tool consumers, `RaycastBatchHelper.QueryResult`, and `QueryCacheContext` through typed surface hits. The vault stores DTO rows, while managed consumers keep an optional collider side-channel for registered interactables.
+Rejected Alternatives: Keeping `RaycastHit` because SDF/terrain already produce the data was rejected; DTO shape is part of authority. Renaming every legacy `BufferID.InteractionRaycast*` slot was rejected in this pass because those IDs are serialized/native-lane ABI and changing them without a migration card is higher risk than the DTO fix. Reintroducing a Unity Physics query to recover colliders for SDF hits was rejected.
+Scalability potential: Low tier keeps the same one-frame-late SDF/terrain surface query with no new allocations. Middle/High/Ultra can add richer target resolution by publishing typed registered-collider hits or SDF material channels without changing the tool contract or gameplay truth route.
+Hardware Impact: No profiler microseconds claimed. Static proof now shows zero Unity `RaycastHit` symbols and zero legacy raycast method symbols in the patched tool-primary route; full build passes with 0 C# errors.
+
+## Decision 126 - Kinematic Local Hits Must Be Burst DTOs, Not Unity Hit Rows
+
+Problem: `ContextualPhysicalIkRuntime`, `VRSomaticProvider`, `BuoyancyObject`, and `HectonPlayerEnvironmentHandler` no longer schedule PhysX queries, but they still used Unity `RaycastHit` for local SDF/terrain hit rows and NativeArray buffers. That preserved a Unity PhysX DTO shape inside Burst-adjacent kinematic presentation code.
+Solution: Added explicit 64-byte unmanaged `KinematicSurfaceHit` and replaced those local hit buffers/results with it. The lowercase point/normal/distance accessors preserve existing code shape while marking valid hits through a typed flag.
+Rejected Alternatives: Reusing `InteractionSurfaceHit` was rejected because it carries a managed collider side-channel and cannot be used in `NativeArray<T>` Burst buffers. Keeping `RaycastHit` was rejected because it leaves the wrong authority contract. Renaming `VoxelSonarSdfRaycastHit` was rejected because it is an existing SDF ABI DTO name and needs a separate migration card.
+Scalability potential: Low tier keeps the same SDF/terrain probe cadence and 64-byte aligned hit rows. Middle/High/Ultra can add richer IK/VR contact detail by filling the typed row with material/source hashes without changing the solver or query owner.
+Hardware Impact: No profiler microseconds claimed. Static proof now shows zero Unity `RaycastHit` symbols in the patched IK/VR/buoyancy local hit route; full C# build passes with 0 errors.
+
+## Decision 127 - Spatial Target Contracts Must Not Stay Raycast-Shaped
+
+Problem: The registered interaction route had already stopped using Unity Physics, but public/local names still exposed `TryRaycastSpatial`, `raycastInterval`, `_raycastTimer`, `PerformRaycast`, laser-cutter raycast requester names, and spawner raycast-origin names. Those names are not runtime PhysX calls, but they are regression handles for future agents to reintroduce PhysX authority.
+Solution: Renamed the route to `TryResolveSpatialTarget`, renamed player interaction timing to target-probe terminology, renamed laser cutter requester/mask/staging members to surface terminology, and renamed the spawner terrain probe origin to `groundProbeOriginHeight/_groundProbeOrigin`. `KccApexAudit_X_005.py` now persists the zero legacy-symbol proof.
+Rejected Alternatives: Keeping names because the implementation was already non-PhysX was rejected; source contracts are part of authority. Adding serialization compatibility aliases was rejected for these defaults because the aliases would preserve banned terminology in the scanned hot route and the default values are unchanged. Replacing the registry target probe with a Unity Physics query was rejected.
+Scalability potential: Low tier keeps the same registered-collider bounds probe and cached terrain ground probe. Middle/High/Ultra can increase target richness through typed SDF/material/source hashes without changing gameplay truth or restoring PhysX command/cast routes.
+Hardware Impact: Runtime savings are 0 us claimed. The practical gain is regression resistance: static proof now reports `interaction_target_legacy_raycast_api_count = 0` and `player_spawner_uses_ground_probe_origin = true`. Compile remains pending because the build gate was closed by 5 active compiler/runtime processes and CPU 100/100/100.
+
+## Decision 128 - Disabled Unity Collision DTOs Are Still Invalid Contracts
+
+Problem: After callback removal, non-Editor runtime still contained disabled legacy methods that accepted Unity `Collision`, read `ContactPoint`, and called `GetContact(0)`. The routes were not active `OnCollisionEnter` callbacks, but they preserved PhysX-shaped impact facts in `GlobalPhysicsStateManager`, `MantaEmergencyWreck`, and `SargassumCollapseChunk`.
+Solution: Deleted the dead `GlobalPhysicsStateManager.QueueImpact(... Collision ...)` route and the disabled legacy `Collision` handlers in Manta/Sargassum. Kept the existing typed `QueueKinematicImpact` path and force-router/spatial routes intact.
+Rejected Alternatives: Keeping disabled methods was rejected because disabled source is still a reactivation point. Replacing them with active world/fauna SDF damage logic in this pass was rejected as cross-domain feature work beyond the dead DTO route. Keeping `ContactPoint` only for future reference was rejected because the audit must prove zero Unity collision DTO contracts.
+Scalability potential: Low/Middle/High/Ultra all keep one collision fact route: KCC/kinematic typed impact events, not Unity callback DTOs. Future richer damage/snare presentation should consume typed spatial/SDF contact payloads without changing gameplay truth ownership.
+Hardware Impact: Runtime savings are 0 us claimed because the removed routes were already disabled. Static proof now reports `unity_collision_dto_count = 0` and `unity_collision_dto_route_removed = true`; compile remains pending under the build gate.

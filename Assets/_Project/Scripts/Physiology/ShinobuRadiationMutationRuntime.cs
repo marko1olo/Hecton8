@@ -19,6 +19,7 @@ namespace Hecton8.Physiology
     [AddComponentMenu("Hecton8/Physiology/Radiation Mutation Link")]
     public sealed unsafe class ShinobuRadiationMutationRuntime : MonoBehaviour, ISlowTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
+        private static int s_x001ShinobuRadiationMutationRuntimeSignalPushDropCount;
         private const SystemID OwnerSystem = SystemID.GameplayPlayer;
         private const string CsvRelativePath = "biological_mutation_profiles.csv";
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_324.bin";
@@ -569,7 +570,7 @@ namespace Hecton8.Physiology
                 Flags = DebrisSpawnSignal.FlagComputeShard,
                 Quantity = (ushort)math.clamp(1 + (int)math.round(quality * 3f), 1, 4)
             };
-            SignalBus<DebrisSpawnSignal>.TryPush(in signal);
+            SignalBus<DebrisSpawnSignal>.TryPushTracked(in signal, ref s_x001ShinobuRadiationMutationRuntimeSignalPushDropCount);
         }
 
         private bool TryResolvePlayerAup(out AbsoluteUniversePosition aup)

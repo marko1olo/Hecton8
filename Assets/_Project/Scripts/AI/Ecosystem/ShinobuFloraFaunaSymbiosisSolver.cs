@@ -22,6 +22,7 @@ namespace Hecton8.AI.Ecosystem
     /// </summary>
     public sealed class ShinobuFloraFaunaSymbiosisSolver : IColdTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener, IDisposable
     {
+        private static int s_x001ShinobuFloraFaunaSymbiosisSolverSignalPushDropCount;
         public const uint TuningFlagEmergencyMock = 1u << 0;
         public const uint TuningFlagLegacyBinary = 1u << 1;
         public const uint TuningFlagCsvOverride = 1u << 2;
@@ -958,7 +959,7 @@ namespace Hecton8.AI.Ecosystem
                     Channel = AcousticPingSignal.ChannelJawSnap,
                     Flags = AcousticPingSignal.FlagJawSnap
                 };
-                SignalBus<AcousticPingSignal>.TryPush(in signal);
+                SignalBus<AcousticPingSignal>.TryPushTracked(in signal, ref s_x001ShinobuFloraFaunaSymbiosisSolverSignalPushDropCount);
             }
         }
 

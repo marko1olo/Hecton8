@@ -10,6 +10,7 @@ using Hecton8.Inventory;
 using TMPro;
 using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 
 namespace Hecton8.UI
@@ -35,7 +36,7 @@ namespace Hecton8.UI
 
         [Header("References")]
         [SerializeField] private PlayerBuilder playerBuilder;
-        [SerializeField] private ConstructionManager constructionManager;
+        [SerializeField, FormerlySerializedAs("constructionManager")] private MonoBehaviour constructionLogisticsProvider;
         [SerializeField] private PlayerInventory inventory;
         [SerializeField] private PlayerToolManager toolManager;
         [SerializeField] private TMP_FontAsset labelFont;
@@ -84,6 +85,7 @@ namespace Hecton8.UI
         private bool _hotSwapListenerRegistered;
         private IPlayerRuntimeContext _cachedPlayerContext;
         private IEnvironmentRuntimeContext _cachedEnvironmentContext;
+        private ILogisticsService _constructionLogistics;
         private uint _inventorySignalHash;
         private uint _lastInventorySignalRevision;
         private uint _toolLoadoutSignalSourceId;
@@ -151,7 +153,7 @@ namespace Hecton8.UI
             bool requiresRuntimeResolve =
                 playerBuilder == null ||
                 inventory == null ||
-                constructionManager == null ||
+                _constructionLogistics == null ||
                 toolManager == null;
 
             if (requiresRuntimeResolve &&
@@ -258,17 +260,25 @@ namespace Hecton8.UI
 
         private void ApplyCachedEnvironmentContext(bool forceAssign)
         {
+            ILogisticsService providerService = constructionLogisticsProvider as ILogisticsService;
+            if (providerService != null)
+            {
+                _constructionLogistics = providerService;
+                return;
+            }
+
             IEnvironmentRuntimeContext environmentContext = _cachedEnvironmentContext;
             if (environmentContext == null)
             {
-                if (forceAssign)
-                    constructionManager = null;
+                _constructionLogistics = GlobalRegistry.Logistics;
 
                 return;
             }
 
-            if (forceAssign || constructionManager == null)
-                constructionManager = environmentContext.ConstructionManager;
+            if (forceAssign || _constructionLogistics == null)
+            {
+                _constructionLogistics = environmentContext.Logistics ?? GlobalRegistry.Logistics;
+            }
         }
 
         private void RefreshSubscriptions()
@@ -467,7 +477,8 @@ namespace Hecton8.UI
             bool snapped = playerBuilder.IsSnapped;
             int activeIndex = playerBuilder.ActiveBuildableIndex;
             int buildCount = playerBuilder.BuildableCount;
-            int builtModuleCount = constructionManager != null ? constructionManager.ModuleCount : 0;
+            ILogisticsService logistics = _constructionLogistics;
+            int builtModuleCount = logistics != null ? logistics.ModuleCount : 0;
             float powerRating = data != null ? data.powerRating : 0f;
             int staticStateHash = ComputeStaticStateHash(data, activeIndex, buildCount, powerRating, builtModuleCount);
             int liveStateHash = ComputeLiveStateHash(hasResources, canPlace, snapped);
@@ -569,7 +580,7 @@ namespace Hecton8.UI
         {
             return playerBuilder == null ||
                    inventory == null ||
-                   constructionManager == null ||
+                   _constructionLogistics == null ||
                    toolManager == null;
         }
 

@@ -34,6 +34,7 @@ namespace Hecton8.Graphics.Scalability
         IGlobalRegistryHotSwapRefListener,
         IResolutionScalerService
     {
+        private static int s_x001ThermalDynamicResolutionAdapterSignalPushDropCount;
         private const int TelemetryCapacity = 300;
         private const int TelemetryHeaderBytes = 20;
         private const int DrsTelemetryEntryBytes = 48;
@@ -1721,7 +1722,7 @@ namespace Hecton8.Graphics.Scalability
                 : ResolutionChangedSignal.ReasonRenderScaleRaised;
             signal.Flags = (byte)(ResolutionChangedSignal.FlagRenderScale |
                 (_stpActive ? ResolutionChangedSignal.FlagStpActive : 0));
-            SignalBus<ResolutionChangedSignal>.TryPush(in signal);
+            SignalBus<ResolutionChangedSignal>.TryPushTracked(in signal, ref s_x001ThermalDynamicResolutionAdapterSignalPushDropCount);
         }
 
         private void ApplyDirectRenderScale(float renderScale, float bufferScale)

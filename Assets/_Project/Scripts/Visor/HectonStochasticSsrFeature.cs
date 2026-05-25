@@ -65,7 +65,10 @@ namespace Hecton8.Visor
             private FeatureSettings _settings;
             private Material _material;
             private GraphicsBuffer _stochasticSsrGlobalsBuffer;
+            private GraphicsBuffer _stochasticSsrGlobalsBufferA;
+            private GraphicsBuffer _stochasticSsrGlobalsBufferB;
             private StochasticSsrGlobalsDTO _lastStochasticSsrGlobals;
+            private int _stochasticSsrGlobalsWriteIndex;
             private bool _hasStochasticSsrGlobals;
 
             public ReflectionSheenPass()
@@ -153,8 +156,12 @@ namespace Hecton8.Visor
 
             public void Dispose()
             {
-                _stochasticSsrGlobalsBuffer?.Release();
+                _stochasticSsrGlobalsBufferA?.Release();
+                _stochasticSsrGlobalsBufferB?.Release();
+                _stochasticSsrGlobalsBufferA = null;
+                _stochasticSsrGlobalsBufferB = null;
                 _stochasticSsrGlobalsBuffer = null;
+                _stochasticSsrGlobalsWriteIndex = 0;
                 _hasStochasticSsrGlobals = false;
             }
 
@@ -166,17 +173,30 @@ namespace Hecton8.Visor
                     return false;
                 }
 
-                if (_stochasticSsrGlobalsBuffer != null && _stochasticSsrGlobalsBuffer.IsValid())
+                if (_stochasticSsrGlobalsBufferA != null && _stochasticSsrGlobalsBufferA.IsValid() &&
+                    _stochasticSsrGlobalsBufferB != null && _stochasticSsrGlobalsBufferB.IsValid())
+                {
+                    if (_stochasticSsrGlobalsBuffer == null)
+                        _stochasticSsrGlobalsBuffer = _stochasticSsrGlobalsBufferA;
                     return true;
+                }
 
-                _stochasticSsrGlobalsBuffer?.Release();
-                _stochasticSsrGlobalsBuffer = new GraphicsBuffer(
+                _stochasticSsrGlobalsBufferA?.Release();
+                _stochasticSsrGlobalsBufferB?.Release();
+                _stochasticSsrGlobalsBufferA = new GraphicsBuffer(
                     GraphicsBuffer.Target.Constant,
                     GraphicsBuffer.UsageFlags.LockBufferForWrite,
                     1,
                     StochasticSsrGlobalsStrideBytes);
+                _stochasticSsrGlobalsBufferB = new GraphicsBuffer(
+                    GraphicsBuffer.Target.Constant,
+                    GraphicsBuffer.UsageFlags.LockBufferForWrite,
+                    1,
+                    StochasticSsrGlobalsStrideBytes);
+                _stochasticSsrGlobalsBuffer = _stochasticSsrGlobalsBufferA;
+                _stochasticSsrGlobalsWriteIndex = 1;
                 _hasStochasticSsrGlobals = false;
-                return _stochasticSsrGlobalsBuffer.IsValid();
+                return _stochasticSsrGlobalsBufferA.IsValid() && _stochasticSsrGlobalsBufferB.IsValid();
             }
 
             private bool UpdateStochasticSsrGlobals(FeatureSettings settings, int inputWidth, int inputHeight)
@@ -199,9 +219,15 @@ namespace Hecton8.Visor
                     return true;
                 }
 
-                NativeArray<StochasticSsrGlobalsDTO> mapped = _stochasticSsrGlobalsBuffer.LockBufferForWrite<StochasticSsrGlobalsDTO>(0, 1);
+                GraphicsBuffer writeBuffer = (_stochasticSsrGlobalsWriteIndex & 1) == 0 ? _stochasticSsrGlobalsBufferA : _stochasticSsrGlobalsBufferB;
+                if (writeBuffer == null || !writeBuffer.IsValid())
+                    return false;
+
+                NativeArray<StochasticSsrGlobalsDTO> mapped = writeBuffer.LockBufferForWrite<StochasticSsrGlobalsDTO>(0, 1);
                 mapped[0] = globals;
-                _stochasticSsrGlobalsBuffer.UnlockBufferAfterWrite<StochasticSsrGlobalsDTO>(1);
+                writeBuffer.UnlockBufferAfterWrite<StochasticSsrGlobalsDTO>(1);
+                _stochasticSsrGlobalsBuffer = writeBuffer;
+                _stochasticSsrGlobalsWriteIndex ^= 1;
                 _lastStochasticSsrGlobals = globals;
                 _hasStochasticSsrGlobals = true;
                 Shader.SetGlobalConstantBuffer(ShaderConstants.StochasticSsrGlobalsBufferId, _stochasticSsrGlobalsBuffer, 0, StochasticSsrGlobalsStrideBytes);

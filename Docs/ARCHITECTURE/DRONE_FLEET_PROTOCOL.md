@@ -321,11 +321,12 @@ Current source boundary:
   - no `File.ReadAllBytes`;
   - no runtime `NativeHashMap`.
 
-- `DroneServiceCommand` and `DroneServiceCommandCursor` are explicit 64 B DTOs. The cursor is a single cache-line atomic counter; command slots are cache-line padded to prevent worker false sharing during parallel service writes.
+- `DroneServiceCommand` and `DroneServiceCommandCursor` are explicit 64 B DTOs.
+- Cursor is single cache-line atomic counter; command slots are cache-line padded against worker false sharing.
 
 - `HectonDroneFleetEvents` drains pending snapshot payloads from vault-backed flat arrays with read/count cursors; reentrant listener updates are deferred into the next-frame flat lane.
 
-- `DroneCognitionJob` samples neighboring drones through the flat bucket/head/next/key spatial lane. It checks exact spatial cell keys after bucket hashing, so hash collisions only add bounded comparisons, not false neighbors.
+- `DroneCognitionJob` samples neighbors through flat bucket/head/next/key lanes. Exact cell-key checks after hashing make collisions bounded comparisons, not false neighbors.
 
 - `HeadlessDroneState` mirrors `PositionAup`, `HomeAup`, `TargetAup`, and `SupplyAup`.
 
@@ -352,7 +353,9 @@ Current source boundary:
 
 Older SHINOBU_128 status text recorded an external World/MapMagic compile wall around `Assets/_Project/Scripts/World/HectonMapMagicVegetationBridgeFloraCollisionProxies.cs`.
 
-R34 filesystem/source grep did not find that path on disk or in `Hecton8.Core.csproj`. Treat the old compile-wall sentence as historical unless fresh compile or current project-file grep proves it again.
+R34 filesystem/source grep did not find that path on disk or in `Hecton8.Core.csproj`.
+
+Treat the old compile-wall sentence as historical unless fresh compile or current project-file grep proves it again.
 
 Fresh 2026-05-19 active project-file probe did not find the MapMagic source include in active `.csproj`, `.rsp`, or solution files. Current static project-file blockers outside SHINOBU_128 ownership are:
 
@@ -360,7 +363,8 @@ Fresh 2026-05-19 active project-file probe did not find the MapMagic source incl
 
 - `Assembly-CSharp.csproj` -> missing `Assets/_Project/_Archive/HectonWaterPhysicsEditor.cs`
 
-- `Hecton8.Core.csproj` still contains generated include text for missing `Assets/_Project/Scripts/Construction/LogisticsPipeEvents.cs`, but R37-era `Directory.Build.targets` removed that stale item for guarded Core CLI builds; remaining Core errors are external missing contract/source bridge types.
+- `Hecton8.Core.csproj` still contains generated include text for missing `Assets/_Project/Scripts/Construction/LogisticsPipeEvents.cs`.
+- R37-era `Directory.Build.targets` removes that stale item for guarded Core CLI builds; remaining Core errors are external missing contract/source bridge types.
 
 R35 project-file/filesystem scan finds `Assets/_Project/Scripts/World/ChemicalInfluenceGrid.cs` present on disk despite the Core project include, so older ChemicalInfluenceGrid missing-file wording is stale. This is not compile/import proof.
 

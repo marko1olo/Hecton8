@@ -89,6 +89,9 @@ namespace Hecton8.UI
 
     public static unsafe class BabelSubtitleSyncRuntime
     {
+
+        private static int s_x001DirectSignalPushDropCount_BabelSubtitleSyncRuntime;
+
         public const int MaxSubtitleCueCount = 64;
         public const int TelemetryFrameCapacity = 300;
         public const uint FlagActive = 1u << 0;
@@ -305,7 +308,7 @@ namespace Hecton8.UI
             signal.Priority = priority;
             signal.Flags = PackSignalFlags(flags);
             signal.SourceHash = SystemHash;
-            return SignalBus<SubtitleCueSignal>.TryPush(in signal);
+            return SignalBus<SubtitleCueSignal>.TryPushTracked(in signal, ref s_x001DirectSignalPushDropCount_BabelSubtitleSyncRuntime);
         }
 
         public static void RecordDecode(uint tokenHash, int decodedCharacters, bool missingTokenHash, float utf8DecodeMilliseconds)

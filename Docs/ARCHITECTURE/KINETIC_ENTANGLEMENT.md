@@ -14,7 +14,8 @@ Verification: PENDING VERIFICATION
 
 - AUP mock scheduling now uses deterministic moving pinned endpoints and a `JobHandle` surface; `TetherManager` completes only an already-finished previous mock handle before scheduling the next pass.
 
-- Continuous scalability route: solver iteration budget uses `HomeostasisBrain.GlobalQualityWeight` via `math.lerp(2, 15, weight)`; below roughly 0.3 the visual path collapses to a taut/linear cable fake while physics remains bounded.
+- Continuous scalability: solver iterations use `HomeostasisBrain.GlobalQualityWeight` via `math.lerp(2, 15, weight)`.
+- Below roughly 0.3, visuals collapse to taut/linear cable fake while physics remains bounded.
 
 - Rendering route is GPU-buffer first. Harpoon tracer no longer instantiates a `LineRenderer`; it writes two procedural tether points into `GraphicsBuffer` and uses the existing tether line-strip shader.
 

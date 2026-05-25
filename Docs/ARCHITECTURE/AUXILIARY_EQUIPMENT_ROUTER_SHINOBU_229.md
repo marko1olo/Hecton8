@@ -90,7 +90,7 @@ The runtime is created once from `GameBootstrapper` during equipment interaction
 
 
 
-- Scheduled lifecycle/VFX work locks `Deployments`, `States`, `TetherAnchors`, `ActiveCount`, `RouteCounters`, `VfxMatrices`, `TelemetryRing`, `TelemetryCursor`, and `ActiveEquipmentState` as one runtime fence, then re-resolves the Vault views under that lock before scheduling/finalization.
+- Scheduled lifecycle/VFX work locks `Deployments`, `States`, `TetherAnchors`, `ActiveCount`, `RouteCounters`, `VfxMatrices`, `TelemetryRing`, `TelemetryCursor`, and `ActiveEquipmentState` as runtime fence, then re-resolves the Vault views under that lock before scheduling/finalization.
 - Tuning is copied into job value fields before scheduling.
 - Editor tuning writes use a separate `ShinobuAuxiliaryTuning` lock.
 - Telemetry writes after pending fence while proof buffers remain locked.
@@ -142,28 +142,34 @@ The runtime is created once from `GameBootstrapper` during equipment interaction
 
 
 
-`DeployableFlare`, `GravTrap`, `GravityTetherTool`, and the scanner pulse path are compatibility shells. They no longer own Light, ParticleSystem, Rigidbody, Collider buffers, Unity joints, per-object pulse drawers, or local radar pulse lifetime.
+`DeployableFlare`, `GravTrap`, `GravityTetherTool`, and scanner pulse are compatibility shells.
+
+They no longer own Light, ParticleSystem, Rigidbody, Collider buffers, Unity joints, per-object pulse drawers, or local radar pulse lifetime.
 
 
 
 - `ScannerTool` still owns its scientific scan and lore query responsibilities, but its radar pulse visual request is now only a `TryDeploySensorPing` call into the auxiliary router.
 - The authored scan radius is stored in `AuxiliaryStateDTO.Scalar0` and emitted as `AuxiliarySonarRequestSignal.MaxRadius`.
-- The active sonar audio cue no longer calls `IAudioService.PlayAtPoint` and no longer depends on `AudioClip` asset fields; it emits `AcousticPingSignal` through `SignalBus` with active-sonar channel flags and AUP payload.
+- Active sonar audio no longer calls `IAudioService.PlayAtPoint` or uses `AudioClip` fields; it emits `AcousticPingSignal` with sonar flags and AUP payload.
 
 
 
 - `HectonScannerProjectionFeature` consumes the `AuxiliarySonarRequestSignal` frame snapshot for its screen-space projection.
-- It subtracts `HectonFloatingOrigin.CurrentTotalOffsetDouble` from the signal AUP in double precision before local float shader upload, derives presentation age from `CurrentRadius / MaxRadius`, and the shader then uses `worldPos - localOrigin`.
+- It subtracts `HectonFloatingOrigin.CurrentTotalOffsetDouble` from the signal AUP in double precision before local float shader upload, derives presentation age from `CurrentRadius / MaxRadius`, and the shader uses `worldPos - localOrigin`.
 - `ScannerTool` no longer publishes `HectonScannerProjectionState` directly, and the unused static shadow-state file was deleted with its `.meta`.
 - The projection route no longer uses `Time.time`, `StartTime`, or `Duration`.
 
 
 
-`GravTrap` no longer emits zero-length constraints. It routes a shell sample at `pullRadius` to the trap center anchor. `GravityTetherTool` uses a forward range endpoint when no explicit chest target exists.
+`GravTrap` no longer emits zero-length constraints. It routes `pullRadius` shell sample to trap center anchor.
+
+`GravityTetherTool` uses a forward range endpoint when no explicit chest target exists.
 
 
 
-Diagnostic deployment reads fail closed while the lifecycle job is active; the router does not hand out a read-only Vault alias while a scheduled writer owns the same buffer.
+Diagnostic deployment reads fail closed while the lifecycle job is active.
+
+The router does not hand out read-only Vault aliases while a scheduled writer owns the buffer.
 
 
 

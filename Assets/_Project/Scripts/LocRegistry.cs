@@ -474,6 +474,7 @@ namespace Hecton.Localization
     /// </summary>
     public static class LocRegistry
     {
+        private static int s_x001LocRegistrySignalPushDropCount;
         private const string MissingKeyLiteral = "[ERR_MISSING_KEY]";
         private const int MaxDecodedGlyphs = 4096;
         private const int DecodeBufferSlotCount = 16;
@@ -1687,7 +1688,7 @@ namespace Hecton.Localization
                 Revision = ++_languageSignalRevision,
                 Language = (ushort)language
             };
-            SignalBus<LocalizationLanguageChangedSignal>.TryPush(in signal);
+            SignalBus<LocalizationLanguageChangedSignal>.TryPushTracked(in signal, ref s_x001LocRegistrySignalPushDropCount);
         }
 
         private static void EnsureLanguageSignalLane()

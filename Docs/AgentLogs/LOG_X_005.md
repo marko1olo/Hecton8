@@ -1312,3 +1312,114 @@ Verification:
 
 Residual truth:
 - Full C# compile still needs a rerun. Latest build gate sample is CPU `100/100/100` with 2 active compiler/runtime processes.
+
+## APEX Continuation - Tool Interaction Surface DTO Closure
+
+What was wrong:
+- The shared tool-primary path no longer scheduled PhysX commands, but its contract still returned Unity `RaycastHit` and exposed `TryRaycastPrimary` / `TryQueuePrimaryRaycast` names. That kept a PhysX-shaped DTO in a route that now resolves SDF/terrain surfaces.
+
+What was done:
+- Added `InteractionSurfaceHitDTO` as an explicit 64-byte surface-hit row and `InteractionSurfaceHit` as the managed collider side-channel wrapper.
+- Changed `IInteractionSignalService`, `EquipmentInteractionHandler`, `PlayerTool`, the primary tool consumers, `RaycastBatchHelper.QueryResult`, and `QueryCacheContext` to use typed surface hits.
+- Changed the service-owned vault hit lane from Unity `RaycastHit` to `InteractionSurfaceHitDTO`.
+- Removed the shared legacy method names from the patched tool route: callers now use `TryResolvePrimarySurfaceHit`.
+- Expanded `Tools/KccApexAudit_X_005.py` to persist proof for the typed tool-surface route.
+
+Cinematic cheats used:
+- None. This is authority-contract cleanup. The low-cost surface query still uses SDF/terrain approximation; richer collider/material resolution belongs in typed producers, not Unity PhysX queries.
+
+Exact microseconds saved:
+- 0 us claimed. This removes a regression vector and Unity DTO dependency from the tool-primary route; profiler timing is not claimed.
+
+Verification:
+- Targeted interaction/tool scan: zero `RaycastHit`, zero `TryRaycastPrimary`, zero `TryQueuePrimaryRaycast`, zero `NativeArray<InteractionSurfaceHit>`, and zero `VaultGenerationHandle<InteractionSurfaceHit>` in the patched route.
+- `python -m py_compile Tools/KccApexAudit_X_005.py Tools/OOP_Kcc_Scanner_X_005.py`: passed.
+- `python Tools/OOP_Kcc_Scanner_X_005.py`: `finding_counts = {}` and Hydro KCC forbidden command hits 0.
+- `python Tools/KccApexAudit_X_005.py`: broad/scoped forbidden counts 0; `interaction_surface_unity_raycast_hit_count = 0`; `interaction_surface_legacy_method_count = 0`; typed hit and typed DTO flags true; `legacy_batch_unity_raycast_hit_count = 0`; lockstep and kinematic DTO sizes remain 64.
+- Exact whole-runtime non-Editor forbidden-symbol scan: 0 matches for sync Physics casts/overlaps/checks, PhysX commands/schedules, Unity collision/trigger callbacks, `Physics.SyncTransforms`, `.ClosestPoint`, `GetContacts`, and `SweepTest*`.
+- `dotnet restore Assembly-CSharp.csproj --disable-parallel -v:minimal`: passed after the build gate opened.
+- `dotnet build Assembly-CSharp.csproj --no-restore -v:minimal -m:1 /p:UseSharedCompilation=false /nodeReuse:false`: Build succeeded, 0 errors. Warnings are the existing missing `Hecton8.Input.csproj` references.
+
+Residual truth:
+- `VoxelSonarSdfRaycastHit` and `VoxelSdfRaycastHit` remain existing SDF-result DTO names. They are not Unity `RaycastHit` and do not schedule PhysX; renaming those ABI-facing contracts needs a separate migration card.
+
+## APEX Continuation - Kinematic Surface Hit DTO Closure
+
+What was wrong:
+- IK, VR head-contact presentation, buoyancy ground contact, and player environment buffers already resolved SDF/terrain contacts without PhysX scheduling, but still stored those contacts as Unity `RaycastHit` or `NativeArray<RaycastHit>`.
+
+What was done:
+- Added explicit 64-byte unmanaged `KinematicSurfaceHit` in `GlobalRegistryContracts.cs`.
+- Replaced local Unity hit rows in `ContextualPhysicalIkRuntime`, `VRSomaticProvider`, `BuoyancyObject`, and `HectonPlayerEnvironmentHandler`.
+- Preserved lowercase `point`, `normal`, and `distance` accessors so existing kinematic math stays narrow and compile-safe.
+- Expanded `Tools/KccApexAudit_X_005.py` to prove the kinematic surface route has no Unity `RaycastHit` symbols and uses typed hit storage.
+
+Cinematic cheats used:
+- None. This is DTO hygiene for existing SDF/terrain contacts. The presentation remains the same approximation.
+
+Exact microseconds saved:
+- 0 us claimed. The real gain is removing Unity PhysX DTO shape from Burst-adjacent hit buffers.
+
+Verification:
+- `python -m py_compile Tools/KccApexAudit_X_005.py Tools/OOP_Kcc_Scanner_X_005.py`: passed.
+- `python Tools/OOP_Kcc_Scanner_X_005.py`: `finding_counts = {}` and Hydro KCC forbidden command hits 0.
+- `python Tools/KccApexAudit_X_005.py`: broad/scoped forbidden counts 0; `kinematic_surface_hit_layout_64 = true`; `kinematic_surface_unity_raycast_hit_count = 0`; `kinematic_surface_uses_typed_hit = true`.
+- Whole-runtime non-Editor forbidden-symbol scan: 0 matches for sync Physics casts/overlaps/checks, PhysX commands/schedules, Unity collision/trigger callbacks, `Physics.SyncTransforms`, `.ClosestPoint`, `GetContacts`, and `SweepTest*`.
+- `dotnet build Assembly-CSharp.csproj --no-restore -v:minimal -m:1 /p:UseSharedCompilation=false /nodeReuse:false`: Build succeeded, 0 errors. Warnings remain the existing missing `Hecton8.Input.csproj` references.
+
+Residual truth:
+- SDF DTO type names such as `VoxelSonarSdfRaycastHit` still contain raycast wording. They are SDF result structs, not Unity `RaycastHit`, but renaming them touches cross-domain ABI and should be done as a separate migration.
+## APEX Continuation - Spatial Target Contract Closure - 2026-05-25
+
+What was wrong:
+- Interaction target acquisition no longer used Unity Physics, but still exposed raycast-shaped contracts: `TryRaycastSpatial`, `raycastInterval`, `_raycastTimer`, `PerformRaycast`, laser-cutter raycast requester names, and spawner raycast-origin names.
+- Those symbols were not active PhysX calls. They were still unacceptable regression handles in the Echelon 4 target acquisition route.
+
+What was done:
+- `InteractableRegistry.TryRaycastSpatial` was renamed to `TryResolveSpatialTarget`.
+- `PlayerInteraction` target acquisition now uses `targetProbeInterval`, `_targetProbeTimer`, and `ResolveHoveredTarget`.
+- `LaserCutter` surface query staging now uses `_surfaceRequesterId`, `CacheSurfaceRequesterId`, `StageDodSurfaceRequest`, and `ResolveCuttableSurfaceMask`.
+- `HectonPlayerSpawner` cached terrain probe now uses `groundProbeOriginHeight` and `_groundProbeOrigin`.
+- `InputDispatcher` XR look-at target resolution now uses the strict interaction/interactable mask instead of `DefaultRaycastLayerMask`.
+- `KccApexAudit_X_005.py` now records `interaction_target_legacy_raycast_api_count`, `interaction_target_uses_spatial_target_contract`, and `player_spawner_uses_ground_probe_origin`.
+
+Cinematic Cheats used:
+- No new physics simulation. Target acquisition stays a registered-collider bounds probe and cached terrain-height probe; rich presentation can be added by typed surface metadata instead of PhysX casts.
+
+Exact Microseconds saved:
+- 0 us claimed. This pass removed source-contract regression risk, not measured runtime work.
+
+Proof:
+- `python -m py_compile Tools/KccApexAudit_X_005.py Tools/OOP_Kcc_Scanner_X_005.py`: passed.
+- `python Tools/KccApexAudit_X_005.py`: `interaction_target_legacy_raycast_api_count = 0`, `interaction_target_uses_spatial_target_contract = true`, `player_spawner_uses_ground_probe_origin = true`, `broad_forbidden_count = 0`, `scoped_forbidden_count = 0`.
+- `python Tools/OOP_Kcc_Scanner_X_005.py`: `finding_counts = {}` and Hydro KCC forbidden command hits 0.
+- Strict whole-runtime forbidden scan returned zero Unity Physics sync casts/overlaps/checks, zero PhysX command types/schedules, zero collision/trigger callbacks, zero `Physics.SyncTransforms`, zero `.ClosestPoint`, zero `GetContacts`, and zero `SweepTest*`.
+- Targeted `git diff --check` passed with CRLF warnings only.
+- C# compile did not run: build gate was closed by 5 active compiler/runtime processes and CPU samples `100/100/100`.
+
+## APEX Continuation - Unity Collision DTO Dead Route Removal - 2026-05-25
+
+What was wrong:
+- Non-Editor runtime still contained disabled legacy routes that accepted Unity `Collision`, read `ContactPoint`, and called `GetContact(0)`.
+- These were not active callbacks, but they were PhysX-shaped facts and future regression handles.
+
+What was done:
+- Removed `GlobalPhysicsStateManager.QueueImpact(Rigidbody, Rigidbody, Collision)` and its private `Collision` resolver.
+- Removed the disabled Unity `Collision` damage route from `MantaEmergencyWreck`.
+- Removed the disabled Unity `Collision` snag route from `SargassumCollapseChunk`.
+- Added `unity_collision_dto_count` and `unity_collision_dto_route_removed` to `KccApexAudit_X_005.py`.
+
+Cinematic Cheats used:
+- No replacement physics simulation was added. Existing typed kinematic impact/spatial routes remain the valid path; future rich impacts must consume typed contact payloads.
+
+Exact Microseconds saved:
+- 0 us claimed. Removed routes were disabled; this is authority cleanup, not measured runtime optimization.
+
+Proof:
+- `python -m py_compile Tools/KccApexAudit_X_005.py Tools/OOP_Kcc_Scanner_X_005.py`: passed.
+- `python Tools/KccApexAudit_X_005.py`: `unity_collision_dto_count = 0`, `unity_collision_dto_route_removed = true`, `broad_forbidden_count = 0`, `scoped_forbidden_count = 0`.
+- `python Tools/OOP_Kcc_Scanner_X_005.py`: `finding_counts = {}` and Hydro KCC forbidden command hits 0.
+- Strict scan: zero `Collision collision`, zero `ContactPoint`, zero `.GetContact(`, zero `QueueImpact(`.
+- Strict whole-runtime forbidden scan: zero sync Unity Physics casts/overlaps/checks, zero PhysX command types/schedules, zero collision/trigger callbacks, zero `Physics.SyncTransforms`, zero `.ClosestPoint`, zero `GetContacts`, zero `GetContact`, and zero `SweepTest*`.
+- `git diff --check` passed for touched files with CRLF warnings only.
+- C# compile did not run after this pass: 10 build-gate attempts stayed blocked by CPU max `100`; attempts 5-10 also had 2 active compiler/runtime processes.

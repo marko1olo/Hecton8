@@ -41,7 +41,7 @@ namespace Hecton8.Gameplay
 
         private SpannerState _state;
         private BaseModule _selectedSource;
-        private ConstructionManager _constructionManager;
+        private ILogisticsService _constructionLogistics;
         private int _selectedSourceModuleHashId;
         private FixedCharBuffer _hudBuffer = new FixedCharBuffer(128); // COLD ALLOC: char[128] — logic spanner HUD staging buffer — owner: LogicSpannerTool
 
@@ -55,21 +55,21 @@ namespace Hecton8.Gameplay
         public override void OnSpawn()
         {
             base.OnSpawn();
-            _constructionManager = GlobalRegistry.ConstructionRuntime;
+            _constructionLogistics = GlobalRegistry.Logistics;
             ClearSelectionInternal();
         }
 
         public override void OnDespawn()
         {
             ClearSelectionInternal();
-            _constructionManager = null;
+            _constructionLogistics = null;
             base.OnDespawn();
         }
 
         public override void OnEquip()
         {
             base.OnEquip();
-            _constructionManager = GlobalRegistry.ConstructionRuntime;
+            _constructionLogistics = GlobalRegistry.Logistics;
             ConnectionSplineBatchRenderer.SetLogisticsPathHighlightActive(true);
         }
 
@@ -124,8 +124,8 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            ConstructionManager constructionManager = _constructionManager;
-            if (constructionManager == null)
+            ILogisticsService logistics = _constructionLogistics;
+            if (logistics == null)
             {
                 PublishWarning(InvalidTargetMessage);
                 ClearSelectionInternal();
@@ -139,11 +139,9 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            if (!constructionManager.TryCreateTemporaryBypass(
+            if (!logistics.TryCreateTemporaryBypass(
                     _selectedSource,
-                    targetModule,
-                    _selectedSourceModuleHashId,
-                    targetModuleHashId))
+                    targetModule))
             {
                 PublishWarning(DuplicateLinkMessage);
                 return;
@@ -242,13 +240,13 @@ namespace Hecton8.Gameplay
                 return false;
             }
 
-            if (!TryQueuePrimaryRaycast(
+            if (!TryResolvePrimarySurfaceHit(
                     origin,
                     direction,
                     GetRuntimeMaxRange(wiringRange),
                     wiringMask.value,
                     QueryTriggerInteraction.Ignore,
-                    out RaycastHit hit))
+                    out InteractionSurfaceHit hit))
             {
                 module = null;
                 return false;

@@ -382,3 +382,65 @@ Defragmentation implication: `RadiationHazardGrid` no longer stores `NativeArray
 ## Residual Project Truth - After Radiation Wrapper
 
 Scoped regex for direct private native collection fields in `RadiationHazardGrid.cs`, `WorldProceduralFieldSampler.cs`, and `World/EcosystemDirector.cs` returns 0 findings. Clean compile proof is pending because Unity/Bee currently holds active compiler processes.
+
+## WorldProceduralScatterDirectorMigratorySargassum.cs
+
+Read-like/native ownership routes checked:
+- `TryEvaluateMigratorySargassumShade` delegates to the raycast-up canopy sampler. It does not allocate/grow DataVault buffers, complete jobs, or publish signals.
+- `TryGetNearestMigratorySargassumIsland` reads current descriptor-backed island rows and returns value data only. It does not call `EnsureMigratorySargassumLane`, create/grow buffers, acquire writer locks, or complete the drift job.
+- `MigratoryVaultArray<T>.IsCreated`, `Length`, and indexer resolve a method-local native view through an existing generation handle. The wrapper stores no `NativeArray<T>` field and cannot retain a raw native alias across phases.
+
+Non-read ownership/write routes:
+- `EnsureMigratorySargassumLane` is an owner setup path. It can create the six fixed DataVault buffers under `SystemID.WorldSargassum`.
+- `ScheduleMigratorySargassumJob` is an explicit mutation/job path. It acquires writer locks for island and flow-sample buffers before sampling flow and scheduling `UpdateMigratorySargassumIslandsJob`.
+- `CompleteMigratorySargassumJobIfReady`, forced teardown, schedule failure, and DataVault replacement release the writer locks. No read helper completes the job.
+- DataVault replacement calls `OnMigratorySargassumDataVaultReplaced`, completes any active migratory job, releases old vault handles, and resets scalar island count before rebinding.
+
+Defragmentation implication: `WorldProceduralScatterDirectorMigratorySargassum.cs` no longer stores six persistent `NativeArray` fields in the MonoBehaviour. It stores descriptor wrappers plus scalar lock state. Native views are method-local and the two buffers used by Burst are writer-locked for the full scheduled-job ownership window.
+
+## Residual Project Truth - After Migratory Sargassum
+
+Scoped regex for direct private native collection fields in `WorldProceduralScatterDirectorMigratorySargassum.cs` returns 0 findings. Clean build and full Roslyn ledger are pending because the latest gate sample had CPU 50.56% and active `dotnet exec ... VBCSCompiler.dll` process `52216`.
+
+## MarauderOutpostGenerationService.cs
+
+Read-like DataVault use checked:
+- `TryGetWfcGrid` checks `_generated`, then reads through `TryReadWfcGrid`. It does not call `EnsurePersistentState`, allocate/grow DataVault buffers, complete jobs, publish signals, or search the scene.
+- `TryGetShellMatrices` checks `_generated` and `_jobPhase`, then reads through `TryReadShellMatrices`. It does not schedule or complete work.
+- `TryReadWfcGrid`, `TryReadShellMatrices`, `TryReadShellCellTypes`, `TryReadInteractableSpawns`, `TryReadCounters`, and `TryReadTelemetryRing` all route through `TryReadVaultBuffer`.
+- `TryReadVaultBuffer` validates cached `IDataVault`, exact `VaultGenerationHandle<T>`, and `TryReadOnlyHandle`. It fails closed on missing/stale buffers and does not call `EnsureVaultBuffer`, `TryAcquireWriteLock`, `ReleaseWriteLock`, `Complete`, or any signal publication route.
+- `ComputeGridHash`, `SpawnInteractableProxies`, `ProcessDoorPowerSignals`, `DumpBlackBox`, and `UploadMatricesAndArgs` consume read-only DataVault views only.
+
+Non-read ownership/write routes:
+- `EnsurePersistentState` and `EnsureVaultBuffer<T>` are cold/setup capacity routes. They can create/grow DataVault buffers, but no `TryGet*` or `TryRead*` accessor calls them.
+- `TryRequestGeneration` acquires the WFC grid writer lock through `TryAcquireSolveJobBuffer` immediately before scheduling `MarauderOutpostSolveJob`; late-frame/teardown/schedule-failure paths release the lock.
+- `ScheduleMatrixExtraction` acquires writer locks for WFC grid, mutable grid, shell matrices, cell types, interactable spawns, and counters before `MarauderOutpostMatrixExtractionJob`; completion, teardown, and catch paths release all locks.
+- `ApplyAupShift` acquires a shell-matrix writer lock only for `MarauderOutpostAupShiftJob` and releases it after the scheduled shift completes or fails.
+- `TryPublishGeneratedSignal`, `RestoreWfcMutableState`, `ApplyPendingShiftToExtractedData`, and `WriteTelemetry` are explicit mutation/publication routes. They acquire writer locks in local scopes and release in `finally`.
+- `OnDataVaultReplaced` completes any active outpost job, releases all writer locks and old handles, then cold-rebinds only if the component is active.
+
+Defragmentation implication: `MarauderOutpostGenerationService` no longer stores `NativeArray<byte>`, `NativeArray<float4x4>`, `NativeArray<uint>`, `NativeArray<int>`, or `NativeArray<OutpostTelemetryEntry>` fields. It stores DataVault handles and scalar lock state only. Native views are method-local and protected by read-only handle validation or writer locks for the full Burst job ownership window.
+
+## Residual Project Truth - After Marauder Outpost
+
+Scoped regex for direct persistent native collection fields in `MarauderOutpostGenerationService.cs` returns 0 findings. Clean build completed with 0 warnings and 0 errors after the CPU/process gate cleared. Full Roslyn ledger now reports 2406 files, 0 parse failures, 2138 forbidden persistent candidates, and 581 MonoBehaviour candidates across 58 files, proof hash `1a2db4092081840dfc0366bb82ed12aaa304e226b1fc5b3b1ee858e37456c58a`.
+
+## CrashTelemetryBuffer.cs
+
+Read-like/native ownership routes checked:
+- `IsInitialized` checks `_ringBuffer.IsCreated`, which resolves the existing DataVault handle through the descriptor and does not allocate/grow a buffer, complete jobs, publish signals, or search scene state.
+- Static telemetry entrypoints first check `instance == null || !instance._ringBuffer.IsCreated`. They fail closed if the descriptor cannot resolve and do not create fallback native storage.
+- `VaultArray<T>.IsCreated`, `Length`, indexer, and implicit conversion resolve method-local native views through `IDataVault.TryResolveHandle`. The wrapper stores no `NativeArray<T>` field and cannot retain a raw native alias across phases.
+
+Non-read ownership/write routes:
+- `InitializeBuffers` is the explicit owner setup route. It creates the fixed `CrashTelemetryRing`, `CrashTelemetryExportSnapshot`, and `CrashTelemetryExportScratch` DataVault payloads under `SystemID.CoreDiagnostics`.
+- Runtime telemetry writes assign one `TelemetryEntry` row into the ring through the descriptor indexer. This is a black-box write path, not a `TryGet*` or `Read*` accessor.
+- `TryExportSnapshot` and `TryExportSnapshotFromUnhandledException` are explicit export mutation paths. They copy recent ring rows into the snapshot, build the scratch payload on the owner thread, mirror bytes into `_crashExportFileScratch`, then signal the background worker.
+- `WritePreparedExportToDisk` writes `_crashExportFileScratch` only. The worker thread does not resolve `_exportScratch`, `_exportSnapshot`, or any DataVault handle.
+- DataVault replacement calls `DisposeBuffers`, releases the old handles, caches the replacement vault, then reinitializes through the cold setup route.
+
+Defragmentation implication: `CrashTelemetryBuffer` no longer stores `NativeArray<TelemetryEntry>` or `NativeArray<byte>` fields in the MonoBehaviour. The three native payloads are DataVault-owned, and every native view is method-local. The background export path has no DataVault view lifetime, so relocation/defrag cannot race a worker-thread handle resolve.
+
+## Residual Project Truth - After CrashTelemetryBuffer Static Proof
+
+Scoped regex for direct persistent native collection fields in `CrashTelemetryBuffer.cs` returns 0 findings. Clean compile and full Roslyn ledger refresh are still pending because the current build gate reports CPU 100% with active `dotnet`/`csc` processes.

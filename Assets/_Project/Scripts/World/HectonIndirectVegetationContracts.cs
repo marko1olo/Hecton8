@@ -223,7 +223,7 @@ namespace Hecton8.World
                 Age01 = Mathf.Clamp01(age01),
                 TemplateIndex = templateIndex,
                 ActivePayloadIndex = activePayloadIndex,
-                FrameIndex = unchecked((uint)Mathf.Max(0, Time.frameCount)),
+                FrameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 Kind = kind,
                 Underwater = underwater ? (byte)1 : (byte)0,
                 Reserved0 = 0

@@ -25,7 +25,7 @@ Source anchors: `Assets/_Project/Scripts/Thermodynamics/AbyssalThermodynamicsSol
 - Primary jobs write via `[NativeSetThreadIndex]`.
 - Scalar reduction scans padded slots, not the voxel grid.
 
-- `ThermalSolverConvergenceStateDTO` is `[StructLayout(LayoutKind.Explicit, Size = 16)]` with residuals at `0`/`4`, omega at `8`, iteration count at `12`, and fault flags at `14`; `ThermalCellLayoutValidator` validates the layout on cold enable.
+- `ThermalSolverConvergenceStateDTO`: explicit `16` bytes; residuals `0`/`4`; omega `8`; iteration count `12`; fault flags `14`; cold layout validator.
 
 - Hot solver jobs use raw pointers and `NativeArrayOptions.UninitializedMemory`.
 
@@ -36,7 +36,7 @@ Source anchors: `Assets/_Project/Scripts/Thermodynamics/AbyssalThermodynamicsSol
 - `ThermalSourceSignal` is `[StructLayout(LayoutKind.Explicit, Size = 64)]`: AUP `0`, radius `48`, intensity `52`, source id `56`, frame `60`.
 
 - `ThermalSourceSignal` is a direct signal registry lane with capacity `128`, minimum-quality frame cap `32`, deterministic mutation order, and sort keys from `SourceId` or folded AUP/radius/intensity.
-- The legacy thermodynamics hazard grid no longer schedules an entity damage job or publishes thermodynamics-owned `CombatDamageSignal`/mock damage. It only publishes updraft signals; damage owners must sample the field.
+- The legacy hazard grid no longer schedules damage jobs or publishes thermodynamics-owned damage. It only publishes updraft signals; damage owners sample the field.
 
 - Legacy thermodynamics source emission is serial deterministic; updraft extraction is done during the serial telemetry scan, not by interlocked writes from parallel diffusion.
 

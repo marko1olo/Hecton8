@@ -78,8 +78,10 @@ Owner: Echelon 8 Presentation & UX / Screen-Space Wounds & Decals
 ## Constraints
 
 - No `DecalProjector` GameObjects, Canvas blood overlays, material clones, or per-wound GameObject hierarchy.
-- No direct Unity `Time.*` or shader `_Time` dependency in owned visor wound runtime/feature/active shader route; dispatcher frame delta drives decay and visual phase, while `TimeSliceScheduler.CurrentFrameId` drives signal dedupe/state/profile cadence.
-- The touched `HectonVisorUberPostFeature` host path routes reconstruction telemetry frame and depthless-TBDR cache through the dispatcher frame source instead of `Time.frameCount`; no fluid runtime rebind cadence remains in this host.
+- No direct Unity `Time.*` or shader `_Time` dependency in owned visor wound runtime/feature/shader route. Dispatcher frame delta drives decay and phase.
+- `TimeSliceScheduler.CurrentFrameId` drives signal dedupe, state, and profile cadence.
+- `HectonVisorUberPostFeature` routes reconstruction telemetry frame and depthless-TBDR cache through dispatcher frame source, not `Time.frameCount`.
+- No fluid runtime rebind cadence remains in this host.
 - Legacy `HectonVisorUberPost.shader` quality gates use continuous `smoothstep`/`lerp` weights.
 - Covered paths: heat haze, VR comfort mask blending, light shafts, water refraction, droplet refraction.
 - No hard low-tier branch is accepted for those paths.

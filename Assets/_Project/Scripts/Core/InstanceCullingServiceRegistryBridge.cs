@@ -11,6 +11,7 @@ namespace Hecton8.Core
     [DefaultExecutionOrder(-87)]
     public sealed class InstanceCullingServiceRegistryBridge : MonoBehaviour, ITickable, IGlobalRegistryHotSwapListener
     {
+        private static int s_x001InstanceCullingServiceRegistryBridgeSignalPushDropCount;
         private const int OverloadVisibleThreshold = 50000;
         private const uint SourceHash = 0xC0111A90u;
 
@@ -88,7 +89,7 @@ namespace Hecton8.Core
                     Flags = telemetry.Flags,
                     SourceHash = SourceHash
                 };
-                SignalBus<CullingOverloadSignal>.TryPush(in signal);
+                SignalBus<CullingOverloadSignal>.TryPushTracked(in signal, ref s_x001InstanceCullingServiceRegistryBridgeSignalPushDropCount);
             }
         }
 

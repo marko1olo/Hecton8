@@ -38,8 +38,11 @@ namespace Hecton8.Physics
         IPostFixedTickable,
         IOriginShiftListener,
         IGlobalRegistryHotSwapListener,
-        IWaterHeatInjectionService
+        IWaterHeatInjectionService,
+        IDockedExternalMassSink
     {
+        private static int s_x001DirectSignalPushDropCount_SubmarineFluidDynamics;
+
         private const int CompartmentCapacity = 8;
         private const int BulkheadCapacity = 7;
         private const int RingBufferLength = 8;
@@ -750,7 +753,7 @@ namespace Hecton8.Physics
         private bool _hullImplosionActive;
         private int _hydroBlackBoxCursor;
         private bool _hydroBlackBoxDumped;
-        private SubmarineAtmosphereSystem _atmosphereSystem;
+        private ISubmarineAtmosphereRoomReadModel _atmosphereSystem;
         private ISubmarineHullBreachReadModel _structuralBreachReadModel;
         private IHectonOceanKinematics _oceanKinematics;
         private IBrineFluidDensityReadModel _resourceDistributionRuntime;
@@ -1667,7 +1670,7 @@ namespace Hecton8.Physics
 
         internal void TriggerImmediateBreachDepressurization(int compartmentIndex, Vector3 breachWorldPosition, float breachAreaSquareMeters)
         {
-            if (_atmosphereSystem == null || _cachedTransform == null || !IsCompartmentIndexValid(compartmentIndex))
+            if (_atmosphereSystem == null || !_atmosphereSystem.IsAtmosphereRuntimeActive || _cachedTransform == null || !IsCompartmentIndexValid(compartmentIndex))
                 return;
 
             TriggerBreach(compartmentIndex, breachAreaSquareMeters);
@@ -2033,8 +2036,8 @@ namespace Hecton8.Physics
             if (_rigidbody == null)
                 TryGetComponent(out _rigidbody);
 
-            if (_atmosphereSystem == null)
-                TryGetComponent(out _atmosphereSystem);
+            if (_atmosphereSystem == null || !_atmosphereSystem.IsAtmosphereRuntimeActive)
+                _atmosphereSystem = ComponentReferenceUtility.ResolveParentService<ISubmarineAtmosphereRoomReadModel>(this);
 
             if (exteriorHullCollider == null)
                 TryGetComponent(out exteriorHullCollider);
@@ -2745,11 +2748,11 @@ namespace Hecton8.Physics
             signal.FillRatio01 = math.saturate(math.isfinite(result.FloodMassRatio) ? result.FloodMassRatio : _floodFillRatio);
             signal.AngularDragMultiplier = math.max(1f, angularDragMultiplier);
             signal.SourceBodyId = _rigidbody != null ? unchecked((uint)EntityId.ToULong(_rigidbody.GetEntityId())) : 0u;
-            signal.Frame = unchecked((uint)Time.frameCount);
+            signal.Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             signal.RoomCount = (ushort)math.min(ushort.MaxValue, math.max(0, _configuredCompartmentCount));
             signal.MathLod = ResolveFloodStateMathLod();
             signal.Flags = flags;
-            if (!SignalBus<SubmarineFloodStateSignal>.TryPush(in signal))
+            if (!SignalBus<SubmarineFloodStateSignal>.TryPushTracked(in signal, ref s_x001DirectSignalPushDropCount_SubmarineFluidDynamics))
                 IncrementDroppedSignalCount();
         }
 
@@ -3012,7 +3015,7 @@ namespace Hecton8.Physics
                     3200f,
                     ProceduralAudioPingKindMechanicalWhirr);
                 SignalAudioEvent audioEvent = SignalAudioEvent.FromAudioPing(in payload);
-                audioAccepted = SignalBus<SignalAudioEvent>.TryPush(in audioEvent);
+                audioAccepted = SignalBus<SignalAudioEvent>.TryPushTracked(in audioEvent, ref s_x001DirectSignalPushDropCount_SubmarineFluidDynamics);
             }
 
             if (hapticAccepted || audioAccepted)
@@ -3232,7 +3235,7 @@ namespace Hecton8.Physics
 
         private void ApplyIceExpansionPhaseChange()
         {
-            if (_atmosphereSystem == null || !_compartmentFloodVolumes.IsCreated || !_compartmentMaxVolumes.IsCreated || _configuredCompartmentCount <= 0)
+            if (_atmosphereSystem == null || !_atmosphereSystem.IsAtmosphereRuntimeActive || !_compartmentFloodVolumes.IsCreated || !_compartmentMaxVolumes.IsCreated || _configuredCompartmentCount <= 0)
                 return;
 
             float externalDepthMeters = math.max(0f, _externalDepthMeters);
@@ -3290,7 +3293,7 @@ namespace Hecton8.Physics
 
         private void ClearIceExpansionFlagsIfWarmed()
         {
-            if (_atmosphereSystem == null || !_compartmentFlags.IsCreated || !_compartmentFloodVolumes.IsCreated)
+            if (_atmosphereSystem == null || !_atmosphereSystem.IsAtmosphereRuntimeActive || !_compartmentFlags.IsCreated || !_compartmentFloodVolumes.IsCreated)
                 return;
 
             for (int compartmentIndex = 0; compartmentIndex < _configuredCompartmentCount; compartmentIndex++)
@@ -3418,7 +3421,7 @@ namespace Hecton8.Physics
 
         private void PropagateRuptureToConnectedPipes(int compartmentIndex)
         {
-            if (_atmosphereSystem == null)
+            if (_atmosphereSystem == null || !_atmosphereSystem.IsAtmosphereRuntimeActive)
                 return;
 
             RefreshPipeBindingsCold();
@@ -3596,7 +3599,7 @@ namespace Hecton8.Physics
 
         private void ApplyBreachDepressurizationSuction()
         {
-            if (_atmosphereSystem == null || _cachedTransform == null || _configuredCompartmentCount <= 0)
+            if (_atmosphereSystem == null || !_atmosphereSystem.IsAtmosphereRuntimeActive || _cachedTransform == null || _configuredCompartmentCount <= 0)
                 return;
 
             float externalPressureKPa = math.max(1f, externalReferencePressureKPa);
@@ -4470,7 +4473,7 @@ namespace Hecton8.Physics
             signal.SourceId = SubmarineFluidDynamicsContextHash;
             signal.Channel = BrineLayerConstants.AcousticThickFluidChannel;
             signal.Flags = _isBrineSubmerged ? BrineLayerConstants.EnteredFlag : BrineLayerConstants.ExitedFlag;
-            if (!SignalBus<AcousticPingSignal>.TryPush(in signal))
+            if (!SignalBus<AcousticPingSignal>.TryPushTracked(in signal, ref s_x001DirectSignalPushDropCount_SubmarineFluidDynamics))
                 IncrementDroppedSignalCount();
         }
 
@@ -5121,7 +5124,7 @@ namespace Hecton8.Physics
                 SecondaryMaterialId = 0,
                 Flags = 1
             };
-            if (!SignalBus<ImpactSignal>.TryPush(in impactSignal))
+            if (!SignalBus<ImpactSignal>.TryPushTracked(in impactSignal, ref s_x001DirectSignalPushDropCount_SubmarineFluidDynamics))
                 IncrementDroppedSignalCount();
         }
 
@@ -5155,10 +5158,10 @@ namespace Hecton8.Physics
             impulse.Vector = impulseVector * math.lerp(0.15f, 0.65f, impact01);
             impulse.Radius = math.lerp(0.75f, 4.5f, impact01);
             impulse.Lifetime = math.lerp(0.2f, 0.9f, impact01);
-            impulse.Frame = unchecked((uint)Time.frameCount);
+            impulse.Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             impulse.SourceHash = 0x53504C48u; // SPLH
             impulse.Flags = 1u;
-            if (!SignalBus<FluidImpulseSignal>.TryPush(in impulse))
+            if (!SignalBus<FluidImpulseSignal>.TryPushTracked(in impulse, ref s_x001DirectSignalPushDropCount_SubmarineFluidDynamics))
                 IncrementDroppedSignalCount();
         }
 
@@ -5194,7 +5197,7 @@ namespace Hecton8.Physics
                 SecondaryMaterialId = 0,
                 Flags = 2
             };
-            if (!SignalBus<ImpactSignal>.TryPush(in impactSignal))
+            if (!SignalBus<ImpactSignal>.TryPushTracked(in impactSignal, ref s_x001DirectSignalPushDropCount_SubmarineFluidDynamics))
                 IncrementDroppedSignalCount();
         }
 
@@ -6004,7 +6007,7 @@ namespace Hecton8.Physics
         private uint BuildHydroBlackBoxHash(Vector3 position, Vector3 velocity, Vector3 angularVelocity, float mass, float depthMeters, uint flags)
         {
             uint hash = 2166136261u;
-            hash = HashHydroBlackBox(hash, (uint)Time.frameCount);
+            hash = HashHydroBlackBox(hash, Hecton8.Core.SystemDispatcher.CurrentFrameId);
             hash = HashHydroBlackBox(hash, QuantizeHydroBlackBox(position.x));
             hash = HashHydroBlackBox(hash, QuantizeHydroBlackBox(position.y));
             hash = HashHydroBlackBox(hash, QuantizeHydroBlackBox(position.z));

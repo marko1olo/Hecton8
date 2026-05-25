@@ -1439,7 +1439,7 @@ namespace Hecton8.Core
             float quality = math.saturate(math.isfinite(globalQualityWeight01) ? globalQualityWeight01 : 1f);
             float4 decompressionPayload = slots[HectonShaderGlobalDataVaultBridge.PhysiologyDecompressionSlot];
             float4 gasPayload = slots[HectonShaderGlobalDataVaultBridge.PhysiologyGasToxicitySlot];
-            uint currentFrame = (uint)math.max(0, SystemDispatcher.CurrentFrameIndex);
+            uint currentFrame = SystemDispatcher.CurrentFrameId;
 
             SanitizePhysiologyVisualPayloads(ref decompressionPayload, ref gasPayload, quality);
 

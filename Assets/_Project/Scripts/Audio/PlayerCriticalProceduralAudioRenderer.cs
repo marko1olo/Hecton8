@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Threading;
 using System.Runtime.InteropServices;
@@ -38,6 +38,7 @@ namespace Hecton8.Audio
     [RequireComponent(typeof(AudioReverbFilter))]
     public sealed class PlayerCriticalProceduralAudioRenderer : MonoBehaviour, ITickable, ISlowTickable, ILateFrameTickable, IUpdatable, IPhysicsImpactEventListener, ISonarPingEventListener, IAcousticEchoEventListener, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener, IPlayerCriticalAudioSignalSink, IPlayerCriticalSonarEchoReadModel
     {
+        private static int s_x001PlayerCriticalProceduralAudioRendererSignalPushDropCount;
         private const SystemID VaultOwner = SystemID.AudioPlayerCritical;
         private const float TwoPi = 6.28318530718f;
         private const float InvTwoPi = 0.15915494309f;
@@ -4246,7 +4247,7 @@ namespace Hecton8.Audio
 
         private void RefreshAudioRuntimeServicesCold()
         {
-            CacheAudioRuntimeService(Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance, Hecton8.Core.SystemDispatcher.CurrentFrameIndex);
+            CacheAudioRuntimeService(GlobalRegistry.Audio, Hecton8.Core.SystemDispatcher.CurrentFrameIndex);
         }
 
         private void RefreshAudioRuntimeServicesIfStale()
@@ -4258,7 +4259,7 @@ namespace Hecton8.Audio
                 return;
             }
 
-            CacheAudioRuntimeService(Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance, frame);
+            CacheAudioRuntimeService(GlobalRegistry.Audio, frame);
         }
 
         private void CacheAudioRuntimeService(IAudioService audioService, int frame)
@@ -5699,7 +5700,7 @@ namespace Hecton8.Audio
                 EventType = (ushort)PhysicsEventType.AcousticImpulse,
                 Reserved = 0
             };
-            SignalBus<PhysicsEventPayload>.TryPush(in payload);
+            SignalBus<PhysicsEventPayload>.TryPushTracked(in payload, ref s_x001PlayerCriticalProceduralAudioRendererSignalPushDropCount);
         }
 
         private void HandleAcousticImpulse(in global::Hecton8.Physics.AcousticImpulseEvent impulseEvent)

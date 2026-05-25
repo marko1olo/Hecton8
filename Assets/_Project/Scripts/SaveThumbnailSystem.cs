@@ -21,6 +21,7 @@ namespace Hecton8.SaveSystem
     /// </summary>
     public static class SaveThumbnailSystem
     {
+        private static int s_x001SaveThumbnailSystemSignalPushDropCount;
         private const int Width = 256;
         private const int Height = 144;
         private const string Extension = ".jpg";
@@ -969,11 +970,11 @@ namespace Hecton8.SaveSystem
                 OperationId = completion.OperationId,
                 ScreenshotBytes = completion.ByteLength <= 0 ? 0u : (uint)completion.ByteLength,
                 ScreenshotHash = completion.ByteHash,
-                Frame = unchecked((uint)Time.frameCount),
+                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 Result = ToMetadataResult(completion.Status),
                 Flags = ToMetadataFlags(completion.Status)
             };
-            SignalBus<SaveMetadataReadySignal>.TryPush(in signal);
+            SignalBus<SaveMetadataReadySignal>.TryPushTracked(in signal, ref s_x001SaveThumbnailSystemSignalPushDropCount);
         }
 
         private static byte ToMetadataResult(CaptureStatus status)

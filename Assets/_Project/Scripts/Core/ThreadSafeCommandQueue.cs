@@ -670,7 +670,7 @@ namespace Hecton8.Core
 
         private static void ReportCommandOverflowOncePerFrame()
         {
-            int frame = Time.frameCount;
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (_lastCommandOverflowWarningFrame == frame)
                 return;
 
@@ -683,7 +683,7 @@ namespace Hecton8.Core
 
         private static void ReportStorageReservationCommitOverflowOncePerFrame()
         {
-            int frame = Time.frameCount;
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (_lastStorageReservationCommitOverflowWarningFrame == frame)
                 return;
 

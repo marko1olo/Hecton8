@@ -30,7 +30,8 @@ Source anchors: `Assets/_Project/Scripts/AI/Ecosystem/ShinobuFloraFaunaSymbiosis
 
 - Legacy `symbiosis_chemical_links.h8bin` accepts raw little-endian records or a 16-byte `S62L`/`S62B` header; `S62B` uses `math.reversebytes` before `math.asfloat`.
 
-- Emergency mock RNG is `Unity.Mathematics.Random` seeded from `ResolveFrameSectorSeed(centerAup, simulationFrame)`, mixing sector hash, solver frame, and a SHINOBU domain salt. Runtime telemetry also records the solver frame, not `Time.frameCount`.
+- Emergency mock RNG is `Unity.Mathematics.Random` seeded from `ResolveFrameSectorSeed(centerAup, simulationFrame)`.
+- Seed mixes sector hash, solver frame, and SHINOBU salt. Runtime telemetry records solver frame, not `Time.frameCount`.
 
 - `Ecology Symbiosis Tuner` is a UI Toolkit editor facade.
 - It writes Vault tuning DTOs.

@@ -34,12 +34,18 @@ No CPU particles, `DecalProjector`, auxiliary camera, or `Camera.Render`.
 
 ## Scalability
 
-`GlobalQualityWeight` continuously controls active ring count, shader loop limit, decay rate, intensity, falloff, and normal perturbation. It does not change DTO layout, save identity, rollback authority, or buffer ownership.
+`GlobalQualityWeight` controls active ring count, shader loop limit, decay rate, intensity, falloff, and normal perturbation.
+
+It does not change DTO layout, save identity, rollback authority, or buffer ownership.
 
 ## Rollback Boundary
 
-Buffers `71940..71946` are presentation-only. They are not part of `StateRingBuffer`, Merkle hashing, save identity, or lockstep authority. On rollback, gameplay truth resimulates; shoreline foam continues as a fading visual layer.
+Buffers `71940..71946` are presentation-only. They are not part of `StateRingBuffer`, Merkle hashing, save identity, or lockstep authority.
+
+On rollback, gameplay truth resimulates; shoreline foam continues as fading visual layer.
 
 ## Proof Gaps
 
-CPU guard blocked `dotnet build`: CPU sampled at 100%. Required later proof: Unity Console compile, shader import, RenderGraph Viewer showing `_GlobalShorelineFoam`, profiler 0 B/frame, and dump test for `Docs/AgentLogs/Dump_SHINOBU_277.bin`.
+CPU guard blocked `dotnet build`: CPU sampled at 100%.
+
+Required later proof: Unity Console compile, shader import, RenderGraph Viewer `_GlobalShorelineFoam`, profiler 0 B/frame, dump test `Docs/AgentLogs/Dump_SHINOBU_277.bin`.

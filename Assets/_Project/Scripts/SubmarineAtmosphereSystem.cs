@@ -748,7 +748,7 @@ namespace Hecton8.Atmosphere
     [DisallowMultipleComponent]
     [RequireComponent(typeof(SubmarineFluidDynamics))]
     [AddComponentMenu("Hecton/Atmosphere/Submarine Atmosphere System")]
-    public sealed class SubmarineAtmosphereSystem : MonoBehaviour, IFixedTickable, IPostFixedTickable, ILateFrameTickable, IInteractionSignalConsumer, IGlobalRegistryHotSwapListener
+    public sealed class SubmarineAtmosphereSystem : MonoBehaviour, IFixedTickable, IPostFixedTickable, ILateFrameTickable, IInteractionSignalConsumer, IGlobalRegistryHotSwapListener, ISubmarineAtmosphereRoomMutationSink
     {
         private const int RoomCapacity = 8;
         private const int DoorCapacity = 7;
@@ -1639,7 +1639,11 @@ namespace Hecton8.Atmosphere
         private uint _pendingOverheatResetMask;
         private readonly float[] _pendingOverheatVoltages = new float[RoomCapacity];
 
+        public bool IsAtmosphereRuntimeActive => isActiveAndEnabled;
+
         public int RoomCount => fluidDynamics != null ? math.clamp(fluidDynamics.CompartmentCount, 0, RoomCapacity) : 0;
+
+        public int RuntimeEntityIdHash => unchecked((int)EntityId.ToULong(GetEntityId()));
 
         /// <summary>Signals refused by bounded pressure/event lanes since this runtime was enabled.</summary>
         public int DroppedSignalCount => _droppedSignalCount;
@@ -2189,7 +2193,7 @@ namespace Hecton8.Atmosphere
             return FiniteNonNegativeOrZero(_steamFront[roomIndex]);
         }
 
-        internal void HandleExternalModuleBreach(Vector3 breachWorldPosition, float breachAreaSquareMeters)
+        public void HandleExternalModuleBreach(Vector3 breachWorldPosition, float breachAreaSquareMeters)
         {
             if (fluidDynamics == null)
                 return;
@@ -2203,7 +2207,7 @@ namespace Hecton8.Atmosphere
             SealAdjacentBulkheads(roomIndex);
         }
 
-        internal float ResolveThermalFatigueMultiplier(int roomIndex)
+        public float ResolveThermalFatigueMultiplier(int roomIndex)
         {
             if (roomIndex < 0 || roomIndex >= RoomCount || !_temperatureFront.IsCreated)
                 return 1f;
@@ -2243,7 +2247,7 @@ namespace Hecton8.Atmosphere
             }
         }
 
-        internal int ResolveNearestRoomIndexForWorldPosition(Vector3 worldPosition)
+        public int ResolveNearestRoomIndexForWorldPosition(Vector3 worldPosition)
         {
             return ResolveNearestRoomIndex(worldPosition);
         }
@@ -2262,7 +2266,7 @@ namespace Hecton8.Atmosphere
             return _submarineBody != null ? _submarineBody.worldCenterOfMass : Vector3.zero;
         }
 
-        internal float ResolveRoomFloodFillNormalized(int roomIndex)
+        public float ResolveRoomFloodFillNormalized(int roomIndex)
         {
             if (fluidDynamics == null || roomIndex < 0 || roomIndex >= RoomCount)
                 return 0f;
@@ -2270,7 +2274,7 @@ namespace Hecton8.Atmosphere
             return math.saturate(fluidDynamics.GetCompartmentFillRatio(roomIndex));
         }
 
-        internal bool TryResolveRoomFloodFillNormalized(Vector3 worldPosition, out int roomIndex, out float floodFillNormalized)
+        public bool TryResolveRoomFloodFillNormalized(Vector3 worldPosition, out int roomIndex, out float floodFillNormalized)
         {
             roomIndex = ResolveNearestRoomIndex(worldPosition);
             if (roomIndex < 0 || roomIndex >= RoomCount)
@@ -2283,7 +2287,7 @@ namespace Hecton8.Atmosphere
             return true;
         }
 
-        internal float ResolveExternalDepthMeters()
+        public float ResolveExternalDepthMeters()
         {
             return fluidDynamics != null ? FiniteNonNegativeOrZero(fluidDynamics.ExternalDepthMeters) : 0f;
         }

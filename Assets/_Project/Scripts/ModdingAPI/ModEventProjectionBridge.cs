@@ -585,7 +585,7 @@ namespace Hecton8.Modding
             {
                 ModHash = modHash,
                 EventHash = eventHash,
-                Frame = unchecked((uint)Time.frameCount),
+                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 Scalar = math.isfinite(scalar) ? scalar : 0f,
                 Reason = (uint)reason,
                 ActiveSubscriptions = (uint)math.max(0, _activeSubscriptionCount)

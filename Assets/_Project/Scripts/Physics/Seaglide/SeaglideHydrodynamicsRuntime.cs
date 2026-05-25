@@ -15,6 +15,8 @@ namespace Hecton8.Physics
     [DisallowMultipleComponent]
     public sealed class SeaglideHydrodynamicsRuntime : MonoBehaviour, IFixedTickable, IPostFixedTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
+        private static int s_x001DirectSignalPushDropCount_SeaglideHydrodynamicsRuntime;
+
         private const int LockStates = 1 << 0;
         private const int LockRequests = 1 << 1;
         private const int LockForcePackets = 1 << 2;
@@ -28,10 +30,6 @@ namespace Hecton8.Physics
         private const int LockCavitationSignals = 1 << 10;
         private const float MinimumSignalIntensity = 0.01f;
         private const byte ToolAcousticStateSeaglidePropeller = 4;
-        private const int PropulsionRequestExpectedSignals = 8;
-        private const int PropulsionRequestMaxFrameSignals = 16;
-        private const int PropulsionRequestMinimumQualityFrameSignals = 4;
-
         private static SeaglideHydrodynamicsRuntime s_activeRuntimeInstance;
 
         private IDataVault _dataVault;
@@ -856,10 +854,10 @@ namespace Hecton8.Physics
         private static void EnsureSeaglideSignalLanes()
         {
             SignalBus<SeaglidePropulsionRequestSignal>.Configure(
-                PropulsionRequestExpectedSignals,
-                PropulsionRequestMaxFrameSignals,
-                PropulsionRequestMinimumQualityFrameSignals,
-                ComputeStableSignalLaneHash(nameof(SeaglidePropulsionRequestSignal)));
+                SeaglidePropulsionRequestSignal.ExpectedCapacity,
+                SeaglidePropulsionRequestSignal.MaxFrameSignals,
+                SeaglidePropulsionRequestSignal.LowTierFrameSignals,
+                SeaglidePropulsionRequestSignal.LaneHash);
             SignalBus<SeaglidePropulsionRequestSignal>.EnsureInitialized();
             SignalBus<ToolAcousticSignal>.Configure(
                 ToolAcousticSignal.ExpectedCapacity,
@@ -1012,7 +1010,7 @@ namespace Hecton8.Physics
             signal.Frame = source.FrameIndex;
             signal.State = ToolAcousticStateSeaglidePropeller;
             signal.Flags = ToolAcousticSignal.FlagLooping;
-            return SignalBus<ToolAcousticSignal>.TryPush(in signal);
+            return SignalBus<ToolAcousticSignal>.TryPushTracked(in signal, ref s_x001DirectSignalPushDropCount_SeaglideHydrodynamicsRuntime);
         }
 
         private static bool PublishBubbleSignal(in SeaglideCavitationVfxSignalDTO source, float quality)
@@ -1035,7 +1033,7 @@ namespace Hecton8.Physics
             signal.Frame = source.FrameIndex;
             signal.SourceHash = source.SourceHash;
             signal.Flags = BubbleSpawnSignal.FlagEngineVent;
-            return SignalBus<BubbleSpawnSignal>.TryPush(in signal);
+            return SignalBus<BubbleSpawnSignal>.TryPushTracked(in signal, ref s_x001DirectSignalPushDropCount_SeaglideHydrodynamicsRuntime);
         }
 
         private static float3 SafeSignalDirection(float3 direction)

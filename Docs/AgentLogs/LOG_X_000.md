@@ -673,3 +673,109 @@ Verification:
 - Clean build and full Roslyn ledger are pending because Unity/Bee currently keeps active compiler processes and CPU-gate remains above the allowed threshold.
 - X_000 targeted removals now total at least 58 persistent native aliases/alias carriers.
 - Project-wide purge remains incomplete.
+
+## T.A.R.S. Override Slice 18 - Migratory Sargassum Vault Migration
+
+What was wrong:
+- `WorldProceduralScatterDirectorMigratorySargassum.cs` retained six persistent MonoBehaviour native arrays for island state, scratch island state, selected source state, flow samples, spatial handles, and scratch spatial handles.
+- The same buffers crossed slow-tick refresh, Burst drift, spatial publication, and DataVault replacement phases.
+
+What was done:
+- Added DataVault BufferIDs `74369..74374` under `SystemID.WorldSargassum`.
+- Replaced the six native fields with `MigratoryVaultArray<T>` descriptor wrappers containing only `IDataVault` plus `VaultGenerationHandle<T>`.
+- Added DataVault hot-swap handling through `WorldProceduralScatterDirector.OnGlobalRegistryServiceReplaced`.
+- Locked island and flow-sample buffers with DataVault writer fences before scheduling the migratory drift job, then released those locks on normal completion, forced teardown, schedule failure, and DataVault swap.
+- Added a slow-tick guard so the owner phase does not mutate migratory state while the previous drift job is still running.
+
+Cinematic cheats used:
+- Kept the hard 24-island cap and reused the existing cheap canopy flow-drift model. No higher-order kelp simulation was added.
+- Low tier keeps the bounded state lane; Middle/High/Ultra should spend budget on presentation density around the canopy, not on changing memory ownership.
+
+Exact microseconds saved:
+- Profiler proof is not available from shell. Static effect is removal of six persistent MonoBehaviour native aliases.
+- Expected GC delta: 0 B/frame. DataVault payloads are fixed-capacity native buffers; wrapper fields are pointer-free descriptors plus cached vault reference.
+
+ARM64 proof:
+- `MigratorySargassumSourceState`: explicit 80 bytes, `SourceKey` at offset 0, `_pad2` at offset 72, 80 % 8 = 0.
+- `MigratorySargassumIslandState`: explicit 96 bytes, `SourceKey` at offset 0, `_pad3` at offset 88, 96 % 8 = 0.
+- Primitive buffers: `float3[24]` is 288 bytes, `int[24]` lanes are 96 bytes each; all totals are divisible by 8 and contain no misaligned 8-byte scalar fields.
+
+Verification:
+- Scoped regex for direct private native collection fields in `WorldProceduralScatterDirectorMigratorySargassum.cs`: 0 findings.
+- `git diff --check` for the three touched code files reports no whitespace errors; only repository CRLF normalization warnings.
+- Clean build and full Roslyn ledger are pending because the latest build gate sampled CPU 50.56% and active `dotnet exec ... VBCSCompiler.dll` process `52216`.
+- X_000 targeted removals now total at least 64 persistent native aliases/alias carriers.
+- Project-wide purge remains incomplete.
+
+## T.A.R.S. Override Slice 19 - Marauder Outpost Generation Vault Migration
+
+What was wrong:
+- `MarauderOutpostGenerationService` retained seven persistent MonoBehaviour native arrays: public WFC grid, shell matrices, shell cell types, interactable spawns, mutable WFC state, counters, and the outpost telemetry ring.
+- Those buffers crossed WFC solve, matrix extraction, AUP shift, power-grid publication, GPU upload, interactable spawn, telemetry dump, and DataVault replacement phases.
+- Public `WfcGrid` also made external stale alias retention possible.
+
+What was done:
+- Added `SystemID.WorldOutposts = 357`.
+- Added BufferIDs `74375..74381` for WFC grid, shell matrices, shell cell types, interactable spawns, mutable WFC state, counters, and telemetry ring.
+- Replaced the seven native fields with `VaultGenerationHandle<T>` descriptors plus scalar writer-lock state.
+- Solve, extraction, and shift jobs now receive method-local native views only after DataVault writer locks are acquired.
+- Late-frame completion, forced teardown, schedule failure, and DataVault hot-swap release the writer locks.
+- `TryGetWfcGrid`, `TryGetShellMatrices`, and all private `TryRead*` helpers use read-only handle resolution only.
+- Added `WfcOutpostGridRegistry.RegisterGrid(..., NativeArray<byte>.ReadOnly, ...)` so outpost grid publication copies from a scoped DataVault view instead of retaining a MonoBehaviour field.
+
+Cinematic cheats used:
+- Kept the existing bounded WFC solve and fixed matrix cap instead of adding heavier procedural structure simulation.
+- Low tier keeps the 5x5x3 solve shape. Middle/High/Ultra can spend saved safety margin on shell density, material decay, and interactable presentation without changing memory ownership or WFC authority.
+
+Exact microseconds saved:
+- Profiler proof is not available from shell. Static effect is removal of seven persistent MonoBehaviour native aliases and one public stale-alias route.
+- Expected GC delta: 0 B/frame. DataVault payloads are native and bounded; no managed arrays are introduced on the hot path.
+
+ARM64 proof:
+- `OutpostTelemetryEntry`: explicit 128 bytes; `SectorHash` at offset 8; `_pad0.._pad6` at offsets 72,80,88,96,104,112,120; all 8-byte lanes are aligned; 128 % 8 = 0.
+- `OutpostInteractableSpawn`: explicit 32 bytes; `_pad1` at offset 24; 32 % 8 = 0.
+- `float4x4` shell matrices are 64-byte rows with 4-byte float lanes; primitive byte/uint/int buffers contain no 8-byte scalar fields.
+
+Verification:
+- Scoped regex for direct persistent native collection fields in `MarauderOutpostGenerationService.cs`: 0 findings.
+- `git diff --check` for the three touched code files reports no whitespace errors; only repository CRLF normalization warnings.
+- Clean build completed after the gate cleared: `dotnet build Hecton8.Editor.csproj /nr:false -p:UseSharedCompilation=false -v:minimal` succeeded in 00:02:08.87 with 0 warnings and 0 errors.
+- Full Roslyn audit: 2406 files, 0 parse failures, 7710 native fields, 2138 forbidden persistent candidates, 581 MonoBehaviour candidates across 58 files.
+- Proof hash: `1a2db4092081840dfc0366bb82ed12aaa304e226b1fc5b3b1ee858e37456c58a`.
+- Regenerated `Docs/Reports/VAULT_MONOBEHAVIOUR_NATIVE_FIELD_AUDIT_X_000.json` and `Docs/Reports/VAULT_EXORCISM_REPORT_X_000.json` from the latest ledger.
+- X_000 targeted removals now total at least 71 persistent native aliases/alias carriers.
+- Project-wide purge remains incomplete.
+
+## T.A.R.S. Override Slice 20 - Crash Telemetry Buffer Vault Migration
+
+What was wrong:
+- `CrashTelemetryBuffer` retained three persistent MonoBehaviour native arrays: the 300-entry live telemetry ring, the 1000-entry export snapshot, and the 64016-byte export scratch buffer.
+- The background export route could become unsafe if DataVault-backed buffers were resolved from the worker thread after migration.
+
+What was done:
+- Added BufferIDs `CrashTelemetryRing = 74382`, `CrashTelemetryExportSnapshot = 74383`, and `CrashTelemetryExportScratch = 74384` under `SystemID.CoreDiagnostics`.
+- Replaced the three raw native fields with `VaultArray<T>` descriptors containing only `IDataVault` plus `VaultGenerationHandle<T>`.
+- `InitializeBuffers` now acquires fixed DataVault payloads; `DisposeBuffers` releases handles through the cached vault.
+- `TryExportSnapshot` and the unhandled-exception route now build native scratch on the owner thread and mirror the exact export bytes into the existing managed `_crashExportFileScratch`.
+- `WritePreparedExportToDisk` now writes the managed scratch only; the worker thread does not resolve DataVault handles.
+- DataVault hot-swap now disposes old crash buffers before rebinding to the replacement vault.
+
+Cinematic cheats used:
+- None. This is a core crash black-box contract. Low/Middle/High/Ultra all use the same bounded telemetry payload; quality cannot alter crash truth or export identity.
+
+Exact microseconds saved:
+- Profiler proof is not available from shell. Static effect is removal of three persistent MonoBehaviour native aliases from a critical diagnostics owner.
+- Expected GC delta: 0 B/frame. The managed export file scratch already existed and remains fixed-size.
+
+ARM64 proof:
+- `CrashExportHeader`: explicit 16 bytes; `Magic` is `ulong` at offset 0; 16 % 8 = 0.
+- `TelemetryEntry`: explicit 64 bytes; only 4-byte scalar/vector lanes plus two 4-byte union slots; no `double`, `long`, or `ulong`; 64 % 8 = 0.
+- `LiveTelemetryRecord`: explicit 32 bytes; only 4-byte lanes; 32 % 8 = 0.
+- Export scratch: 64016 bytes = 16-byte header + 1000 * 64-byte entries; 64016 % 8 = 0.
+
+Verification:
+- Scoped regex for direct persistent native collection fields in `CrashTelemetryBuffer.cs`: 0 findings.
+- `git diff --check` for `CrashTelemetryBuffer.cs` and `H8Memory.cs` reports no whitespace errors; only repository CRLF normalization warnings.
+- Clean build and full Roslyn audit refresh are pending because the current build gate reports CPU 100% with active `dotnet`/`csc`.
+- X_000 targeted removals now total at least 74 persistent native aliases/alias carriers.
+- Project-wide purge remains incomplete.

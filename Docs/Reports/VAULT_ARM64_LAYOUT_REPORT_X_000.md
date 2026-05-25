@@ -701,3 +701,202 @@ DTOs already present in the file and checked by `RadiationStateLayoutGuard`:
 Padding map: no new DTO padding was added by the wrapper migration. Existing explicit rows remain unchanged.
 Size proof: all listed radiation DTO row sizes are divisible by 8.
 8-byte field proof: 8-byte scalar/padding lanes start on 8-byte offsets in the explicit rows. Primitive grid/source-count/cursor/csv lanes have no 8-byte scalar alignment risk.
+
+## WorldProceduralScatterDirector MigratorySargassumSourceState
+
+Source: `Assets/_Project/Scripts/WorldProceduralScatterDirectorMigratorySargassum.cs`
+Declaration: `[StructLayout(LayoutKind.Explicit, Size = 80)]`
+
+| Offset | Size | Field | Type | ARM64 alignment |
+| ---: | ---: | --- | --- | --- |
+| 0 | 8 | SourceKey | long | ok, 8-byte scalar at 8-byte offset |
+| 8 | 4 | SourceHash | int | ok |
+| 12 | 4 | _padPreAup | uint | explicit reserve before AUP |
+| 16 | 48 | Position | AbsoluteUniversePosition | ok; nested checked layout starts at 16 |
+| 64 | 4 | RadiusMeters | float | ok |
+| 68 | 1 | Active | byte | ok |
+| 69 | 1 | _pad0 | byte | explicit reserve |
+| 70 | 2 | _pad1 | ushort | explicit reserve |
+| 72 | 8 | _pad2 | ulong | ok, 8-byte scalar at 8-byte offset |
+
+Padding map: `_padPreAup` reserves 4 bytes before AUP; `_pad0` + `_pad1` reserve bytes 69..71; `_pad2` reserves bytes 72..79.
+Size proof: 80 % 8 = 0.
+8-byte field proof: `SourceKey` starts at 0 and `_pad2` starts at 72. Both are 8-byte aligned.
+
+## WorldProceduralScatterDirector MigratorySargassumIslandState
+
+Source: `Assets/_Project/Scripts/WorldProceduralScatterDirectorMigratorySargassum.cs`
+Declaration: `[StructLayout(LayoutKind.Explicit, Size = 96)]`
+
+| Offset | Size | Field | Type | ARM64 alignment |
+| ---: | ---: | --- | --- | --- |
+| 0 | 8 | SourceKey | long | ok, 8-byte scalar at 8-byte offset |
+| 8 | 4 | SourceHash | int | ok |
+| 12 | 4 | _padPreAup | uint | explicit reserve before AUP |
+| 16 | 48 | Position | AbsoluteUniversePosition | ok; nested checked layout starts at 16 |
+| 64 | 12 | Velocity | float3 | ok, three 4-byte lanes |
+| 76 | 4 | RadiusMeters | float | ok |
+| 80 | 1 | Active | byte | ok |
+| 81 | 1 | _pad0 | byte | explicit reserve |
+| 82 | 2 | _pad1 | ushort | explicit reserve |
+| 84 | 4 | _pad2 | uint | explicit reserve |
+| 88 | 8 | _pad3 | ulong | ok, 8-byte scalar at 8-byte offset |
+
+Padding map: `_padPreAup` reserves 4 bytes before AUP; `_pad0` + `_pad1` + `_pad2` reserve bytes 81..87; `_pad3` reserves bytes 88..95.
+Size proof: 96 % 8 = 0.
+8-byte field proof: `SourceKey` starts at 0 and `_pad3` starts at 88. Both are 8-byte aligned.
+
+## WorldProceduralScatterDirector Migratory Primitive Buffers
+
+Source: `Assets/_Project/Scripts/WorldProceduralScatterDirectorMigratorySargassum.cs`
+DataVault buffers: `WorldScatterMigratorySargassumFlowSamples`, `WorldScatterMigratorySargassumSpatialHandles`, `WorldScatterMigratorySargassumScratchSpatialHandles`.
+
+| Payload | Element size | Capacity | Byte proof | 8-byte scalar risk |
+| --- | ---: | ---: | --- | --- |
+| `float3` flow samples | 12 | 24 | 288 bytes; 288 % 8 = 0 | none; three 4-byte lanes |
+| `int` spatial handles | 4 | 24 | 96 bytes; 96 % 8 = 0 | none |
+| `int` scratch spatial handles | 4 | 24 | 96 bytes; 96 % 8 = 0 | none |
+
+Padding map: primitive payloads have no DTO padding. Total payload byte count is 8-byte-clean for the fixed 24-row capacity.
+
+## MarauderOutpostGenerationService OutpostTelemetryEntry
+
+Source: `Assets/_Project/Scripts/World/Outposts/MarauderOutpostJobs.cs`
+Declaration: `[StructLayout(LayoutKind.Explicit, Size = MarauderOutpostJobsLayout.OutpostTelemetryEntryStrideBytes)]`, stride constant = 128.
+
+| Offset | Size | Field | Type | ARM64 alignment |
+| ---: | ---: | --- | --- | --- |
+| 0 | 4 | Frame | uint | ok |
+| 4 | 4 | Flags | uint | ok |
+| 8 | 8 | SectorHash | ulong | ok, 8-byte scalar at 8-byte offset |
+| 16 | 4 | Seed | uint | ok |
+| 20 | 4 | GenerationSequence | uint | ok |
+| 24 | 12 | OriginMeters | float3 | ok, three 4-byte lanes |
+| 36 | 12 | Dimensions | int3 | ok, three 4-byte lanes |
+| 48 | 4 | MatrixCount | int | ok |
+| 52 | 4 | InteractableCount | int | ok |
+| 56 | 4 | SolidCellCount | int | ok |
+| 60 | 4 | SupportCount | int | ok |
+| 64 | 4 | OutpostAge01 | float | ok |
+| 68 | 4 | ShiftFrameId | uint | ok |
+| 72 | 8 | _pad0 | ulong | ok, 8-byte scalar at 8-byte offset |
+| 80 | 8 | _pad1 | ulong | ok, 8-byte scalar at 8-byte offset |
+| 88 | 8 | _pad2 | ulong | ok, 8-byte scalar at 8-byte offset |
+| 96 | 8 | _pad3 | ulong | ok, 8-byte scalar at 8-byte offset |
+| 104 | 8 | _pad4 | ulong | ok, 8-byte scalar at 8-byte offset |
+| 112 | 8 | _pad5 | ulong | ok, 8-byte scalar at 8-byte offset |
+| 120 | 8 | _pad6 | ulong | ok, 8-byte scalar at 8-byte offset |
+
+Padding map: `_pad0.._pad6` reserve bytes 72..127.
+Size proof: 128 % 8 = 0.
+8-byte field proof: `SectorHash` starts at 8. `_pad0.._pad6` start at 72, 80, 88, 96, 104, 112, and 120. Every 8-byte lane is 8-byte aligned.
+
+## MarauderOutpostGenerationService OutpostInteractableSpawn
+
+Source: `Assets/_Project/Scripts/World/Contracts/OutpostGenerationContracts.cs`
+Declaration: `[StructLayout(LayoutKind.Explicit, Size = OutpostGenerationContractLayout.OutpostInteractableSpawnStrideBytes)]`, stride constant = 32.
+
+| Offset | Size | Field | Type | ARM64 alignment |
+| ---: | ---: | --- | --- | --- |
+| 0 | 12 | PositionMeters | float3 | ok, three 4-byte lanes |
+| 12 | 4 | RotationYRadians | float | ok |
+| 16 | 2 | CellIndex | ushort | ok |
+| 18 | 1 | Kind | byte | ok |
+| 19 | 1 | Flags | byte | ok |
+| 20 | 4 | _pad0 | uint | explicit reserve |
+| 24 | 8 | _pad1 | ulong | ok, 8-byte scalar at 8-byte offset |
+
+Padding map: `_pad0` reserves bytes 20..23; `_pad1` reserves bytes 24..31.
+Size proof: 32 % 8 = 0.
+8-byte field proof: `_pad1` is the only 8-byte lane and starts at offset 24, so it is 8-byte aligned.
+
+## MarauderOutpostGenerationService Primitive And Matrix Buffers
+
+Source: `Assets/_Project/Scripts/World/Outposts/MarauderOutpostGenerationService.cs`
+DataVault buffers: `MarauderOutpostWfcGrid`, `MarauderOutpostShellMatrices`, `MarauderOutpostShellCellTypes`, `MarauderOutpostMutableStateGrid`, `MarauderOutpostCounters`.
+
+| Payload | Element size | Capacity | Byte proof | 8-byte scalar risk |
+| --- | ---: | ---: | --- | --- |
+| `byte` WFC grid | 1 | 500 | not 8-byte total by itself; byte lanes have no scalar alignment requirement | none |
+| `byte` mutable WFC grid | 1 | 500 | not 8-byte total by itself; byte lanes have no scalar alignment requirement | none |
+| `float4x4` shell matrices | 64 | 1024 | 65536 bytes; 65536 % 8 = 0 | none; Unity.Mathematics matrix is 4-byte float lanes |
+| `uint` shell cell types | 4 | 1024 | 4096 bytes; 4096 % 8 = 0 | none |
+| `int` counters | 4 | 8 | 32 bytes; 32 % 8 = 0 | none |
+
+Padding map: primitive payloads have no DTO padding. `float4x4` rows are 64-byte value rows and contain no double, long, or ulong field declared by X_000.
+Size proof: custom DTO rows are 8-byte-clean. Primitive byte grids are byte-addressed payloads; no 8-byte scalar can be misaligned inside them.
+
+## CrashTelemetryBuffer CrashExportHeader
+
+Source: `Assets/_Project/Scripts/CrashTelemetryBuffer.cs`
+Declaration: `[StructLayout(LayoutKind.Explicit, Size = CrashExportHeaderSizeBytes)]`, size constant = 16.
+
+| Offset | Size | Field | Type | ARM64 alignment |
+| ---: | ---: | --- | --- | --- |
+| 0 | 8 | Magic | ulong | ok, 8-byte scalar at 8-byte offset |
+| 8 | 4 | EntryCount | uint | ok |
+| 12 | 4 | StructSizeBytes | uint | ok |
+
+Padding map: no named padding; fields exactly cover bytes 0..15.
+Size proof: 16 % 8 = 0.
+8-byte field proof: `Magic` starts at offset 0, so it is 8-byte aligned.
+
+## CrashTelemetryBuffer TelemetryEntry
+
+Source: `Assets/_Project/Scripts/CrashTelemetryBuffer.cs`
+Declaration: `[StructLayout(LayoutKind.Explicit, Size = TelemetryEntrySizeBytes)]`, size constant = 64.
+
+| Offset | Size | Field | Type | ARM64 alignment |
+| ---: | ---: | --- | --- | --- |
+| 0 | 4 | FrameIndex | uint | ok |
+| 4 | 4 | SystemMask | uint | ok |
+| 8 | 4 | DeltaTime | float | ok |
+| 12 | 4 | LatencyMs | float | ok |
+| 16 | 4 | GpuFrameTime | float | ok |
+| 20 | 4 | MemoryUsedMb | float | ok |
+| 24 | 12 | PlayerAup | float3 | ok, three 4-byte lanes |
+| 36 | 4 | ActiveChunkCount | uint | ok |
+| 40 | 4 | ErrorFlags | uint | ok |
+| 44 | 4 | ExportReason | uint | ok |
+| 48 | 4 | AupShiftSequence | uint | ok |
+| 52 | 4 | AiStatePacked / VelocityPacked | uint union | ok |
+| 56 | 4 | SubsystemHeatPacked / GcAllocBytes | uint union | ok |
+| 60 | 4 | LastOriginShiftFrame | uint | ok |
+
+Padding map: no named padding; the 64-byte explicit row is fully covered by 4-byte lanes and one 12-byte float3.
+Size proof: 64 % 8 = 0.
+8-byte field proof: no `double`, `long`, or `ulong` field exists in `TelemetryEntry`, so there is no 8-byte scalar that can sit on an odd offset.
+
+## CrashTelemetryBuffer LiveTelemetryRecord
+
+Source: `Assets/_Project/Scripts/CrashTelemetryBuffer.cs`
+Declaration: `[StructLayout(LayoutKind.Explicit, Size = LiveTelemetryRecordSizeBytes)]`, size constant = 32.
+
+| Offset | Size | Field | Type | ARM64 alignment |
+| ---: | ---: | --- | --- | --- |
+| 0 | 4 | Magic | uint | ok |
+| 4 | 4 | Version | uint | ok |
+| 8 | 4 | FrameIndex | uint | ok |
+| 12 | 4 | ActiveChunkCount | uint | ok |
+| 16 | 4 | GcAllocBytes | uint | ok |
+| 20 | 4 | CpuFrameTimeMs | float | ok |
+| 24 | 4 | DeltaTime | float | ok |
+| 28 | 4 | ReservedMemoryMb | float | ok |
+
+Padding map: no named padding; fields exactly cover bytes 0..31.
+Size proof: 32 % 8 = 0.
+8-byte field proof: no `double`, `long`, or `ulong` field exists in `LiveTelemetryRecord`.
+
+## CrashTelemetryBuffer Primitive Export Buffers
+
+Source: `Assets/_Project/Scripts/CrashTelemetryBuffer.cs`
+DataVault buffers: `CrashTelemetryRing`, `CrashTelemetryExportSnapshot`, `CrashTelemetryExportScratch`.
+
+| Payload | Element size | Capacity | Byte proof | 8-byte scalar risk |
+| --- | ---: | ---: | --- | --- |
+| `TelemetryEntry` ring | 64 | 300 | 19200 bytes; 19200 % 8 = 0 | none; no 8-byte scalar fields |
+| `TelemetryEntry` export snapshot | 64 | 1000 | 64000 bytes; 64000 % 8 = 0 | none; no 8-byte scalar fields |
+| `byte` export scratch | 1 | 64016 | 64016 bytes; 64016 % 8 = 0 | none; byte-addressed payload |
+
+Padding map: primitive `byte` scratch has no DTO padding. The scratch byte count is header 16 + 1000 * 64.
+Size proof: every custom DTO row is 8-byte-clean; total export scratch byte length is also divisible by 8.

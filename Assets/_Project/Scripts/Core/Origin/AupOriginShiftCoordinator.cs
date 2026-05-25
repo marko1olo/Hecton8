@@ -735,7 +735,7 @@ namespace Hecton8.Core
 
             arrays.TelemetryRing[cursor] = new AupOriginShiftTelemetryEntry
             {
-                Frame = unchecked((uint)Time.frameCount),
+                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 RebaseCount = runtime.RebaseCount,
                 ShiftSequence = info.ShiftSequence,
                 SectorHash = info.Signal.NewSectorHash,
@@ -1016,7 +1016,7 @@ namespace Hecton8.Core
 
             telemetryRing[Time.frameCount % TelemetryCapacity] = new AupOriginShiftTelemetryEntry
             {
-                Frame = unchecked((uint)Time.frameCount),
+                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 RebaseCount = runtime.RebaseCount,
                 ShiftSequence = runtime.LastShiftSequence,
                 SectorHash = camera.SectorHash,
@@ -1395,7 +1395,7 @@ namespace Hecton8.Core
                 EntryStrideBytes = ToLittleEndian((uint)math.max(0, entryStride)),
                 PayloadBytes = ToLittleEndian(payloadBytes),
                 OldestRingIndex = ToLittleEndian((uint)math.max(0, oldestRingIndex)),
-                LatestFrame = ToLittleEndian(unchecked((uint)Time.frameCount)),
+                LatestFrame = ToLittleEndian(Hecton8.Core.SystemDispatcher.CurrentFrameId),
                 EndianTag = ToLittleEndian(BitConverter.IsLittleEndian ? DumpEndianLittleTag : DumpEndianBigTag),
                 Flags = ToLittleEndian(BitConverter.IsLittleEndian ? 0u : 1u)
             };

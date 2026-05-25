@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using Hecton8.Atmosphere;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Gameplay;
@@ -10,6 +9,7 @@ using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Hecton8.Construction
 {
@@ -17,6 +17,7 @@ namespace Hecton8.Construction
     [AddComponentMenu("Hecton8/Construction/Fluid Pipe Graph Runtime")]
     public sealed class FluidPipeGraphRuntime : MonoBehaviour, IFluidPipeGraphService, ISlowTickable, ILateFrameTickable, IServiceShutdown, IGlobalRegistryHotSwapListener
     {
+        private static int s_x001FluidPipeGraphRuntimeSignalPushDropCount;
         private const string NativeMemoryOwner = nameof(FluidPipeGraphRuntime);
         private const float SlowTickStepSeconds = 0.1f;
         private const uint PipeImpactMaterialHash = 0x50495045u;
@@ -28,7 +29,7 @@ namespace Hecton8.Construction
         [SerializeField, Min(0.001f)] private float defaultPipeFlowRate = FluidPipeGraphConstants.DefaultFlowRate;
 
         [Header("Integration")]
-        [SerializeField] private SubmarineAtmosphereSystem atmosphereSystem;
+        [SerializeField, FormerlySerializedAs("atmosphereSystem")] private MonoBehaviour atmosphereSystemSource;
 
         [Header("Diagnostics")]
         [SerializeField] private int _debugNodeCount;
@@ -65,6 +66,7 @@ namespace Hecton8.Construction
         private bool _initialized;
         private bool _atmosphereResolveAttempted;
         private bool _blackBoxDumped;
+        private ISubmarineAtmosphereRoomMutationSink _atmosphereSystem;
         private int _nodeCount;
         private int _connectionCount;
         private int _frameIndex;
@@ -546,7 +548,7 @@ namespace Hecton8.Construction
             for (int i = 0; i < sourceCount; i++)
             {
                 SubmarineElectrolysisModule source = SubmarineElectrolysisModule.GetActiveElectrolysis(i);
-                if (atmosphereSystem == null)
+                if (_atmosphereSystem == null || !_atmosphereSystem.IsAtmosphereRuntimeActive)
                 {
                     source?.FlushPendingPipeOxygenToAtmosphere();
                     continue;
@@ -592,8 +594,8 @@ namespace Hecton8.Construction
                 if (kind == (byte)FluidPipeContentKind.Oxygen)
                 {
                     int roomIndex = _pipeRoomIndices[i];
-                    if (atmosphereSystem != null && roomIndex >= 0)
-                        atmosphereSystem.InjectOxygenUnits(roomIndex, exchange);
+                    if (_atmosphereSystem != null && _atmosphereSystem.IsAtmosphereRuntimeActive && roomIndex >= 0)
+                        _atmosphereSystem.InjectOxygenUnits(roomIndex, exchange);
                 }
                 else if (kind == (byte)FluidPipeContentKind.Water)
                 {
@@ -616,7 +618,7 @@ namespace Hecton8.Construction
                 Flags = rupture.Flags,
                 RoomIndex = roomIndex
             };
-            SignalBus<PipeRuptureSignal>.TryPush(in pipeSignal);
+            SignalBus<PipeRuptureSignal>.TryPushTracked(in pipeSignal, ref s_x001FluidPipeGraphRuntimeSignalPushDropCount);
 
             ImpactSignal impactSignal = new ImpactSignal
             {
@@ -627,7 +629,7 @@ namespace Hecton8.Construction
                 WeightClass = 1,
                 Flags = 1
             };
-            SignalBus<ImpactSignal>.TryPush(in impactSignal);
+            SignalBus<ImpactSignal>.TryPushTracked(in impactSignal, ref s_x001FluidPipeGraphRuntimeSignalPushDropCount);
             ConnectionSplineBatchRenderer.SetPipeNodeRuptured((uint)math.max(0, rupture.NodeIndex), true);
 
             if (rupture.ContentKind == (byte)FluidPipeContentKind.Water)
@@ -668,7 +670,7 @@ namespace Hecton8.Construction
                 FlowRate01 = math.saturate(amount),
                 Flags = 1
             };
-            SignalBus<FluidIncursionSignal>.TryPush(in incursionSignal);
+            SignalBus<FluidIncursionSignal>.TryPushTracked(in incursionSignal, ref s_x001FluidPipeGraphRuntimeSignalPushDropCount);
         }
 
         private FluidPipeTelemetryEntry ReadLatestTelemetry()
@@ -775,16 +777,16 @@ namespace Hecton8.Construction
             if (!force && _atmosphereResolveAttempted)
                 return;
 
-            if (atmosphereSystem != null && atmosphereSystem.isActiveAndEnabled)
+            if (_atmosphereSystem != null && _atmosphereSystem.IsAtmosphereRuntimeActive)
             {
                 _atmosphereResolveAttempted = true;
                 return;
             }
 
             _atmosphereResolveAttempted = true;
-            atmosphereSystem = GetComponentInParent<SubmarineAtmosphereSystem>();
-            if (atmosphereSystem == null)
-                TryGetComponent(out atmosphereSystem);
+            _atmosphereSystem = atmosphereSystemSource as ISubmarineAtmosphereRoomMutationSink;
+            if (_atmosphereSystem == null || !_atmosphereSystem.IsAtmosphereRuntimeActive)
+                _atmosphereSystem = ComponentReferenceUtility.ResolveParentService<ISubmarineAtmosphereRoomMutationSink>(this);
         }
 
         private static short ClampToShort(int value)

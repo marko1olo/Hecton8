@@ -2112,14 +2112,15 @@ namespace Hecton8.Gameplay
             if (math.lengthsq(centerFromOrigin - nearestOnRay) > radiusSq)
                 return false;
 
-            quaternion inverseRotation = math.inverse(BallisticsRuntime.NormalizeOrIdentity(primitive.Rotation));
+            quaternion rotation = BallisticsRuntime.NormalizeOrIdentity(primitive.Rotation);
+            quaternion inverseRotation = math.conjugate(rotation);
             float3 localOrigin = math.mul(inverseRotation, AupPrecisionMath.DowncastLocalDelta(deltaAup, float3.zero));
             float3 localDirection = BallisticsRuntime.NormalizeOrDefault(math.mul(inverseRotation, direction), new float3(0f, 0f, 1f));
             if (!TryIntersectAabbSlab(localOrigin, localDirection, half, maxDistance, out distance, out localHit, out float3 localNormal))
                 return false;
 
-            worldNormal = BallisticsRuntime.NormalizeOrDefault(math.mul(BallisticsRuntime.NormalizeOrIdentity(primitive.Rotation), localNormal), new float3(0f, 0f, 1f));
-            float3 relativeWorldHit = math.mul(BallisticsRuntime.NormalizeOrIdentity(primitive.Rotation), localHit);
+            worldNormal = BallisticsRuntime.NormalizeOrDefault(math.mul(rotation, localNormal), new float3(0f, 0f, 1f));
+            float3 relativeWorldHit = math.mul(rotation, localHit);
             hitAup = primitive.CenterAUP + (double3)relativeWorldHit;
             return math.all(math.isfinite(hitAup));
         }

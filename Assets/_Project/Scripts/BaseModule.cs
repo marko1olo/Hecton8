@@ -94,6 +94,7 @@ namespace Hecton8.Gameplay
     [DisallowMultipleComponent]
     public sealed class BaseModule : MonoBehaviour, IPowerComponent, IContinuousPowerComponent, IPoolable, ISlowTickable, IFixedTickable, IUpdatable, ILateFrameTickable, ICuttable, Hecton8.Physics.IPhysicsImpactMaterialProvider, IElectromagneticPulseEventListener, Hecton8.Interaction.IKinematicRepairTarget, Hecton8.Interaction.IRepairableModuleTarget, IGlobalRegistryHotSwapListener
     {
+        private static int s_x001BaseModuleSignalPushDropCount;
         // COLD ALLOC: List<BaseModule>[64] - active runtime habitat module registry for cold-path environment scans - owner: BaseModule
         private static readonly List<BaseModule> s_activeModules = new List<BaseModule>(64);
         private const int ModuleWaterLevelShaderCapacity = 64;
@@ -684,10 +685,17 @@ namespace Hecton8.Gameplay
         private bool _pendingLeakVisualDirty;
         private bool _pendingLeakActive;
         private bool _pendingFloodVisualDirty;
+        private AudioClip _pendingSpatialSfx0;
+        private AudioClip _pendingSpatialSfx1;
+        private AudioClip _pendingSpatialSfx2;
+        private AudioClip _pendingSpatialSfx3;
+        private byte _pendingSpatialSfxCount;
         private bool _pendingOxygenHumVisualDirty;
         private bool _pendingPressureVisualScaleDirty;
         private bool _pendingPressureVisualRotationDirty;
         private bool _pendingInteriorReefVisualDirty;
+        private bool _pendingParasiteSporeVfxDirty;
+        private bool _pendingParasiteSporeVfxActive;
         private Vector3 _pendingPressureVisualScale = Vector3.one;
         private Quaternion _pendingPressureVisualRotation = Quaternion.identity;
         private Quaternion _pressureCompressionVisualRotationState = Quaternion.identity;
@@ -767,6 +775,7 @@ namespace Hecton8.Gameplay
         private IPlayerHypoxiaPresentationSink _trackedPlayerHypoxiaPresentation;
         private readonly ModuleIntegrityComponent _integrityComponent = new ModuleIntegrityComponent();
         private readonly ModuleLifeSupportComponent _lifeSupportComponent = new ModuleLifeSupportComponent();
+        private readonly FixedCharBuffer _fieldOperationSummaryBuffer = new FixedCharBuffer(320);
         // SHINOBU_330: interior trigger remains life-support occupancy only.
         // Flood water and dry-zone physics truth is routed through HabitatFluidIncursionDirector and SignalBus.
         // COLD ALLOC: List<BaseAirlock>[2] - cached owned airlock controllers for emergency lockdown fan-out - owner: BaseModule
@@ -1297,11 +1306,13 @@ namespace Hecton8.Gameplay
 
         public void LateFrameTick()
         {
+            FlushPendingSpatialSfx();
             FlushLeakVisualState();
             FlushFloodVisualState();
             FlushOxygenScrubberHumVisualState();
             FlushPressureCompressionVisualState();
             FlushInteriorReefVisualState();
+            FlushParasiteSporeVfxState();
             FlushPendingInteriorLightState();
             if (s_moduleWaterLevelShaderDirty)
             {
@@ -1411,7 +1422,7 @@ namespace Hecton8.Gameplay
         }
 
         // ----------------------------------------------------------
-        //  INTERIOR ZONE — TRIGGER CALLBACKS
+        //  INTERIOR ZONE ï¿½ TRIGGER CALLBACKS
         // ----------------------------------------------------------
 
         private void UpdateInteriorOccupancyFromPlayerRuntime()
@@ -1498,7 +1509,7 @@ namespace Hecton8.Gameplay
 
         /// <summary>
         /// Nanosit uron modulyu.
-        /// Pri dostizhenii 0 — modul probit i zataplivaetsya.
+        /// Pri dostizhenii 0 ï¿½ modul probit i zataplivaetsya.
         /// </summary>
         public void ApplyDamage(float amount)
         {
@@ -1579,7 +1590,7 @@ namespace Hecton8.Gameplay
 
         /// <summary>
         /// Remontiruet modul.
-        /// Esli tselostnost polnostyu vosstanovlena i est pitanie —
+        /// Esli tselostnost polnostyu vosstanovlena i est pitanie ï¿½
         /// nachinaetsya otkachka vody.
         /// </summary>
         public void Repair(float amount)
@@ -2342,7 +2353,7 @@ namespace Hecton8.Gameplay
         }
 
         // ----------------------------------------------------------
-        //  PUBLIC API — DECONSTRUCTION
+        //  PUBLIC API ï¿½ DECONSTRUCTION
         // ----------------------------------------------------------
 
         /// <summary>
@@ -2352,23 +2363,23 @@ namespace Hecton8.Gameplay
         ///   1. Poluchit buildCost iz ModuleMarker.Data.
         ///   2. Dlya kazhdogo resursa: refund = floor(amount / 2).
         ///   3. Popytka dobavit v PlayerInventory.Grid.
-        ///   4. Esli inventar polon — spavn HectonItem v mir cherez ObjectPoolManager.
+        ///   4. Esli inventar polon ï¿½ spavn HectonItem v mir cherez ObjectPoolManager.
         ///   5. Osvobozhdenie dry zone (ReleaseAllTrackedObjects).
         ///   6. ConstructionManager.DestroyModule(gameObject).
         ///
         /// ZERO GC:
-        ///   • for-tsikly po List, bez LINQ.
-        ///   • TryAddItem vozvraschaet bool, bez allokatsiy.
-        ///   • ObjectPoolManager.Spawn — zero GC (pre-warmed pool).
+        ///   ï¿½ for-tsikly po List, bez LINQ.
+        ///   ï¿½ TryAddItem vozvraschaet bool, bez allokatsiy.
+        ///   ï¿½ ObjectPoolManager.Spawn ï¿½ zero GC (pre-warmed pool).
         ///
         /// ZASchITA:
-        ///   • _isDeconstructing predotvraschaet povtornyy vyzov.
-        ///   • Null-safe: esli ModuleMarker/Data/buildCost otsutstvuyut —
+        ///   ï¿½ _isDeconstructing predotvraschaet povtornyy vyzov.
+        ///   ï¿½ Null-safe: esli ModuleMarker/Data/buildCost otsutstvuyut ï¿½
         ///     modul unichtozhaetsya bez vozvrata resursov (s Warning).
         /// </summary>
         /// <param name="playerInventory">
         /// Inventar igroka dlya vozvrata resursov.
-        /// Null dopustim — vse resursy budut spavneny v mir.
+        /// Null dopustim ï¿½ vse resursy budut spavneny v mir.
         /// </param>
         public void Deconstruct(PlayerInventory playerInventory)
         {
@@ -2468,7 +2479,7 @@ namespace Hecton8.Gameplay
                 RequesterEntityId = 0u,
                 MaxDistance = 0f,
                 RayDirection = new float3(0f, -1f, 0f),
-                Frame = (uint)Mathf.Max(0, SystemDispatcher.CurrentFrameIndex),
+                Frame = SystemDispatcher.CurrentFrameId,
                 ToolKind = 0,
                 Flags = 1
             };
@@ -2504,7 +2515,7 @@ namespace Hecton8.Gameplay
         }
 
         // ----------------------------------------------------------
-        //  PRIVATE — WORLD ITEM SPAWN
+        //  PRIVATE ï¿½ WORLD ITEM SPAWN
         // ----------------------------------------------------------
 
         /// <summary>
@@ -2517,7 +2528,7 @@ namespace Hecton8.Gameplay
         ///
         /// Razdelenie otvetstvennostey:
         ///   BaseModule NE znaet pro konkretnyy vizual predmeta.
-        ///   worldItemPrefab — generic konteyner s HectonItem + Rigidbody.
+        ///   worldItemPrefab ï¿½ generic konteyner s HectonItem + Rigidbody.
         ///   Katalozhnye dannye na HectonItem ustanavlivayutsya programmno.
         ///
         /// Buduschee: esli nuzhna vizualnaya differentsiatsiya (raznye modeli
@@ -2592,7 +2603,7 @@ namespace Hecton8.Gameplay
         }
 
         // ----------------------------------------------------------
-        //  PRIVATE — CORE STATE LOGIC
+        //  PRIVATE ï¿½ CORE STATE LOGIC
         // ----------------------------------------------------------
 
         private float GetRepairIntegrityCap()
@@ -2794,7 +2805,7 @@ namespace Hecton8.Gameplay
         }
 
         // ----------------------------------------------------------
-        //  PRIVATE — INTERIOR ZONE SYNC
+        //  PRIVATE ï¿½ INTERIOR ZONE SYNC
         // ----------------------------------------------------------
 
         private bool ShouldLeakBeActive()
@@ -2861,11 +2872,6 @@ namespace Hecton8.Gameplay
                 _trackedPlayerSurvival));
         }
 
-        private string BuildAirReserveSummary()
-        {
-            return _lifeSupportComponent.BuildAirReserveSummary();
-        }
-
         private void ClearCascadeFailure()
         {
             _integrityComponent.ClearCascadeFailure();
@@ -2884,6 +2890,14 @@ namespace Hecton8.Gameplay
                 ? _moduleMarker.Data.moduleName
                 : "BASE";
             FieldOperationLogSystem.RecordOperation(source, title, summary, "WARN");
+        }
+
+        private void RecordCascadeFailure(string title, in FixedCharBuffer summary)
+        {
+            string source = _moduleMarker != null && _moduleMarker.Data != null
+                ? _moduleMarker.Data.moduleName
+                : "BASE";
+            FieldOperationLogSystem.RecordOperation(source, title, in summary, "WARN");
         }
 
         private void SyncSpatialRole()
@@ -2924,7 +2938,7 @@ namespace Hecton8.Gameplay
         }
 
         // ----------------------------------------------------------
-        //  PRIVATE — VISUALS
+        //  PRIVATE ï¿½ VISUALS
         // ----------------------------------------------------------
 
         private void ResyncInteriorOccupants(bool notifyPlayerEnter)
@@ -3799,13 +3813,66 @@ namespace Hecton8.Gameplay
             if (clip == null)
                 return;
 
+            QueueSpatialSfx(clip);
+        }
+
+        private void QueueSpatialSfx(AudioClip clip)
+        {
+            switch (_pendingSpatialSfxCount)
+            {
+                case 0:
+                    _pendingSpatialSfx0 = clip;
+                    break;
+                case 1:
+                    _pendingSpatialSfx1 = clip;
+                    break;
+                case 2:
+                    _pendingSpatialSfx2 = clip;
+                    break;
+                case 3:
+                    _pendingSpatialSfx3 = clip;
+                    break;
+                default:
+                    return;
+            }
+
+            _pendingSpatialSfxCount++;
+            TryRegisterLateFrameTick();
+        }
+
+        private void FlushPendingSpatialSfx()
+        {
+            if (_pendingSpatialSfxCount == 0)
+                return;
+
             Hecton8.Core.IAudioService sam = _cachedAudioService;
-            if (sam != null)
-                sam.PlayAtPoint(clip, ResolveInteriorHazardWorldPosition());
+            Vector3 position = ResolveInteriorHazardWorldPosition();
+            byte count = _pendingSpatialSfxCount;
+            AudioClip clip0 = _pendingSpatialSfx0;
+            AudioClip clip1 = _pendingSpatialSfx1;
+            AudioClip clip2 = _pendingSpatialSfx2;
+            AudioClip clip3 = _pendingSpatialSfx3;
+            _pendingSpatialSfx0 = null;
+            _pendingSpatialSfx1 = null;
+            _pendingSpatialSfx2 = null;
+            _pendingSpatialSfx3 = null;
+            _pendingSpatialSfxCount = 0;
+
+            if (sam == null)
+                return;
+
+            if (count > 0 && clip0 != null)
+                sam.PlayAtPoint(clip0, position);
+            if (count > 1 && clip1 != null)
+                sam.PlayAtPoint(clip1, position);
+            if (count > 2 && clip2 != null)
+                sam.PlayAtPoint(clip2, position);
+            if (count > 3 && clip3 != null)
+                sam.PlayAtPoint(clip3, position);
         }
 
         // ----------------------------------------------------------
-        //  PRIVATE — DATA HELPERS
+        //  PRIVATE ï¿½ DATA HELPERS
         // ----------------------------------------------------------
 
         private void CacheReferences()
@@ -4413,7 +4480,7 @@ namespace Hecton8.Gameplay
             if (!TryResolveAupFromRuntimeOrigin(center, out AbsoluteUniversePosition centerAup))
                 return;
 
-            uint frame = (uint)math.max(0, SystemDispatcher.CurrentFrameIndex);
+            uint frame = SystemDispatcher.CurrentFrameId;
             if (playerInside)
             {
                 PlayerBaseEnterSignal signal = new PlayerBaseEnterSignal
@@ -4424,7 +4491,7 @@ namespace Hecton8.Gameplay
                     Frame = frame,
                     Flags = PlayerBaseEnterSignal.DirectPlayerInsideFlag
                 };
-                SignalBus<PlayerBaseEnterSignal>.TryPush(in signal);
+                SignalBus<PlayerBaseEnterSignal>.TryPushTracked(in signal, ref s_x001BaseModuleSignalPushDropCount);
                 return;
             }
 
@@ -4436,7 +4503,7 @@ namespace Hecton8.Gameplay
                 Frame = frame,
                 Flags = PlayerBaseExitSignal.DirectPlayerOutsideFlag
             };
-            SignalBus<PlayerBaseExitSignal>.TryPush(in exitSignal);
+            SignalBus<PlayerBaseExitSignal>.TryPushTracked(in exitSignal, ref s_x001BaseModuleSignalPushDropCount);
         }
 
         private void ReadBuildablePower()
@@ -4813,7 +4880,7 @@ namespace Hecton8.Gameplay
         {
             _atmosphereRuntime = Hecton8.Core.GlobalRegistry.AtmosphereReadModel;
             _cachedPlayerInventoryService = Hecton8.Core.GlobalRegistry.PlayerInventory;
-            _cachedAudioService = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
+            _cachedAudioService = Hecton8.Core.GlobalRegistry.Audio;
             _cachedSpatialAudioSfxRoute = _cachedAudioService as ISpatialAudioSfxMixerRouteReadModel;
             _cachedObjectPool = Hecton8.Core.GlobalRegistry.ObjectPoolService;
             _cachedPlayerRuntime = Hecton8.Core.GlobalRegistry.Player;
@@ -5030,12 +5097,24 @@ namespace Hecton8.Gameplay
 
         internal void SetParasiteSporeVfxActive(bool active)
         {
+            _pendingParasiteSporeVfxActive = active;
+            _pendingParasiteSporeVfxDirty = true;
+            TryRegisterLateFrameTick();
+        }
+
+        private void FlushParasiteSporeVfxState()
+        {
             if (parasiteSporeVfx == null)
                 ResolveParasiteSporeVfxReference();
 
             if (parasiteSporeVfx == null)
                 return;
 
+            if (!_pendingParasiteSporeVfxDirty)
+                return;
+
+            _pendingParasiteSporeVfxDirty = false;
+            bool active = _pendingParasiteSporeVfxActive;
             if (active)
             {
                 parasiteSporeVfx.transform.position = ResolveInteriorHazardWorldPosition();
@@ -5642,7 +5721,11 @@ namespace Hecton8.Gameplay
         private void HandleLifeSupportSignals(ModuleLifeSupportSignals signals)
         {
             if (signals.AirQualityWarningRaised != 0)
-                RecordCascadeFailure("AIR SCRUBBERS SATURATED", _lifeSupportComponent.BuildAirReserveSummary());
+            {
+                _fieldOperationSummaryBuffer.Clear();
+                if (_lifeSupportComponent.TryBuildAirReserveSummary(ref _fieldOperationSummaryBuffer))
+                    RecordCascadeFailure("AIR SCRUBBERS SATURATED", in _fieldOperationSummaryBuffer);
+            }
 
             if (signals.AirReserveDepletedRaised != 0)
             {
@@ -5652,7 +5735,11 @@ namespace Hecton8.Gameplay
             }
 
             if (signals.Co2CriticalRaised != 0)
-                RecordCascadeFailure("CO2 SCRUBBER LOCKOUT", _lifeSupportComponent.BuildCo2CriticalSummary());
+            {
+                _fieldOperationSummaryBuffer.Clear();
+                if (_lifeSupportComponent.TryBuildCo2CriticalSummary(ref _fieldOperationSummaryBuffer))
+                    RecordCascadeFailure("CO2 SCRUBBER LOCKOUT", in _fieldOperationSummaryBuffer);
+            }
 
             if (signals.Co2HypoxiaRaised != 0)
                 TriggerCo2HypoxiaDistortion();

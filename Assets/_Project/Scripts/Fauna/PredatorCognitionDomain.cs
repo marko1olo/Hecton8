@@ -486,6 +486,7 @@ namespace Hecton8.AI
     /// </summary>
     internal static partial class PredatorCognitionDomain
     {
+        private static int s_x001PredatorCognitionDomainSignalPushDropCount;
         internal const int Capacity = 256;
         internal const int MemorySlotsPerCreature = 8;
         internal const int AcousticMemorySlotsPerCreature = 5;
@@ -1108,6 +1109,9 @@ namespace Hecton8.AI
             for (int signalIndex = 0; signalIndex < damageSignals.Length; signalIndex++)
             {
                 CombatDamageSignal signal = damageSignals[signalIndex];
+                if ((signal.Flags & CombatDamageSignal.VisualOnlyFlag) != 0)
+                    continue;
+
                 if (signal.TargetHash == 0u && signal.TargetId == 0)
                     continue;
 
@@ -4140,7 +4144,7 @@ namespace Hecton8.AI
 
             CognitionCore core = _cores[slot];
             AbsoluteUniversePosition signalPosition = ResolveBlindSignalAup(slot, in core);
-            SignalBus<FaunaStateChangedSignal>.TryPush(new FaunaStateChangedSignal
+            SignalBus<FaunaStateChangedSignal>.TryPushTracked(new FaunaStateChangedSignal
             {
                 PositionAup = signalPosition,
                 SpeciesHash = unchecked((uint)core.SpeciesId),
@@ -4149,7 +4153,7 @@ namespace Hecton8.AI
                 Slot = (ushort)math.clamp(slot, 0, ushort.MaxValue),
                 StateKind = FaunaStateChangedSignalKinds.Blind,
                 Flags = blind ? FaunaStateChangedSignalFlags.StateActive : (byte)0
-            });
+            }, ref s_x001PredatorCognitionDomainSignalPushDropCount);
         }
 
         private static AbsoluteUniversePosition ResolveBlindSignalAup(int slot, in CognitionCore core)

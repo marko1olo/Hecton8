@@ -159,8 +159,7 @@ namespace Hecton8.World
                 return;
 
             _duplicateDestroyPending = false;
-            if (GlobalRegistry.EnvironmentalStrain != this)
-                Destroy(gameObject);
+            Destroy(gameObject);
         }
 
         private void TryRegisterService()
@@ -231,7 +230,7 @@ namespace Hecton8.World
 
         private void CacheSaveServiceCold()
         {
-            _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+            _saveService = GlobalRegistry.Save;
         }
 
         private void TryRegisterHotSwapListener()

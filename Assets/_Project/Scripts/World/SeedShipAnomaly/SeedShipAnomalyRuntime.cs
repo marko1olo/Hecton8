@@ -18,6 +18,7 @@ namespace Hecton8.World.SeedShipAnomaly
     [DisallowMultipleComponent]
     public sealed unsafe class SeedShipAnomalyRuntime : MonoBehaviour, IUpdatable, ILateFrameTickable, ISlowTickable, IGlobalRegistryHotSwapListener
     {
+        private int _signalPushDropCount;
         private const SystemID OwnerSystem = SystemID.EndgameAnomaly;
 #if UNITY_EDITOR
         private const int CsvMaxBytes = 8192;
@@ -351,14 +352,14 @@ namespace Hecton8.World.SeedShipAnomaly
 
         public void InjectCoreHack(uint codeHash, float validity01)
         {
-            SignalBus<CoreHackedSignal>.TryPush(new CoreHackedSignal
+            SignalBus<CoreHackedSignal>.TryPushTracked(new CoreHackedSignal
             {
                 Frame = _simulationFrameCounter,
                 SourceHash = SeedShipAnomalyConstants.SourceHash,
                 CodeHash = codeHash,
                 Validity01 = math.saturate(validity01),
                 Flags = 1
-            });
+            }, ref _signalPushDropCount);
         }
 
         private void RebindColdServices()
@@ -856,11 +857,11 @@ namespace Hecton8.World.SeedShipAnomaly
             in AnomalyThermoSourceDTO thermo)
         {
             AbsoluteUniversePosition epicenter = AbsoluteUniversePosition.FromAbsolutePosition(field.EpicenterAUP);
-            SignalBus<MockHudSignal>.TryPush(in hud);
+            SignalBus<MockHudSignal>.TryPushTracked(in hud, ref _signalPushDropCount);
             if (rebase.Flags != 0u && rebase.ShiftFrameId == globals.LastRebaseFrame)
-                SignalBus<MockAupRebaseSignal>.TryPush(in rebase);
+                SignalBus<MockAupRebaseSignal>.TryPushTracked(in rebase, ref _signalPushDropCount);
 
-            SignalBus<AnomalyProximitySignal>.TryPush(new AnomalyProximitySignal
+            SignalBus<AnomalyProximitySignal>.TryPushTracked(new AnomalyProximitySignal
             {
                 SourceAup = epicenter,
                 Proximity01 = globals.Corruption01,
@@ -868,7 +869,7 @@ namespace Hecton8.World.SeedShipAnomaly
                 Frame = globals.Frame,
                 SourceHash = SeedShipAnomalyConstants.SourceHash,
                 Flags = (byte)(globals.Corruption01 > 0.001f ? 1 : 0)
-            });
+            }, ref _signalPushDropCount);
 
             bool publishRadiationThisSlowTick = _radiationExportRequested;
             if (publishRadiationThisSlowTick)
@@ -876,7 +877,7 @@ namespace Hecton8.World.SeedShipAnomaly
 
             if (globals.Corruption01 > 0.001f)
             {
-                SignalBus<SystemGlitchSignal>.TryPush(new SystemGlitchSignal
+                SignalBus<SystemGlitchSignal>.TryPushTracked(new SystemGlitchSignal
                 {
                     Frame = globals.Frame,
                     SourceId = SeedShipAnomalyConstants.SourceHash,
@@ -886,9 +887,9 @@ namespace Hecton8.World.SeedShipAnomaly
                     DurationSeconds = 0.25f,
                     Reason = 48,
                     Flags = 1
-                });
+                }, ref _signalPushDropCount);
 
-                SignalBus<TelemetryAnomalySignal>.TryPush(new TelemetryAnomalySignal
+                SignalBus<TelemetryAnomalySignal>.TryPushTracked(new TelemetryAnomalySignal
                 {
                     SystemHash = SeedShipAnomalyConstants.SourceHash,
                     AnomalyHash = field.GlitchHash,
@@ -896,13 +897,13 @@ namespace Hecton8.World.SeedShipAnomaly
                     Frame = globals.Frame,
                     Severity = (byte)math.clamp((int)math.round(globals.Corruption01 * 255f), 0, 255),
                     Flags = (byte)(globals.Flags & 0xFFu)
-                });
+                }, ref _signalPushDropCount);
 
                 if (publishRadiationThisSlowTick)
                 {
                     float radiation01 = math.saturate(globals.Radiation01);
                     float sourceIntensity01 = math.saturate(thermo.Radiation01);
-                    SignalBus<RadiationSourceSignal>.TryPush(new RadiationSourceSignal
+                    SignalBus<RadiationSourceSignal>.TryPushTracked(new RadiationSourceSignal
                     {
                         PositionAup = epicenter,
                         Intensity = sourceIntensity01,
@@ -910,12 +911,12 @@ namespace Hecton8.World.SeedShipAnomaly
                         SourceId = unchecked((int)SeedShipAnomalyConstants.SourceHash),
                         Operation = RadiationSourceSignal.OperationUpsert,
                         Flags = 1
-                    });
+                    }, ref _signalPushDropCount);
                     _radiationSourceActive = sourceIntensity01 > 0.0001f;
 
                     if (radiation01 > 0.0001f)
                     {
-                        SignalBus<RadiationDoseSignal>.TryPush(new RadiationDoseSignal
+                        SignalBus<RadiationDoseSignal>.TryPushTracked(new RadiationDoseSignal
                         {
                             PositionAup = epicenter,
                             Dose = radiation01 * RadiationDosePerSecondScale * RadiationExportSlowTickSeconds,
@@ -923,18 +924,18 @@ namespace Hecton8.World.SeedShipAnomaly
                             SourceId = SeedShipAnomalyConstants.SourceHash,
                             DoseKind = 48,
                             Flags = 1
-                        });
+                        }, ref _signalPushDropCount);
                     }
                 }
             }
             else if (publishRadiationThisSlowTick && _radiationSourceActive)
             {
-                SignalBus<RadiationSourceSignal>.TryPush(new RadiationSourceSignal
+                SignalBus<RadiationSourceSignal>.TryPushTracked(new RadiationSourceSignal
                 {
                     SourceId = unchecked((int)SeedShipAnomalyConstants.SourceHash),
                     Operation = RadiationSourceSignal.OperationRemove,
                     Flags = 1
-                });
+                }, ref _signalPushDropCount);
                 _radiationSourceActive = false;
             }
         }

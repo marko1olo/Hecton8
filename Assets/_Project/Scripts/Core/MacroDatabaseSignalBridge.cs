@@ -9,6 +9,7 @@ namespace Hecton8.Core
     /// </summary>
     public readonly struct MacroDatabaseSignalBridge : IMacroDatabaseSignalSink
     {
+        private static int s_x001MacroDatabaseSignalBridgeSignalPushDropCount;
         public void PublishSectorHydrated(in MacroDatabaseHydratedSignal signal)
         {
             Hecton8.Core.Contracts.Signals.MacroDatabaseSectorHydrationSignal payload = new Hecton8.Core.Contracts.Signals.MacroDatabaseSectorHydrationSignal
@@ -20,7 +21,7 @@ namespace Hecton8.Core
                 SourceTier = signal.SourceTier,
                 Flags = signal.Flags
             };
-            SignalBus<MacroDatabaseSectorHydrationSignal>.TryPush(in payload);
+            SignalBus<MacroDatabaseSectorHydrationSignal>.TryPushTracked(in payload, ref s_x001MacroDatabaseSignalBridgeSignalPushDropCount);
         }
     }
 }

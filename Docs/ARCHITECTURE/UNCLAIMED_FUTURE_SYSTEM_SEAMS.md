@@ -16,7 +16,9 @@ not exist yet.
 
 ## Evidence Scan
 
-Filesystem evidence checked on 2026-05-17. This is a historical R8 filesystem snapshot; rerun before using it for current ownership. This file is handoff context only, not current ownership proof.
+Filesystem evidence checked on 2026-05-17.
+
+This is a historical R8 snapshot; rerun before current ownership use. Handoff context only; not current ownership proof.
 
 - `Docs/Tasks/CURRENT_BATCH.md` contains `SHINOBU_01` through `SHINOBU_40`.
 

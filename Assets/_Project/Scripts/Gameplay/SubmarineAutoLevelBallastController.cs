@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Audio;
@@ -35,6 +35,7 @@ namespace Hecton8.Gameplay
         IGlobalRegistryHotSwapListener,
         ISubmarineState
     {
+        private static int s_x001SubmarineAutoLevelBallastControllerSignalPushDropCount;
         [StructLayout(LayoutKind.Explicit, Size = 80)]
         private struct PidJobOutput
         {
@@ -1952,7 +1953,7 @@ namespace Hecton8.Gameplay
                     stress.Intensity01 = math.saturate(offsetMagnitude * 1.8f);
                     stress.SourceId = unchecked((uint)_targetInstanceId);
                     stress.Channel = AcousticPingSignal.ChannelMetalStress;
-                    SignalBus<AcousticPingSignal>.TryPush(in stress);
+                    SignalBus<AcousticPingSignal>.TryPushTracked(in stress, ref s_x001SubmarineAutoLevelBallastControllerSignalPushDropCount);
                 }
             }
 
@@ -1969,7 +1970,7 @@ namespace Hecton8.Gameplay
                 haptic.SourceHash = FloodFeedbackSourceHash;
                 haptic.Frame = unchecked((uint)_tickCount);
                 haptic.Channel = HapticRequest.ChannelVehicleCritical;
-                SignalBus<HapticRequest>.TryPush(in haptic);
+                SignalBus<HapticRequest>.TryPushTracked(in haptic, ref s_x001SubmarineAutoLevelBallastControllerSignalPushDropCount);
             }
 
             if (_criticalListCooldown > 0f || !IsCriticalFloodPitchExceeded())
@@ -2029,7 +2030,7 @@ namespace Hecton8.Gameplay
             signal.Frame = unchecked((uint)_tickCount);
             signal.SourceHash = EngineVentBubbleSourceHash;
             signal.Flags = BubbleSpawnSignal.FlagEngineVent | BubbleSpawnSignal.FlagTailHeavy;
-            SignalBus<BubbleSpawnSignal>.TryPush(in signal);
+            SignalBus<BubbleSpawnSignal>.TryPushTracked(in signal, ref s_x001SubmarineAutoLevelBallastControllerSignalPushDropCount);
             _pendingTelemetryFlags |= PidTelemetryFlagBubbleSignal;
             EmitTailHeavyFluidImpulse(in signal.PositionAup, ventDirection, intensity01);
         }
@@ -2053,7 +2054,7 @@ namespace Hecton8.Gameplay
             impulse.Frame = unchecked((uint)_tickCount);
             impulse.SourceHash = EngineVentBubbleSourceHash;
             impulse.Flags = EngineVentFluidImpulseFlag | TailHeavyFluidImpulseFlag;
-            SignalBus<FluidImpulseSignal>.TryPush(in impulse);
+            SignalBus<FluidImpulseSignal>.TryPushTracked(in impulse, ref s_x001SubmarineAutoLevelBallastControllerSignalPushDropCount);
             _pendingTelemetryFlags |= PidTelemetryFlagFluidImpulseSignal;
         }
 

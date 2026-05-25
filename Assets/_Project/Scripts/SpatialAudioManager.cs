@@ -1,4 +1,4 @@
-﻿// ============================================================================
+// ============================================================================
 // HECTON-8 â€” SpatialAudioManager.cs
 // Ð’Ñ‹ÑÐ¾ÐºÐ¾Ð¿Ñ€Ð¾Ð¸Ð·Ð²Ð¾Ð´Ð¸Ñ‚ÐµÐ»ÑŒÐ½Ð°Ñ ÑÐ¸ÑÑ‚ÐµÐ¼Ð° Ð¿Ñ€Ð¾ÑÑ‚Ñ€Ð°Ð½ÑÑ‚Ð²ÐµÐ½Ð½Ð¾Ð³Ð¾ Ð·Ð²ÑƒÐºÐ° Ñ Ð¿ÑƒÐ»Ð¸Ð½Ð³Ð¾Ð¼.
 //
@@ -378,6 +378,7 @@ namespace Hecton8.Audio
     /// </summary>
     public sealed class SpatialAudioManager : MonoBehaviour, IAudioService, IAudioResidencyService, ISpatialAudioImpactEmitterReadModel, ISpatialAudioWorldEmitterReadModel, ISpatialAudioListenerCaveReadModel, ISpatialAudioBinauralEmitterReadModel, IMeteorShowerAudioSink, ISpatialAudioLowPassPlayback, ISpatialAudioEnvironmentModulationSink, ISpatialAudioSfxMixerRouteReadModel, ISpatialAudioNarrativeRadioSink, ISpatialAudioInventoryRunawaySink, ISpatialAudioHarvestPlaybackSink, ISpatialAudioWeatherPlaybackSink, ISceneTransitionAudioBridge, IAudioVirtualizationService, IUpdatable, IFastTickable, ISlowTickable, ILateFrameTickable, IOriginShiftListener, IPhysicsImpactEventListener, IRepairDroneTorchAcousticListener, IFatalPressureImplosionEventListener, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener, IServiceHeartbeat, IServiceShutdown
     {
+        private static int s_x001SpatialAudioManagerSignalPushDropCount;
         private const float SoundSpeedWaterMetersPerSecond = HectonPhysicsContract.SoundSpeedWaterMetersPerSecondConst;
         private const float MassiveDistanceFixedAudioDelayMeters = 740f;
         private const float MassiveDistanceFixedAudioDelaySeconds = 0.5f;
@@ -1088,7 +1089,7 @@ namespace Hecton8.Audio
         private IAcousticZoneReadModel _cachedAcousticZone;
         private ISurfaceWeatherReadModel _cachedSurfaceWeatherDirector;
         private IPlayerCriticalAudioSignalSink _cachedPlayerCriticalAudio;
-        private ConstructionManager _cachedConstructionManager;
+        private IHabitatGraphService _cachedHabitatGraph;
         private float _cachedSpatialAudioQualityWeight01 = 1f;
         private int _spatialAudioPolicyRefreshFrame = SpatialAudioPolicyUninitializedFrame;
         private int _playerRuntimeContextResolveFrame = -4096;
@@ -1198,7 +1199,7 @@ namespace Hecton8.Audio
             _listenerPlayerMovementTrauma = null;
             _foveatedSimulationDirector = null;
             _cachedPlayerCriticalAudio = null;
-            _cachedConstructionManager = null;
+            _cachedHabitatGraph = null;
             _cachedPlayerRuntimeContext = null;
             _cachedWeatherService = null;
             _cachedAcousticZone = null;
@@ -3331,7 +3332,7 @@ namespace Hecton8.Audio
                 Channel = AcousticPingSignal.ChannelMetalStress,
                 Flags = 0
             };
-            SignalBus<AcousticPingSignal>.TryPush(in ping);
+            SignalBus<AcousticPingSignal>.TryPushTracked(in ping, ref s_x001SpatialAudioManagerSignalPushDropCount);
         }
 
         private void UpdateVirtualPhysicalVoice(int channel, int sourceIndex, in VirtualVoiceSelection selection)
@@ -3872,7 +3873,7 @@ namespace Hecton8.Audio
             _cachedAcousticZone = GlobalRegistry.AcousticZoneReadModel;
             _cachedSurfaceWeatherDirector = GlobalRegistry.SurfaceWeatherReadModel;
             _cachedPlayerCriticalAudio = GlobalRegistry.PlayerCriticalAudioSignals;
-            _cachedConstructionManager = GlobalRegistry.ConstructionRuntime;
+            _cachedHabitatGraph = GlobalRegistry.HabitatGraph;
             _foveatedSimulationDirector = GlobalRegistry.FoveatedSimulationDirector;
             _dataVault = GlobalRegistry.DataVault;
             _listenerPlayerMovementTrauma = GlobalRegistry.PlayerMovementContracts;
@@ -3913,7 +3914,7 @@ namespace Hecton8.Audio
                     _cachedPlayerCriticalAudio = currentService as IPlayerCriticalAudioSignalSink;
                     break;
                 case GlobalRegistryServiceSlot.Logistics:
-                    _cachedConstructionManager = currentService as ConstructionManager;
+                    _cachedHabitatGraph = currentService as IHabitatGraphService;
                     break;
                 case GlobalRegistryServiceSlot.FoveatedSimulationDirector:
                     _foveatedSimulationDirector = currentService as IFoveatedSimulationDirector;
@@ -6806,9 +6807,9 @@ namespace Hecton8.Audio
         {
             nodeCount = 0;
             edgeCount = 0;
-            ConstructionManager constructionManager = _cachedConstructionManager;
-            if (constructionManager == null ||
-                !constructionManager.TryGetHabitatAcousticGraph(out HabitatGraphManager graph) ||
+            IHabitatGraphService habitatGraph = _cachedHabitatGraph;
+            if (habitatGraph == null ||
+                !habitatGraph.TryGetHabitatAcousticGraph(out HabitatGraphManager graph) ||
                 _acousticHabitatNodeMap == null ||
                 _acousticHabitatQueue == null ||
                 graph.NodeCount < 2)

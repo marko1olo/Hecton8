@@ -453,7 +453,8 @@ Crash black box:
 
 - Current proof class is static source plus documentation.
 - JSON reports and `.h8bin` files are generated only after the Unity editor menu actions run.
-- Compilation is still pending because the local CPU gate forbids launching dotnet/csc above 50% load, and R48 documents known external generated-project source blockers outside SHINOBU_240 (`HectonScannerProjectionState`, `IBuildPlacementRule`, `PlacementGhost`, `HabitatDamageBakePipeline`).
+- Compilation is still pending because the local CPU gate forbids dotnet/csc above 50% load.
+- R48 documents external generated-project blockers: `HectonScannerProjectionState`, `IBuildPlacementRule`, `PlacementGhost`, `HabitatDamageBakePipeline`.
 - Assembly co-tenancy caveat: `Hecton8.World.OfflineGeology.Editor.asmdef` also contains `SHINOBU_208` offline geology mesh-baker files (`GeologyForge*` and `RuntimeMeshGenerationScanner`).
 - SHINOBU_240 does not edit or claim those files.
 - Topography proof applies to `TopographyForge*`; Unity import of the shared asmdef can still be affected by co-tenant mesh-baker debt until that owner splits or hardens the assembly.

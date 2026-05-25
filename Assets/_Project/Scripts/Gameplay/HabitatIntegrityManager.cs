@@ -121,6 +121,7 @@ namespace Hecton8.Gameplay
     [DefaultExecutionOrder(-5600)] // Core-lane registration resolves rupture state before environment-lane power balance.
     public sealed class HabitatIntegrityManager : MonoBehaviour, ISlowTickable, Hecton8.Core.IDamageReceiver, IDamageSignalReceiver, IDamageSignalEmitter, IToolEffectListener, IGlobalRegistryHotSwapListener
     {
+        private static int s_x001HabitatIntegrityManagerSignalPushDropCount;
         private const float HabitatStepInterval = 0.1f;
         private const float DefaultSlowTickInterval = 0.1f;
         private const float BasePressureAtm = 1f;
@@ -613,7 +614,7 @@ namespace Hecton8.Gameplay
                 FlowRate01 = flow01,
                 Flags = 1
             };
-            SignalBus<FluidIncursionSignal>.TryPush(in signal);
+            SignalBus<FluidIncursionSignal>.TryPushTracked(in signal, ref s_x001HabitatIntegrityManagerSignalPushDropCount);
         }
 
         private void EmitBreachVfx(float3 localPoint, float depth, float pressureDelta)

@@ -577,6 +577,9 @@ namespace Hecton8.Physics
     /// </summary>
     public static class PhysicsEventBus
     {
+        private static int s_x001DirectSignalPushDropCount_PhysicsApplySystem;
+
+        private static int s_x001PhysicsApplySystemSignalPushDropCount;
         private const int ListenerCapacity = 32;
         private const int PendingEventCapacity = 128;
         private const ushort EventCircuitBreakerDepthLimit = 5;
@@ -954,7 +957,7 @@ namespace Hecton8.Physics
             EnsureInitialized();
             PhysicsEventPayload queuedPayload = payload;
             queuedPayload.Reserved = (ushort)math.max(1, queuedDepth);
-            if (SignalBus<PhysicsEventPayload>.TryPush(in queuedPayload))
+            if (SignalBus<PhysicsEventPayload>.TryPushTracked(in queuedPayload, ref s_x001DirectSignalPushDropCount_PhysicsApplySystem))
                 return true;
 
             IncrementDroppedEventCount();
@@ -997,7 +1000,7 @@ namespace Hecton8.Physics
             for (int i = startIndex; i < snapshot.Length; i++)
             {
                 PhysicsEventPayload payload = snapshot[i];
-                SignalBus<PhysicsEventPayload>.TryPush(in payload);
+                SignalBus<PhysicsEventPayload>.TryPushTracked(in payload, ref s_x001PhysicsApplySystemSignalPushDropCount);
             }
         }
 
@@ -1409,6 +1412,7 @@ namespace Hecton8.Physics
     [DefaultExecutionOrder(-9000)]
     public sealed partial class PhysicsApplySystem : MonoBehaviour, IPhysicsService, ISceneTransitionPhysicsBridge, IFixedTickable, IPostFixedTickable, ILateFrameTickable, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener
     {
+        private static int s_x001PhysicsApplySystemSignalPushDropCount;
         private const int MaxTrackedBodies = 64;
         private const int MaxQueuedPackets = 64;
         private const int MaxForcePacketsAppliedPerFixedTick = 64;
@@ -3299,7 +3303,7 @@ namespace Hecton8.Physics
                 IntegrityDelta = integrityDelta,
                 TraumaLevel = (byte)ResolveSubmarineTraumaLevel(severity01)
             };
-            SignalBus<DeferredSubmarineImpactSignal>.TryPush(in signal);
+            SignalBus<DeferredSubmarineImpactSignal>.TryPushTracked(in signal, ref s_x001PhysicsApplySystemSignalPushDropCount);
         }
 
         private void FlushDeferredSubmarineImpactSignals()
@@ -3357,7 +3361,7 @@ namespace Hecton8.Physics
             for (int i = startIndex; i < snapshot.Length; i++)
             {
                 DeferredSubmarineImpactSignal signal = snapshot[i];
-                SignalBus<DeferredSubmarineImpactSignal>.TryPush(in signal);
+                SignalBus<DeferredSubmarineImpactSignal>.TryPushTracked(in signal, ref s_x001PhysicsApplySystemSignalPushDropCount);
             }
         }
 

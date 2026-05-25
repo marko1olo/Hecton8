@@ -5,7 +5,6 @@ using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
 using Hecton8.Gameplay;
-using Hecton8.Physics;
 using Hecton8.Power;
 using Hecton8.Vehicles.Automation;
 using Hecton8.World;
@@ -25,6 +24,7 @@ namespace Hecton8.Construction
     [AddComponentMenu("Hecton8/Construction/Vehicle Docking Module")]
     public sealed class VehicleDockingModule : MonoBehaviour, ITickable, IFixedTickable, IUpdatable, ILateFrameTickable, IPowerComponent, IPoolable, IOriginShiftListener, IGlobalRegistryHotSwapListener
     {
+        private static int s_x001VehicleDockingModuleSignalPushDropCount;
         private const float MaxDockingFixedDeltaSeconds = 0.05f;
         private const float DockingAcquireDistanceSqMeters = 2f;
         private const float DockingAcquireAlignmentDot = 0.8f;
@@ -161,8 +161,10 @@ namespace Hecton8.Construction
         private Transform _dockedTransform;
         private Rigidbody _dockedBody;
         private VehicleMotor _dockedVehicleMotor;
-        private SubmarineFluidDynamics _dockedFluidDynamics;
+        private IDockedExternalMassSink _dockedExternalMassSink;
         private IAbyssalFlowGpuReadModel _fluidRuntime;
+        private IPhysicsService _physicsService;
+        private IPhysicsStateEventService _physicsStateEvents;
         private bool _cachedBodyWasKinematic;
         private bool _cachedBodyUseGravity;
         private RigidbodyConstraints _cachedBodyConstraints;
@@ -260,6 +262,7 @@ namespace Hecton8.Construction
             TryRegisterHotSwapListener();
             CacheDockingAutopilotService();
             CacheFluidRuntime();
+            CachePhysicsRoutes();
             HectonFloatingOrigin.RegisterListener(this);
             TryRegister();
         }
@@ -299,6 +302,7 @@ namespace Hecton8.Construction
             TryRegisterHotSwapListener();
             CacheDockingAutopilotService();
             CacheFluidRuntime();
+            CachePhysicsRoutes();
             _debugDockOccupied = false;
             _debugDockedTransportName = string.Empty;
             TryRegister();
@@ -388,6 +392,18 @@ namespace Hecton8.Construction
             if (serviceSlot == GlobalRegistryServiceSlot.FluidRuntime)
             {
                 _fluidRuntime = currentService as IAbyssalFlowGpuReadModel;
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.Physics)
+            {
+                _physicsService = currentService as IPhysicsService;
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.PhysicsStateManager)
+            {
+                _physicsStateEvents = currentService as IPhysicsStateEventService;
                 return;
             }
 
@@ -549,7 +565,7 @@ namespace Hecton8.Construction
 
             ResolveDockedBody(transportBehaviour);
             ResolveDockedVehicleMotor(transportBehaviour);
-            ResolveDockedFluidDynamics(transportBehaviour);
+            ResolveDockedExternalMassSink(transportBehaviour);
             BeginDockingControlLock(transportBehaviour);
             _dockingElapsedSeconds = 0f;
             ResetDockingRuntimeCaches();
@@ -573,8 +589,8 @@ namespace Hecton8.Construction
                     ? ResolveDockForward() * ResolveSafeUndockEjectSpeed()
                     : Vector3.zero;
 
-                PhysicsForceRouter.QueueLinearVelocitySet(_dockedBody, Vector3.zero, wake: false);
-                PhysicsForceRouter.QueueAngularVelocitySet(_dockedBody, Vector3.zero, wake: false);
+                QueueLinearVelocitySet(_dockedBody, Vector3.zero, wake: false);
+                QueueAngularVelocitySet(_dockedBody, Vector3.zero, wake: false);
                 _dockedBody.isKinematic = _cachedBodyWasKinematic;
                 _dockedBody.useGravity = _cachedBodyUseGravity;
                 _dockedBody.constraints = _cachedBodyConstraints;
@@ -584,13 +600,13 @@ namespace Hecton8.Construction
                     ApplyUndockEjectVelocity(_dockedBody, ejectVelocity);
             }
 
-            GlobalPhysicsStateManager.UnregisterDockConnection(this);
+            _physicsStateEvents?.UnregisterDockConnectionOwner(this);
             EndDockingControlLock();
             _dockedBody = null;
             _dockedVehicleMotor = null;
-            if (_dockedFluidDynamics != null)
-                _dockedFluidDynamics.SetDockedExternalMassKilograms(0f);
-            _dockedFluidDynamics = null;
+            if (_dockedExternalMassSink != null)
+                _dockedExternalMassSink.SetDockedExternalMassKilograms(0f);
+            _dockedExternalMassSink = null;
             _attachedDroneMassKg = 0f;
             _dockedTransport = null;
             _dockedBehaviour = null;
@@ -624,8 +640,8 @@ namespace Hecton8.Construction
             _cachedBodyInterpolation = _dockedBody.interpolation;
             _dockingStartPosition = _dockedBody.position;
             _dockingStartRotation = _dockedBody.rotation;
-            PhysicsForceRouter.QueueLinearVelocitySet(_dockedBody, Vector3.zero, wake: false);
-            PhysicsForceRouter.QueueAngularVelocitySet(_dockedBody, Vector3.zero, wake: false);
+            QueueLinearVelocitySet(_dockedBody, Vector3.zero, wake: false);
+            QueueAngularVelocitySet(_dockedBody, Vector3.zero, wake: false);
             _dockedBody.isKinematic = true;
             _dockedBody.useGravity = false;
             _dockedBody.interpolation = RigidbodyInterpolation.Interpolate;
@@ -641,14 +657,13 @@ namespace Hecton8.Construction
                 _dockedVehicleMotor = transportBehaviour.GetComponentInParent<VehicleMotor>();
         }
 
-        private void ResolveDockedFluidDynamics(MonoBehaviour transportBehaviour)
+        private void ResolveDockedExternalMassSink(MonoBehaviour transportBehaviour)
         {
-            _dockedFluidDynamics = null;
+            _dockedExternalMassSink = null;
             if (transportBehaviour == null)
                 return;
 
-            if (!transportBehaviour.TryGetComponent(out _dockedFluidDynamics))
-                _dockedFluidDynamics = transportBehaviour.GetComponentInParent<SubmarineFluidDynamics>();
+            _dockedExternalMassSink = ComponentReferenceUtility.ResolveParentService<IDockedExternalMassSink>(transportBehaviour);
 
             PushDockedExternalMass();
         }
@@ -825,8 +840,8 @@ namespace Hecton8.Construction
 
             if (_dockedBody != null)
             {
-                PhysicsForceRouter.QueueLinearVelocitySet(_dockedBody, commandVelocity);
-                PhysicsForceRouter.QueueAngularVelocitySet(_dockedBody, commandAngularVelocity);
+                QueueLinearVelocitySet(_dockedBody, commandVelocity);
+                QueueAngularVelocitySet(_dockedBody, commandAngularVelocity);
                 _dockedBody.MovePosition(evaluatedPosition);
                 _dockedBody.MoveRotation(evaluatedRotation);
             }
@@ -855,11 +870,11 @@ namespace Hecton8.Construction
 
             if (_dockedBody != null)
             {
-                PhysicsForceRouter.QueueLinearVelocitySet(_dockedBody, Vector3.zero, wake: false);
-                PhysicsForceRouter.QueueAngularVelocitySet(_dockedBody, Vector3.zero, wake: false);
+                QueueLinearVelocitySet(_dockedBody, Vector3.zero, wake: false);
+                QueueAngularVelocitySet(_dockedBody, Vector3.zero, wake: false);
                 _dockedBody.isKinematic = true;
                 _dockedBody.useGravity = false;
-                GlobalPhysicsStateManager.RegisterDockConnection(this, _dockedBody);
+                _physicsStateEvents?.RegisterDockConnectionOwner(this, _dockedBody);
             }
 
             Transform anchor = ResolveDockAnchor();
@@ -998,7 +1013,7 @@ namespace Hecton8.Construction
                 ? anchor.position
                 : _dockedBody.position;
             Vector3 normal = -ResolveDockForward();
-            GlobalPhysicsStateManager.QueueKinematicImpact(_dockedBody, point, normal, impactSpeed);
+            _physicsStateEvents?.QueueKinematicImpactEvent(_dockedBody, null, point, normal, impactSpeed);
         }
 
         private void ApplyUndockEjectVelocity(Rigidbody body, Vector3 ejectVelocity)
@@ -1006,8 +1021,8 @@ namespace Hecton8.Construction
             if (body == null || body.isKinematic || !IsFiniteVector(ejectVelocity))
                 return;
 
-            PhysicsForceRouter.QueueLinearVelocitySet(body, ejectVelocity);
-            PhysicsForceRouter.QueueAngularVelocitySet(body, Vector3.zero);
+            QueueLinearVelocitySet(body, ejectVelocity);
+            QueueAngularVelocitySet(body, Vector3.zero);
         }
 
         private void AbortDockingForInvalidPose()
@@ -1033,10 +1048,10 @@ namespace Hecton8.Construction
 
         private void PushDockedExternalMass()
         {
-            if (_dockedFluidDynamics == null)
+            if (_dockedExternalMassSink == null)
                 return;
 
-            _dockedFluidDynamics.SetDockedExternalMassKilograms(_attachedDroneMassKg);
+            _dockedExternalMassSink.SetDockedExternalMassKilograms(_attachedDroneMassKg);
         }
 
         private void EnsureDockTelemetry()
@@ -1398,6 +1413,24 @@ namespace Hecton8.Construction
             _fluidRuntime = GlobalRegistry.AbyssalFlowGpu;
         }
 
+        private void CachePhysicsRoutes()
+        {
+            _physicsService = GlobalRegistry.Physics;
+            _physicsStateEvents = GlobalRegistry.PhysicsStateEvents;
+        }
+
+        private bool QueueLinearVelocitySet(Rigidbody body, Vector3 linearVelocity, bool wake = true)
+        {
+            IPhysicsService physicsService = _physicsService;
+            return physicsService != null && physicsService.QueueLinearVelocitySet(body, linearVelocity, wake);
+        }
+
+        private bool QueueAngularVelocitySet(Rigidbody body, Vector3 angularVelocity, bool wake = true)
+        {
+            IPhysicsService physicsService = _physicsService;
+            return physicsService != null && physicsService.QueueAngularVelocitySet(body, angularVelocity, wake);
+        }
+
         private void RebindDockingAutopilotService(
             IDockingAutopilotService previousService,
             IDockingAutopilotService currentService)
@@ -1534,7 +1567,7 @@ namespace Hecton8.Construction
                 Velocity = velocity,
                 SourceFlags = DockingWakeSourceVehicleFlag
             };
-            SignalBus<WakeGeneratedSignal>.TryPush(in wakeSignal);
+            SignalBus<WakeGeneratedSignal>.TryPushTracked(in wakeSignal, ref s_x001VehicleDockingModuleSignalPushDropCount);
 
             float speed = FastMagnitudeFromSq(speedSq);
             FluidImpulseSignal impulseSignal = new FluidImpulseSignal
@@ -1543,11 +1576,11 @@ namespace Hecton8.Construction
                 Vector = velocity,
                 Radius = math.clamp(1.5f + (speed * 0.15f), 1.5f, 8f),
                 Lifetime = speedSq > 4f ? 1.25f : 0.75f,
-                Frame = unchecked((uint)math.max(0, Time.frameCount)),
+                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 SourceHash = DockingWakeSourceHash,
                 Flags = DockingWakeSourceVehicleFlag
             };
-            SignalBus<FluidImpulseSignal>.TryPush(in impulseSignal);
+            SignalBus<FluidImpulseSignal>.TryPushTracked(in impulseSignal, ref s_x001VehicleDockingModuleSignalPushDropCount);
         }
 
         private void TryPublishDockingCompleteSignal(float progress01, Vector3 dockPosition, Vector3 dockForward)
@@ -1576,7 +1609,7 @@ namespace Hecton8.Construction
                 Reserved2 = 0,
                 ReservedTail = 0u
             };
-            SignalBus<DockingCompleteSignal>.TryPush(in signal);
+            SignalBus<DockingCompleteSignal>.TryPushTracked(in signal, ref s_x001VehicleDockingModuleSignalPushDropCount);
             _dockingCompletionSignalPublished = true;
         }
 
@@ -1609,7 +1642,7 @@ namespace Hecton8.Construction
                 Reserved1 = 0,
                 ReservedTail = 0u
             };
-            SignalBus<DockingFailedSignal>.TryPush(in signal);
+            SignalBus<DockingFailedSignal>.TryPushTracked(in signal, ref s_x001VehicleDockingModuleSignalPushDropCount);
         }
 
         private void ReleaseActiveDockingSpline(DockingSplineRuntimeState finalState)

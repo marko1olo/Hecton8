@@ -73,7 +73,10 @@ namespace Hecton8.Visor
             private FeatureSettings _settings;
             private Material _material;
             private GraphicsBuffer _depthFogGlobalsBuffer;
+            private GraphicsBuffer _depthFogGlobalsBufferA;
+            private GraphicsBuffer _depthFogGlobalsBufferB;
             private DepthFogGlobalsDTO _lastDepthFogGlobals;
+            private int _depthFogGlobalsWriteIndex;
             private bool _hasDepthFogGlobals;
 
             public NoirDepthFogPass()
@@ -94,8 +97,12 @@ namespace Hecton8.Visor
 
             public void Dispose()
             {
-                _depthFogGlobalsBuffer?.Release();
+                _depthFogGlobalsBufferA?.Release();
+                _depthFogGlobalsBufferB?.Release();
+                _depthFogGlobalsBufferA = null;
+                _depthFogGlobalsBufferB = null;
                 _depthFogGlobalsBuffer = null;
+                _depthFogGlobalsWriteIndex = 0;
                 _lastDepthFogGlobals = default;
                 _hasDepthFogGlobals = false;
             }
@@ -148,17 +155,38 @@ namespace Hecton8.Visor
                 if (!SystemInfo.supportsSetConstantBuffer)
                     return false;
 
-                if (_depthFogGlobalsBuffer == null || !_depthFogGlobalsBuffer.IsValid())
+                if (_depthFogGlobalsBufferA != null && _depthFogGlobalsBufferA.IsValid() &&
+                    _depthFogGlobalsBufferB != null && _depthFogGlobalsBufferB.IsValid())
                 {
-                    _depthFogGlobalsBuffer = new GraphicsBuffer(
-                        GraphicsBuffer.Target.Constant,
-                        GraphicsBuffer.UsageFlags.LockBufferForWrite,
-                        1,
-                        DepthFogGlobalsStrideBytes); // COLD ALLOC: GraphicsBuffer[64B] - noir depth fog global CBuffer - owner: NoirDepthFogPass
-                    _hasDepthFogGlobals = false;
+                    if (_depthFogGlobalsBuffer == null)
+                        _depthFogGlobalsBuffer = _depthFogGlobalsBufferA;
+                    return true;
                 }
 
-                return _depthFogGlobalsBuffer != null && _depthFogGlobalsBuffer.IsValid();
+                _depthFogGlobalsBufferA?.Release();
+                _depthFogGlobalsBufferB?.Release();
+                _depthFogGlobalsBufferA = new GraphicsBuffer(
+                    GraphicsBuffer.Target.Constant,
+                    GraphicsBuffer.UsageFlags.LockBufferForWrite,
+                    1,
+                    DepthFogGlobalsStrideBytes); // COLD ALLOC: GraphicsBuffer[64B] - noir depth fog global CBuffer A - owner: NoirDepthFogPass
+                _depthFogGlobalsBufferB = new GraphicsBuffer(
+                    GraphicsBuffer.Target.Constant,
+                    GraphicsBuffer.UsageFlags.LockBufferForWrite,
+                    1,
+                    DepthFogGlobalsStrideBytes); // COLD ALLOC: GraphicsBuffer[64B] - noir depth fog global CBuffer B - owner: NoirDepthFogPass
+                _depthFogGlobalsBuffer = _depthFogGlobalsBufferA;
+                _depthFogGlobalsWriteIndex = 1;
+                _hasDepthFogGlobals = false;
+
+                if (_depthFogGlobalsBufferA == null || !_depthFogGlobalsBufferA.IsValid() ||
+                    _depthFogGlobalsBufferB == null || !_depthFogGlobalsBufferB.IsValid())
+                {
+                    Dispose();
+                    return false;
+                }
+
+                return true;
             }
 
             private bool UpdateDepthFogGlobals(FeatureSettings settings)
@@ -173,16 +201,22 @@ namespace Hecton8.Visor
                     return true;
                 }
 
-                NativeArray<DepthFogGlobalsDTO> mapped = _depthFogGlobalsBuffer.LockBufferForWrite<DepthFogGlobalsDTO>(0, 1);
+                GraphicsBuffer writeBuffer = (_depthFogGlobalsWriteIndex & 1) == 0 ? _depthFogGlobalsBufferA : _depthFogGlobalsBufferB;
+                if (writeBuffer == null || !writeBuffer.IsValid())
+                    return false;
+
+                NativeArray<DepthFogGlobalsDTO> mapped = writeBuffer.LockBufferForWrite<DepthFogGlobalsDTO>(0, 1);
                 try
                 {
                     mapped[0] = globals;
                 }
                 finally
                 {
-                    _depthFogGlobalsBuffer.UnlockBufferAfterWrite<DepthFogGlobalsDTO>(1);
+                    writeBuffer.UnlockBufferAfterWrite<DepthFogGlobalsDTO>(1);
                 }
 
+                _depthFogGlobalsBuffer = writeBuffer;
+                _depthFogGlobalsWriteIndex ^= 1;
                 Shader.SetGlobalConstantBuffer(ShaderConstants.DepthFogGlobalsBufferId, _depthFogGlobalsBuffer, 0, DepthFogGlobalsStrideBytes);
                 _lastDepthFogGlobals = globals;
                 _hasDepthFogGlobals = true;

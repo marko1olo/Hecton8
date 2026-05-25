@@ -16,6 +16,7 @@ namespace Hecton8.Visor
     [DefaultExecutionOrder(-6920)]
     public sealed class InternalFloodWaterlineRuntime : MonoBehaviour, IFastTickable, ILateFrameTickable, IOriginShiftListener, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener
     {
+        private static int s_x001InternalFloodWaterlineRuntimeSignalPushDropCount;
         private const int TelemetryCapacity = 300;
         private const int TelemetryEntrySizeBytes = 40;
         private const SystemID VaultOwnerSystemId = SystemID.UI;
@@ -425,7 +426,7 @@ namespace Hecton8.Visor
                 Flags = 1,
                 Quantity = 6
             };
-            SignalBus<DebrisSpawnSignal>.TryPush(in signal);
+            SignalBus<DebrisSpawnSignal>.TryPushTracked(in signal, ref s_x001InternalFloodWaterlineRuntimeSignalPushDropCount);
         }
 
         private void ConsumeExternalDropletSignals()
@@ -508,6 +509,8 @@ namespace Hecton8.Visor
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.Dispatcher:
+                    _registeredFastTick = false;
+                    _registeredLateFrameTick = false;
                     if (currentService != null && isActiveAndEnabled && _isInitialized)
                         RegisterRuntime();
                     return;
@@ -594,7 +597,7 @@ namespace Hecton8.Visor
                 Channel = 0,
                 Flags = 0
             };
-            SignalBus<AcousticPingSignal>.TryPush(in ping);
+            SignalBus<AcousticPingSignal>.TryPushTracked(in ping, ref s_x001InternalFloodWaterlineRuntimeSignalPushDropCount);
         }
 
         private void QueueShaderGlobals(float fill01)
@@ -722,7 +725,7 @@ namespace Hecton8.Visor
             byte qualityByte = EncodeQualityWeightByte(_cachedGlobalQualityWeight01);
             WaterlineTelemetryEntry entry = new WaterlineTelemetryEntry
             {
-                Frame = (uint)math.max(0, Time.frameCount),
+                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 Sequence = snapshot.Sequence,
                 RoomId = snapshot.RoomId,
                 Fill01 = snapshot.Fill01,

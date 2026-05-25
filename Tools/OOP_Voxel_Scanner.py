@@ -29,6 +29,7 @@ FILES = {
     "rock_shader": ROOT / "Assets/_Project/Art/Shaders/Hecton_AbyssalVoxelRock.shader",
     "terrain_shader": ROOT / "Assets/_Project/Art/Shaders/TerrainMaster.shader",
     "ghost_shader": ROOT / "Assets/_Project/Art/Shaders/Hecton_VoxelBakeGhost.shader",
+    "cut_compute": ROOT / "Assets/_Project/Art/Shaders/Hecton_SargassumCutMask.compute",
     "damage_compute": ROOT / "Assets/_Project/Art/Shaders/Hecton_TerrainDamageVolume.compute",
     "world_residency": ROOT / "Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs",
 }
@@ -448,6 +449,11 @@ def surface_nets_gpu_upload_dispatcher_proof():
     release_start = gpu_text.find("public bool TryRelease()")
     release_end = gpu_text.find("public void Dispose()", release_start)
     release_block = gpu_text[release_start:release_end] if release_start >= 0 and release_end > release_start else ""
+    release_helper_start = gpu_text.find("private static void ReleaseGraphicsBuffer")
+    release_helper_end = gpu_text.find("private void UnlockPendingUploadBuffers()", release_helper_start)
+    release_helper_block = gpu_text[release_helper_start:release_helper_end] if release_helper_start >= 0 and release_helper_end > release_helper_start else ""
+    unlock_helper_start = gpu_text.find("private void UnlockPendingUploadBuffers()")
+    unlock_helper_block = gpu_text[unlock_helper_start:] if unlock_helper_start >= 0 else ""
     is_completed_index = finalize_block.find("!uploadDependency.IsCompleted")
     pending_is_completed_index = finalize_block.find("!_pendingUploadDependency.IsCompleted")
     complete_index = finalize_block.find("_pendingUploadDependency.Complete();")
@@ -481,6 +487,53 @@ def surface_nets_gpu_upload_dispatcher_proof():
             and "return false;" in begin_block
         ),
         "lock_buffer_route_present": "LockBufferForWrite<VoxelVertexDTO>" in gpu_text and "LockBufferForWrite<uint>" in gpu_text,
+        "graphics_buffer_validity_guard_present": (
+            "private static bool IsGraphicsBufferReady(GraphicsBuffer buffer)" in gpu_text
+            and "buffer.IsValid()" in gpu_text
+            and "IsGraphicsBufferReady(_vertexFront)" in gpu_text
+            and "IsGraphicsBufferReady(_vertexBack)" in gpu_text
+            and "IsGraphicsBufferReady(_indexFront)" in gpu_text
+            and "IsGraphicsBufferReady(_indexBack)" in gpu_text
+            and "IsGraphicsBufferReady(_indirectArgs)" in gpu_text
+        ),
+        "invalid_upload_resource_releases_for_cold_recreate": (
+            "if (!IsInitialized())" in begin_block
+            and "TryRelease();" in begin_block
+            and "_releaseRequested = true;" in begin_block
+            and "VoxelMeshingFlags.GpuResourceInvalid" in begin_block
+            and "GpuResourceInvalid = 1 << 7" in read(FILES["surface_contracts"])
+            and "TryRelease();" in begin_block
+            and "return false;" in begin_block
+        ),
+        "invalid_release_skips_dead_graphics_buffers": (
+            "private static void ReleaseGraphicsBuffer(ref GraphicsBuffer buffer)" in gpu_text
+            and "if (buffer.IsValid())" in release_helper_block
+            and "buffer.Release();" in release_helper_block
+            and "buffer = null;" in release_helper_block
+            and "ReleaseGraphicsBuffer(ref _vertexFront);" in release_block
+            and "ReleaseGraphicsBuffer(ref _vertexBack);" in release_block
+            and "ReleaseGraphicsBuffer(ref _indexFront);" in release_block
+            and "ReleaseGraphicsBuffer(ref _indexBack);" in release_block
+            and "ReleaseGraphicsBuffer(ref _indirectArgs);" in release_block
+        ),
+        "invalid_unlock_skips_dead_graphics_buffers": (
+            "if (indirectArgsLocked && IsGraphicsBufferReady(_indirectArgs))" in begin_block
+            and "if (indexLocked && IsGraphicsBufferReady(indexBuffer))" in begin_block
+            and "if (vertexLocked && IsGraphicsBufferReady(vertexBuffer))" in begin_block
+            and "if (IsGraphicsBufferReady(_pendingVertexBuffer) && _pendingVertexCount > 0)" in unlock_helper_block
+            and "if (IsGraphicsBufferReady(_pendingIndexBuffer) && _pendingIndexCount > 0)" in unlock_helper_block
+            and "if (IsGraphicsBufferReady(_indirectArgs))" in unlock_helper_block
+        ),
+        "finalize_invalid_upload_resource_fails_closed": (
+            "bool pendingUploadResourcesReady = ArePendingUploadBuffersReady();" in finalize_block
+            and "if (!pendingUploadResourcesReady)" in finalize_block
+            and "MarkPendingChunkFault(buffers, VoxelMeshingFlags.GpuResourceInvalid);" in finalize_block
+            and "_releaseRequested = true;" in finalize_block
+            and "TryRelease();" in finalize_block
+            and "return false;" in finalize_block
+            and "private bool ArePendingUploadBuffersReady()" in gpu_text
+            and "private void MarkPendingChunkFault(VoxelSurfaceNetsVaultBuffers buffers, byte flags)" in gpu_text
+        ),
         "upload_requires_indirect_args_view": "!buffers.IndirectArgs.IsCreated" in begin_block,
         "upload_capacity_fail_closed": (
             "state.VertexCount > buffers.Vertices.Length" in begin_block
@@ -529,7 +582,21 @@ def surface_nets_gpu_upload_dispatcher_proof():
             and release_unlock_index > release_complete_index
             and "while (!_pendingUploadDependency.IsCompleted)" not in release_block
         ),
-        "policy": "GPU upload finalization calls JobHandle.Complete only after IsCompleted is already true, then unlocks GraphicsBuffer write ranges. Upload begin fails closed on vertex/index/indirect-args capacity defects instead of silently truncating mesh payloads, marks Uploading only after buffers are locked and the copy job is scheduled, and unlocks partial LockBufferForWrite acquisitions on exception. Initialize and release defer buffer destruction while an unfinished upload prevents TryRelease; a pending release rejects new uploads and drains after natural job completion.",
+        "policy": "GPU upload finalization calls JobHandle.Complete only after IsCompleted is already true, then unlocks GraphicsBuffer write ranges. Upload begin fails closed on vertex/index/indirect-args capacity defects instead of silently truncating mesh payloads, rejects invalid GraphicsBuffer resources before LockBufferForWrite, marks Uploading only after buffers are locked and the copy job is scheduled, and unlocks partial LockBufferForWrite acquisitions only when their buffers remain valid. Finalize rejects invalidated pending upload resources before publishing Uploaded state. Initialize and release defer buffer destruction while an unfinished upload prevents TryRelease; a pending release rejects new uploads and drains after natural job completion. Cold release skips Release() on already-invalid GraphicsBuffer handles and nulls the managed wrapper for recreation.",
+    }
+
+
+def surface_nets_dump_path_proof():
+    vault_text = read(FILES["surface_vault"])
+    return {
+        "agent_dump_path_aligned": 'AgentDumpFileName = "Dump_SHINOBU_308_Voxel.bin"' in vault_text,
+        "old_agent_dump_path_absent": "Dump_SHINOBU_61.bin" not in vault_text,
+        "writes_primary_and_agent_dump": (
+            "TryWriteDumpFile(Path.Combine(dir, DumpFileName)" in vault_text
+            and "TryWriteDumpFile(Path.Combine(dir, AgentDumpFileName)" in vault_text
+            and "return primary && agent;" in vault_text
+        ),
+        "policy": "Surface Nets black-box dump keeps the legacy mesh surgeon file and writes the X_006 voxel forensic dump required by the batch prompt.",
     }
 
 
@@ -825,6 +892,16 @@ def mesh_publication_component_cache_proof():
     apply_start = engine_text.find("Awaitable<bool> ApplyVolumeMeshAsync")
     apply_end = engine_text.find("static bool TryResolveSelectedChthonicPillarRecord", apply_start)
     apply_block = engine_text[apply_start:apply_end] if apply_start >= 0 and apply_end > apply_start else ""
+    add_mesh_collider_index = apply_block.find("mcol = go.AddComponent<MeshCollider>();")
+    build_collider_index = apply_block.find("bool buildCollider =")
+    early_null_volume_guard_index = apply_block.find("if (volume == null && Application.isPlaying)", build_collider_index)
+    mcol_lookup_index = apply_block.find("go.TryGetComponent(out mcol)")
+    null_mcol_index = apply_block.find("if (mcol == null)")
+    null_volume_index = apply_block.find("if (volume == null)")
+    ensure_proxy_index = apply_block.find("BoxCollider fallbackBakeProxy = EnsureVoxelBakeProxyCollider(go);")
+    no_build_block_index = apply_block.find("if (!buildCollider)")
+    no_build_editor_proxy_guard_index = apply_block.find("if (!Application.isPlaying)", no_build_block_index)
+    no_build_return_index = apply_block.find("return true;", no_build_block_index)
     return {
         "build_welded_uses_cached_components": (
             "HectonVoxelVolume volume = null" in build_block
@@ -844,6 +921,36 @@ def mesh_publication_component_cache_proof():
         "volume_missing_collider_uses_fake": (
             "if (volume != null)\n                    {\n                        volume.DisableColliderChunksForCinematicFake();\n                        return true;\n                    }" in apply_block
         ),
+        "runtime_null_volume_collider_fails_closed": (
+            "VoxelMeshPipelineNullVolumeColliderFallbackFlag = 1u << 5" in engine_text
+            and "private static void ReportVoxelNullVolumeColliderFallback()" in engine_text
+            and build_collider_index >= 0
+            and early_null_volume_guard_index > build_collider_index
+            and mcol_lookup_index > early_null_volume_guard_index
+            and "ReportVoxelNullVolumeColliderFallback();" in apply_block[early_null_volume_guard_index:mcol_lookup_index]
+            and "return true;" in apply_block[early_null_volume_guard_index:mcol_lookup_index]
+            and "if (mcol == null && !Application.isPlaying)" in apply_block
+            and null_mcol_index >= 0
+            and add_mesh_collider_index > null_mcol_index
+            and early_null_volume_guard_index < add_mesh_collider_index
+            and null_volume_index >= 0
+            and ensure_proxy_index > null_volume_index
+            and early_null_volume_guard_index < ensure_proxy_index
+        ),
+        "cinematic_fake_proxy_search_editor_only": (
+            no_build_block_index >= 0
+            and no_build_editor_proxy_guard_index > no_build_block_index
+            and no_build_return_index > no_build_editor_proxy_guard_index
+            and "go.TryGetComponent(out BoxCollider rootBakeProxy)" in apply_block[no_build_editor_proxy_guard_index:no_build_return_index]
+            and "go.transform.Find(VoxelBakeProxyRuntimeName)" in apply_block[no_build_editor_proxy_guard_index:no_build_return_index]
+        ),
+        "mesh_pipeline_blackbox_agent_dump_aligned": (
+            "#if UNITY_EDITOR || DEVELOPMENT_BUILD" in engine_text
+            and 'VoxelMeshPipelineBlackBoxPrimaryDumpRelativePath = "Docs/AgentLogs/Dump_VOXEL_MESH_PIPELINE.bin"' in engine_text
+            and 'VoxelMeshPipelineBlackBoxAgentDumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_308_Voxel.bin"' in engine_text
+            and "WriteVoxelMeshPipelineBlackBoxFile(VoxelMeshPipelineBlackBoxPrimaryDumpRelativePath, blackBox, reasonFlags);" in engine_text
+            and "WriteVoxelMeshPipelineBlackBoxFile(VoxelMeshPipelineBlackBoxAgentDumpRelativePath, blackBox, reasonFlags);" in engine_text
+        ),
         "generated_volume_bound_before_mesh_publication": (
             "static bool TryBindGeneratedVolumeForMeshPublication(GameObject go, VoxelPipelineData data)" in engine_text
             and "data.SourceVolume = volume;" in engine_text
@@ -851,7 +958,7 @@ def mesh_publication_component_cache_proof():
             and engine_text.count("if (!TryBindGeneratedVolumeForMeshPublication(targetGO, pipelineData))") >= 2
             and engine_text.count("DespawnVolume(targetGO);\n                return null;") >= 2
         ),
-        "policy": "Surface mesh publication and collider setup use HectonVoxelVolume cached MeshFilter/MeshRenderer/MeshCollider from VoxelPipelineData.SourceVolume. Fresh generation binds the prewarmed HectonVoxelVolume before mesh publication, so runtime generation does not fall into legacy AddComponent branches. TryGetComponent/AddComponent remain only as cold fallback for legacy/null-volume objects; malformed volumes fail closed or use cinematic fake.",
+        "policy": "Surface mesh publication and collider setup use HectonVoxelVolume cached MeshFilter/MeshRenderer/MeshCollider from VoxelPipelineData.SourceVolume. Fresh generation binds the prewarmed HectonVoxelVolume before mesh publication, so runtime generation does not fall into legacy AddComponent branches. Runtime null-volume collider fallback fails closed to visual-only publication and records a mesh-pipeline black-box flag before any component search, MeshCollider creation, or bake-proxy allocation. Cinematic fake proxy searches run only outside play mode. Mesh-pipeline black-box faults write the primary mesh-pipeline dump and the X_006 mandated agent dump. TryGetComponent/AddComponent remain only as cold editor fallback for legacy/null-volume objects; malformed volumes fail closed or use cinematic fake.",
     }
 
 
@@ -1131,6 +1238,8 @@ def save_snapshot_scratch_proof():
 
 def damage_volume_pressure():
     sargassum_text = read(FILES["sargassum"])
+    cut_compute_text = read(FILES["cut_compute"])
+    damage_compute_text = read(FILES["damage_compute"])
     mask_coalesce_start = sargassum_text.find("private bool TryCoalesceOverflowStamp")
     mask_coalesce_end = sargassum_text.find("private void DecayRecentCutStamps", mask_coalesce_start)
     mask_coalesce_block = sargassum_text[mask_coalesce_start:mask_coalesce_end] if mask_coalesce_start >= 0 and mask_coalesce_end > mask_coalesce_start else ""
@@ -1143,6 +1252,9 @@ def damage_volume_pressure():
     damage_update_start = sargassum_text.find("private void ProcessQueuedDamageVolumeUpdate")
     damage_update_end = sargassum_text.find("private void QueueGlobalPublish", damage_update_start)
     damage_update_block = sargassum_text[damage_update_start:damage_update_end] if damage_update_start >= 0 and damage_update_end > damage_update_start else ""
+    create_resources_start = sargassum_text.find("private void CreateResources")
+    create_resources_end = sargassum_text.find("private void RefreshQualityDependentResourcesIfNeeded", create_resources_start)
+    create_resources_block = sargassum_text[create_resources_start:create_resources_end] if create_resources_start >= 0 and create_resources_end > create_resources_start else ""
     mask_resolver_start = sargassum_text.find("private GraphicsBuffer ResolveStampCommandWriteBuffer")
     damage_resolver_start = sargassum_text.find("private GraphicsBuffer ResolveDamageVolumeStampCommandWriteBuffer")
     mask_resolver_block = sargassum_text[mask_resolver_start:damage_resolver_start] if mask_resolver_start >= 0 and damage_resolver_start > mask_resolver_start else ""
@@ -1184,6 +1296,15 @@ def damage_volume_pressure():
         "DamageVolumeEnergyEpsilon",
         "QueueDamageVolumeVisualSync",
     ])
+    shader_active_energy_gated = all(token in sargassum_text for token in [
+        "bool damageVolumeActive =",
+        "_damageVolumeRead != null &&",
+        "_damageVolumeEnergy > DamageVolumeEnergyEpsilon",
+        "_queuedDamageVolumeStampCount > 0",
+        "_pendingDamageVolumeDeltaTime > 0f",
+        "if (damageVolumeActive)",
+        "Shader.SetGlobalFloat(_DamageVolumeActiveId, 1f)",
+    ])
     overflow_expands_coverage = (
         "math.distance(existingCenter" in mask_coalesce_block
         and "+ uvRadius" in mask_coalesce_block
@@ -1222,6 +1343,35 @@ def damage_volume_pressure():
         and "return _damageVolumeStampCommandBufferB != null && _damageVolumeStampCommandBufferB.IsValid()" in damage_resolver_block
         and ": null;" in damage_resolver_block
     )
+    stamp_graphics_buffers_recreated_when_invalid = all(token in create_resources_block for token in [
+        "private void CreateResources",
+        "!IsGraphicsBufferReady(_stampCommandBufferA)",
+        "!IsGraphicsBufferReady(_stampCommandBufferB)",
+        "!IsGraphicsBufferReady(_damageVolumeStampCommandBufferA)",
+        "!IsGraphicsBufferReady(_damageVolumeStampCommandBufferB)",
+        "_activeStampCommandBuffer = _stampCommandBufferA",
+        "_activeDamageVolumeStampCommandBuffer = _damageVolumeStampCommandBufferA",
+    ]) and "private static bool IsGraphicsBufferReady(GraphicsBuffer buffer)" in sargassum_text \
+        and "return buffer != null && buffer.IsValid();" in sargassum_text
+    active_stamp_buffers_validated_before_dispatch = all(token in sargassum_text for token in [
+        "private bool EnsureActiveStampCommandBufferReady()",
+        "private bool EnsureActiveDamageVolumeStampCommandBufferReady()",
+        "private void RequestStampGraphicsBufferRefresh()",
+        "_qualityResourceRefreshRequested = true;",
+    ]) and "!EnsureActiveStampCommandBufferReady()" in mask_update_block \
+        and "!EnsureActiveDamageVolumeStampCommandBufferReady()" in damage_update_block \
+        and "RequestStampGraphicsBufferRefresh();" in mask_update_block \
+        and "RequestStampGraphicsBufferRefresh();" in damage_update_block
+    cut_shader_stamp_count_clamped = all(token in cut_compute_text for token in [
+        "static const int HectonStampCommandCapacity = 16;",
+        "int stampCount = min(max(_StampCount, 0), HectonStampCommandCapacity);",
+        "stampIndex < stampCount",
+    ])
+    damage_shader_stamp_count_clamped = all(token in damage_compute_text for token in [
+        "static const int HectonDamageVolumeStampCapacity = 16;",
+        "int stampCount = min(max(_HectonDamageVolumeStampCount, 0), HectonDamageVolumeStampCapacity);",
+        "stampIndex < stampCount",
+    ])
     return {
         "damage_stamp_capacity_per_frame": damage_stamp_capacity,
         "cut_mask_stamp_capacity_per_frame": cut_stamp_capacity,
@@ -1234,12 +1384,17 @@ def damage_volume_pressure():
         "quality_scaled_runtime_dimensions_present": quality_scaled,
         "quality_resize_inactive_gate_present": inactive_resize_gate,
         "energy_gated_dispatch_present": energy_gated,
+        "shader_active_energy_gated_present": shader_active_energy_gated,
         "cut_mask_overflow_coalescing_present": "TryCoalesceOverflowStamp" in sargassum_text,
         "damage_volume_overflow_coalescing_present": "TryCoalesceOverflowDamageVolumeStamp" in sargassum_text,
         "overflow_coalescing_expands_coverage_present": overflow_expands_coverage,
         "cut_mask_upload_fail_closed_present": mask_upload_fail_closed,
         "damage_volume_upload_fail_closed_present": damage_upload_fail_closed,
         "stamp_graphics_buffer_invalid_fail_closed": stamp_resolvers_invalid_fail_closed,
+        "stamp_graphics_buffers_recreated_when_invalid": stamp_graphics_buffers_recreated_when_invalid,
+        "active_stamp_buffers_validated_before_dispatch": active_stamp_buffers_validated_before_dispatch,
+        "cut_mask_shader_stamp_count_clamped": cut_shader_stamp_count_clamped,
+        "damage_volume_shader_stamp_count_clamped": damage_shader_stamp_count_clamped,
         "binary_qualitysettings_route_absent": "QualitySettings.GetQualityLevel" not in sargassum_text,
         "minimum_survival_damage_volume_resolution_xzy": [min_res, min_depth, min_res],
         "minimum_survival_ping_pong_texture_bytes_per_dispatch": min_texture_bytes * 2,
@@ -1383,6 +1538,9 @@ def carve_queue_pressure():
     try_resolve_start = delta_text.find("private bool TryResolveScheduledCarveWriteBuffer")
     ensure_write_start = delta_text.find("private bool EnsureScheduledCarveWriteBuffer", try_resolve_start)
     try_resolve_block = delta_text[try_resolve_start:ensure_write_start] if try_resolve_start >= 0 and ensure_write_start > try_resolve_start else ""
+    schedule_start = delta_text.find("private unsafe void TrySchedulePendingCarve")
+    schedule_end = delta_text.find("private static bool TryResolveScheduledCarveCandidateCount", schedule_start)
+    schedule_block = delta_text[schedule_start:schedule_end] if schedule_start >= 0 and schedule_end > schedule_start else ""
     return {
         "pending_carve_capacity": pending_capacity,
         "queued_carve_event_capacity": event_capacity,
@@ -1413,6 +1571,18 @@ def carve_queue_pressure():
         "scheduled_commit_min_writes_per_frame": constants.get("MinScheduledCarveCommitWritesPerFrame", 0),
         "scheduled_carve_write_hot_growth_absent": "EnsureGenerationHandle<CarveCellWrite>" not in try_resolve_block,
         "scheduled_carve_write_over_capacity_reject_present": "requiredCount > ScheduledCarveWriteCapacity" in delta_text,
+        "scheduled_carve_candidate_overflow_guard_present": (
+            "TryResolveScheduledCarveCandidateCount" in delta_text
+            and "long xy = (long)span.x * span.y" in delta_text
+            and "long total = xy * span.z" in delta_text
+            and "total > ScheduledCarveWriteCapacity" in delta_text
+            and "WriteBlackBoxSample(EntityId.ToULong(volume.GetEntityId()), VoxelBlackBoxQueueOverflowFlag)" in delta_text
+        ),
+        "scheduled_carve_schedule_exception_blackbox_present": (
+            "catch (Exception exception)" in schedule_block
+            and "WriteBlackBoxSample(EntityId.ToULong(volume.GetEntityId()), VoxelBlackBoxInvalidPendingCarveFlag)" in schedule_block
+            and "DumpBlackBoxOnce(VoxelBlackBoxInvalidPendingCarveFlag)" in schedule_block
+        ),
         "queue_overflow_coalescing_present": (
             "ResolveOverflowQueuedCarveEvent" in delta_text
             and "CanCoalesceQueuedCarveEvent" in delta_text
@@ -1484,8 +1654,10 @@ def rle_packet_layout(sector_payload_bytes):
     arch_run = struct_layout(FILES["rle"], "VoxelDeltaRleRunDTO")
     arch_constants = extract_int_constants(FILES["rle"])
     chunk_cells = first_int_constant(FILES["rle"], "ChunkCellCount", 32768)
+    max_arch_runs_per_wal = arch_constants.get("MaxVoxelDeltaRleRunsPerWalPayload", chunk_cells)
     native_worst = native_chunk["bytes"] + (chunk_cells * save_run["bytes"])
-    arch_worst = arch_header["bytes"] + (chunk_cells * arch_run["bytes"])
+    arch_full_chunk_worst = arch_header["bytes"] + (chunk_cells * arch_run["bytes"])
+    arch_worst = arch_header["bytes"] + (max_arch_runs_per_wal * arch_run["bytes"])
     dirty_mask_bytes = (chunk_cells // 32) * 4
     dense_payload_bytes = dirty_mask_bytes + (chunk_cells * 2) + chunk_cells + chunk_cells
     dense_total = native_chunk["bytes"] + dense_payload_bytes
@@ -1500,12 +1672,25 @@ def rle_packet_layout(sector_payload_bytes):
         "alignment_proof": "All listed packet structs are explicit layout and multiples of 8 bytes.",
         "architecture_max_wal_payload_bytes": arch_constants.get("MaxVoxelDeltaWalPayloadBytes", 0),
         "architecture_wal_payload_guard_present": (
-            "byteCount > MaxVoxelDeltaWalPayloadBytes" in rle_text
+            "int byteCount = counters[CounterWalPayloadBytes];" in rle_text
+            and "byteCount > walPayloadBytes.Length" in rle_text
+            and "byteCount > MaxVoxelDeltaWalPayloadBytes" in rle_text
+            and "int count = Counters[CounterCompressedBytes];" in rle_text
+            and "count < 0 || count > CompressedBytes.Length || count > MaxVoxelDeltaWalPayloadBytes" in rle_text
+            and "int compressedBytes = Counters[CounterCompressedBytes];" in rle_text
+            and "compressedBytes > CompressedBytes.Length" in rle_text
+            and "compressedBytes > MaxVoxelDeltaWalPayloadBytes - headerBytes" in rle_text
             and "required > MaxVoxelDeltaWalPayloadBytes" in rle_text
         ),
+        "compression_telemetry_dump_path_aligned": (
+            'VoxelDeltaTelemetryDumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_308_Voxel.bin"' in rle_text
+            and "Dump_VOXEL_IO_SURGEON.bin" not in rle_text
+        ),
         "vault_buffer_cell_capacity_fixed_to_chunk": "int safeCells = ChunkCellCount;" in try_resolve_block,
-        "vault_buffer_run_capacity_clamped_to_chunk": (
-            "math.clamp(rleRunCapacity <= 0 ? ChunkCellCount : rleRunCapacity, 1, ChunkCellCount)" in try_resolve_block
+        "max_voxel_delta_rle_runs_per_wal_payload": max_arch_runs_per_wal,
+        "vault_buffer_run_capacity_clamped_to_wal_payload": (
+            "rleRunCapacity <= 0 ? MaxVoxelDeltaRleRunsPerWalPayload : rleRunCapacity" in try_resolve_block
+            and "math.min(ChunkCellCount, MaxVoxelDeltaRleRunsPerWalPayload)" in try_resolve_block
         ),
         "vault_buffer_staging_capacity_clamped_to_wal_payload": (
             "stagingCapacityBytes <= 0 ? MaxVoxelDeltaWalPayloadBytes : stagingCapacityBytes" in try_resolve_block
@@ -1521,6 +1706,7 @@ def rle_packet_layout(sector_payload_bytes):
         "native_snapshot_dense_payload_bytes": dense_payload_bytes,
         "native_snapshot_dense_total_bytes": dense_total,
         "native_snapshot_effective_worst_case_bytes": effective_native_worst,
+        "voxel_delta_architecture_full_chunk_theoretical_payload_bytes": arch_full_chunk_worst,
         "voxel_delta_architecture_worst_case_payload_bytes": arch_worst,
         "sector_payload_bytes": sector_payload_bytes,
         "native_worst_case_exceeds_sector_payload_by_bytes": max(0, native_worst - sector_payload_bytes),
@@ -1628,9 +1814,18 @@ def mesh_upload_budgeting():
     upload_sites = line_hits(FILES["engine"], r"UploadSurfaceMesh\(|UploadColliderMesh\(")
     direct_upload_call_count = sum(
         1 for hit in upload_sites
-        if "static void UploadSurfaceMesh" not in hit["text"]
-        and "static void UploadColliderMesh" not in hit["text"]
+        if "static bool UploadSurfaceMesh" not in hit["text"]
+        and "static bool UploadColliderMesh" not in hit["text"]
     )
+    mesh_data_upload_guard_present = all(token in engine_text for token in [
+        "private static bool CanUploadMeshData",
+        "if (!CanUploadMeshData(mesh, positions, triangleIndices, vertexCount, triangleIndexCount))",
+        "ReportVoxelInvalidMeshUpload();",
+        "bool applied = false;",
+        "if (!applied)\n                meshDataArray.Dispose();",
+        "if (!UploadSurfaceMesh(",
+        "if (!UploadColliderMesh(",
+    ])
     return {
         "budget_constant_present": "VoxelMeshUploadBudgetPerFrame" in engine_text,
         "continuous_quality_budget_present": (
@@ -1645,10 +1840,12 @@ def mesh_upload_budgeting():
         "budget_awaiter_present": "AwaitVoxelMeshUploadBudgetAsync" in engine_text,
         "budgeted_upload_call_count": engine_text.count("await AwaitVoxelMeshUploadBudgetAsync"),
         "direct_upload_call_count": direct_upload_call_count,
+        "mesh_data_upload_guard_present": mesh_data_upload_guard_present,
         "budgeted": (
             "VoxelMeshUploadBudgetPerFrame" in engine_text
             and "AwaitVoxelMeshUploadBudgetAsync" in engine_text
             and engine_text.count("await AwaitVoxelMeshUploadBudgetAsync") >= direct_upload_call_count
+            and mesh_data_upload_guard_present
         ),
         "policy": "Unity mesh upload remains main-thread API; budget gate uses a continuous GlobalQualityWeight token bucket from 1 to 3 uploads per frame and delays later uploads behind Dear Lie visual clipping.",
     }
@@ -1708,6 +1905,33 @@ def physics_bake_schedule_guard():
             after=4,
         )
     )
+    teardown_budget_continuous_quality_scaled = all(token in engine_text for token in [
+        "DeferredVoxelPhysicsBakeTeardownBudgetPerFrame",
+        "DeferredVoxelPhysicsBakeTeardownBudgetVisualOverkillPerFrame",
+        "DeferredVoxelPhysicsBakeTeardownBurstCapBias",
+        "_deferredVoxelPhysicsBakeTeardownBudgetTokens",
+        "ResolveDeferredVoxelPhysicsBakeTeardownDrainBudgetThisFrame",
+        "ResolveDeferredVoxelPhysicsBakeTeardownBudgetPerFrame",
+        "ResolveDeferredVoxelPhysicsBakeTeardownInspectionBudget",
+        "HomeostasisBrain.GlobalQualityWeight",
+        "Mathf.Ceil(frameBudget - DeferredVoxelPhysicsBakeTeardownBurstCapBias)",
+        "Mathf.Lerp(\n            DeferredVoxelPhysicsBakeTeardownBudgetPerFrame",
+        "Mathf.Max(budget, DeferredVoxelPhysicsBakeTeardownBackpressureDrainBudget)",
+        "int drainBudget = ResolveDeferredVoxelPhysicsBakeTeardownDrainBudgetThisFrame();",
+        "int inspectionBudget = ResolveDeferredVoxelPhysicsBakeTeardownInspectionBudget(drainBudget);",
+    ])
+    teardown_renderer_lookup_destroy_owner_only = (
+        "DisableDeferredVoxelBakePresentation(GameObject owner, MeshRenderer renderer, MeshCollider collider, byte flags)" in engine_text
+        and "bool destroyOwner = (flags & DeferredVoxelBakeDestroyOwner) != 0;" in engine_text
+        and "if (destroyOwner)" in engine_text
+        and "DisableDeferredVoxelBakePresentation(owner, renderer, collider, flags);" in enqueue_block
+    )
+    physics_bake_job_start = engine_text.find("struct VoxelMeshBakeJob : IJob")
+    physics_bake_job_window = (
+        engine_text[max(0, physics_bake_job_start - 220):physics_bake_job_start + 420]
+        if physics_bake_job_start >= 0
+        else ""
+    )
     return {
         "schedule_precheck_present": (
             "Application.isPlaying && !CanScheduleVoxelPhysicsBake()" in schedule_block
@@ -1718,6 +1942,10 @@ def physics_bake_schedule_guard():
             or "CanRegisterDeferredVoxelLateFrameWork()" in guard_block
         ),
         "teardown_driver_registered_before_bake_schedule": "EnsureDeferredVoxelPhysicsBakeTeardownRegistered()" in guard_block,
+        "physics_bake_job_not_burst_compiled": (
+            "struct VoxelMeshBakeJob : IJob" in engine_text
+            and "[BurstCompile" not in physics_bake_job_window
+        ),
         "backpressure_guard_present": (
             "DeferredVoxelPhysicsBakePendingCount < DeferredVoxelPhysicsBakeBackpressureThreshold" in guard_block
             and "UpdateDeferredVoxelPhysicsBakeBackpressure()" in guard_block
@@ -1739,13 +1967,15 @@ def physics_bake_schedule_guard():
         ),
         "force_complete_sites": force_complete_hits,
         "force_complete_shutdown_only": shutdown_only_force_complete,
+        "teardown_budget_continuous_quality_scaled": teardown_budget_continuous_quality_scaled,
+        "teardown_renderer_lookup_destroy_owner_only": teardown_renderer_lookup_destroy_owner_only,
         "normal_teardown_capacity": constants.get("DeferredVoxelPhysicsBakeTeardownCapacity", 0),
         "emergency_teardown_capacity": constants.get("DeferredVoxelPhysicsBakeEmergencyTeardownCapacity", 0),
         "total_tracked_teardown_capacity": (
             constants.get("DeferredVoxelPhysicsBakeTeardownCapacity", 0)
             + constants.get("DeferredVoxelPhysicsBakeEmergencyTeardownCapacity", 0)
         ),
-        "policy": "New PhysX bake jobs are refused while the deferred teardown lane cannot register or total normal+emergency teardown count is at backpressure threshold; live bake waits do not use cancellable frame awaits. If teardown driver registration fails after a bake is already scheduled, the teardown remains queued for a later lane registration. Capacity overflow uses a fixed emergency teardown lane and records blackbox state instead of force-completing on the deformation path; force-release is limited to dispatcherless shutdown/reset.",
+        "policy": "New PhysX bake jobs are refused while the deferred teardown lane cannot register or total normal+emergency teardown count is at backpressure threshold; live bake waits do not use cancellable frame awaits. If teardown driver registration fails after a bake is already scheduled, the teardown remains queued for a later lane registration. Capacity overflow uses a fixed emergency teardown lane and records blackbox state instead of force-completing on the deformation path; force-release is limited to dispatcherless shutdown/reset. Teardown drain cadence is a continuous GlobalQualityWeight token bucket from 8 to 32 drains/frame, with backpressure lifting low-quality devices to the emergency drain ceiling without changing capacity.",
     }
 
 
@@ -2009,8 +2239,11 @@ def world_residency_teleport_reset_proof():
     tick_start = text.find("public void Tick(float deltaTime)")
     tick_end = text.find("public void SlowTick()", tick_start)
     tick_block = text[tick_start:tick_end] if tick_start >= 0 and tick_end > tick_start else ""
+    late_start = text.find("public void LateFrameTick()")
+    late_end = text.find("private void PublishLod2ImpostorResidency", late_start)
+    late_block = text[late_start:late_end] if late_start >= 0 and late_end > late_start else ""
     handle_start = text.find("private void HandleTeleport")
-    handle_end = text.find("private void ClearStreamingQueues", handle_start)
+    handle_end = text.find("private void TryApplyPendingTeleportReset", handle_start)
     handle_block = text[handle_start:handle_end] if handle_start >= 0 and handle_end > handle_start else ""
     apply_start = text.find("private void TryApplyPendingTeleportReset")
     apply_end = text.find("private void ApplyTeleportResetNow", apply_start)
@@ -2019,16 +2252,23 @@ def world_residency_teleport_reset_proof():
         "pending_flag_present": "private bool _teleportResetPending;" in text,
         "pending_aup_present": "private AbsoluteUniversePositionBlit _pendingTeleportAup;" in text,
         "tick_finalizes_before_apply": (
-            "DetectAndHandleTeleport();" in tick_block
-            and "CompleteResidencyJobIfFinished();" in tick_block
-            and "TryApplyPendingTeleportReset();" in tick_block
-            and tick_block.find("CompleteResidencyJobIfFinished();") < tick_block.find("TryApplyPendingTeleportReset();")
+            (
+                "DetectAndHandleTeleport();" in tick_block
+                and "CompleteResidencyJobIfFinished();" in tick_block
+                and "TryApplyPendingTeleportReset();" in tick_block
+                and tick_block.find("CompleteResidencyJobIfFinished();") < tick_block.find("TryApplyPendingTeleportReset();")
+            )
+            or (
+                "CompleteResidencyJobIfFinished();" in late_block
+                and "TryApplyPendingTeleportReset();" in late_block
+                and late_block.find("CompleteResidencyJobIfFinished();") < late_block.find("TryApplyPendingTeleportReset();")
+            )
         ),
         "handle_defers_while_job_live": (
-            "if (_residencyJobScheduled)" in handle_block
-            and "_pendingTeleportAup = AbsoluteUniversePositionBlit.FromAup(in playerAup);" in handle_block
+            "_pendingTeleportAup = AbsoluteUniversePositionBlit.FromAup(in playerAup);" in handle_block
             and "_teleportResetPending = true;" in handle_block
-            and "return;" in handle_block
+            and "_forceResidencyEvaluation = true;" in handle_block
+            and "ApplyTeleportResetNow(in playerAup);" not in handle_block
         ),
         "pending_apply_waits_for_job_completion": (
             "if (!_teleportResetPending || _residencyJobScheduled)" in apply_block
@@ -2335,6 +2575,7 @@ def build_report():
     teleport_reset = world_residency_teleport_reset_proof()
     job_wait = voxel_job_wait_cancellation_proof()
     surface_gpu = surface_nets_gpu_upload_dispatcher_proof()
+    surface_dump = surface_nets_dump_path_proof()
     cave_graph = cave_graph_generator_proof()
     spawn_point_job = voxel_spawn_point_job_proof()
     modified_cells_fill = modified_cells_fill_proof()
@@ -2370,12 +2611,18 @@ def build_report():
         "dear_lie_shader_clip_present": all(shader_routes.values()),
         "sync_physx_registration_fallback_removed": len(sync_fallbacks) == 0,
         "voxel_carving_torture_job_present": has_text(FILES["rle"], "struct VoxelCarvingTortureJob"),
-        "x006_blackbox_dump_path_present": has_text(FILES["delta"], "Dump_SHINOBU_308_Voxel.bin"),
+        "x006_blackbox_dump_path_present": (
+            has_text(FILES["delta"], "Dump_SHINOBU_308_Voxel.bin")
+            and rle_packet["compression_telemetry_dump_path_aligned"]
+            and surface_dump["agent_dump_path_aligned"]
+            and surface_dump["old_agent_dump_path_absent"]
+            and mesh_publication_components["mesh_pipeline_blackbox_agent_dump_aligned"]
+        ),
         "voxel_rle_architecture_wal_payload_guard": (
             rle_packet["architecture_max_wal_payload_bytes"] == pager["sector_payload_bytes"]
             and rle_packet["architecture_wal_payload_guard_present"]
             and rle_packet["vault_buffer_cell_capacity_fixed_to_chunk"]
-            and rle_packet["vault_buffer_run_capacity_clamped_to_chunk"]
+            and rle_packet["vault_buffer_run_capacity_clamped_to_wal_payload"]
             and rle_packet["vault_buffer_staging_capacity_clamped_to_wal_payload"]
             and rle_packet["vault_buffer_sector_stats_capacity_clamped"]
         ),
@@ -2434,6 +2681,9 @@ def build_report():
         ),
         "physics_bake_overflow_teardown_nonblocking": physics_bake_guard["emergency_teardown_overflow_nonblocking"],
         "physics_bake_force_complete_shutdown_only": physics_bake_guard["force_complete_shutdown_only"],
+        "physics_bake_teardown_budget_continuous_quality_scaled": physics_bake_guard["teardown_budget_continuous_quality_scaled"],
+        "physics_bake_deferred_teardown_keeps_chunk_visuals": physics_bake_guard["teardown_renderer_lookup_destroy_owner_only"],
+        "physics_bake_job_not_burst_compiled": physics_bake_guard["physics_bake_job_not_burst_compiled"],
         "physics_bake_live_job_cancellable_wait_absent": (
             physics_bake_guard["live_job_cancellable_frame_wait_absent"]
             and physics_bake_guard["cancellation_deferred_teardown_present"]
@@ -2579,6 +2829,19 @@ def build_report():
             surface_gpu["dispatcher_present"]
             and surface_gpu["initialize_respects_inflight_release"]
         ),
+        "surface_nets_gpu_invalid_buffer_fail_closed": (
+            surface_gpu["dispatcher_present"]
+            and surface_gpu["graphics_buffer_validity_guard_present"]
+            and surface_gpu["invalid_upload_resource_releases_for_cold_recreate"]
+            and surface_gpu["invalid_release_skips_dead_graphics_buffers"]
+            and surface_gpu["invalid_unlock_skips_dead_graphics_buffers"]
+            and surface_gpu["finalize_invalid_upload_resource_fails_closed"]
+        ),
+        "surface_nets_blackbox_dump_path_x006": (
+            surface_dump["agent_dump_path_aligned"]
+            and surface_dump["old_agent_dump_path_absent"]
+            and surface_dump["writes_primary_and_agent_dump"]
+        ),
         "deformation_collider_main_thread_assignment_absent": len(collider_shared_mesh_assignments) == 0,
         "deformation_collider_null_mesh_mutation_absent": len(deformation_shared_mesh_nulls) == 0,
         "deferred_bake_presentation_null_mesh_mutation_absent": len(deferred_bake_presentation_nulls) == 0,
@@ -2596,6 +2859,10 @@ def build_report():
             and damage["cut_mask_upload_fail_closed_present"]
             and damage["damage_volume_upload_fail_closed_present"]
             and damage["stamp_graphics_buffer_invalid_fail_closed"]
+            and damage["stamp_graphics_buffers_recreated_when_invalid"]
+            and damage["cut_mask_shader_stamp_count_clamped"]
+            and damage["damage_volume_shader_stamp_count_clamped"]
+            and damage["active_stamp_buffers_validated_before_dispatch"]
         ),
         "carve_ingress_queue_bounded": (
             carve_queue["queued_carve_event_capacity"] > 0
@@ -2614,6 +2881,8 @@ def build_report():
             and carve_queue["scheduled_carve_write_prewarm_present"]
             and carve_queue["scheduled_carve_write_hot_growth_absent"]
             and carve_queue["scheduled_carve_write_over_capacity_reject_present"]
+            and carve_queue["scheduled_carve_candidate_overflow_guard_present"]
+            and carve_queue["scheduled_carve_schedule_exception_blackbox_present"]
         ),
         "damage_stamp_overflow_coalescing_present": (
             damage["cut_mask_overflow_coalescing_present"]
@@ -2623,9 +2892,13 @@ def build_report():
         "damage_volume_quality_scaled": damage["quality_scaled_runtime_dimensions_present"],
         "damage_volume_quality_resize_inactive_gate_present": damage["quality_resize_inactive_gate_present"],
         "damage_volume_energy_gated": damage["energy_gated_dispatch_present"],
+        "damage_volume_shader_active_energy_gated": damage["shader_active_energy_gated_present"],
         "damage_volume_gpu_upload_fail_closed": damage["damage_volume_upload_fail_closed_present"],
         "cut_mask_gpu_upload_fail_closed": damage["cut_mask_upload_fail_closed_present"],
         "stamp_graphics_buffer_invalid_fail_closed": damage["stamp_graphics_buffer_invalid_fail_closed"],
+        "stamp_graphics_buffers_recreated_when_invalid": damage["stamp_graphics_buffers_recreated_when_invalid"],
+        "cut_mask_shader_stamp_count_clamped": damage["cut_mask_shader_stamp_count_clamped"],
+        "damage_volume_shader_stamp_count_clamped": damage["damage_volume_shader_stamp_count_clamped"],
         "damage_volume_binary_quality_route_absent": damage["binary_qualitysettings_route_absent"],
         "global_datavault_dirty_chunk_recycler_proven": dirty_chunk["global_datavault_recycler_proven"],
         "global_datavault_dirty_chunk_hot_swap_rebind_present": dirty_chunk["global_datavault_hot_swap_rebind_present"],
@@ -2679,6 +2952,8 @@ def build_report():
         "mesh_publication_volume_addcomponent_absent": (
             mesh_publication_components["volume_missing_component_fails_closed"]
             and mesh_publication_components["volume_missing_collider_uses_fake"]
+            and mesh_publication_components["runtime_null_volume_collider_fails_closed"]
+            and mesh_publication_components["cinematic_fake_proxy_search_editor_only"]
         ),
         "compaction_source_copy_job_present": dirty_chunk["compaction_copy_job_present"],
         "compaction_source_main_thread_copy_absent": dirty_chunk["compaction_main_thread_copy_absent"],
@@ -2754,6 +3029,7 @@ def build_report():
         "carve_queue_pressure": carve_queue,
         "voxel_delta_shutdown_completion": voxel_delta_shutdown,
         "surface_nets_datavault_pool": surface_nets_vault_ledger(),
+        "surface_nets_blackbox_dump": surface_dump,
         "active_dirty_chunk_memory": dirty_chunk,
         "volume_registry": volume_registry,
         "engine_active_volume_registry": engine_active_volume_registry,

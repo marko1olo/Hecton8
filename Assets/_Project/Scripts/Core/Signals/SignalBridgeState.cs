@@ -14,12 +14,15 @@ namespace Hecton8.Core
         private static int s_timeDilationSequence;
         private static int s_simulationPaused;
         private static int s_bulletTimeVisualMilli;
+        private static int s_legacyPublishDropCount;
 
         public static float TimeDilationScalar => Volatile.Read(ref s_timeDilationScalarMilli) * 0.001f;
 
         public static bool SimulationPaused => Volatile.Read(ref s_simulationPaused) != 0;
 
         public static float BulletTimeVisualIntensity01 => Volatile.Read(ref s_bulletTimeVisualMilli) * 0.001f;
+
+        public static int LegacyPublishDropCount => Volatile.Read(ref s_legacyPublishDropCount);
 
         public static uint LatestCraftingCompletedSequence => unchecked((uint)Volatile.Read(ref s_latestCraftingCompletedSignalSequence));
 
@@ -61,6 +64,13 @@ namespace Hecton8.Core
             AdvanceSignalSequence(ref s_latestSurvivalDeathSignalSequence);
         }
 
+        public static void RecordLegacyPublishDrop()
+        {
+            int current = Volatile.Read(ref s_legacyPublishDropCount);
+            if (current < int.MaxValue)
+                Interlocked.Increment(ref s_legacyPublishDropCount);
+        }
+
         public static bool TryGetLatestSurvivalDeath(out SurvivalVitalsChangedSignal signal, out int sequence)
         {
             sequence = Volatile.Read(ref s_latestSurvivalDeathSignalSequence);
@@ -78,6 +88,7 @@ namespace Hecton8.Core
             Volatile.Write(ref s_timeDilationSequence, 0);
             Volatile.Write(ref s_simulationPaused, 0);
             Volatile.Write(ref s_bulletTimeVisualMilli, 0);
+            Volatile.Write(ref s_legacyPublishDropCount, 0);
         }
 
         private static void AdvanceSignalSequence(ref int sequence)

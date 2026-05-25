@@ -24,6 +24,7 @@ namespace Hecton8.UI.VR
     [AddComponentMenu("Hecton8/UI/VR/OpenXR Manual Override Lever")]
     public sealed class OpenXRManualOverrideLever : MonoBehaviour, IUpdatable, ILateFrameTickable, IPhysicalPanelButtonReceiver, IManualOverrideLeverReadModel, IGlobalRegistryHotSwapListener
     {
+        private static int s_x001OpenXRManualOverrideLeverSignalPushDropCount;
         private const int LeverCount = 1;
         private const int BlackBoxFrameCount = 300;
         private const float MaxDeltaSeconds = 0.05f;
@@ -444,7 +445,7 @@ namespace Hecton8.UI.VR
             request.SourceHash = SourceHash;
             request.Frame = unchecked((uint)_frameThisTick);
             request.Channel = HapticRequest.ChannelGearScrape;
-            SignalBus<HapticRequest>.TryPush(in request);
+            SignalBus<HapticRequest>.TryPushTracked(in request, ref s_x001OpenXRManualOverrideLeverSignalPushDropCount);
             byte motorMask = _grabbed ? ResolveHapticMotorMask(_lastHandSide) : HapticBothHandsMask;
             ToolHapticsRuntime.TryEnqueueSinusoidalCommand(0.18f, 0.28f, 0.025f, 28f, HapticPriorityCritical, motorMask);
         }
@@ -486,7 +487,7 @@ namespace Hecton8.UI.VR
             signal.Flags |= _xrActiveThisFrame
                 ? ManualOverridePulledSignal.FlagVrGrip
                 : ManualOverridePulledSignal.FlagNonVrFallback;
-            SignalBus<ManualOverridePulledSignal>.TryPush(in signal);
+            SignalBus<ManualOverridePulledSignal>.TryPushTracked(in signal, ref s_x001OpenXRManualOverrideLeverSignalPushDropCount);
         }
 
         private void QueueLeverPresentation(float angleDegrees)
@@ -517,7 +518,7 @@ namespace Hecton8.UI.VR
             signal.Sequence = _signalSequence;
             signal.Flags = PrologueCompleteSignal.FlagForceWhiteout;
             signal.Phase = PrologueCompleteSignal.PhaseOceanHandoff;
-            SignalBus<PrologueCompleteSignal>.TryPush(in signal);
+            SignalBus<PrologueCompleteSignal>.TryPushTracked(in signal, ref s_x001OpenXRManualOverrideLeverSignalPushDropCount);
         }
 
         private void PublishLatchHaptic()
@@ -529,7 +530,7 @@ namespace Hecton8.UI.VR
             request.SourceHash = SourceHash;
             request.Frame = unchecked((uint)_frameThisTick);
             request.Channel = HapticRequest.ChannelVehicleCritical;
-            SignalBus<HapticRequest>.TryPush(in request);
+            SignalBus<HapticRequest>.TryPushTracked(in request, ref s_x001OpenXRManualOverrideLeverSignalPushDropCount);
             byte motorMask = ResolveHapticMotorMask(_latchedHandSide);
             ToolHapticsRuntime.TryEnqueueSinusoidalCommand(0.75f, 0.95f, 0.11f, 42f, HapticPriorityCritical, motorMask);
         }

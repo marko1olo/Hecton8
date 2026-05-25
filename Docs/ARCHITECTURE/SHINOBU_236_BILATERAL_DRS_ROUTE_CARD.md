@@ -108,7 +108,9 @@ Route:
 - Imported `GraphicsBuffer` constant buffer for GPU scalar payload.
 - RenderGraph-declared `TextureHandle` reads/writes for low-res color, high-res depth, edge mask, and output color.
 
-Proof artifact: ABSENT until a timestamped runtime trigger/output exists. `UpscalerTelemetryEntry[300]` in Vault buffer `71052`, binary dump path `Docs/AgentLogs/Dump_SHINOBU_236.bin`, and static scanner report path `Docs/Reports/RENDERING_OPTIMIZATION_REPORT.json` are STATIC_SOURCE/planned-fault orientation only.
+Proof artifact: ABSENT until timestamped runtime trigger/output exists.
+
+STATIC_SOURCE/planned-fault orientation: `UpscalerTelemetryEntry[300]` in Vault `71052`, dump `Docs/AgentLogs/Dump_SHINOBU_236.bin`, static report `Docs/Reports/RENDERING_OPTIMIZATION_REPORT.json`.
 
 ## Vault Buffers
 

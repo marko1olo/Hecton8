@@ -19,6 +19,7 @@ namespace Hecton8.Gameplay
     [RequireComponent(typeof(HectonPlayerMovement))]
     public sealed class TraumaDispatcher : MonoBehaviour, ISlowTickable, IDamageSignalReceiver, IModuleStatusEventListener, IElectromagneticPulseEventListener, IGlobalRegistryHotSwapListener
     {
+        private static int s_x001TraumaDispatcherSignalPushDropCount;
         private const float TraumaSlowTickDeltaSeconds = 0.1f;
         private const float IntegrityChannelDecayPerSecond = 0.35f;
         private const float PowerChannelDecayPerSecond = 0.28f;
@@ -696,7 +697,7 @@ namespace Hecton8.Gameplay
             signal.ChemicalHash = ParasiteSporeChemicalHash;
             signal.Frame = TimeSliceScheduler.CurrentFrameId;
             signal.Flags = 1;
-            SignalBus<ToxicityExposureSignal>.TryPush(in signal);
+            SignalBus<ToxicityExposureSignal>.TryPushTracked(in signal, ref s_x001TraumaDispatcherSignalPushDropCount);
         }
 
         private void ResolveParasiteSporeOcclusion(Vector3 hazardCenter, Vector3 playerPosition)

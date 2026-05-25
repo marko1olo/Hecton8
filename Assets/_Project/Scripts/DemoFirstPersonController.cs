@@ -106,10 +106,11 @@ namespace ScifiOffice
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.Dispatcher:
+                    _registeredTick = false;
+                    _registeredLateFrame = false;
                     if (currentService == null)
                         return;
 
-                    UnregisterTick();
                     RegisterTicks();
                     break;
                 case GlobalRegistryServiceSlot.NativeInputManagerRuntime:

@@ -19,9 +19,9 @@ namespace Hecton8.Interaction
     {
         private const int MaxQueuedSignals = 256;
         private const int MaxInteractionPacketsPerFrame = 256;
-        private const int MaxQueuedRayRequests = 64;
+        private const int MaxQueuedSurfaceRequests = 64;
         private const int MaxParentResolveDepth = 32;
-        private const int MaxCompletedRaycastAgeFrames = 1;
+        private const int MaxCompletedSurfaceAgeFrames = 1;
         private const float MinDirectionSqr = 0.0001f;
         private const float MinHitDistance = 0.05f;
         private const float AttachedFloraArbitrationRadiusMeters = 0.5f;
@@ -33,18 +33,18 @@ namespace Hecton8.Interaction
 
         // COLD ALLOC: Collider[256] - queued target side-channel aligned with the vault interaction queue - owner: EquipmentInteractionHandler
         private readonly Collider[] _queuedTargetColliders = new Collider[MaxQueuedSignals];
-        // COLD ALLOC: ulong[64] - requester ids for the writable raycast staging lane - owner: EquipmentInteractionHandler
-        private readonly ulong[] _stagingRequesterIds = new ulong[MaxQueuedRayRequests];
-        // COLD ALLOC: ulong[64] - requester ids paired with the scheduled raycast lane - owner: EquipmentInteractionHandler
-        private readonly ulong[] _scheduledRequesterIds = new ulong[MaxQueuedRayRequests];
-        // COLD ALLOC: ulong[64] - requester ids paired with completed frame-latent raycast results - owner: EquipmentInteractionHandler
-        private readonly ulong[] _completedRequesterIds = new ulong[MaxQueuedRayRequests];
-        // COLD ALLOC: RaycastHit[64] - completed frame-latent tool raycast results - owner: EquipmentInteractionHandler
-        private readonly RaycastHit[] _completedHits = new RaycastHit[MaxQueuedRayRequests];
-        // COLD ALLOC: bool[64] - validity bits for completed frame-latent tool raycast results - owner: EquipmentInteractionHandler
-        private readonly bool[] _completedHasHit = new bool[MaxQueuedRayRequests];
-        // COLD ALLOC: int[64] - frame stamps for completed frame-latent raycast results - owner: EquipmentInteractionHandler
-        private readonly int[] _completedHitFrames = new int[MaxQueuedRayRequests];
+        // COLD ALLOC: ulong[64] - requester ids for the writable surface-query staging lane - owner: EquipmentInteractionHandler
+        private readonly ulong[] _stagingRequesterIds = new ulong[MaxQueuedSurfaceRequests];
+        // COLD ALLOC: ulong[64] - requester ids paired with the scheduled surface-query lane - owner: EquipmentInteractionHandler
+        private readonly ulong[] _scheduledRequesterIds = new ulong[MaxQueuedSurfaceRequests];
+        // COLD ALLOC: ulong[64] - requester ids paired with completed frame-latent surface results - owner: EquipmentInteractionHandler
+        private readonly ulong[] _completedRequesterIds = new ulong[MaxQueuedSurfaceRequests];
+        // COLD ALLOC: InteractionSurfaceHit[64] - completed frame-latent tool surface results - owner: EquipmentInteractionHandler
+        private readonly InteractionSurfaceHit[] _completedHits = new InteractionSurfaceHit[MaxQueuedSurfaceRequests];
+        // COLD ALLOC: bool[64] - validity bits for completed frame-latent tool surface results - owner: EquipmentInteractionHandler
+        private readonly bool[] _completedHasHit = new bool[MaxQueuedSurfaceRequests];
+        // COLD ALLOC: int[64] - frame stamps for completed frame-latent surface results - owner: EquipmentInteractionHandler
+        private readonly int[] _completedHitFrames = new int[MaxQueuedSurfaceRequests];
         // COLD ALLOC: Transform[256] - platform-local hit point side-channel aligned with the vault signal queue - owner: EquipmentInteractionHandler
         private readonly Transform[] _queuedPlatformTransforms = new Transform[MaxQueuedSignals];
         // COLD ALLOC: Vector3[256] - local platform hit points aligned with the vault signal queue - owner: EquipmentInteractionHandler
@@ -58,9 +58,9 @@ namespace Hecton8.Interaction
         private Hecton8.Core.Contracts.IVoxelSonarSdfReadModel _voxelSdfReadModel;
         private ITerrainProvider _terrainProvider;
         private VaultGenerationHandle<InteractionSignal> _signalQueueHandle;
-        private VaultGenerationHandle<InteractionRaycastRequestDTO> _scheduledRequestsHandle;
-        private VaultGenerationHandle<RaycastHit> _scheduledHitsHandle;
-        private VaultGenerationHandle<InteractionRaycastRequestDTO> _stagingRequestsHandle;
+        private VaultGenerationHandle<InteractionSurfaceQueryDTO> _scheduledRequestsHandle;
+        private VaultGenerationHandle<InteractionSurfaceHitDTO> _scheduledHitsHandle;
+        private VaultGenerationHandle<InteractionSurfaceQueryDTO> _stagingRequestsHandle;
         private int _queueHead;
         private int _queueTail;
         private int _queueCount;
@@ -70,12 +70,12 @@ namespace Hecton8.Interaction
         private int _packetAdmissionFrame = -1;
         private int _packetAdmissionCount;
         private int _lastOverflowWarningFrame = -1;
-        private bool _scheduledRaycastActive;
+        private bool _scheduledSurfaceQueryActive;
         private bool _isInitialized;
         private bool _dispatcherRegistered;
         private bool _lateFrameRegistered;
         private bool _serviceRegistered;
-        private bool _scheduledRaycastVaultLocked;
+        private bool _scheduledSurfaceQueryVaultLocked;
         private bool _hotSwapRegistered;
 
         internal static EquipmentInteractionHandler ActiveRuntimeInstance { get; private set; }
@@ -164,16 +164,16 @@ namespace Hecton8.Interaction
         }
 
         /// <inheritdoc />
-        public bool TryRaycastPrimary(ulong requesterId, in InteractionPacket packet, int layerMask, QueryTriggerInteraction queryTriggerInteraction, out RaycastHit hit)
+        public bool TryResolvePrimarySurfaceHit(ulong requesterId, in InteractionPacket packet, int layerMask, QueryTriggerInteraction queryTriggerInteraction, out InteractionSurfaceHit hit)
         {
             Vector3 absoluteOrigin = new Vector3(packet.Origin.x, packet.Origin.y, packet.Origin.z);
             Vector3 origin = HectonFloatingOrigin.ToRuntimePosition(absoluteOrigin);
             Vector3 direction = new Vector3(packet.Direction.x, packet.Direction.y, packet.Direction.z);
-            return TryRaycastPrimary(requesterId, origin, direction, packet.Range, layerMask, queryTriggerInteraction, out hit);
+            return TryResolvePrimarySurfaceHit(requesterId, origin, direction, packet.Range, layerMask, queryTriggerInteraction, out hit);
         }
 
         /// <inheritdoc />
-        public bool TryRaycastPrimary(ulong requesterId, Vector3 origin, Vector3 direction, float range, int layerMask, QueryTriggerInteraction queryTriggerInteraction, out RaycastHit hit)
+        public bool TryResolvePrimarySurfaceHit(ulong requesterId, Vector3 origin, Vector3 direction, float range, int layerMask, QueryTriggerInteraction queryTriggerInteraction, out InteractionSurfaceHit hit)
         {
             hit = default;
             if (requesterId == 0UL ||
@@ -186,9 +186,9 @@ namespace Hecton8.Interaction
                 return false;
             }
 
-            bool hasCompletedHit = TryGetCompletedRaycast(requesterId, ResolveSimulationFrameIndex(), out hit);
+            bool hasCompletedHit = TryGetCompletedSurfaceHit(requesterId, ResolveSimulationFrameIndex(), out hit);
             Vector3 normalizedDirection = NormalizeFinite(direction, Vector3.forward);
-            QueuePrimaryRaycast(requesterId, origin, normalizedDirection, range, layerMask, queryTriggerInteraction);
+            QueuePrimarySurfaceQuery(requesterId, origin, normalizedDirection, range, layerMask, queryTriggerInteraction);
             return hasCompletedHit;
         }
 
@@ -257,7 +257,7 @@ namespace Hecton8.Interaction
             EnsureLayerCache();
             EnsureSignalQueueHandle(createIfMissing: true);
 
-            if (EnsureRaycastBufferHandles(createIfMissing: true))
+            if (EnsureSurfaceQueryBufferHandles(createIfMissing: true))
             {
                 IDataVault vault = ResolveDataVault();
                 ResetRequestLaneLocked(
@@ -315,9 +315,9 @@ namespace Hecton8.Interaction
         /// <inheritdoc />
         public void LateFrameTick()
         {
-            CompleteScheduledRaycasts();
+            CompleteScheduledSurfaceQueries();
             FlushSignals();
-            ScheduleStagedRaycasts();
+            ScheduleStagedSurfaceQueries();
         }
 
         private void OnDestroy()
@@ -340,8 +340,8 @@ namespace Hecton8.Interaction
             ClearQueuedSignals(createVaultLane: false);
 
             ReleaseInteractionVaultDescriptor(_dataVault, ref _signalQueueHandle);
-            DisposeRaycastBuffers();
-            _scheduledRaycastActive = false;
+            DisposeSurfaceQueryBuffers();
+            _scheduledSurfaceQueryActive = false;
             _scheduledRequestCount = 0;
             _stagedRequestCount = 0;
             _completedResultCount = 0;
@@ -770,7 +770,7 @@ namespace Hecton8.Interaction
             return false;
         }
 
-        private static bool IsValidHit(Vector3 origin, Vector3 direction, float range, int layerMask, RaycastHit hit)
+        private static bool IsValidHit(Vector3 origin, Vector3 direction, float range, int layerMask, InteractionSurfaceHit hit)
         {
             if (hit.collider == null ||
                 !IsFinite(origin) ||
@@ -796,7 +796,7 @@ namespace Hecton8.Interaction
             return toHit.sqrMagnitude > 0.0001f;
         }
 
-        private bool TryResolveKinematicRaycastHit(in InteractionRaycastRequestDTO request, out RaycastHit hit)
+        private bool TryResolveKinematicSurfaceHit(in InteractionSurfaceQueryDTO request, out InteractionSurfaceHit hit)
         {
             hit = default;
             if (request.Valid == 0u ||
@@ -809,13 +809,13 @@ namespace Hecton8.Interaction
             }
 
             Vector3 normalizedDirection = NormalizeFinite(request.Direction, Vector3.forward);
-            if (TryResolveSdfRaycastHit(request.Origin, normalizedDirection, request.Range, request.LayerMask, out hit))
+            if (TryResolveSdfSurfaceHit(request.Origin, normalizedDirection, request.Range, request.LayerMask, out hit))
                 return true;
 
-            return TryResolveTerrainRaycastHit(request.Origin, normalizedDirection, request.Range, request.LayerMask, out hit);
+            return TryResolveTerrainSurfaceHit(request.Origin, normalizedDirection, request.Range, request.LayerMask, out hit);
         }
 
-        private bool TryResolveSdfRaycastHit(Vector3 origin, Vector3 direction, float range, int layerMask, out RaycastHit hit)
+        private bool TryResolveSdfSurfaceHit(Vector3 origin, Vector3 direction, float range, int layerMask, out InteractionSurfaceHit hit)
         {
             hit = default;
             if (!IncludesAnyLayer(layerMask, HectonLayerMasks.VoxelCaveLayerMask | HectonLayerMasks.VoxelProxyLayerMask))
@@ -863,7 +863,7 @@ namespace Hecton8.Interaction
             return true;
         }
 
-        private bool TryResolveTerrainRaycastHit(Vector3 origin, Vector3 direction, float range, int layerMask, out RaycastHit hit)
+        private bool TryResolveTerrainSurfaceHit(Vector3 origin, Vector3 direction, float range, int layerMask, out InteractionSurfaceHit hit)
         {
             hit = default;
             if (!IncludesAnyLayer(layerMask, HectonLayerMasks.TerrainLayerMask) ||
@@ -916,16 +916,16 @@ namespace Hecton8.Interaction
             return math.lerp(coarse, fine, quality);
         }
 
-        private void QueuePrimaryRaycast(ulong requesterId, Vector3 origin, Vector3 direction, float range, int layerMask, QueryTriggerInteraction queryTriggerInteraction)
+        private void QueuePrimarySurfaceQuery(ulong requesterId, Vector3 origin, Vector3 direction, float range, int layerMask, QueryTriggerInteraction queryTriggerInteraction)
         {
-            if (!EnsureRaycastBufferHandles(createIfMissing: false))
+            if (!EnsureSurfaceQueryBufferHandles(createIfMissing: false))
                 return;
 
             int requestIndex = FindStagedRequestIndex(requesterId);
             bool newRequest = requestIndex < 0;
             if (requestIndex < 0)
             {
-                if (_stagedRequestCount >= MaxQueuedRayRequests)
+                if (_stagedRequestCount >= MaxQueuedSurfaceRequests)
                     return;
 
                 requestIndex = _stagedRequestCount;
@@ -941,8 +941,8 @@ namespace Hecton8.Interaction
                         vault,
                         ref _stagingRequestsHandle,
                         BufferID.InteractionRaycastStagingCommands,
-                        MaxQueuedRayRequests,
-                        out NativeArray<InteractionRaycastRequestDTO> stagingRequests))
+                        MaxQueuedSurfaceRequests,
+                        out NativeArray<InteractionSurfaceQueryDTO> stagingRequests))
                 {
                     return;
                 }
@@ -953,7 +953,7 @@ namespace Hecton8.Interaction
                     _stagedRequestCount++;
                 }
 
-                stagingRequests[requestIndex] = CreateRaycastRequest(origin, direction, range, layerMask, queryTriggerInteraction);
+                stagingRequests[requestIndex] = CreateSurfaceQueryRequest(origin, direction, range, layerMask, queryTriggerInteraction);
             }
             finally
             {
@@ -961,7 +961,7 @@ namespace Hecton8.Interaction
             }
         }
 
-        private bool TryGetCompletedRaycast(ulong requesterId, int currentFrame, out RaycastHit hit)
+        private bool TryGetCompletedSurfaceHit(ulong requesterId, int currentFrame, out InteractionSurfaceHit hit)
         {
             hit = default;
             if (requesterId == 0UL)
@@ -972,7 +972,7 @@ namespace Hecton8.Interaction
                 if (_completedRequesterIds[i] != requesterId)
                     continue;
 
-                if (currentFrame - _completedHitFrames[i] > MaxCompletedRaycastAgeFrames)
+                if (currentFrame - _completedHitFrames[i] > MaxCompletedSurfaceAgeFrames)
                     return false;
 
                 if (!_completedHasHit[i])
@@ -996,25 +996,25 @@ namespace Hecton8.Interaction
             return -1;
         }
 
-        private void CompleteScheduledRaycasts()
+        private void CompleteScheduledSurfaceQueries()
         {
-            if (!_scheduledRaycastActive)
+            if (!_scheduledSurfaceQueryActive)
                 return;
 
-            if (!EnsureRaycastBufferHandles(createIfMissing: false))
+            if (!EnsureSurfaceQueryBufferHandles(createIfMissing: false))
             {
-                UnlockScheduledRaycastVaultBuffers();
+                UnlockScheduledSurfaceVaultBuffers();
                 _scheduledRequestCount = 0;
-                _scheduledRaycastActive = false;
+                _scheduledSurfaceQueryActive = false;
                 return;
             }
 
             IDataVault vault = ResolveDataVault();
             if (vault == null)
             {
-                UnlockScheduledRaycastVaultBuffers();
+                UnlockScheduledSurfaceVaultBuffers();
                 _scheduledRequestCount = 0;
-                _scheduledRaycastActive = false;
+                _scheduledSurfaceQueryActive = false;
                 return;
             }
 
@@ -1022,18 +1022,18 @@ namespace Hecton8.Interaction
                     vault,
                     ref _scheduledRequestsHandle,
                     BufferID.InteractionRaycastScheduledCommands,
-                    MaxQueuedRayRequests,
-                    out NativeArray<InteractionRaycastRequestDTO> scheduledRequests) ||
+                    MaxQueuedSurfaceRequests,
+                    out NativeArray<InteractionSurfaceQueryDTO> scheduledRequests) ||
                 !TryOpenExistingInteractionVaultBuffer(
                     vault,
                     ref _scheduledHitsHandle,
                     BufferID.InteractionRaycastScheduledHits,
-                    MaxQueuedRayRequests,
-                    out NativeArray<RaycastHit> scheduledHits))
+                    MaxQueuedSurfaceRequests,
+                    out NativeArray<InteractionSurfaceHitDTO> scheduledHits))
             {
-                UnlockScheduledRaycastVaultBuffers();
+                UnlockScheduledSurfaceVaultBuffers();
                 _scheduledRequestCount = 0;
-                _scheduledRaycastActive = false;
+                _scheduledSurfaceQueryActive = false;
                 return;
             }
 
@@ -1042,9 +1042,9 @@ namespace Hecton8.Interaction
             int completionFrame = ResolveSimulationFrameIndex();
             for (int i = 0; i < _scheduledRequestCount; i++)
             {
-                InteractionRaycastRequestDTO request = scheduledRequests[i];
-                bool hasAuthoritativeHit = TryResolveKinematicRaycastHit(in request, out RaycastHit candidate);
-                scheduledHits[i] = hasAuthoritativeHit ? candidate : default;
+                InteractionSurfaceQueryDTO request = scheduledRequests[i];
+                bool hasAuthoritativeHit = TryResolveKinematicSurfaceHit(in request, out InteractionSurfaceHit candidate);
+                scheduledHits[i] = hasAuthoritativeHit ? candidate.Dto : default;
                 _completedRequesterIds[i] = _scheduledRequesterIds[i];
                 _completedHasHit[i] = hasAuthoritativeHit;
                 _completedHits[i] = _completedHasHit[i] ? candidate : default;
@@ -1052,7 +1052,7 @@ namespace Hecton8.Interaction
                 _scheduledRequesterIds[i] = 0UL;
             }
 
-            for (int i = _scheduledRequestCount; i < MaxQueuedRayRequests; i++)
+            for (int i = _scheduledRequestCount; i < MaxQueuedSurfaceRequests; i++)
             {
                 _completedRequesterIds[i] = 0UL;
                 _completedHasHit[i] = false;
@@ -1061,20 +1061,20 @@ namespace Hecton8.Interaction
             }
 
             _scheduledRequestCount = 0;
-            _scheduledRaycastActive = false;
+            _scheduledSurfaceQueryActive = false;
             for (int i = 0; i < scheduledRequests.Length; i++)
                 scheduledRequests[i] = default;
             for (int i = 0; i < scheduledHits.Length; i++)
                 scheduledHits[i] = default;
-            UnlockScheduledRaycastVaultBuffers();
+            UnlockScheduledSurfaceVaultBuffers();
         }
 
-        private void ScheduleStagedRaycasts()
+        private void ScheduleStagedSurfaceQueries()
         {
-            if (_scheduledRaycastActive || _stagedRequestCount <= 0)
+            if (_scheduledSurfaceQueryActive || _stagedRequestCount <= 0)
                 return;
 
-            if (!EnsureRaycastBufferHandles(createIfMissing: false))
+            if (!EnsureSurfaceQueryBufferHandles(createIfMissing: false))
                 return;
 
             IDataVault vault = ResolveDataVault();
@@ -1106,20 +1106,20 @@ namespace Hecton8.Interaction
                         vault,
                         ref _stagingRequestsHandle,
                         BufferID.InteractionRaycastStagingCommands,
-                        MaxQueuedRayRequests,
-                        out NativeArray<InteractionRaycastRequestDTO> stagingRequests) ||
+                        MaxQueuedSurfaceRequests,
+                        out NativeArray<InteractionSurfaceQueryDTO> stagingRequests) ||
                     !TryOpenExistingInteractionVaultBuffer(
                         vault,
                         ref _scheduledRequestsHandle,
                         BufferID.InteractionRaycastScheduledCommands,
-                        MaxQueuedRayRequests,
-                        out NativeArray<InteractionRaycastRequestDTO> scheduledRequests) ||
+                        MaxQueuedSurfaceRequests,
+                        out NativeArray<InteractionSurfaceQueryDTO> scheduledRequests) ||
                     !TryOpenExistingInteractionVaultBuffer(
                         vault,
                         ref _scheduledHitsHandle,
                         BufferID.InteractionRaycastScheduledHits,
-                        MaxQueuedRayRequests,
-                        out NativeArray<RaycastHit> scheduledHits))
+                        MaxQueuedSurfaceRequests,
+                        out NativeArray<InteractionSurfaceHitDTO> scheduledHits))
                 {
                     return;
                 }
@@ -1133,9 +1133,9 @@ namespace Hecton8.Interaction
                 for (int i = 0; i < scheduledHits.Length; i++)
                     scheduledHits[i] = default;
 
-                _scheduledRaycastActive = true;
+                _scheduledSurfaceQueryActive = true;
                 _scheduledRequestCount = scheduledCount;
-                _scheduledRaycastVaultLocked = true;
+                _scheduledSurfaceQueryVaultLocked = true;
 
                 System.Array.Copy(_stagingRequesterIds, _scheduledRequesterIds, scheduledCount);
                 System.Array.Clear(_stagingRequesterIds, 0, scheduledCount);
@@ -1159,9 +1159,9 @@ namespace Hecton8.Interaction
             }
         }
 
-        private void DisposeRaycastBuffers()
+        private void DisposeSurfaceQueryBuffers()
         {
-            UnlockScheduledRaycastVaultBuffers();
+            UnlockScheduledSurfaceVaultBuffers();
             ReleaseInteractionVaultDescriptor(_dataVault, ref _scheduledRequestsHandle);
             ReleaseInteractionVaultDescriptor(_dataVault, ref _scheduledHitsHandle);
             ReleaseInteractionVaultDescriptor(_dataVault, ref _stagingRequestsHandle);
@@ -1183,10 +1183,10 @@ namespace Hecton8.Interaction
                 return;
 
             IDataVault oldVault = _dataVault;
-            UnlockScheduledRaycastVaultBuffers();
+            UnlockScheduledSurfaceVaultBuffers();
             ReleaseAllInteractionVaultDescriptors(oldVault);
             _dataVault = dataVault;
-            _scheduledRaycastActive = false;
+            _scheduledSurfaceQueryActive = false;
             _scheduledRequestCount = 0;
             _stagedRequestCount = 0;
 
@@ -1194,7 +1194,7 @@ namespace Hecton8.Interaction
                 return;
 
             EnsureSignalQueueHandle(createIfMissing: true);
-            EnsureRaycastBufferHandles(createIfMissing: true);
+            EnsureSurfaceQueryBufferHandles(createIfMissing: true);
         }
 
         private void TryRegisterHotSwapListenerCold()
@@ -1253,33 +1253,33 @@ namespace Hecton8.Interaction
             return unchecked((int)SystemDispatcher.CurrentFrameId);
         }
 
-        private bool EnsureRaycastBufferHandles(bool createIfMissing)
+        private bool EnsureSurfaceQueryBufferHandles(bool createIfMissing)
         {
             IDataVault vault = ResolveDataVault();
             if (vault == null)
                 return false;
 
-            if (!EnsureRaycastBufferHandle(
+            if (!EnsureSurfaceQueryBufferHandle(
                     vault,
                     ref _scheduledRequestsHandle,
                     BufferID.InteractionRaycastScheduledCommands,
-                    MaxQueuedRayRequests,
+                    MaxQueuedSurfaceRequests,
                     createIfMissing))
                 return false;
 
-            if (!EnsureRaycastBufferHandle(
+            if (!EnsureSurfaceQueryBufferHandle(
                     vault,
                     ref _scheduledHitsHandle,
                     BufferID.InteractionRaycastScheduledHits,
-                    MaxQueuedRayRequests,
+                    MaxQueuedSurfaceRequests,
                     createIfMissing))
                 return false;
 
-            if (!EnsureRaycastBufferHandle(
+            if (!EnsureSurfaceQueryBufferHandle(
                     vault,
                     ref _stagingRequestsHandle,
                     BufferID.InteractionRaycastStagingCommands,
-                    MaxQueuedRayRequests,
+                    MaxQueuedSurfaceRequests,
                     createIfMissing))
                 return false;
 
@@ -1354,7 +1354,7 @@ namespace Hecton8.Interaction
             }
         }
 
-        private static bool EnsureRaycastBufferHandle<T>(
+        private static bool EnsureSurfaceQueryBufferHandle<T>(
             IDataVault vault,
             ref VaultGenerationHandle<T> handle,
             BufferID bufferId,
@@ -1434,9 +1434,9 @@ namespace Hecton8.Interaction
                    handle.Generation != 0u;
         }
 
-        private void UnlockScheduledRaycastVaultBuffers()
+        private void UnlockScheduledSurfaceVaultBuffers()
         {
-            if (!_scheduledRaycastVaultLocked)
+            if (!_scheduledSurfaceQueryVaultLocked)
                 return;
 
             IDataVault vault = ResolveDataVault();
@@ -1446,12 +1446,12 @@ namespace Hecton8.Interaction
                 vault.TryUnlockBuffer(BufferID.InteractionRaycastScheduledHits, SystemID.GameplayTools);
             }
 
-            _scheduledRaycastVaultLocked = false;
+            _scheduledSurfaceQueryVaultLocked = false;
         }
 
         private static void ResetRequestLaneLocked(
             IDataVault vault,
-            ref VaultGenerationHandle<InteractionRaycastRequestDTO> handle,
+            ref VaultGenerationHandle<InteractionSurfaceQueryDTO> handle,
             BufferID bufferId)
         {
             if (vault == null || !IsGameplayToolsVaultHandle(in handle, bufferId))
@@ -1466,8 +1466,8 @@ namespace Hecton8.Interaction
                         vault,
                         ref handle,
                         bufferId,
-                        MaxQueuedRayRequests,
-                        out NativeArray<InteractionRaycastRequestDTO> requests))
+                        MaxQueuedSurfaceRequests,
+                        out NativeArray<InteractionSurfaceQueryDTO> requests))
                 {
                     for (int i = 0; i < requests.Length; i++)
                         requests[i] = default;
@@ -1496,9 +1496,9 @@ namespace Hecton8.Interaction
             handle = default;
         }
 
-        private static InteractionRaycastRequestDTO CreateRaycastRequest(Vector3 origin, Vector3 direction, float range, int layerMask, QueryTriggerInteraction queryTriggerInteraction)
+        private static InteractionSurfaceQueryDTO CreateSurfaceQueryRequest(Vector3 origin, Vector3 direction, float range, int layerMask, QueryTriggerInteraction queryTriggerInteraction)
         {
-            return new InteractionRaycastRequestDTO
+            return new InteractionSurfaceQueryDTO
             {
                 Origin = origin,
                 Direction = direction,
@@ -1510,7 +1510,7 @@ namespace Hecton8.Interaction
         }
 
         [StructLayout(LayoutKind.Explicit, Size = 64)]
-        private struct InteractionRaycastRequestDTO
+        private struct InteractionSurfaceQueryDTO
         {
             [FieldOffset(0)] public Vector3 Origin;
             [FieldOffset(12)] public Vector3 Direction;

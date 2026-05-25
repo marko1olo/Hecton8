@@ -27,6 +27,7 @@ namespace Hecton8.Tools
     [DefaultExecutionOrder(-9918)]
     public sealed partial class ModularEquipmentEngine : MonoBehaviour, IModularEquipmentService, IUpdatable, ILateFrameTickable, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener
     {
+        private static int s_x001ModularEquipmentEngineSignalPushDropCount;
         private const int MaxTrackedTools = 16;
         private const float OverchargePowerMultiplier = 3f;
         private const float OverchargeHeatExponent = 1.35f;
@@ -1812,8 +1813,11 @@ namespace Hecton8.Tools
 
         private bool ResolveGridPowerAvailable()
         {
-            return _submarineRuntimeContext != null &&
-                   _submarineRuntimeContext.AtmosphereSystem != null &&
+            ISubmarineAtmosphereRoomReadModel atmosphere = _submarineRuntimeContext != null
+                ? _submarineRuntimeContext.AtmosphereSystem
+                : null;
+            return atmosphere != null &&
+                   atmosphere.IsAtmosphereRuntimeActive &&
                    _powerGridService != null;
         }
 
@@ -2727,7 +2731,7 @@ namespace Hecton8.Tools
             if (!terminalHolster && !ShouldPublishToolStateChanged(slotIndex, in signal, quality01))
                 return;
 
-            SignalBus<ToolStateChangedSignal>.TryPush(in signal);
+            SignalBus<ToolStateChangedSignal>.TryPushTracked(in signal, ref s_x001ModularEquipmentEngineSignalPushDropCount);
             _lastPublishedToolStateChangedSignal = signal;
             _lastPublishedToolStateChangedSlot = slotIndex;
             _lastPublishedToolStateChangedValid = 1;

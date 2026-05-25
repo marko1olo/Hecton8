@@ -1134,6 +1134,33 @@ namespace Hecton8.Core
     }
 
     /// <summary>
+    /// Physics-state event route for cross-domain systems that must report impacts or temporary body connections.
+    /// </summary>
+    public interface IPhysicsStateEventService : ISystem
+    {
+        bool IsInitialized { get; }
+
+        void QueueKinematicImpactEvent(
+            Rigidbody primaryBody,
+            Rigidbody secondaryBody,
+            Vector3 point,
+            Vector3 normal,
+            float impactSpeedMetersPerSecond);
+
+        void RegisterDockConnectionOwner(UnityEngine.Object owner, Rigidbody dockedBody);
+
+        void UnregisterDockConnectionOwner(UnityEngine.Object owner);
+    }
+
+    /// <summary>
+    /// Local component route for systems that need to mirror external docked mass into a vehicle fluid model.
+    /// </summary>
+    public interface IDockedExternalMassSink
+    {
+        void SetDockedExternalMassKilograms(float massKg);
+    }
+
+    /// <summary>
     /// Blittable gameplay audio request consumed by the central audio service queue.
     /// EventID maps to an authored clip-table slot owned by the audio runtime.
     /// </summary>
@@ -2901,6 +2928,56 @@ namespace Hecton8.Core
     }
 
     /// <summary>
+    /// Owner-local submarine room atmosphere read model.
+    /// Consumers resolve this through an owned component contract, not through the concrete atmosphere MonoBehaviour.
+    /// </summary>
+    public interface ISubmarineAtmosphereRoomReadModel : ISystem
+    {
+        bool IsAtmosphereRuntimeActive { get; }
+
+        int RoomCount { get; }
+
+        int RuntimeEntityIdHash { get; }
+
+        float GetRoomPressureKPa(int roomIndex);
+
+        float GetRoomOxygenFraction(int roomIndex);
+
+        float GetRoomCarbonDioxidePressureFraction(int roomIndex);
+
+        float GetRoomTemperatureCelsius(int roomIndex);
+
+        float GetRoomFloodFillRatio(int roomIndex);
+
+        int ResolveNearestRoomIndexForWorldPosition(Vector3 worldPosition);
+
+        float ResolveRoomFloodFillNormalized(int roomIndex);
+
+        bool TryResolveRoomFloodFillNormalized(Vector3 worldPosition, out int roomIndex, out float floodFillNormalized);
+
+        float ResolveExternalDepthMeters();
+
+        float ResolveThermalFatigueMultiplier(int roomIndex);
+    }
+
+    /// <summary>
+    /// Owner-local submarine room atmosphere mutation sink.
+    /// This keeps construction and power systems off the concrete atmosphere owner while preserving single-authority writes.
+    /// </summary>
+    public interface ISubmarineAtmosphereRoomMutationSink : ISubmarineAtmosphereRoomReadModel
+    {
+        void InjectOxygenUnits(int roomIndex, float oxygenUnits);
+
+        void InjectRoomTemperatureDeltaCelsius(int roomIndex, float deltaCelsius);
+
+        void InjectRoomHeatEnergyJoules(int roomIndex, float heatEnergyJoules);
+
+        void InjectElectrolysisGasPocket(int roomIndex, float hydrogenUnits, float oxygenUnits, float pressureSpikeKPa);
+
+        void HandleExternalModuleBreach(Vector3 breachWorldPosition, float breachAreaSquareMeters);
+    }
+
+    /// <summary>
     /// Authoritative environment runtime-context contract exposed through <see cref="GlobalRegistry"/>.
     /// </summary>
     public interface IEnvironmentRuntimeContext
@@ -2914,6 +2991,11 @@ namespace Hecton8.Core
         /// Authoritative construction manager for module placement and integrity checks.
         /// </summary>
         ConstructionManager ConstructionManager { get; }
+
+        /// <summary>
+        /// Authoritative logistics route for module placement and registry reads.
+        /// </summary>
+        ILogisticsService Logistics { get; }
 
         /// <summary>
         /// Authoritative buildable catalog resolved from the construction manager.
@@ -3119,6 +3201,11 @@ namespace Hecton8.Core
         int ModuleCount { get; }
 
         /// <summary>
+        /// Total number of cached BaseModule entries tracked by the logistics owner.
+        /// </summary>
+        int SpawnedBaseModuleCount { get; }
+
+        /// <summary>
         /// Authoritative buildable catalog used for module restoration and placement.
         /// </summary>
         ModuleCatalog Catalog { get; }
@@ -3127,6 +3214,26 @@ namespace Hecton8.Core
         /// Read-only live module registry.
         /// </summary>
         IReadOnlyList<GameObject> SpawnedModules { get; }
+
+        /// <summary>
+        /// Indexed cached BaseModule access without forcing consumers to scan components.
+        /// </summary>
+        BaseModule GetSpawnedBaseModuleAt(int index);
+
+        /// <summary>
+        /// Registers a runtime module with the logistics graph owner.
+        /// </summary>
+        void RegisterModule(GameObject module);
+
+        /// <summary>
+        /// Registers a runtime module with authored buildable metadata.
+        /// </summary>
+        void RegisterModule(GameObject module, BuildableData data);
+
+        /// <summary>
+        /// Clears the active placed-module registry through the logistics owner.
+        /// </summary>
+        void ClearAllModules();
 
         /// <summary>
         /// Creates a temporary bypass edge between two placed base modules when permitted.
@@ -3208,6 +3315,21 @@ namespace Hecton8.Core
             out HabitatRoomWaterlineSnapshot snapshot);
 
         bool TryGetRoomWaterline(int roomId, out HabitatRoomWaterlineSnapshot snapshot);
+
+        bool TryGetHabitatAcousticGraph(out HabitatGraphManager graph);
+    }
+
+    /// <summary>
+    /// Narrow habitat parasite graph route owned by construction logistics.
+    /// </summary>
+    public interface IConstructionParasiteGraphService : ISystem
+    {
+        bool TryResolveFungalMindTarget(
+            BaseModule sourceModule,
+            out BaseModule targetModule,
+            out float targetPotential);
+
+        void NotifyModuleParasiteRootStateChanged(BaseModule module);
     }
 
     /// <summary>
@@ -4599,6 +4721,60 @@ namespace Hecton8.Core
     }
 
     /// <summary>
+    /// Beacon marker snapshot copied from the beacon owner without exposing the owner MonoBehaviour.
+    /// Labels remain managed because the current beacon/save/UI path is label-string based; this is not a Vault DTO.
+    /// </summary>
+    public readonly struct BeaconNetworkSnapshot
+    {
+        public readonly string Id;
+        public readonly string Label;
+        public readonly Vector3 Position;
+        public readonly AbsoluteUniversePosition PositionAup;
+        public readonly Color Color;
+        public readonly float LightRange;
+
+        public BeaconNetworkSnapshot(
+            string id,
+            string label,
+            Vector3 position,
+            AbsoluteUniversePosition positionAup,
+            Color color,
+            float lightRange)
+        {
+            Id = id;
+            Label = label;
+            Position = position;
+            PositionAup = positionAup;
+            Color = color;
+            LightRange = lightRange;
+        }
+    }
+
+    /// <summary>
+    /// Tool/VFX beacon-network route. Consumers can deploy/read/retract markers without binding to BeaconNetworkSystem.
+    /// </summary>
+    public interface IBeaconNetworkService : ISystem
+    {
+        int ActiveCount { get; }
+
+        bool TryDeployBeaconFromTool(
+            GameObject worldBeaconPrefab,
+            Vector3 position,
+            Quaternion rotation,
+            Color color,
+            float lightRange,
+            Vector3 fallbackScale,
+            int maxActive,
+            out string label);
+
+        bool TryRetractNearestFromTool(in AbsoluteUniversePosition originAup, out float distance);
+
+        bool TryGetNearestFromTool(in AbsoluteUniversePosition originAup, out BeaconNetworkSnapshot snapshot, out float distance);
+
+        int CopySnapshots(BeaconNetworkSnapshot[] buffer);
+    }
+
+    /// <summary>
     /// Read-only VRAM budget counters without binding callers to the concrete monitor owner.
     /// </summary>
     public interface IVramBudgetReadModel : ISystem
@@ -4828,6 +5004,172 @@ namespace Hecton8.Core
     {
     }
 
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public struct InteractionSurfaceHitDTO
+    {
+        public const uint FlagHit = 1u << 0;
+
+        [FieldOffset(0)] public Vector3 Point;
+        [FieldOffset(12)] public Vector3 Normal;
+        [FieldOffset(24)] public float Distance;
+        [FieldOffset(28)] public int ColliderInstanceId;
+        [FieldOffset(32)] public int Layer;
+        [FieldOffset(36)] public uint Flags;
+        [FieldOffset(40)] public uint TargetHash;
+        [FieldOffset(44)] public uint Reserved0;
+        [FieldOffset(48)] public ulong Reserved1;
+        [FieldOffset(56)] public ulong Reserved2;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public struct KinematicSurfaceHit
+    {
+        public const uint FlagHit = 1u << 0;
+
+        [FieldOffset(0)] private Vector3 _point;
+        [FieldOffset(12)] private Vector3 _normal;
+        [FieldOffset(24)] private float _distance;
+        [FieldOffset(28)] public int Layer;
+        [FieldOffset(32)] public uint Flags;
+        [FieldOffset(36)] public uint SourceHash;
+        [FieldOffset(40)] public uint Reserved0;
+        [FieldOffset(44)] public uint Reserved1;
+        [FieldOffset(48)] public ulong Reserved2;
+        [FieldOffset(56)] public ulong Reserved3;
+
+        public bool hasHit => (Flags & FlagHit) != 0u;
+        public bool HasHit => hasHit;
+
+        public Vector3 point
+        {
+            readonly get => _point;
+            set
+            {
+                _point = value;
+                MarkHit();
+            }
+        }
+
+        public Vector3 normal
+        {
+            readonly get => _normal;
+            set
+            {
+                _normal = value;
+                MarkHit();
+            }
+        }
+
+        public float distance
+        {
+            readonly get => _distance;
+            set
+            {
+                _distance = value;
+                MarkHit();
+            }
+        }
+
+        public static KinematicSurfaceHit FromSurface(Vector3 point, Vector3 normal, float distance, int layer = -1, uint sourceHash = 0u)
+        {
+            KinematicSurfaceHit hit = default;
+            hit._point = point;
+            hit._normal = normal;
+            hit._distance = distance;
+            hit.Layer = layer;
+            hit.SourceHash = sourceHash;
+            hit.Flags = FlagHit;
+            return hit;
+        }
+
+        private void MarkHit()
+        {
+            Flags |= FlagHit;
+        }
+    }
+
+    public struct InteractionSurfaceHit
+    {
+        private InteractionSurfaceHitDTO _dto;
+        private Collider _collider;
+
+        public bool hasHit => (_dto.Flags & InteractionSurfaceHitDTO.FlagHit) != 0u;
+        public bool HasHit => hasHit;
+
+        public Vector3 point
+        {
+            readonly get => _dto.Point;
+            set
+            {
+                _dto.Point = value;
+                MarkHit();
+            }
+        }
+
+        public Vector3 normal
+        {
+            readonly get => _dto.Normal;
+            set
+            {
+                _dto.Normal = value;
+                MarkHit();
+            }
+        }
+
+        public float distance
+        {
+            readonly get => _dto.Distance;
+            set
+            {
+                _dto.Distance = value;
+                MarkHit();
+            }
+        }
+
+        public Collider collider
+        {
+            readonly get => _collider;
+            set
+            {
+                _collider = value;
+                _dto.ColliderInstanceId = value != null ? value.GetInstanceID() : 0;
+                _dto.Layer = value != null ? value.gameObject.layer : _dto.Layer;
+                MarkHit();
+            }
+        }
+
+        public readonly int colliderInstanceId => _dto.ColliderInstanceId;
+        public readonly int layer => _dto.Layer;
+        public readonly InteractionSurfaceHitDTO Dto => _dto;
+
+        public static InteractionSurfaceHit FromDTO(in InteractionSurfaceHitDTO dto, Collider collider = null)
+        {
+            return new InteractionSurfaceHit
+            {
+                _dto = dto,
+                _collider = collider
+            };
+        }
+
+        public static InteractionSurfaceHit FromSurface(Vector3 point, Vector3 normal, float distance, Collider collider = null, int layer = -1)
+        {
+            InteractionSurfaceHit hit = default;
+            hit._dto.Point = point;
+            hit._dto.Normal = normal;
+            hit._dto.Distance = distance;
+            hit._dto.ColliderInstanceId = collider != null ? collider.GetInstanceID() : 0;
+            hit._dto.Layer = collider != null ? collider.gameObject.layer : layer;
+            hit._dto.Flags = InteractionSurfaceHitDTO.FlagHit;
+            hit._collider = collider;
+            return hit;
+        }
+
+        private void MarkHit()
+        {
+            _dto.Flags |= InteractionSurfaceHitDTO.FlagHit;
+        }
+    }
+
     /// <summary>
     /// Authoritative queued interaction-signal service exposed through <see cref="GlobalRegistry"/>.
     /// </summary>
@@ -4847,28 +5189,28 @@ namespace Hecton8.Core
         bool Publish(in Hecton8.Interaction.InteractionSignal signal, Collider targetCollider);
 
         /// <summary>
-        /// Performs the shared zero-allocation tool hit query from a preformatted interaction packet.
+        /// Performs the shared zero-allocation tool surface query from a preformatted interaction packet.
         /// </summary>
         /// <param name="requesterId">Stable per-requester identifier used to map frame-latent results.</param>
-        /// <param name="packet">Blittable tool request packet copied by value into the service-owned raycast lane.</param>
-        /// <param name="layerMask">Physics layer mask.</param>
+        /// <param name="packet">Blittable tool request packet copied by value into the service-owned surface-query lane.</param>
+        /// <param name="layerMask">Layer mask.</param>
         /// <param name="queryTriggerInteraction">Whether trigger colliders participate in the batched query.</param>
         /// <param name="hit">Nearest valid hit when one is found.</param>
         /// <returns>True when a valid hit was resolved.</returns>
-        bool TryRaycastPrimary(ulong requesterId, in Hecton8.Interaction.InteractionPacket packet, int layerMask, QueryTriggerInteraction queryTriggerInteraction, out RaycastHit hit);
+        bool TryResolvePrimarySurfaceHit(ulong requesterId, in Hecton8.Interaction.InteractionPacket packet, int layerMask, QueryTriggerInteraction queryTriggerInteraction, out InteractionSurfaceHit hit);
 
         /// <summary>
-        /// Performs the shared zero-allocation tool hit query using the service-owned buffers.
+        /// Performs the shared zero-allocation tool surface query using the service-owned buffers.
         /// </summary>
         /// <param name="requesterId">Stable per-requester identifier used to map frame-latent results.</param>
-        /// <param name="origin">Runtime-space ray origin.</param>
-        /// <param name="direction">Runtime-space ray direction.</param>
+        /// <param name="origin">Runtime-space query origin.</param>
+        /// <param name="direction">Runtime-space query direction.</param>
         /// <param name="range">Maximum query range.</param>
-        /// <param name="layerMask">Physics layer mask.</param>
+        /// <param name="layerMask">Layer mask.</param>
         /// <param name="queryTriggerInteraction">Whether trigger colliders participate in the batched query.</param>
         /// <param name="hit">Nearest valid hit when one is found.</param>
         /// <returns>True when a valid hit was resolved.</returns>
-        bool TryRaycastPrimary(ulong requesterId, Vector3 origin, Vector3 direction, float range, int layerMask, QueryTriggerInteraction queryTriggerInteraction, out RaycastHit hit);
+        bool TryResolvePrimarySurfaceHit(ulong requesterId, Vector3 origin, Vector3 direction, float range, int layerMask, QueryTriggerInteraction queryTriggerInteraction, out InteractionSurfaceHit hit);
 
         /// <summary>
         /// Clears all queued interaction signals and associated transient target references.
@@ -5416,6 +5758,32 @@ namespace Hecton8.Core
                 component = ResolveOwnedComponent<T>(root.GetChild(i));
                 if (component != null)
                     return component;
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Resolves the first parent-chain component implementing an owner-local service contract.
+        /// </summary>
+        public static T ResolveParentService<T>(Component owner) where T : class
+        {
+            return owner != null ? ResolveParentService<T>(owner.transform) : null;
+        }
+
+        /// <summary>
+        /// Resolves the first parent-chain component implementing an owner-local service contract.
+        /// </summary>
+        public static T ResolveParentService<T>(Transform root) where T : class
+        {
+            Transform current = root;
+            while (current != null)
+            {
+                Component component = current.GetComponent(typeof(T));
+                if (component is T service)
+                    return service;
+
+                current = current.parent;
             }
 
             return null;

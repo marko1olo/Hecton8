@@ -50,7 +50,8 @@ Generated ARM textures are visual assets, not gameplay state.
 
 - This ring is not runtime authority memory and is not a gameplay rollback buffer.
 
-- Job completion boundaries are Editor materialization points only: texture asset serialization, mip `SetPixelData`, mock benchmark reporting, and UI preview texture creation. There is no runtime `.Complete()` path in this domain.
+- Job completion boundaries are Editor materialization only: texture asset serialization, mip `SetPixelData`, mock benchmark reporting, UI preview texture creation.
+- No runtime `.Complete()` path exists in this domain.
 
 ## Scalability
 

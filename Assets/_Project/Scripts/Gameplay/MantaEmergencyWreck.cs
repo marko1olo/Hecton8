@@ -31,7 +31,6 @@ namespace Hecton8.Gameplay
             public Vector3 linearVelocity;
             public Vector3 angularVelocity;
             public float remainingLifetime;
-            public float collisionDamageCooldownTimer;
             public bool isResident;
             public bool isDehydrated;
         }
@@ -224,18 +223,9 @@ namespace Hecton8.Gameplay
         [Tooltip("Maximum angular spin applied on bailout.")]
         [SerializeField, Range(0f, 24f)] private float spinVelocityMax = 4.6f;
 
-        [Header("-- Collision Damage --------------")]
-        [Tooltip("Minimum collision speed where the drifting wreck starts dealing catastrophic kinetic damage to fauna.")]
-        [SerializeField, Range(0f, 60f)] private float collisionDamageStartSpeed = 15f;
+        [Tooltip("Authored velocity cap used when persisting or restoring a drifting emergency wreck.")]
+        [SerializeField, Range(0f, 80f)] private float bailoutVelocityCapMaxSpeed = 32f;
 
-        [Tooltip("Collision speed where the drifting wreck reaches maximum kinetic damage.")]
-        [SerializeField, Range(0f, 80f)] private float collisionDamageMaxSpeed = 32f;
-
-        [Tooltip("Maximum damage applied when the emergency wreck slams into a fauna target at full authored speed.")]
-        [SerializeField, Range(0f, 500f)] private float collisionDamageAtMaxSpeed = 260f;
-
-        [Tooltip("Cooldown preventing the same wreck body from reapplying catastrophic collision damage every single contact frame.")]
-        [SerializeField, Range(0f, 1f)] private float collisionDamageCooldown = 0.18f;
 
         [Header("-- Idle Reset --------------------")]
         [Tooltip("Linear damping used when the wreck object returns to idle pooled pickup behavior.")]
@@ -263,7 +253,6 @@ namespace Hecton8.Gameplay
         private bool _preserveResidencyOnDespawn;
         private bool _selfDeactivateQueued;
         private float _remainingLifetime;
-        private float _collisionDamageCooldownTimer;
         private float _dehydrationCheckTimer;
         private GameObject _residencyPrefabSource;
         private int _residencySlotIndex = InvalidResidencySlotIndex;
@@ -378,13 +367,6 @@ namespace Hecton8.Gameplay
             if (!_emergencyActive)
                 return;
 
-            if (_collisionDamageCooldownTimer > 0f)
-            {
-                _collisionDamageCooldownTimer -= math.max(0f, fixedDeltaTime);
-                if (_collisionDamageCooldownTimer < 0f)
-                    _collisionDamageCooldownTimer = 0f;
-            }
-
             _remainingLifetime -= math.max(0f, fixedDeltaTime);
             if (_remainingLifetime <= 0f)
             {
@@ -409,147 +391,6 @@ namespace Hecton8.Gameplay
                 _rigidbody,
                 Vector3.down * sinkVelocityChangePerSecond * fixedDeltaTime,
                 ForceMode.VelocityChange);
-        }
-
-        private void LegacyPhysXCollisionDamageDisabled(Collision collision)
-        {
-            if (!_emergencyActive || _collisionDamageCooldownTimer > 0f || collision == null)
-                return;
-
-            float impactSpeedSq = collision.relativeVelocity.sqrMagnitude;
-            float collisionDamageStartSpeedSq = collisionDamageStartSpeed * collisionDamageStartSpeed;
-            if (impactSpeedSq <= collisionDamageStartSpeedSq)
-                return;
-
-            Collider hitCollider = collision.collider;
-            if (hitCollider == null)
-                return;
-
-            FaunaBrain faunaBrain = hitCollider.GetComponent<FaunaBrain>();
-            if (faunaBrain == null)
-                faunaBrain = hitCollider.GetComponentInParent<FaunaBrain>();
-
-            if (faunaBrain == null)
-                return;
-
-            float impactSpeed = impactSpeedSq * math.rsqrt(impactSpeedSq);
-            float maxSpeed = math.max(collisionDamageStartSpeed + 0.01f, collisionDamageMaxSpeed);
-            float inverseDamageRange = 1f / math.max(0.0001f, maxSpeed - collisionDamageStartSpeed);
-            float damageT = math.saturate((impactSpeed - collisionDamageStartSpeed) * inverseDamageRange);
-            float damage = collisionDamageAtMaxSpeed * damageT;
-            if (damage <= 0f)
-                return;
-
-            if (!TryQueueFaunaCollisionDamage(faunaBrain, collision, damage))
-                ApplyFaunaCollisionOwnerFallbackDamage(faunaBrain, collision, damage);
-
-            _collisionDamageCooldownTimer = collisionDamageCooldown;
-        }
-
-        private bool TryQueueFaunaCollisionDamage(FaunaBrain faunaBrain, Collision collision, float damage)
-        {
-            if (faunaBrain == null || collision == null || damage <= 0f)
-                return false;
-
-            int targetId = CombatDamageRuntime.ResolveTargetId(faunaBrain.gameObject);
-            if (targetId == 0 || !CombatDamageRuntime.IsTargetRegistered(targetId))
-                return false;
-
-            Vector3 impactPoint = ResolveCollisionImpactPoint(faunaBrain, collision);
-            if (!IsFiniteVector(impactPoint))
-                impactPoint = faunaBrain.transform != null && IsFiniteVector(faunaBrain.transform.position)
-                    ? faunaBrain.transform.position
-                    : Vector3.zero;
-
-            double3 impactAup3 = double3.zero;
-            if (TryResolveAupFromPlayerObserver(impactPoint, out AbsoluteUniversePosition impactAup) && impactAup.IsFinite())
-            {
-                double3 resolvedAup = impactAup.ToAbsoluteDouble3();
-                if (math.all(math.isfinite(resolvedAup)))
-                    impactAup3 = resolvedAup;
-            }
-
-            Vector3 direction = ResolveCollisionImpactDirection(faunaBrain, collision);
-            Vector3 localPoint = faunaBrain.transform.InverseTransformPoint(impactPoint);
-            float3 localPoint3 = new float3(localPoint.x, localPoint.y, localPoint.z);
-            if (!math.all(math.isfinite(localPoint3)))
-                localPoint3 = float3.zero;
-
-            float3 direction3 = new float3(direction.x, direction.y, direction.z);
-            CombatDamageRequest signal = new CombatDamageRequest
-            {
-                TargetId = targetId,
-                SourceId = DamageSourceIds.MantaEmergencyWreck,
-                Amount = damage,
-                ImpulseMagnitude = damage,
-                Direction = direction3,
-                PackedMeta = CombatDamageRuntime.PackSignalMeta(
-                    CombatDamageTypes.Impact,
-                    0u,
-                    CombatWeakspotTier.None)
-            };
-
-            CombatDamageSignalDetail detail = new CombatDamageSignalDetail
-            {
-                LocalPoint = localPoint3,
-                ArmorNormal = -direction3,
-                LocalTemperatureCelsius = 20f,
-                StatusDurationSeconds = 0f
-            };
-
-            CombatDamageRuntime.TryQueueDamage(in signal, in detail, impactAup3);
-            return true;
-        }
-
-        private void ApplyFaunaCollisionOwnerFallbackDamage(FaunaBrain faunaBrain, Collision collision, float damage)
-        {
-            if (faunaBrain == null || damage <= 0f || !math.isfinite(damage))
-                return;
-
-            Vector3 impactPoint = ResolveCollisionImpactPoint(faunaBrain, collision);
-            if (!IsFiniteVector(impactPoint))
-                impactPoint = faunaBrain.transform != null && IsFiniteVector(faunaBrain.transform.position)
-                    ? faunaBrain.transform.position
-                    : Vector3.zero;
-
-            Vector3 localPoint = faunaBrain.transform != null
-                ? faunaBrain.transform.InverseTransformPoint(impactPoint)
-                : Vector3.zero;
-            float3 localPoint3 = new float3(localPoint.x, localPoint.y, localPoint.z);
-            if (!math.all(math.isfinite(localPoint3)))
-                localPoint3 = float3.zero;
-
-            DamagePacket packet = new DamagePacket
-            {
-                Channel = DamageChannel.Integrity,
-                PreviousValue = 0f,
-                NextValue = 0f,
-                Magnitude = damage,
-                LocalPoint = localPoint3,
-                DamageType = CombatDamageTypes.Impact,
-                IntegrityDelta = 0,
-                Depth = 0f,
-                SourceId = DamageSourceIds.MantaEmergencyWreck,
-                TraumaLevel = 0
-            };
-            faunaBrain.ReceiveDamage(in packet);
-        }
-
-        private static Vector3 ResolveCollisionImpactPoint(FaunaBrain faunaBrain, Collision collision)
-        {
-            if (collision != null && collision.contactCount > 0)
-                return collision.GetContact(0).point;
-
-            return faunaBrain != null ? faunaBrain.transform.position : Vector3.zero;
-        }
-
-        private Vector3 ResolveCollisionImpactDirection(FaunaBrain faunaBrain, Collision collision)
-        {
-            Vector3 direction = collision != null ? collision.relativeVelocity : Vector3.zero;
-            if (!IsFiniteVector(direction) || direction.sqrMagnitude <= 0.0001f)
-                direction = faunaBrain != null ? faunaBrain.transform.position - transform.position : Vector3.forward;
-
-            return NormalizeOrForward(direction);
         }
 
         private static Vector3 NormalizeOrForward(Vector3 direction)
@@ -597,7 +438,6 @@ namespace Hecton8.Gameplay
         {
             _emergencyActive = false;
             _remainingLifetime = 0f;
-            _collisionDamageCooldownTimer = 0f;
             _dehydrationCheckTimer = 0f;
             _currentAup = default;
             _currentRuntimePosition = default;
@@ -752,7 +592,6 @@ namespace Hecton8.Gameplay
             _residencyPrefabSource = state.prefabSource;
             _emergencyActive = true;
             _remainingLifetime = math.max(0.05f, state.remainingLifetime);
-            _collisionDamageCooldownTimer = math.max(0f, state.collisionDamageCooldownTimer);
             _dehydrationCheckTimer = DehydrationCheckIntervalSeconds;
             _preserveResidencyOnDespawn = false;
             _currentAup = ReadPoolSlotPosition(s_residencySlots[slotIndex]);
@@ -864,7 +703,6 @@ namespace Hecton8.Gameplay
                 linearVelocity = linearVelocity,
                 angularVelocity = angularVelocity,
                 remainingLifetime = _remainingLifetime,
-                collisionDamageCooldownTimer = _collisionDamageCooldownTimer,
                 isResident = true,
                 isDehydrated = markDehydrated
             };
@@ -897,7 +735,7 @@ namespace Hecton8.Gameplay
 
         private float ResolveLinearVelocityCap()
         {
-            float authoredCap = math.max(collisionDamageMaxSpeed, sinkVelocityChangePerSecond * bailoutLifetime);
+            float authoredCap = math.max(bailoutVelocityCapMaxSpeed, sinkVelocityChangePerSecond * bailoutLifetime);
             authoredCap *= VelocityClampSafetyMultiplier;
             return float.IsFinite(authoredCap) ? math.max(1f, authoredCap) : 1f;
         }

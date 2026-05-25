@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Globalization;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -19,6 +19,7 @@ namespace Hecton8.QA.Headless
     [DefaultExecutionOrder(-9000)]
     public sealed class HeadlessSimulationRunner : MonoBehaviour, IFastTickable, IFrostTickable, IColdTickable, ILateFrameTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener
     {
+        private static int s_x001HeadlessSimulationRunnerSignalPushDropCount;
         private const string RunnerName = "HEADLESS_SIMULATION_RUNNER";
         private const string RuntimeRootName = "[HeadlessSimulationRunner]";
         private const string CommandLineArg = "-h8headless";
@@ -418,13 +419,23 @@ namespace Hecton8.QA.Headless
                 return;
             }
 
-            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher ||
-                currentService == null ||
-                _finished ||
-                !isActiveAndEnabled)
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
             {
                 return;
             }
+
+            if (currentService == null)
+            {
+                _registeredFast = false;
+                _registeredFrost = false;
+                _registeredCold = false;
+                _registeredLate = false;
+                _started = false;
+                return;
+            }
+
+            if (_finished || !isActiveAndEnabled)
+                return;
 
             RegisterRuntimeLanes();
         }
@@ -708,13 +719,13 @@ namespace Hecton8.QA.Headless
                 SectorDelta = delta,
                 Flags = 1u
             });
-            SignalBus<RebaseSignal>.TryPush(new RebaseSignal
+            SignalBus<RebaseSignal>.TryPushTracked(new RebaseSignal
             {
                 ShiftMeters = shiftMeters,
                 ShiftFrameId = sequence,
                 GridDelta = delta,
                 Flags = 1u
-            });
+            }, ref s_x001HeadlessSimulationRunnerSignalPushDropCount);
             AupSignalRoute.TryQueueShift(new AupShiftSignal
             {
                 ShiftMeters = shiftMeters,
@@ -752,7 +763,7 @@ namespace Hecton8.QA.Headless
 
         private void PublishCrashSignal(int exitCode, uint reasonHash, byte severity)
         {
-            SignalBus<CrashTelemetrySignal>.TryPush(new CrashTelemetrySignal
+            SignalBus<CrashTelemetrySignal>.TryPushTracked(new CrashTelemetrySignal
             {
                 SystemHash = RunnerHash,
                 ReasonHash = reasonHash,
@@ -762,7 +773,7 @@ namespace Hecton8.QA.Headless
                 NativeTrackedBytesMb = GlobalRegistry.NativeTrackedBytes * NativeBytesToMegabytes,
                 Severity = severity,
                 Flags = exitCode == 0 ? (byte)0 : (byte)1
-            });
+            }, ref s_x001HeadlessSimulationRunnerSignalPushDropCount);
         }
 
         private void RecordBlackbox(uint flags)

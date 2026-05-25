@@ -1,4 +1,4 @@
-﻿// ============================================================================
+// ============================================================================
 // HECTON-8 - HectonNarrativeDirector.cs
 // Stateless narrative tracker for discoveries and depth-tier milestones.
 // ============================================================================
@@ -24,6 +24,7 @@ namespace Hecton8.Gameplay
     [DefaultExecutionOrder(-150)]
     public sealed partial class HectonNarrativeDirector : MonoBehaviour, ISaveable, ISlowTickable, IUpdatable, ILateFrameTickable, INarrativeEventListener, INarrativePointOfInterestListener, IDirectorAIEventListener, ISpatialTriggerSystem, IOriginShiftListener, IGlobalRegistryHotSwapListener, INarrativeDiscoveryReadModel, IDisposable
     {
+        private static int s_x001HectonNarrativeDirectorSignalPushDropCount;
         [Header("Settings")]
 #pragma warning disable CS0414 // slowTickRate reserved for future SlowTick throttling
         [SerializeField, UnityEngine.Range(1, 10)] private int slowTickRate = 2;
@@ -159,7 +160,7 @@ namespace Hecton8.Gameplay
         {
             TryRegister();
             TryRegisterHotSwapListener();
-            _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+            _saveService = GlobalRegistry.Save;
             TryRegisterSaveParticipant();
 
             NarrativeEvents.Register(this);
@@ -302,7 +303,7 @@ namespace Hecton8.Gameplay
                 return;
 
             if (_saveService == null)
-                _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+                _saveService = GlobalRegistry.Save;
 
             if (_saveService == null)
                 return;
@@ -456,10 +457,10 @@ namespace Hecton8.Gameplay
                 PreviousBiomeHash = _lastBiomeHash,
                 CurrentBiomeHash = biomeHash,
                 PoiHash = poiHash,
-                Frame = unchecked((uint)SystemDispatcher.CurrentFrameIndex)
+                Frame = SystemDispatcher.CurrentFrameId
             };
             _lastBiomeHash = biomeHash;
-            SignalBus<BiomeChangedSignal>.TryPush(in signal);
+            SignalBus<BiomeChangedSignal>.TryPushTracked(in signal, ref s_x001HectonNarrativeDirectorSignalPushDropCount);
         }
 
         private void PublishSoundscapeSignal(in NarrativePoiDTO dto, in NarrativePoiPresentationDTO presentation, uint poiHash)
@@ -474,9 +475,9 @@ namespace Hecton8.Gameplay
                 ProfileHash = profileHash,
                 PoiHash = poiHash,
                 Intensity01 = 1f,
-                Frame = unchecked((uint)SystemDispatcher.CurrentFrameIndex)
+                Frame = SystemDispatcher.CurrentFrameId
             };
-            SignalBus<SoundscapeProfileSignal>.TryPush(in signal);
+            SignalBus<SoundscapeProfileSignal>.TryPushTracked(in signal, ref s_x001HectonNarrativeDirectorSignalPushDropCount);
         }
 
         private void PublishNarrativeFocusSignal(in NarrativePoiDTO dto, in NarrativePoiPresentationDTO presentation, uint poiHash)
@@ -490,11 +491,11 @@ namespace Hecton8.Gameplay
                 Intensity01 = 1f,
                 DurationSeconds = NarrativeFocusDefaultDurationSeconds,
                 SubtitleFadeDistanceSq = NarrativeFocusSubtitleFadeDistanceSq,
-                Frame = unchecked((uint)SystemDispatcher.CurrentFrameIndex),
+                Frame = SystemDispatcher.CurrentFrameId,
                 Flags = (byte)(NarrativeFocusSignal.FlagArtifactTarget | NarrativeFocusSignal.FlagWorldSubtitle),
                 BoneTarget = 0
             };
-            SignalBus<NarrativeFocusSignal>.TryPush(in signal);
+            SignalBus<NarrativeFocusSignal>.TryPushTracked(in signal, ref s_x001HectonNarrativeDirectorSignalPushDropCount);
         }
 
         private void PublishHudWaypointSignal(in NarrativePoiDTO dto, in NarrativePoiPresentationDTO presentation, uint poiHash)
@@ -513,11 +514,11 @@ namespace Hecton8.Gameplay
                 PositionAup = poiAup,
                 PoiHash = poiHash,
                 QuestHash = questHash,
-                Frame = unchecked((uint)SystemDispatcher.CurrentFrameIndex),
+                Frame = SystemDispatcher.CurrentFrameId,
                 Priority = 1,
                 Flags = flags
             };
-            SignalBus<NarrativeHudWaypointSignal>.TryPush(in signal);
+            SignalBus<NarrativeHudWaypointSignal>.TryPushTracked(in signal, ref s_x001HectonNarrativeDirectorSignalPushDropCount);
 
             IARWaypointService waypoints = GlobalRegistry.ARWaypoints;
             if (waypoints != null && waypoints.IsInitialized)
@@ -550,12 +551,12 @@ namespace Hecton8.Gameplay
             {
                 StateMask = narrativeAupTriggeredMask,
                 PoiHash = poiHash,
-                Frame = unchecked((uint)SystemDispatcher.CurrentFrameIndex),
+                Frame = SystemDispatcher.CurrentFrameId,
                 PoiIndex = poiIndex >= 0 ? (ushort)poiIndex : (ushort)0,
                 Operation = operation,
                 Flags = flags
             };
-            SignalBus<NarrativePoiStateSignal>.TryPush(in signal);
+            SignalBus<NarrativePoiStateSignal>.TryPushTracked(in signal, ref s_x001HectonNarrativeDirectorSignalPushDropCount);
         }
 
         private static AbsoluteUniversePosition CreateAupFromPoiDto(in NarrativePoiDTO dto)

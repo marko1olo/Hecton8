@@ -18,6 +18,7 @@ namespace Hecton8.Gameplay
         private const int BeaconIdPrefixLength = 7;
         private const int BeaconIdHexLength = 16;
         private const int BeaconIdLength = BeaconIdPrefixLength + BeaconIdHexLength;
+        private const string DefaultBeaconLabel = "BEACON";
 
         private static Shader s_fallbackBeaconShader;
 
@@ -81,8 +82,8 @@ namespace Hecton8.Gameplay
                 ? CreateDeterministicBeaconId(in _cachedAup, unchecked((int)EntityId.ToULong(GetEntityId())))
                 : beaconId;
             Label = string.IsNullOrWhiteSpace(label)
-                ? ResolveLocalized(LocalizationKeys.BEACON_PREFIX, "BEACON")
-                : CachedToUpperInvariant(label.Trim());
+                ? DefaultBeaconLabel
+                : label;
             BeaconColor = color;
             LightRange = Mathf.Max(0.5f, range);
             _sourcePrefab = _isFallbackRuntime ? null : sourcePrefab;
@@ -304,20 +305,6 @@ namespace Hecton8.Gameplay
             return hash * BeaconIdFnvPrime;
         }
 
-
-
-        // ----------------------------------------------------------
-        //  ZERO-GC STRING CACHING
-        // ----------------------------------------------------------
-
-        private string ResolveLocalized(string key, string fallback)
-        {
-            ILocalizationTextReadModel manager = _cachedLocalization;
-            return manager != null
-                ? manager.GetOrFallback(key, fallback)
-                : fallback;
-        }
-
         private void CacheRegistryServicesCold()
         {
             _cachedObjectPool = GlobalRegistry.ObjectPoolService;
@@ -339,29 +326,6 @@ namespace Hecton8.Gameplay
 
             GlobalRegistry.TryUnregisterHotSwapListener(this);
             _hotSwapListenerRegistered = false;
-        }
-
-        private static readonly string[] _cachedUpperStrings = new string[16]; // COLD ALLOC: string[16] - upper-case label cache slots - owner: BeaconRuntime
-
-        /// <summary>
-        /// Cached ToUpperInvariant path to avoid repeated string allocations.
-        /// Stores up to 16 recent conversions for reuse.
-        /// </summary>
-        private static string CachedToUpperInvariant(string input)
-        {
-            if (string.IsNullOrEmpty(input))
-                return input;
-
-            // Simple cache hash; not cryptographic.
-            int hash = input.GetHashCode() & 0xF;
-
-            string cached = _cachedUpperStrings[hash];
-            if (cached != null && string.Equals(cached, input, System.StringComparison.OrdinalIgnoreCase))
-                return cached;
-
-            string upper = input.ToUpperInvariant();
-            _cachedUpperStrings[hash] = upper;
-            return upper;
         }
     }
 }

@@ -231,7 +231,8 @@ Owner-local BufferID lane:
 
 
 - `GlobalQualityWeight` is continuous.
-- `ResolveMaxActiveLights(weight, thermal)` uses `math.step` only as a zero-quality numeric gate, a cubic smooth polynomial, and `math.lerp` to map low pressure toward 8 survivors and full quality to 64 survivors.
+- `ResolveMaxActiveLights(weight, thermal)` uses `math.step` only as zero-quality numeric gate.
+- Cubic smooth polynomial plus `math.lerp` maps low pressure to `8` survivors and full quality to `64`.
 - Thermal damping is polynomial and branchless.
 - The culling cadence also lerps from roughly 5 Hz under pressure to 60 Hz at high quality.
 - Intensity fades by squared distance and thermal pressure before radix sorting, so lights disappear by weight, not by binary tier.

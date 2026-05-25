@@ -52,7 +52,7 @@ Evidence: UNITY_IMPORT_ATTEMPTED / COMPILE_BLOCKED_BY_DEPENDENCIES.
 
 - Non-finite facade inputs increment a hot non-finite delta and fail closed before entering ingress.
 
-- If a fixed ingress ring saturates, `TryWriteIngressEvent` increments the lane-specific `AnalyticsIngressCursorDTO` overflow field and returns an overflow result so the generic hot-drop delta is not incremented a second time.
+- On fixed-ring saturation, `TryWriteIngressEvent` increments lane-specific overflow and returns overflow; the generic hot-drop delta is not double-counted.
 
 - Exporter drains critical telemetry first, then routine telemetry. Quality-derived budget bounds POST_SIMULATION by `min(stagingCapacity, lerp(10,1000,GlobalQualityWeight))`, not ring backlog.
 
@@ -192,7 +192,7 @@ If first `OnDisable` cannot stop the worker, `OnDestroy` retries and keeps Vault
 
 
 - `GlobalQualityWeight` continuously maps routine event retention and per-frame drain work from roughly 10 records per drain at `q=0` to 1000 at `q=1`.
-- Routine pressure culling uses a deterministic hash of event type, timestamp, backlog, and full AUP double lanes so load shedding remains spatially distributed instead of dropping same-second cohorts.
+- Routine pressure culling uses a deterministic hash of event type, timestamp, backlog, and AUP double lanes so load shedding remains spatially distributed instead of dropping same-second cohorts.
 - Critical hashes use the high bit, route through the critical ingress lane, and survive routine pressure culling.
 
 
@@ -237,7 +237,7 @@ Event payloads are fixed little-endian binary:
 
 - Compression is explicitly RLE envelope compression, not claimed LZ4.
 - `CompressAnalyticsBufferJob` remains a Burst unmanaged RLE kernel, while the live worker path uses equivalent span RLE because Unity Job scheduling from the dedicated I/O thread is rejected.
-- Endpoint configuration is cold CSV only from `telemetry_config.csv` with legacy `analytics_endpoint.csv` fallback; runtime hot capture does not use JSON, `UnityWebRequest`, managed worker arrays, `ParallelWriter` caching, or `Schedule().Complete()` fences.
+- Endpoint config is cold CSV: `telemetry_config.csv`, then legacy `analytics_endpoint.csv`. Hot capture rejects JSON, `UnityWebRequest`, managed workers, cached `ParallelWriter`, and `Schedule().Complete()`.
 - Disk fallback writes uniquely sequenced `.tmp` files with `FileMode.CreateNew`, flushes, then atomically renames to `.h8log`.
 - Existing final backlog files are not deleted.
 - Replay validates each payload; corrupt/partial/replayed files delete only after the read stream closes.

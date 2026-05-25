@@ -92,6 +92,7 @@ namespace Hecton8.Narrative.Campaign
     [AddComponentMenu("Hecton8/Narrative/Meta Campaign Service")]
     public sealed class MetaCampaignService : MonoBehaviour, IMetaCampaignService, IUpdatable, ILateFrameTickable, ISaveable, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener
     {
+        private static int s_x001MetaCampaignServiceSignalPushDropCount;
         public const uint ToxicityLevelHash = 0x903D9D8Eu;
         public const uint LeviathanAwakenedHash = 0x2B00DC54u;
         public const uint BaseDeltaDestroyedHash = 0x46BAFD85u;
@@ -185,7 +186,7 @@ namespace Hecton8.Narrative.Campaign
             if (!_serviceRegistered)
                 return;
 
-            _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+            _saveService = GlobalRegistry.Save;
             TryRegisterHotSwapListener();
             TryRegisterSaveService();
             PublishCachedVisualState(GlobalWorldStateSignal.ChangeKindLoad, (uint)Hecton8.Core.SystemDispatcher.CurrentFrameIndex);
@@ -197,7 +198,7 @@ namespace Hecton8.Narrative.Campaign
             if (_serviceRegistered)
             {
                 if (_saveService == null)
-                    _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+                    _saveService = GlobalRegistry.Save;
                 TryRegisterHotSwapListener();
                 TryRegisterSaveService();
             }
@@ -442,7 +443,7 @@ namespace Hecton8.Narrative.Campaign
                 return;
 
             if (_saveService == null)
-                _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+                _saveService = GlobalRegistry.Save;
 
             if (_saveService == null)
                 return;
@@ -639,7 +640,7 @@ namespace Hecton8.Narrative.Campaign
         {
             sideEffectFlags |= GlobalWorldStateSignal.FlagAupIndependent;
             _sequence++;
-            SignalBus<GlobalWorldStateSignal>.TryPush(new GlobalWorldStateSignal
+            SignalBus<GlobalWorldStateSignal>.TryPushTracked(new GlobalWorldStateSignal
             {
                 PositionAup = default,
                 VariableHash = variableHash,
@@ -648,7 +649,7 @@ namespace Hecton8.Narrative.Campaign
                 ChangeKind = changeKind,
                 Flags = sideEffectFlags,
                 Sequence = _sequence
-            });
+            }, ref s_x001MetaCampaignServiceSignalPushDropCount);
 
             WriteBlackBox(frame, variableHash, value, changeKind, sideEffectFlags);
         }
@@ -690,7 +691,7 @@ namespace Hecton8.Narrative.Campaign
         private void PublishCampaignBroadcast(uint variableHash)
         {
             float severity01 = math.max(0.1f, _toxicity01);
-            SignalBus<VocalWarningSignal>.TryPush(new VocalWarningSignal
+            SignalBus<VocalWarningSignal>.TryPushTracked(new VocalWarningSignal
             {
                 WarningHash = VocalWarningHashes.Radiation,
                 SourceId = variableHash != 0u ? variableHash : VwsToxicityBroadcastHash,
@@ -698,14 +699,14 @@ namespace Hecton8.Narrative.Campaign
                 CooldownSeconds = 30f,
                 Priority = (byte)VocalWarningId.Radiation,
                 Flags = VocalWarningSignalFlags.HabitatIntegrityCompromised
-            });
+            }, ref s_x001MetaCampaignServiceSignalPushDropCount);
         }
 
         private void PublishCampaignStateSnapshot(byte changeKind, byte sideEffectFlags, uint frame)
         {
             sideEffectFlags |= GlobalWorldStateSignal.FlagAupIndependent;
             _sequence++;
-            SignalBus<GlobalWorldStateSignal>.TryPush(new GlobalWorldStateSignal
+            SignalBus<GlobalWorldStateSignal>.TryPushTracked(new GlobalWorldStateSignal
             {
                 PositionAup = default,
                 VariableHash = CampaignStageHash,
@@ -714,7 +715,7 @@ namespace Hecton8.Narrative.Campaign
                 ChangeKind = changeKind,
                 Flags = sideEffectFlags,
                 Sequence = _sequence
-            });
+            }, ref s_x001MetaCampaignServiceSignalPushDropCount);
 
             PublishStateSideEffects(changeKind, sideEffectFlags, CampaignStageHash, frame);
             WriteBlackBox(frame, CampaignStageHash, _currentStage, changeKind, sideEffectFlags);
@@ -722,7 +723,7 @@ namespace Hecton8.Narrative.Campaign
 
         private void PublishCartographyState(uint frame)
         {
-            SignalBus<NarrativePoiStateSignal>.TryPush(new NarrativePoiStateSignal
+            SignalBus<NarrativePoiStateSignal>.TryPushTracked(new NarrativePoiStateSignal
             {
                 StateMask = ((ulong)_currentStageHash << 32) | (uint)math.clamp(_currentStage, 0, int.MaxValue),
                 PoiHash = CartographyCorruptionPoiHash,
@@ -730,7 +731,7 @@ namespace Hecton8.Narrative.Campaign
                 PoiIndex = 0,
                 Operation = _toxicity01 > 0f || _currentStage > 0 ? (byte)1 : (byte)0,
                 Flags = GlobalWorldStateSignal.FlagCartographyRefresh
-            });
+            }, ref s_x001MetaCampaignServiceSignalPushDropCount);
         }
 
         private void RefreshCachedStateFromVariables()

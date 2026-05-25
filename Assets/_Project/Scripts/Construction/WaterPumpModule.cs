@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using Hecton8.Atmosphere;
 using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.Logistics;
@@ -34,7 +33,7 @@ namespace Hecton8.Construction
         private static readonly List<WaterPumpModule> s_activePumps = new List<WaterPumpModule>(InitialPumpCapacity);
 
         private BaseModule _hostModule;
-        private SubmarineAtmosphereSystem _atmosphereSystem;
+        private ISubmarineAtmosphereRoomReadModel _atmosphereSystem;
         private IFluidPipeGraphService _pipeGraphService;
         private bool _hasPower = true;
         private bool _registered;
@@ -262,11 +261,8 @@ namespace Hecton8.Construction
                 TryGetComponent(out _hostModule);
             if (_hostModule == null)
                 _hostModule = GetComponentInParent<BaseModule>();
-            if (_atmosphereSystem == null)
-            {
-                if (!TryGetComponent(out _atmosphereSystem))
-                    _atmosphereSystem = GetComponentInParent<SubmarineAtmosphereSystem>();
-            }
+            if (_atmosphereSystem == null || !_atmosphereSystem.IsAtmosphereRuntimeActive)
+                _atmosphereSystem = ComponentReferenceUtility.ResolveParentService<ISubmarineAtmosphereRoomReadModel>(this);
         }
 
         private bool TryConnectDefaultOutlet(IFluidPipeGraphService graph, int networkId, int ingressNodeIndex)
@@ -348,7 +344,7 @@ namespace Hecton8.Construction
 
         private int ResolvePipeRoomIndex()
         {
-            return _atmosphereSystem != null
+            return _atmosphereSystem != null && _atmosphereSystem.IsAtmosphereRuntimeActive
                 ? _atmosphereSystem.ResolveNearestRoomIndexForWorldPosition(ResolvePipeRuntimePosition())
                 : -1;
         }
@@ -382,8 +378,8 @@ namespace Hecton8.Construction
 
         private int ResolvePipeNetworkId()
         {
-            if (_atmosphereSystem != null)
-                return unchecked((int)EntityId.ToULong(_atmosphereSystem.GetEntityId()));
+            if (_atmosphereSystem != null && _atmosphereSystem.IsAtmosphereRuntimeActive)
+                return _atmosphereSystem.RuntimeEntityIdHash;
             if (_hostModule != null)
                 return unchecked((int)EntityId.ToULong(_hostModule.GetEntityId()));
 

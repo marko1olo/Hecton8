@@ -5,7 +5,7 @@ Role: HYDRODYNAMIC_KCC_AND_COLLISION_SOVEREIGN
 Domain: Echelon 4 Player/Kinematics/Physics KCC
 Task Count: 10
 Batch Source: Docs/Tasks/CURRENT_BATCH.md
-Status: APEX_LOCKSTEP64_HIDDEN_QUERY_COMPILED
+Status: APEX_UNITY_COLLISION_DTO_STATIC_GREEN_BUILD_BLOCKED
 
 ## Hygiene
 
@@ -38,7 +38,7 @@ Status: APEX_LOCKSTEP64_HIDDEN_QUERY_COMPILED
 
 ## Current Loop
 
-APEX re-audit: `GameBootstrapper.WaitForGroundReadyAsync` no longer uses `Physics.RaycastNonAlloc`; it uses cached `ITerrainProvider` and `IVoxelSonarSdfReadModel` routes. `BuoyancyObject.PerformGroundCheck`, which is read by player acoustic/weather systems, no longer uses `Physics.RaycastNonAlloc`; it uses terrain/SDF providers and is now in scanner scope. `DeployableSdfDrillRuntime` no longer uses `RaycastCommand.ScheduleBatch`, `RaycastHit`, or snap command buffers; deploy snap resolves nearest cached terrain/SDF contact. `DemoFirstPersonController` no longer registers into `PriorityLayer.Player` and no longer writes `Rigidbody.linearVelocity`. `PlayerInteraction` and `UI/InteractionUI` no longer use `RaycastCommand`, dispatcher ray receivers, `QueryParameters`, `RaycastHit`, or `Physics.RaycastNonAlloc`; both consume `InteractableRegistry.TryRaycastSpatial` over a fixed registered collider target array. `Core/InputDispatcher` no longer stages XR look-at `RaycastCommand`, no longer implements `IDispatcherRaycastReceiver`, and resolves XR look-at through `InteractableRegistry.TryRaycastSpatial`. `PhysicalInteractionHandler`, `PickupItem`, and `PhysicalBatteryCompartment` no longer write `Rigidbody.linearVelocity` in the player pocket-pickup / battery snap path; restore uses `PhysicsForceRouter.QueueForce/QueueTorque(..., VelocityChange)` where motion restoration is needed. `LaserCutterDodRuntime` no longer allocates or schedules PhysX command/hit buffers; it schedules a bounded Burst SDF probe job over `IVoxelSonarSdfReadModel` payload bytes and evaluates `VoxelSonarSdfRaycastHit` rows. `DiegeticPdaFocusDistanceController` no longer uses `Physics.RaycastNonAlloc`; it resolves focus distance through cached voxel SDF raymarch. `ScannerTool` no longer implements `IDispatcherRaycastReceiver` or queues scientific lore `RaycastCommand` requests; lore occlusion now uses cached voxel SDF raymarch plus bounded `WorldSpatialHashGrid` spatial occlusion. `Floater` no longer uses `Physics.RaycastNonAlloc` or `RaycastHit` for held attach targeting; it consumes registered `WorldSpatialHashGrid` owner hits and refuses unregistered arbitrary collider targets. `HectonSocketHelper` no longer contains a raw PhysX snap probe; the context menu is disabled until construction owns a non-PhysX surface route. Hydro KCC jobs locally clamp contact-hit stride to 1..8 inside Burst jobs. `Tools/OOP_Kcc_Scanner_X_005.py` is clean for the expanded X_005 scope including input/interaction/pickup/UI/PDA/laser cutter/scanner/floater/socket helper. `Tools/KccApexAudit_X_005.py` reports scoped forbidden count 0, broad non-Editor runtime forbidden count 96 outside X_005, `LockstepPlayerKinematicState` size 96 bytes gap-free, and `KinematicStateDTO` size 64 bytes gap-free. Full non-Editor `Assets/_Project/Scripts` raw scan finds zero sync `Physics.Raycast/SphereCast/CapsuleCast` calls, including `NonAlloc` variants. Compile after the latest patch is pending because CPU measured 91.5%, above the project build gate.
+APEX re-audit: `GameBootstrapper.WaitForGroundReadyAsync`, `BuoyancyObject.PerformGroundCheck`, deploy snap, demo controller, player interaction, XR look-at, PDA focus, scanner lore occlusion, floater attach targeting, and socket helper no longer use sync PhysX casts, PhysX command bridges, Unity collision callbacks, direct Rigidbody velocity writes, or Unity `RaycastHit` DTOs in the X_005 route. `PlayerInteraction`, `UI/InteractionUI`, and `Core/InputDispatcher` consume `InteractableRegistry.TryResolveSpatialTarget` over the registered target array. `LaserCutterDodRuntime` uses the surface requester/mask/staging contract and a bounded Burst SDF probe over `IVoxelSonarSdfReadModel` payload bytes. Hydro KCC jobs locally clamp contact-hit stride to 1..8 inside Burst jobs. `Tools/OOP_Kcc_Scanner_X_005.py` is clean for the expanded X_005 scope. `Tools/KccApexAudit_X_005.py` reports scoped forbidden count 0, broad non-Editor runtime forbidden count 0, `LockstepPlayerKinematicState` size 64 bytes, `KinematicStateDTO` size 64 bytes, interaction target legacy raycast API count 0, and Unity collision DTO route count 0. Strict non-Editor runtime scans find zero sync `Physics.Raycast/SphereCast/CapsuleCast` calls, including `NonAlloc` variants, and zero PhysX command/callback DTO routes. Compile after the latest collision DTO removal is pending because the project build gate remains closed by active compiler/runtime processes and CPU saturation.
 
 ## Proof Artifacts
 
@@ -712,4 +712,80 @@ The whole non-Editor runtime is now clean for the broad hidden PhysX query class
 - [x] Restore/build reached a non-KCC compile wall | DOD practice: build was launched only after gate opened and failed on `Assets/_Project/Scripts/UI/DiegeticPDAController.cs` missing `IUpdatable.Tick(float)` | Alternatives rejected: treating the error as KCC failure or ignoring compiler output | Estimate: compiler proof blocked, runtime 0 us
 - [x] UI compile wall patched minimally | DOD practice: removed unused `IUpdatable` from `DiegeticPDAController` because the class only registers as `ILateFrameTickable` and has no update-lane registration | Alternatives rejected: adding a no-op `Tick(float)` method that would keep a false interface contract | Estimate: behavior-preserving compile-wall fix, no KCC frame us claimed
 - [x] Static verification rerun | DOD practice: targeted scan confirms no remaining `DiegeticPDAController : MonoBehaviour, IUpdatable`; py_compile and targeted diff-check passed | Alternatives rejected: rerunning KCC audit for a UI-only compile-wall patch | Estimate: runtime 0 us
-- [ ] C# compile rerun pending | DOD practice: build gate was retried again and stayed closed; latest samples are CPU `100/100/100` with 2 active compiler/runtime processes | Alternatives rejected: launching `dotnet build` above the 50% CPU gate or while compiler processes are active | Estimate: compile pending verification
+- [ ] C# compile rerun pending | DOD practice: build gate was retried for 24 attempts over 180 seconds and stayed closed; CPU samples peaked above 50% on every attempt and active compiler/runtime process count was non-zero during attempts 9-19 | Alternatives rejected: launching `dotnet build` above the 50% CPU gate or while compiler processes are active | Estimate: compile pending verification
+
+## Latest Verification - Build Gate Retry After UI Compile Wall
+
+- Build gate retry did not launch `dotnet build`: 24 attempts, CPU samples included `100/100/95`, `100/100/100`, `41/35/97`, `52/77/47`, `40/89/71`, and `53/78/100`; the max sample in every attempt exceeded 50%.
+- Active compiler/runtime process count was 1-2 during attempts 9-19; attempts outside that window had zero active compiler/runtime processes but CPU still exceeded the project gate.
+- The pending compiler proof remains the next hard verification step after the UI interface fix.
+
+## APEX Continuation - Tool Interaction Surface DTO Closure
+
+- [x] Tool primary hit route no longer returns Unity `RaycastHit` | DOD practice: `IInteractionSignalService`, `EquipmentInteractionHandler`, `PlayerTool`, tool consumers, `RaycastBatchHelper.QueryResult`, and `QueryCacheContext` now use typed `InteractionSurfaceHit`; the service-owned vault hit lane stores explicit 64-byte `InteractionSurfaceHitDTO` rows | Alternatives rejected: keeping Unity `RaycastHit` as a harmless DTO after PhysX scheduling was removed | Estimate: structural authority cleanup, no profiler us claimed
+- [x] Legacy tool raycast method names removed from the patched route | DOD practice: public/shared tool methods now use `TryResolvePrimarySurfaceHit`; targeted scan shows zero `TryRaycastPrimary` and zero `TryQueuePrimaryRaycast` in the patched interaction/tool route | Alternatives rejected: leaving raycast-shaped public contracts for future regressions | Estimate: runtime 0 us
+- [x] Apex audit proof expanded and rerun | DOD practice: audit now persists `interaction_surface_unity_raycast_hit_count = 0`, `interaction_surface_legacy_method_count = 0`, `interaction_surface_uses_typed_hit = true`, and `interaction_surface_vault_uses_typed_hit_dto = true` | Alternatives rejected: one-off grep without JSON/markdown proof | Estimate: offline proof only
+- [x] Full C# compile passed after restore | DOD practice: build gate opened, `dotnet restore Assembly-CSharp.csproj --disable-parallel -v:minimal` regenerated `Temp/obj` assets, and `dotnet build Assembly-CSharp.csproj --no-restore -v:minimal -m:1 /p:UseSharedCompilation=false /nodeReuse:false` completed with 0 errors | Alternatives rejected: reporting static success after `NETSDK1004` without restore/build proof | Estimate: compiler proof only
+
+## Latest Verification - Tool Interaction Surface DTO Closure
+
+- `python -m py_compile Tools/KccApexAudit_X_005.py Tools/OOP_Kcc_Scanner_X_005.py`: passed.
+- `python Tools/OOP_Kcc_Scanner_X_005.py`: `finding_counts = {}` and Hydro KCC forbidden command hits 0.
+- `python Tools/KccApexAudit_X_005.py`: `broad_forbidden_count = 0`, `scoped_forbidden_count = 0`, `interaction_surface_unity_raycast_hit_count = 0`, `interaction_surface_legacy_method_count = 0`, `interaction_surface_uses_typed_hit = true`, `interaction_surface_vault_uses_typed_hit_dto = true`, `legacy_batch_unity_raycast_hit_count = 0`, `lockstep_size = 64`, and `kinematic_state_size = 64`.
+- Targeted interaction/tool scan returned zero `RaycastHit`, zero `TryRaycastPrimary`, zero `TryQueuePrimaryRaycast`, zero `NativeArray<InteractionSurfaceHit>`, and zero `VaultGenerationHandle<InteractionSurfaceHit>` in the patched surface-query route; `VoxelSonarSdfRaycastHit` remains the existing 64-byte SDF result DTO name.
+- Whole-runtime non-Editor exact forbidden-symbol scan returned zero sync Physics casts/overlaps/checks, zero PhysX command types/schedules, zero Unity collision/trigger callbacks, zero `Physics.SyncTransforms`, zero `.ClosestPoint`, zero `GetContacts`, and zero `SweepTest*`.
+- Targeted `git diff --check` passed for touched code/tool/report files with CRLF warnings only.
+- Full build result: `Build succeeded`, 0 errors, 2 pre-existing missing `Hecton8.Input.csproj` reference warnings.
+
+## APEX Continuation - Kinematic Surface Hit DTO Closure
+
+- [x] IK/VR/buoyancy local hit buffers no longer use Unity `RaycastHit` | DOD practice: added explicit 64-byte unmanaged `KinematicSurfaceHit` and routed `ContextualPhysicalIkRuntime`, `VRSomaticProvider`, `BuoyancyObject`, and `HectonPlayerEnvironmentHandler` local SDF/terrain hit buffers through it | Alternatives rejected: keeping Unity `RaycastHit` as a convenient Burst-compatible local hit row | Estimate: structural authority cleanup, no profiler us claimed
+- [x] Apex audit proof expanded and rerun | DOD practice: audit now persists `kinematic_surface_hit_layout_64 = true`, `kinematic_surface_unity_raycast_hit_count = 0`, and `kinematic_surface_uses_typed_hit = true` | Alternatives rejected: reporting only a targeted grep | Estimate: offline proof only
+- [x] Static and compile verification rerun | DOD practice: py_compile, OOP scanner, apex audit, whole-runtime forbidden scan, targeted diff-check, and gated C# build were rerun after the DTO change | Alternatives rejected: relying on the previous compile before changing Burst job DTO types | Estimate: compiler proof only
+
+## Latest Verification - Kinematic Surface Hit DTO Closure
+
+- `python -m py_compile Tools/KccApexAudit_X_005.py Tools/OOP_Kcc_Scanner_X_005.py`: passed.
+- `python Tools/OOP_Kcc_Scanner_X_005.py`: `finding_counts = {}` and Hydro KCC forbidden command hits 0.
+- `python Tools/KccApexAudit_X_005.py`: `broad_forbidden_count = 0`, `scoped_forbidden_count = 0`, `kinematic_surface_hit_layout_64 = true`, `kinematic_surface_unity_raycast_hit_count = 0`, `kinematic_surface_uses_typed_hit = true`, and `lockstep_size = 64`.
+- Targeted source scan found no Unity `RaycastHit` symbols in `BuoyancyObject`, `ContextualPhysicalIkRuntime`, `VRSomaticProvider`, or `HectonPlayerEnvironmentHandler`; the remaining `VoxelSonarSdfRaycastHit` names are existing SDF DTO contracts, not Unity hit rows.
+- Whole-runtime non-Editor exact forbidden-symbol scan returned zero sync Physics casts/overlaps/checks, zero PhysX command types/schedules, zero Unity collision/trigger callbacks, zero `Physics.SyncTransforms`, zero `.ClosestPoint`, zero `GetContacts`, and zero `SweepTest*`.
+- Targeted `git diff --check` passed for touched kinematic-surface files and proof artifacts with CRLF warnings only.
+- Full build result after the kinematic DTO change: `Build succeeded`, 0 errors, 2 pre-existing missing `Hecton8.Input.csproj` reference warnings.
+
+## APEX Continuation - Spatial Target Contract Closure
+
+- [x] Registered interaction target route no longer exposes raycast-shaped API | DOD practice: `InteractableRegistry.TryRaycastSpatial` became `TryResolveSpatialTarget`, and `PlayerInteraction`, `InteractionUI`, and `InputDispatcher` now call the typed spatial target route | Alternatives rejected: keeping a non-PhysX method with PhysX naming because it did not call `Physics.Raycast` | Estimate: runtime 0 us, regression-surface reduction only
+- [x] Player interaction and laser cutter no longer carry raycast-shaped local contracts | DOD practice: `raycastInterval/_raycastTimer/PerformRaycast` became `targetProbeInterval/_targetProbeTimer/ResolveHoveredTarget`, and laser cutter requester/mask/staging names became surface-contract names | Alternatives rejected: preserving legacy field names after the service contract was already typed | Estimate: runtime 0 us
+- [x] Player spawner ground probe naming is no longer raycast-shaped | DOD practice: `raycastOriginHeight/_rayOrigin` became `groundProbeOriginHeight/_groundProbeOrigin`, while the implementation continues to read cached terrain height through `SpawnGroundHit` | Alternatives rejected: keeping raycast names because defaults were behaviorally identical | Estimate: runtime 0 us
+- [x] Apex audit proof expanded and rerun | DOD practice: `KccApexAudit_X_005.py` now persists `interaction_target_legacy_raycast_api_count = 0`, `interaction_target_uses_spatial_target_contract = true`, and `player_spawner_uses_ground_probe_origin = true` | Alternatives rejected: one-off `rg` proof without report artifacts | Estimate: offline proof only
+- [x] Static verification rerun | DOD practice: py_compile, OOP scanner, apex audit, strict whole-runtime forbidden scan, targeted legacy-name scan, and targeted diff-check were rerun | Alternatives rejected: claiming source-contract closure without scanner output | Estimate: runtime 0 us
+- [ ] C# compile rerun pending | DOD practice: build gate sampled active compiler/runtime process count `5` and CPU `100/100/100`, so local build stayed blocked | Alternatives rejected: launching `dotnet build` above the 50% CPU and active compiler rule | Estimate: compile pending verification
+
+## Latest Verification - Spatial Target Contract Closure
+
+- `python -m py_compile Tools/KccApexAudit_X_005.py Tools/OOP_Kcc_Scanner_X_005.py`: passed.
+- `python Tools/KccApexAudit_X_005.py`: `interaction_target_legacy_raycast_api_count = 0`, `interaction_target_uses_spatial_target_contract = true`, `player_spawner_uses_ground_probe_origin = true`, `broad_forbidden_count = 0`, and `scoped_forbidden_count = 0`.
+- `python Tools/OOP_Kcc_Scanner_X_005.py`: `finding_counts = {}` and Hydro KCC forbidden command hits 0.
+- Targeted legacy-name scan returned zero `TryRaycastSpatial`, `raycastInterval`, `_raycastTimer`, `PerformRaycast`, `_raycastRequesterId`, `CacheRaycastRequesterId`, `StageDodRaycastRequest`, `ResolveCuttableRaycastMask`, `raycastOriginHeight`, `_rayOrigin`, and `DefaultRaycastLayerMask` matches in the patched interaction/spawner/cutter route.
+- Strict whole-runtime non-Editor forbidden-symbol scan returned zero sync Unity Physics casts/overlaps/checks, zero PhysX command types/schedules, zero Unity collision/trigger callbacks, zero `Physics.SyncTransforms`, zero `.ClosestPoint`, zero `GetContacts`, and zero `SweepTest*`.
+- Targeted `git diff --check` passed for touched code/tool/report files with CRLF warnings only.
+- Compile gate remained closed: active compiler/runtime process count `5`, CPU samples `100/100/100`.
+
+## APEX Continuation - Unity Collision DTO Dead Route Removal
+
+- [x] Core legacy Unity `Collision` impact route removed | DOD practice: deleted `GlobalPhysicsStateManager.QueueImpact(Rigidbody, Rigidbody, Collision)`, `QueueImpactInternal(... Collision ...)`, and the disabled helper that forwarded Unity `Collision` into the impact queue | Alternatives rejected: keeping a disabled helper because it was not named `OnCollisionEnter` | Estimate: runtime 0 us, dead route removal
+- [x] Cross-domain disabled Unity `Collision` DTO blocks removed | DOD practice: removed dead disabled `Collision`/`ContactPoint` handlers from `MantaEmergencyWreck` and `SargassumCollapseChunk` while preserving existing force-router/spatial routes | Alternatives rejected: editing active fauna/world ownership math beyond the dead DTO route | Estimate: runtime 0 us
+- [x] Apex audit proof expanded and rerun | DOD practice: `KccApexAudit_X_005.py` now persists `unity_collision_dto_count = 0` and `unity_collision_dto_route_removed = true` across non-Editor runtime scripts | Alternatives rejected: local `rg` without persisted JSON proof | Estimate: offline proof only
+- [x] Static verification rerun | DOD practice: py_compile, OOP scanner, apex audit, strict collision DTO scan, strict whole-runtime forbidden scan, and targeted diff-check were rerun | Alternatives rejected: reporting collision DTO removal without scan proof | Estimate: runtime 0 us
+- [ ] C# compile rerun pending | DOD practice: previous build gate retries stayed closed under active compiler/runtime processes and CPU saturation | Alternatives rejected: launching `dotnet build` above the 50% CPU and active compiler rule | Estimate: compile pending verification
+
+## Latest Verification - Unity Collision DTO Dead Route Removal
+
+- `python -m py_compile Tools/KccApexAudit_X_005.py Tools/OOP_Kcc_Scanner_X_005.py`: passed.
+- `python Tools/KccApexAudit_X_005.py`: `unity_collision_dto_count = 0`, `unity_collision_dto_route_removed = true`, `broad_forbidden_count = 0`, and `scoped_forbidden_count = 0`.
+- `python Tools/OOP_Kcc_Scanner_X_005.py`: `finding_counts = {}` and Hydro KCC forbidden command hits 0.
+- Strict non-Editor runtime scan returned zero `Collision collision`, zero `ContactPoint`, zero `.GetContact(`, and zero `QueueImpact(` matches.
+- Strict whole-runtime non-Editor forbidden-symbol scan returned zero sync Unity Physics casts/overlaps/checks, zero PhysX command types/schedules, zero Unity collision/trigger callbacks, zero `Physics.SyncTransforms`, zero `.ClosestPoint`, zero `GetContacts`, zero `GetContact`, and zero `SweepTest*`.
+- Targeted `git diff --check` passed for touched code/tool/report files with CRLF warnings only.
+- Compile gate retry stayed closed for 10 attempts: active compiler/runtime process count was `0` for attempts 1-4 and `2` for attempts 5-10, but CPU max stayed `100` on every attempt.

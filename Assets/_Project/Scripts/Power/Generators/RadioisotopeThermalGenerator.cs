@@ -32,6 +32,7 @@ namespace Hecton8.Power.Generators
         IRadioisotopeThermalReprocessable,
         IGlobalRegistryHotSwapListener
     {
+        private static int s_x001RadioisotopeThermalGeneratorSignalPushDropCount;
         private const int MaxRtgs = 128;
         private const int TelemetryCapacity = 300;
         private const int DecayBatchSize = 32;
@@ -886,10 +887,10 @@ namespace Hecton8.Power.Generators
             signal.PositionAup = positionAup;
             signal.TemperatureCelsius = heatDelta;
             signal.DeltaCelsius = heatDelta;
-            signal.Frame = unchecked((uint)Time.frameCount);
+            signal.Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             signal.SourceId = (ushort)math.min(_sourceId, ushort.MaxValue);
             signal.Flags = TemperatureChangedSignal.FlagSubmarineAmbient;
-            SignalBus<TemperatureChangedSignal>.TryPush(in signal);
+            SignalBus<TemperatureChangedSignal>.TryPushTracked(in signal, ref s_x001RadioisotopeThermalGeneratorSignalPushDropCount);
         }
 
         private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition absoluteAup)
@@ -921,10 +922,10 @@ namespace Hecton8.Power.Generators
             signal.MessageHash = RtgLowOutputMessageHash;
             signal.ContextHash = RtgLowOutputContextHash;
             signal.SourceId = unchecked((uint)_sourceId);
-            signal.Frame = unchecked((uint)Time.frameCount);
+            signal.Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             signal.Severity = 2;
             signal.Flags = 0;
-            SignalBus<HUDNotificationSignal>.TryPush(in signal);
+            SignalBus<HUDNotificationSignal>.TryPushTracked(in signal, ref s_x001RadioisotopeThermalGeneratorSignalPushDropCount);
         }
 
         private void MarkPowerGridDirty()
@@ -939,7 +940,7 @@ namespace Hecton8.Power.Generators
                 return;
 
             if (_saveService == null)
-                _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+                _saveService = GlobalRegistry.Save;
 
             if (_saveService == null)
                 return;
@@ -1132,7 +1133,7 @@ namespace Hecton8.Power.Generators
             int index = s_telemetryCursor % TelemetryCapacity;
             telemetryRing[index] = new RtgTelemetryEntry
             {
-                Frame = unchecked((uint)Time.frameCount),
+                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 SourceId = unchecked((uint)instance._sourceId),
                 OutputWatts = currentOutput[slot],
                 NormalizedOutput01 = outputNormalized[slot],

@@ -17,6 +17,7 @@ namespace Hecton8.Networking
     [DefaultExecutionOrder(-8850)]
     public sealed unsafe class HectonRollbackNetcodeRuntime : MonoBehaviour, IDispatcherFixedSystem, IDispatcherFenceDomainProvider, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
+        private static int s_x001HectonRollbackNetcodeRuntimeSignalPushDropCount;
         private const uint FixedSystemHash = 0x4E465852u;
         private const uint PauseSourceHash = 0x4E455452u;
         private const uint LegacyProfileMagic = 0x4E455450u;
@@ -1518,7 +1519,7 @@ namespace Hecton8.Networking
             signal.Paused = 1;
             signal.Flags = 1;
             signal.RestoreScalar = 1f;
-            SignalBus<SystemPauseSignal>.TryPush(in signal);
+            SignalBus<SystemPauseSignal>.TryPushTracked(in signal, ref s_x001HectonRollbackNetcodeRuntimeSignalPushDropCount);
         }
 
         private void DumpNetcodeBlackBox(uint currentFrame, uint flags)

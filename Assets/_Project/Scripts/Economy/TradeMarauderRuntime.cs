@@ -1875,6 +1875,7 @@ namespace Hecton8.Economy
     [AddComponentMenu("Hecton8/Economy/Trade Marauder Director")]
     public sealed class TradeMarauderDirector : MonoBehaviour, ISlowTickable, IFrostTickable, IGlobalRegistryHotSwapListener
     {
+        private static int s_x001TradeMarauderRuntimeSignalPushDropCount;
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_TRADE_SURGEON.bin";
         private static readonly uint CopperHash = MarauderEconomyHash.HashLowerAscii("Data_Copper".AsSpan());
         private static readonly uint TitaniumHash = MarauderEconomyHash.HashLowerAscii("Data_TitaniumScrap".AsSpan());
@@ -2603,7 +2604,7 @@ namespace Hecton8.Economy
             for (int i = 0; hasTransactions && i < transactionCount && i < transactions.Length; i++)
             {
                 MockInventoryTransactionSignal signal = transactions[i];
-                SignalBus<MockInventoryTransactionSignal>.TryPush(in signal);
+                SignalBus<MockInventoryTransactionSignal>.TryPushTracked(in signal, ref s_x001TradeMarauderRuntimeSignalPushDropCount);
                 HUDNotificationSignal hud = new HUDNotificationSignal
                 {
                     MessageHash = TradeMarauderConstants.MessageBaseRaidedHash,
@@ -2613,7 +2614,7 @@ namespace Hecton8.Economy
                     Severity = 2,
                     Flags = 0
                 };
-                SignalBus<HUDNotificationSignal>.TryPush(in hud);
+                SignalBus<HUDNotificationSignal>.TryPushTracked(in hud, ref s_x001TradeMarauderRuntimeSignalPushDropCount);
             }
 
             int acousticCount = ReadCounter(counters, MarauderCounterIndex.AcousticSignalCount);
@@ -2629,7 +2630,7 @@ namespace Hecton8.Economy
                     Channel = (byte)math.min(signature.Channel, byte.MaxValue),
                     Flags = (byte)math.min(signature.Flags, byte.MaxValue)
                 };
-                SignalBus<AcousticPingSignal>.TryPush(in signal);
+                SignalBus<AcousticPingSignal>.TryPushTracked(in signal, ref s_x001TradeMarauderRuntimeSignalPushDropCount);
             }
 
             if (ReadCounter(counters, MarauderCounterIndex.FaultFlags) != 0)

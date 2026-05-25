@@ -190,7 +190,7 @@ namespace Hecton8.Interaction
             s_invalidationColliders.Clear();
         }
 
-        internal static bool TryRaycastSpatial(
+        internal static bool TryResolveSpatialTarget(
             in Ray ray,
             float maxDistance,
             int layerMask,

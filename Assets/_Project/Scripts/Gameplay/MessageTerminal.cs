@@ -72,6 +72,7 @@ namespace Hecton8.Gameplay
     [AddComponentMenu("Hecton/Gameplay/Message Terminal")]
     public sealed class MessageTerminal : MonoBehaviour, IInteractable, IInteractableTextProvider, ITickable, IUpdatable, ILateFrameTickable, ILocalizationLanguageChangedListener, IGlobalRegistryHotSwapListener
     {
+        private static int s_x001MessageTerminalSignalPushDropCount;
         private const uint WfcOutpostDatapadSourceHash = 0x57464354u; // WFCT
         private const byte WfcDatapadLootedFlag = (byte)WfcOutpostCellStateFlags.DatapadLooted;
         // ══════════════════════════════════════════════════════════
@@ -298,7 +299,7 @@ namespace Hecton8.Gameplay
         /// </summary>
         private void CacheRegistryServicesCold()
         {
-            _audioService = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
+            _audioService = GlobalRegistry.Audio;
             _localizationManager = GlobalRegistry.LocalizationText;
         }
 
@@ -548,7 +549,7 @@ namespace Hecton8.Gameplay
             if (!wasRead)
                 SetWfcOutpostFlags(
                     (byte)(_wfcOutpostFlags | WfcDatapadLootedFlag),
-                    unchecked((uint)Mathf.Max(0, SystemDispatcher.CurrentFrameIndex)));
+                    SystemDispatcher.CurrentFrameId);
         }
 
         /// <summary>
@@ -728,7 +729,7 @@ namespace Hecton8.Gameplay
                 SourceHash = WfcOutpostDatapadSourceHash,
                 Flags = 0
             };
-            SignalBus<WfcOutpostStateChangedSignal>.TryPush(in signal);
+            SignalBus<WfcOutpostStateChangedSignal>.TryPushTracked(in signal, ref s_x001MessageTerminalSignalPushDropCount);
         }
 
         private void UpdatePendingMessage()

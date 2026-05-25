@@ -4,6 +4,7 @@ using System.Threading;
 using Hecton8.Core;
 using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.SceneManagement;
 
 namespace Hecton8.Gameplay
@@ -15,7 +16,8 @@ namespace Hecton8.Gameplay
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         [Header("References")]
         [SerializeField] private PlayerToolManager toolManager;
-        [SerializeField] private BeaconNetworkSystem beaconNetwork;
+        [FormerlySerializedAs("beaconNetwork")]
+        [SerializeField] private MonoBehaviour beaconNetworkProvider;
         [SerializeField] private Transform playerRoot;
 
         [Header("Execution")]
@@ -27,11 +29,14 @@ namespace Hecton8.Gameplay
 
         // COLD ALLOC: List<GameObject>[512] - loaded-scene root traversal scratch for trial-range smoke reference resolution - owner: ToolTrialRangeRuntimeSmokeTester
         private static readonly List<GameObject> _sceneRootScratch = new List<GameObject>(512);
+        // COLD ALLOC: List<MonoBehaviour>[16] - dev-only service scan scratch for trial-range smoke reference resolution - owner: ToolTrialRangeRuntimeSmokeTester
+        private static readonly List<MonoBehaviour> _componentScratch = new List<MonoBehaviour>(16);
         // COLD ALLOC: GameObject[4] - original tool loadout snapshot reused by smoke-suite restore path - owner: ToolTrialRangeRuntimeSmokeTester
         private readonly GameObject[] _originalAssignments = new GameObject[4];
         private FixedCharBuffer _summaryProbeBuffer = new FixedCharBuffer(512); // COLD ALLOC: char[512] - tool summary smoke assertion probe - owner: ToolTrialRangeRuntimeSmokeTester
         private FixedCharBuffer _directiveProbeBuffer = new FixedCharBuffer(512); // COLD ALLOC: char[512] - tool directive smoke assertion probe - owner: ToolTrialRangeRuntimeSmokeTester
 
+        private IBeaconNetworkService _beaconNetwork;
         private bool _isRunning;
 
         private void Awake()
@@ -195,7 +200,7 @@ namespace Hecton8.Gameplay
             PositionPlayerForTarget(routeAnchor, 2.5f);
             beaconTool.UsePrimary(0f);
             await DelayRealtimeAsync(settleDelay, cancellationToken);
-            if (beaconNetwork == null || beaconNetwork.ActiveCount <= 0 || !ToolSummaryContainsAny(beaconTool, "ANCHOR", "BEACON"))
+            if (_beaconNetwork == null || _beaconNetwork.ActiveCount <= 0 || !ToolSummaryContainsAny(beaconTool, "ANCHOR", "BEACON"))
             {
                 LogSmokeWarning("[TrialRangeSmoke] Beacon tool did not establish anchor semantics.");
                 return false;
@@ -885,8 +890,14 @@ namespace Hecton8.Gameplay
         {
             if (toolManager == null)
                 toolManager = FindSceneObjectIncludingInactive<PlayerToolManager>();
-            if (beaconNetwork == null)
-                beaconNetwork = FindSceneObjectIncludingInactive<BeaconNetworkSystem>();
+            if (_beaconNetwork == null)
+                _beaconNetwork = beaconNetworkProvider as IBeaconNetworkService;
+            if (_beaconNetwork == null)
+                _beaconNetwork = GlobalRegistry.BeaconNetworkService;
+            if (_beaconNetwork == null)
+                _beaconNetwork = FindSceneServiceIncludingInactive<IBeaconNetworkService>();
+            if (beaconNetworkProvider == null && _beaconNetwork is MonoBehaviour beaconNetworkBehaviour)
+                beaconNetworkProvider = beaconNetworkBehaviour;
             if (playerRoot == null && toolManager != null)
                 playerRoot = toolManager.transform;
         }
@@ -980,6 +991,64 @@ namespace Hecton8.Gameplay
             for (int i = 0; i < root.childCount; i++)
             {
                 T match = FindComponentInChildrenIncludingInactive<T>(root.GetChild(i));
+                if (match != null)
+                    return match;
+            }
+
+            return null;
+        }
+
+        private static TService FindSceneServiceIncludingInactive<TService>() where TService : class
+        {
+            _sceneRootScratch.Clear();
+
+            for (int sceneIndex = 0; sceneIndex < SceneManager.sceneCount; sceneIndex++)
+            {
+                Scene scene = SceneManager.GetSceneAt(sceneIndex);
+                if (!scene.IsValid() || !scene.isLoaded)
+                    continue;
+
+                scene.GetRootGameObjects(_sceneRootScratch);
+                for (int rootIndex = 0; rootIndex < _sceneRootScratch.Count; rootIndex++)
+                {
+                    GameObject root = _sceneRootScratch[rootIndex];
+                    if (root == null)
+                        continue;
+
+                    TService candidate = FindServiceInChildrenIncludingInactive<TService>(root.transform);
+                    if (candidate != null)
+                    {
+                        _sceneRootScratch.Clear();
+                        return candidate;
+                    }
+                }
+
+                _sceneRootScratch.Clear();
+            }
+
+            return null;
+        }
+
+        private static TService FindServiceInChildrenIncludingInactive<TService>(Transform root) where TService : class
+        {
+            if (root == null)
+                return null;
+
+            root.GetComponents(_componentScratch);
+            for (int i = 0; i < _componentScratch.Count; i++)
+            {
+                if (_componentScratch[i] is TService service)
+                {
+                    _componentScratch.Clear();
+                    return service;
+                }
+            }
+
+            _componentScratch.Clear();
+
+            for (int i = 0; i < root.childCount; i++)
+            {
+                TService match = FindServiceInChildrenIncludingInactive<TService>(root.GetChild(i));
                 if (match != null)
                     return match;
             }

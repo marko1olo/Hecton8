@@ -36,6 +36,7 @@ namespace Hecton8.Items
     [DisallowMultipleComponent]
     public class HectonItem : MonoBehaviour, IInteractable, IInteractableTextProvider, ITickable, IUpdatable, IInventoryPickupSource, IInventoryPickupPreviewSource, IInteractionVulnerabilitySource, Hecton8.Physics.IPhysicsImpactMaterialProvider, ILocalizationLanguageChangedListener
     {
+        private static int s_x001HectonItemSignalPushDropCount;
         private const float OverflowScatterImpulse = 2.5f;
         private const float OverflowScatterLiftImpulse = 1.2f;
         private const float OverflowScatterTorqueImpulse = 0.35f;
@@ -454,7 +455,7 @@ namespace Hecton8.Items
                 Flags = InventoryPickupSignalConstants.SignalFlagManualPickup,
                 Frame = ResolveCurrentFrameId()
             };
-            SignalBus<ItemAcquiredSignal>.TryPush(in signal);
+            SignalBus<ItemAcquiredSignal>.TryPushTracked(in signal, ref s_x001HectonItemSignalPushDropCount);
         }
 
         private static uint ResolveCurrentFrameId()

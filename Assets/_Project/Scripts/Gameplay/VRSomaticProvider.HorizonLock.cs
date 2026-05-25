@@ -222,7 +222,7 @@ namespace Hecton8.Gameplay
                 FovTunnelScalar = Sanitize01(state.FovTunnelScalar, 0f),
                 PitchDampening = Sanitize01(state.PitchDampening, 0f),
                 BurstExecutionMicroseconds = SanitizeNonNegative(burstMicroseconds),
-                Frame = unchecked((uint)Time.frameCount),
+                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 Flags = flags,
                 StateHash = ResolveHorizonStateHash(in state, rawState.AngularVelocity, delta.value, flags),
                 AupHash = ResolveDouble3Hash(rawState.AUP_Position)

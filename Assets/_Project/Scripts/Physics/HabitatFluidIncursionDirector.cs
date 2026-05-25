@@ -18,6 +18,8 @@ namespace Hecton8.Physics
     [DefaultExecutionOrder(-3420)]
     public sealed unsafe class HabitatFluidIncursionDirector : MonoBehaviour, IFixedTickable, IPostFixedTickable, IRenderable, IGlobalRegistryHotSwapListener
     {
+        private static int s_x001DirectSignalPushDropCount_HabitatFluidIncursionDirector;
+
         private const SystemID OwnerSystem = SystemID.Fluid;
         private const string DumpPath = "Docs/AgentLogs/Dump_SHINOBU_330.bin";
         private const uint FloodMuffleLaneHash = 0x464C4D46u; // FLMF
@@ -1083,7 +1085,7 @@ namespace Hecton8.Physics
                 floodState.Flags |= SubmarineFloodStateSignal.FlagCriticalFlood;
             if (summary.InvalidCount > 0)
                 floodState.Flags |= SubmarineFloodStateSignal.FlagInvalid;
-            if (!SignalBus<SubmarineFloodStateSignal>.TryPush(in floodState))
+            if (!SignalBus<SubmarineFloodStateSignal>.TryPushTracked(in floodState, ref s_x001DirectSignalPushDropCount_HabitatFluidIncursionDirector))
             {
                 IncrementDroppedSignalCount();
                 accepted = false;
@@ -1137,7 +1139,7 @@ namespace Hecton8.Physics
                 TransmissionByte = (byte)math.clamp((int)math.round(transmission01 * 255f), 0, 255),
                 Flags = (byte)(summary.MaxFill01 > 0.82f ? HabitatFloodAcousticMuffleSignal.FlagCriticalFlood : 0)
             };
-            if (SignalBus<HabitatFloodAcousticMuffleSignal>.TryPush(in signal))
+            if (SignalBus<HabitatFloodAcousticMuffleSignal>.TryPushTracked(in signal, ref s_x001DirectSignalPushDropCount_HabitatFluidIncursionDirector))
                 return true;
 
             IncrementDroppedSignalCount();

@@ -18,6 +18,7 @@ namespace Hecton8.Animation.Locomotion
     [DefaultExecutionOrder(-9921)]
     internal sealed class ProceduralLadderClimbRuntime : MonoBehaviour, IFastTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
+        private static int s_x001ProceduralLadderClimbRuntimeSignalPushDropCount;
         private const float DefaultPcSlideSpeedMetersPerSecond = 1.35f;
         private const float StaminaDrainPerMeter = 0.18f;
         private const float SlipVelocityMetersPerSecond = -2.25f;
@@ -911,7 +912,7 @@ namespace Hecton8.Animation.Locomotion
             if (_pendingSlip)
                 flags |= PlayerStateSignal.FlagLadderSlip;
 
-            uint frame = unchecked((uint)Time.frameCount);
+            uint frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             float oxygenDrainScale = 1f + stress01 * ClimbStressOxygenDrainBonus;
             PlayerStressSignal stress = new PlayerStressSignal
             {
@@ -922,7 +923,7 @@ namespace Hecton8.Animation.Locomotion
                 Cause = PlayerStateSignal.StateClimbing,
                 Flags = flags
             };
-            SignalBus<PlayerStressSignal>.TryPush(in stress);
+            SignalBus<PlayerStressSignal>.TryPushTracked(in stress, ref s_x001ProceduralLadderClimbRuntimeSignalPushDropCount);
         }
 
         private bool ShouldDropFromLookDownGripRelease()
@@ -1006,11 +1007,11 @@ namespace Hecton8.Animation.Locomotion
                 DurationSeconds = 0.045f,
                 Frequency01 = 0.62f,
                 SourceHash = LadderClimbIkConstants.SourceHash,
-                Frame = (uint)Time.frameCount,
+                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 Channel = HapticRequest.ChannelLightThud,
                 Flags = HapticRequest.FlagLightThud
             };
-            SignalBus<HapticRequest>.TryPush(in request);
+            SignalBus<HapticRequest>.TryPushTracked(in request, ref s_x001ProceduralLadderClimbRuntimeSignalPushDropCount);
         }
 
         private void PublishClimbState(bool slip)
@@ -1061,7 +1062,7 @@ namespace Hecton8.Animation.Locomotion
                 State = state,
                 Flags = flags
             };
-            SignalBus<PlayerStateSignal>.TryPush(in signal);
+            SignalBus<PlayerStateSignal>.TryPushTracked(in signal, ref s_x001ProceduralLadderClimbRuntimeSignalPushDropCount);
             _hasPublishedClimbState = true;
             _lastPublishedClimbFrame = frame;
             _lastPublishedClimbState = state;

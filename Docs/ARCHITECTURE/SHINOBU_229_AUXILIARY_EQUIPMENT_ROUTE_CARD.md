@@ -62,7 +62,9 @@ Cadence: continuous `GlobalQualityWeight` curve, 15 Hz to 60 Hz.
 
 Producer/consumer phase: SIMULATION lifecycle update, POST_SIMULATION telemetry, and VISUAL_SYNC matrix staging -> downstream lighting, sonar/VFX, and tether owners drain typed `SignalBus<T>` lanes in owned phases.
 
-Cadence/capacity: continuous `GlobalQualityWeight` curve, 15 Hz to 60 Hz; 1024 deployed auxiliaries, 1024 tether anchors, 300 telemetry entries, 64 profiles, 16384-byte CSV scratch, and 1024 prewarmed slots per flare/sonar/tether lane.
+Cadence/capacity: continuous `GlobalQualityWeight` curve, `15..60 Hz`.
+
+Caps: `1024` auxiliaries, `1024` anchors, `300` telemetry entries, `64` profiles, `16384` CSV bytes, `1024` prewarmed lane slots.
 
 - Expected max events per frame: 1024 flare, 1024 sonar, 1024 tether configured maximum-quality lane maxima.
 - Each lane prewarms 1024 queue slots to match the maximum one-signal-per-active-slot producer ceiling.
@@ -105,7 +107,11 @@ Capacity: 1024 deployed auxiliaries, 1024 tether anchors, 300 telemetry entries,
 
 ## Telemetry And Black Box
 
-Telemetry fields: frame, active count, flare/ping/tether attempted route counts, cadence, schedule-to-finalize wall microseconds, quality weight, fault flags, snapshot hash, dropped slots, dropped signals, corrupted signals, and peak queued signals.
+Telemetry fields:
+
+- frame; active count; flare/ping/tether attempted route counts
+- cadence; schedule-to-finalize wall microseconds; quality weight
+- fault flags; snapshot hash; dropped slots/signals; corrupted signals; peak queued signals
 
 Black-box fields: same telemetry ring, last 300 frames.
 
@@ -202,13 +208,17 @@ Flare facade boundary: `DeployableFlare` keeps no local `_state` or countdown mi
 
 - `[x] no global route needed`
 
-Rejected because auxiliary effects have multiple specialized consumers, must be job-visible, and must be rollback/telemetry visible. Existing lanes did not provide flare/sonar/tether payload layout with AUP and per-route counters.
+Rejected because auxiliary effects need specialized consumers, job visibility, and rollback/telemetry visibility.
+
+Existing lanes lacked flare/sonar/tether payload layout with AUP and per-route counters.
 
 ## Monolith Risk
 
 This route does not add a `GlobalRegistry` service slot and does not use `HectonEventBus`.
 
-It adds typed, unmanaged, bounded payloads plus named Vault buffers. It removes object-local effect ownership from flares, gravity tethers, and scanner pulses; no catch-all global gameplay pipe is added.
+It adds typed unmanaged bounded payloads plus named Vault buffers.
+
+It removes object-local effect ownership from flares, gravity tethers, and scanner pulses; no catch-all gameplay pipe is added.
 
 H-Phi impact expected: positive only if Unity import confirms the router files compile and runtime proof shows stable Vault/SignalBus behavior.
 

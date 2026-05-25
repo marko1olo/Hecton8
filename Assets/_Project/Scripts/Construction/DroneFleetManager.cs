@@ -5,7 +5,6 @@ using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
 using Hecton8.Gameplay;
-using Hecton8.Physics;
 using Hecton8.Power;
 using Hecton8.SaveSystem;
 using Hecton8.Vehicles.Automation;
@@ -583,6 +582,7 @@ namespace Hecton8.Construction
     /// </summary>
     internal static partial class DroneFleetManager
     {
+        private static int s_SignalPushDropCount;
         private const int InitialTaskCapacity = 64;
         private const int MaxOperationalDroneCount = 500;
         private const int HeadlessDroneCapacity = 512;
@@ -926,7 +926,7 @@ namespace Hecton8.Construction
         private static int s_HeadlessStasisSlotCount;
         private static bool s_Initialized;
         private static bool s_RuntimeRegistryCacheInitialized;
-        private static ConstructionManager s_CachedConstructionRuntime;
+        private static ILogisticsService s_CachedLogisticsService;
         private static IPlayerRuntimeContext s_CachedPlayerRuntime;
         private static ISubmarineRuntimeContext s_CachedSubmarineRuntime;
         private static IFluidSurfaceCurrentReadModel s_CachedFluidRuntime;
@@ -1070,7 +1070,7 @@ namespace Hecton8.Construction
             s_LastFleetStatusSnapshot = default;
             s_Initialized = false;
             s_RuntimeRegistryCacheInitialized = false;
-            s_CachedConstructionRuntime = null;
+            s_CachedLogisticsService = null;
             s_CachedPlayerRuntime = null;
             s_CachedSubmarineRuntime = null;
             s_CachedFluidRuntime = null;
@@ -1369,7 +1369,7 @@ namespace Hecton8.Construction
 
             EnsureInitialized();
 
-            ConstructionManager manager = s_CachedConstructionRuntime;
+            ILogisticsService manager = s_CachedLogisticsService;
             int moduleCount = manager != null ? manager.SpawnedBaseModuleCount : 0;
             if (moduleCount == 0)
                 return false;
@@ -1504,7 +1504,7 @@ namespace Hecton8.Construction
             if (s_RuntimeRegistryCacheInitialized)
                 return;
 
-            s_CachedConstructionRuntime = GlobalRegistry.ConstructionRuntime;
+            s_CachedLogisticsService = GlobalRegistry.Logistics;
             s_CachedPlayerRuntime = GlobalRegistry.Player;
             s_CachedSubmarineRuntime = GlobalRegistry.Submarine;
             s_CachedFluidRuntime = GlobalRegistry.FluidSurfaceCurrent;
@@ -1518,7 +1518,7 @@ namespace Hecton8.Construction
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.Logistics:
-                    s_CachedConstructionRuntime = currentService as ConstructionManager;
+                    s_CachedLogisticsService = currentService as ILogisticsService;
                     break;
                 case GlobalRegistryServiceSlot.Player:
                     s_CachedPlayerRuntime = currentService as IPlayerRuntimeContext;
@@ -2552,7 +2552,7 @@ namespace Hecton8.Construction
             signal.DurationSeconds = 0.5f;
             signal.Reason = DronePathFailureGlitchReason;
             signal.Flags = 2;
-            SignalBus<SystemGlitchSignal>.TryPush(in signal);
+            SignalBus<SystemGlitchSignal>.TryPushTracked(in signal, ref s_SignalPushDropCount);
         }
 
         private static void CompleteHeadlessSimulationAndApply()
@@ -2998,7 +2998,7 @@ namespace Hecton8.Construction
                 Reserved2 = 0,
                 ReservedTail = 0u
             };
-            SignalBus<DockingCompleteSignal>.TryPush(in signal);
+            SignalBus<DockingCompleteSignal>.TryPushTracked(in signal, ref s_SignalPushDropCount);
         }
 
         private static void PublishDockingFailed(int slot, in HeadlessDroneState drone, Vector3 hitPoint, DockingFailureReason reason)
@@ -3031,7 +3031,7 @@ namespace Hecton8.Construction
                 Reserved1 = 0,
                 ReservedTail = 0u
             };
-            SignalBus<DockingFailedSignal>.TryPush(in signal);
+            SignalBus<DockingFailedSignal>.TryPushTracked(in signal, ref s_SignalPushDropCount);
         }
 
         private static void PublishDockingFailedForMissingDrone(in DockingRequestSignal request)
@@ -3049,7 +3049,7 @@ namespace Hecton8.Construction
                 Reserved1 = 0,
                 ReservedTail = 0u
             };
-            SignalBus<DockingFailedSignal>.TryPush(in signal);
+            SignalBus<DockingFailedSignal>.TryPushTracked(in signal, ref s_SignalPushDropCount);
         }
 
         private static void ApplyCompletedHeadlessServices()
@@ -3245,7 +3245,7 @@ namespace Hecton8.Construction
                 Flags = 1u,
                 Reserved0 = 0u
             };
-            SignalBus<DroneFleetInventoryTransactionSignal>.TryPush(in signal);
+            SignalBus<DroneFleetInventoryTransactionSignal>.TryPushTracked(in signal, ref s_SignalPushDropCount);
         }
 
         private static void TryQueueStasisWakeRequest(int slot, ref HeadlessDroneState drone)
@@ -3402,7 +3402,7 @@ namespace Hecton8.Construction
                 Flags = 0u,
                 Reserved0 = 0u
             };
-            SignalBus<DroneFleetMockRepairSignal>.TryPush(in repairSignal);
+            SignalBus<DroneFleetMockRepairSignal>.TryPushTracked(in repairSignal, ref s_SignalPushDropCount);
             PublishHullRepairedByDrone(slot, in drone, target, repairAmount);
             DispatchRepairWeld(slot, in drone, target);
             ConsumeSolderByWork(ref drone, repairAmount, SolderIntegrityUnitsPerBundle);
@@ -3433,15 +3433,15 @@ namespace Hecton8.Construction
                 Flags = 2u,
                 Reserved0 = 0u
             };
-            SignalBus<DroneFleetInventoryTransactionSignal>.TryPush(in signal);
-            SignalBus<InventoryCommandSignal>.TryPush(new InventoryCommandSignal
+            SignalBus<DroneFleetInventoryTransactionSignal>.TryPushTracked(in signal, ref s_SignalPushDropCount);
+            SignalBus<InventoryCommandSignal>.TryPushTracked(new InventoryCommandSignal
             {
                 InventoryHash = (uint)Mathf.Max(0, drone.HubGridId),
-                Frame = (uint)Mathf.Max(0, Time.frameCount),
+                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 Sequence = (uint)Mathf.Max(0, drone.DroneId),
                 Command = InventoryCommandSignalCommands.Sort,
                 Flags = 2
-            });
+            }, ref s_SignalPushDropCount);
             drone.RepairAccumulator = 0f;
             drone.TransactionProgress = 1f;
             ReturnDroneToHub(ref drone);
@@ -3516,13 +3516,13 @@ namespace Hecton8.Construction
                 HitAup = hitAup,
                 RoomId = 0,
                 SourceHash = ComputeDroneTaskHash(s_DroneTaskKindsBySlot[slot], drone.DroneId, GetRuntimeId(target)),
-                Frame = (uint)Mathf.Max(0, Time.frameCount),
+                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 DentIndex = 0,
                 DentsRepairedCount = 1,
                 QualityTier = ResolveDroneRepairQualityTier(),
                 Flags = HullRepairedSignal.CompletedFlag
             };
-            SignalBus<HullRepairedSignal>.TryPush(in signal);
+            SignalBus<HullRepairedSignal>.TryPushTracked(in signal, ref s_SignalPushDropCount);
         }
 
         private static byte ResolveDroneRepairQualityTier()
@@ -3702,7 +3702,7 @@ namespace Hecton8.Construction
                 DebrisKind = DebrisSpawnSignal.DebrisKindSparks,
                 Flags = DebrisSpawnSignal.FlagToolSparks | DebrisSpawnSignal.FlagComputeShard
             };
-            SignalBus<DebrisSpawnSignal>.TryPush(in signal);
+            SignalBus<DebrisSpawnSignal>.TryPushTracked(in signal, ref s_SignalPushDropCount);
 
             Hecton8.Tools.ToolKinematics.Contracts.VfxSparkRequestSignal spark = new Hecton8.Tools.ToolKinematics.Contracts.VfxSparkRequestSignal
             {
@@ -3711,9 +3711,9 @@ namespace Hecton8.Construction
                 MaterialHash = DroneRepairSparksSignalHash,
                 ToolHash = DroneRepairSparksSignalHash,
                 Intensity01 = safeIntensity,
-                Frame = (uint)Mathf.Max(0, Time.frameCount)
+                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId
             };
-            SignalBus<Hecton8.Tools.ToolKinematics.Contracts.VfxSparkRequestSignal>.TryPush(in spark);
+            SignalBus<Hecton8.Tools.ToolKinematics.Contracts.VfxSparkRequestSignal>.TryPushTracked(in spark, ref s_SignalPushDropCount);
         }
 
         private static void ApplyPendingLaunches()
@@ -4056,7 +4056,7 @@ namespace Hecton8.Construction
             s_HeadlessTaskCount = 0;
             ClearManagedTaskRefs();
 
-            ConstructionManager manager = s_CachedConstructionRuntime;
+            ILogisticsService manager = s_CachedLogisticsService;
             int moduleCount = manager != null ? manager.SpawnedBaseModuleCount : 0;
             if (moduleCount == 0)
                 return;
@@ -6178,12 +6178,13 @@ namespace Hecton8.Construction
                 TaskKind = (int)candidate.Kind,
                 Reserved0 = 0u
             };
-            heap.TryPush(in dto);
+            if (!heap.TryPush(in dto) && s_SignalPushDropCount < int.MaxValue)
+                s_SignalPushDropCount++;
         }
 
         private static bool TryResolvePriorityHeapTask(
             ref DroneTaskNativeMinHeap heap,
-            ConstructionManager manager,
+            ILogisticsService manager,
             out RepairTaskCandidate candidate)
         {
             candidate = default;
@@ -6244,7 +6245,7 @@ namespace Hecton8.Construction
                 s_TaskClaimCounts[i] = 0;
         }
 
-        private static void RebuildActiveClaimCounts(ConstructionManager manager, int moduleCount)
+        private static void RebuildActiveClaimCounts(ILogisticsService manager, int moduleCount)
         {
             if (manager == null)
                 return;
@@ -6272,7 +6273,7 @@ namespace Hecton8.Construction
             }
         }
 
-        private static void IncrementClaimForTarget(ConstructionManager manager, int moduleCount, BaseModule target)
+        private static void IncrementClaimForTarget(ILogisticsService manager, int moduleCount, BaseModule target)
         {
             if (manager == null || target == null)
                 return;

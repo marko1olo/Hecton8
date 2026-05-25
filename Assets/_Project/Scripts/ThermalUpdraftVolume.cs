@@ -67,8 +67,12 @@ namespace Hecton8.Physics
             object previousService,
             object currentService)
         {
-            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && currentService != null && isActiveAndEnabled)
-                TryRegisterToTick();
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                _registeredToTick = false;
+                if (currentService != null && isActiveAndEnabled)
+                    TryRegisterToTick();
+            }
         }
 
         public void SlowTick()

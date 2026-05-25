@@ -20,7 +20,9 @@ It does not replace voxel pathfinding, funnel smoothing, predator cognition, or 
 
 - Output: desired steering direction plus force/speed multipliers for the fauna movement owner.
 
-No direct dependency on concrete fluid, voxel, or player classes is required in hot paths. Runtime code should cache interfaces/snapshots outside Tick and consume plain data inside Burst jobs.
+Hot paths require no concrete fluid, voxel, or player classes.
+
+Runtime code caches interfaces/snapshots outside Tick and feeds plain data to Burst jobs.
 
 ## Flow Parameters Read
 
@@ -64,7 +66,9 @@ Pinned values in `Data/AI/Navigation_Tuning.json`:
 
 Runtime port must keep `NativeArray<AiPotentialFieldTelemetryEntry>[300]` as a circular buffer and dump it to `Docs/AgentLogs/Dump_AI_POTENTIAL_FIELD_NAVIGATOR.bin` on non-finite state, negative SDF clearance, or source-parameter drift detection.
 
-Required telemetry fields are exported in `Data/AI/Navigation_Tuning.json`: `frameIndex`, `entityId`, `positionAupCell`, `positionLocalMeters`, `velocityMetersPerSecond`, `targetDistanceMeters`, `flowAlignmentSigned`, `sdfClearanceMeters`, `stateFlags`, and `stateHash`. All float fields feeding steering or rendering must be finite-guarded before write.
+Required telemetry fields in `Data/AI/Navigation_Tuning.json`: `frameIndex`, `entityId`, `positionAupCell`, `positionLocalMeters`, `velocityMetersPerSecond`, `targetDistanceMeters`, `flowAlignmentSigned`, `sdfClearanceMeters`, `stateFlags`, `stateHash`.
+
+All float fields feeding steering or rendering must be finite-guarded before write.
 
 ## Steering Formula
 

@@ -13,7 +13,7 @@ namespace Hecton8.World
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-4025)]
     [AddComponentMenu("Hecton8/World/World Readability Director")]
-    public sealed class WorldReadabilityDirector : MonoBehaviour, ISlowTickable, IGlobalRegistryHotSwapListener
+    public sealed class WorldReadabilityDirector : MonoBehaviour, ISlowTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         internal static WorldReadabilityDirector ActiveRuntimeInstance { get; private set; }
         private const int SeverityInfo = 0;
@@ -67,6 +67,7 @@ namespace Hecton8.World
         [SerializeField] private bool _debugSafePocket;
 
         private bool _registeredToTickManager;
+        private bool _registeredLateFrame;
         private bool _hasObservedContext;
         private HectonBiomeMatrixProfile _lastBiomeProfile;
         private WorldZoneAnchor _lastZone;
@@ -140,15 +141,22 @@ namespace Hecton8.World
                 return;
 
             _registeredToTickManager = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
+            if (!_registeredLateFrame)
+                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregister()
         {
+            if (_registeredLateFrame)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                _registeredLateFrame = false;
+            }
+
             if (!_registeredToTickManager)
                 return;
 
             GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
-
             _registeredToTickManager = false;
         }
 
@@ -214,7 +222,6 @@ namespace Hecton8.World
         public void SlowTick()
         {
             ResolveReferences();
-            TryPublishPending();
 
             HectonBiomeMatrixProfile currentBiome = biomeMatrixDirector != null ? biomeMatrixDirector.CurrentProfile : null;
             WorldZoneAnchor currentZone = worldZoneDirector != null ? worldZoneDirector.CurrentZone : null;
@@ -259,6 +266,11 @@ namespace Hecton8.World
             _hasObservedContext = true;
             TryPublishPending();
             UpdateDiagnostics();
+        }
+
+        public void LateFrameTick()
+        {
+            TryPublishPending();
         }
 
         private bool CanPublishReadability()
@@ -386,12 +398,6 @@ namespace Hecton8.World
         {
             if (string.IsNullOrWhiteSpace(message))
                 return;
-
-            if (Time.unscaledTime >= _nextNotificationTime)
-            {
-                PublishNotification(message, severity);
-                return;
-            }
 
             if (_hasPendingMessage && _pendingMessage == message && _pendingSeverity == severity)
                 return;

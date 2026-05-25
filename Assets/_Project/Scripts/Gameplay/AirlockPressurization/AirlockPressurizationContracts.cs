@@ -490,6 +490,7 @@ namespace Hecton8.Gameplay.AirlockPressurization
 
     public static class AirlockPressurizationSignalFlush
     {
+        private static int s_x001AirlockPressurizationContractsSignalPushDropCount;
         public static void PushFrameSignals(
             NativeArray<BubbleSpawnSignal> vfxSignals,
             NativeArray<MovementAcousticSignal> acousticSignals,
@@ -504,7 +505,7 @@ namespace Hecton8.Gameplay.AirlockPressurization
                     BubbleSpawnSignal signal = vfxSignals[i];
                     vfxSignals[i] = default;
                     if (signal.Frame != 0u)
-                        SignalBus<BubbleSpawnSignal>.TryPush(in signal);
+                        SignalBus<BubbleSpawnSignal>.TryPushTracked(in signal, ref s_x001AirlockPressurizationContractsSignalPushDropCount);
                 }
             }
 
@@ -517,7 +518,7 @@ namespace Hecton8.Gameplay.AirlockPressurization
                 MovementAcousticSignal signal = acousticSignals[i];
                 acousticSignals[i] = default;
                 if (signal.SourceId != 0u)
-                    SignalBus<MovementAcousticSignal>.TryPush(in signal);
+                    SignalBus<MovementAcousticSignal>.TryPushTracked(in signal, ref s_x001AirlockPressurizationContractsSignalPushDropCount);
             }
         }
     }

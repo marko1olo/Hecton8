@@ -461,7 +461,7 @@ namespace Hecton8.Core
                 nextIndex %= laneCount;
 
             Volatile.Write(ref _signalTelemetryCursor, nextIndex);
-            int frame = Time.frameCount;
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             SignalTelemetryRingBuffer.ReportFrame(
                 frame,
                 pushedSignals,
@@ -799,33 +799,33 @@ namespace Hecton8.Core
             SignalBus<PdaExchangeStateChangedSignal>.EnsureInitialized();
             SignalBus<VehicleUpgradesChangedSignal>.Configure(VehicleUpgradesChangedSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(VehicleUpgradesChangedSignal)));
             SignalBus<VehicleUpgradesChangedSignal>.EnsureInitialized();
-            SignalBus<SystemHealthSignal>.Configure(16, maxFrameSignals: 64, lowTierFrameSignals: 16, laneHash: 0x48484C54u);
+            SignalBus<SystemHealthSignal>.Configure(SystemHealthSignal.ExpectedCapacity, maxFrameSignals: SystemHealthSignal.MaxFrameSignals, lowTierFrameSignals: SystemHealthSignal.LowTierFrameSignals, laneHash: SystemHealthSignal.LaneHash);
             SignalBus<SystemHealthSignal>.EnsureInitialized();
-            SignalBus<FrameTimeSignal>.Configure(32, maxFrameSignals: 64, lowTierFrameSignals: 16, laneHash: 0x46544D53u);
+            SignalBus<FrameTimeSignal>.Configure(FrameTimeSignal.ExpectedCapacity, maxFrameSignals: FrameTimeSignal.MaxFrameSignals, lowTierFrameSignals: FrameTimeSignal.LowTierFrameSignals, laneHash: FrameTimeSignal.LaneHash);
             SignalBus<FrameTimeSignal>.EnsureInitialized();
-            SignalBus<KillSwitchSignal>.Configure(8, maxFrameSignals: 32, lowTierFrameSignals: 8, laneHash: 0x4B534857u);
+            SignalBus<KillSwitchSignal>.Configure(KillSwitchSignal.ExpectedCapacity, maxFrameSignals: KillSwitchSignal.MaxFrameSignals, lowTierFrameSignals: KillSwitchSignal.LowTierFrameSignals, laneHash: KillSwitchSignal.LaneHash);
             SignalBus<KillSwitchSignal>.EnsureInitialized();
-            SignalBus<SystemKillSwitchBitsSignal>.Configure(8, maxFrameSignals: 32, lowTierFrameSignals: 8, laneHash: HectonSignalLaneContract.SystemKillSwitchBitsSignalStableHash);
+            SignalBus<SystemKillSwitchBitsSignal>.Configure(SystemKillSwitchBitsSignal.ExpectedCapacity, maxFrameSignals: SystemKillSwitchBitsSignal.MaxFrameSignals, lowTierFrameSignals: SystemKillSwitchBitsSignal.LowTierFrameSignals, laneHash: SystemKillSwitchBitsSignal.LaneHash);
             SignalBus<SystemKillSwitchBitsSignal>.EnsureInitialized();
-            SignalBus<ReentryVfxStateSignal>.Configure(4, 16, 4, ComputeStableSignalLaneHash(nameof(ReentryVfxStateSignal)));
+            SignalBus<ReentryVfxStateSignal>.Configure(ReentryVfxStateSignal.ExpectedCapacity, ReentryVfxStateSignal.MaxFrameSignals, ReentryVfxStateSignal.LowTierFrameSignals, ReentryVfxStateSignal.LaneHash);
             SignalBus<ReentryVfxStateSignal>.EnsureInitialized();
-            SignalBus<VisorDropletSignal>.Configure(8, 32, 8, ComputeStableSignalLaneHash(nameof(VisorDropletSignal)));
+            SignalBus<VisorDropletSignal>.Configure(VisorDropletSignal.ExpectedCapacity, VisorDropletSignal.MaxFrameSignals, VisorDropletSignal.LowTierFrameSignals, VisorDropletSignal.LaneHash);
             SignalBus<VisorDropletSignal>.EnsureInitialized();
-            SignalBus<PlayerFootstepSignal>.Configure(16, 32, 8, ComputeStableSignalLaneHash(nameof(PlayerFootstepSignal)));
+            SignalBus<PlayerFootstepSignal>.Configure(PlayerFootstepSignal.ExpectedCapacity, PlayerFootstepSignal.MaxFrameSignals, PlayerFootstepSignal.LowTierFrameSignals, PlayerFootstepSignal.LaneHash);
             SignalBus<PlayerFootstepSignal>.EnsureInitialized();
-            SignalBus<PlayerWaterSplashSignal>.Configure(8, 16, 4, ComputeStableSignalLaneHash(nameof(PlayerWaterSplashSignal)));
+            SignalBus<PlayerWaterSplashSignal>.Configure(PlayerWaterSplashSignal.ExpectedCapacity, PlayerWaterSplashSignal.MaxFrameSignals, PlayerWaterSplashSignal.LowTierFrameSignals, PlayerWaterSplashSignal.LaneHash);
             SignalBus<PlayerWaterSplashSignal>.EnsureInitialized();
-            SignalBus<WaterTransitionSignal>.Configure(8, 16, 8, ComputeStableSignalLaneHash(nameof(WaterTransitionSignal)));
+            SignalBus<WaterTransitionSignal>.Configure(WaterTransitionSignal.ExpectedCapacity, WaterTransitionSignal.MaxFrameSignals, WaterTransitionSignal.LowTierFrameSignals, WaterTransitionSignal.LaneHash);
             SignalBus<WaterTransitionSignal>.EnsureInitialized();
-            SignalBus<PlayerExhaleSignal>.Configure(16, 32, 8, ComputeStableSignalLaneHash(nameof(PlayerExhaleSignal)));
+            SignalBus<PlayerExhaleSignal>.Configure(PlayerExhaleSignal.ExpectedCapacity, PlayerExhaleSignal.MaxFrameSignals, PlayerExhaleSignal.LowTierFrameSignals, PlayerExhaleSignal.LaneHash);
             SignalBus<PlayerExhaleSignal>.EnsureInitialized();
-            SignalBus<PlayerSprintStateSignal>.Configure(8, 16, 4, ComputeStableSignalLaneHash(nameof(PlayerSprintStateSignal)));
+            SignalBus<PlayerSprintStateSignal>.Configure(PlayerSprintStateSignal.ExpectedCapacity, PlayerSprintStateSignal.MaxFrameSignals, PlayerSprintStateSignal.LowTierFrameSignals, PlayerSprintStateSignal.LaneHash);
             SignalBus<PlayerSprintStateSignal>.EnsureInitialized();
-            SignalBus<PlayerFatalPressureSignal>.Configure(8, 16, 4, ComputeStableSignalLaneHash(nameof(PlayerFatalPressureSignal)));
+            SignalBus<PlayerFatalPressureSignal>.Configure(PlayerFatalPressureSignal.ExpectedCapacity, PlayerFatalPressureSignal.MaxFrameSignals, PlayerFatalPressureSignal.LowTierFrameSignals, PlayerFatalPressureSignal.LaneHash);
             SignalBus<PlayerFatalPressureSignal>.EnsureInitialized();
-            SignalBus<PlayerTransportBailoutSignal>.Configure(4, 8, 2, ComputeStableSignalLaneHash(nameof(PlayerTransportBailoutSignal)));
+            SignalBus<PlayerTransportBailoutSignal>.Configure(PlayerTransportBailoutSignal.ExpectedCapacity, PlayerTransportBailoutSignal.MaxFrameSignals, PlayerTransportBailoutSignal.LowTierFrameSignals, PlayerTransportBailoutSignal.LaneHash);
             SignalBus<PlayerTransportBailoutSignal>.EnsureInitialized();
-            SignalBus<VisualFlareSignal>.Configure(16, 16, 16, 0x56464C52u);
+            SignalBus<VisualFlareSignal>.Configure(VisualFlareSignal.ExpectedCapacity, VisualFlareSignal.MaxFrameSignals, VisualFlareSignal.LowTierFrameSignals, VisualFlareSignal.LaneHash);
             SignalBus<VisualFlareSignal>.EnsureInitialized();
             SignalBus<BrownoutSignal>.Configure(BrownoutSignalCapacity, maxFrameSignals: BrownoutSignalCapacity, lowTierFrameSignals: 16, laneHash: ComputeStableSignalLaneHash(nameof(BrownoutSignal)));
             SignalBus<BrownoutSignal>.EnsureInitialized();

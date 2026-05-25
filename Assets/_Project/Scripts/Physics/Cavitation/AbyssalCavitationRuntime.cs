@@ -17,6 +17,8 @@ namespace Hecton8.Physics
 {
     public static class AbyssalCavitationRuntime
     {
+        private static int s_x001DirectSignalPushDropCount_AbyssalCavitationRuntime;
+
         private const SystemID OwnerSystem = SystemID.VehiclesPhysics;
         private static readonly int _shockwavesShaderId = Shader.PropertyToID("_H8CavitationShockwaves");
         private static readonly int _shockwaveCountShaderId = Shader.PropertyToID("_H8CavitationShockwaveCount");
@@ -1200,7 +1202,7 @@ namespace Hecton8.Physics
             ping.SourceId = wave.SourceHashID;
             ping.Channel = AcousticPingSignal.ChannelMetalStress;
             ping.Flags = AcousticPingSignal.FlagActiveSonar;
-            if (!SignalBus<AcousticPingSignal>.TryPush(in ping))
+            if (!SignalBus<AcousticPingSignal>.TryPushTracked(in ping, ref s_x001DirectSignalPushDropCount_AbyssalCavitationRuntime))
                 RecordDroppedSignal();
 
             WakeRequestSignal wake = default;
@@ -1209,7 +1211,7 @@ namespace Hecton8.Physics
             wake.SourceHash = wave.SourceHashID;
             wake.Frame = _frameIndex;
             wake.Flags = 1;
-            if (!SignalBus<WakeRequestSignal>.TryPush(in wake))
+            if (!SignalBus<WakeRequestSignal>.TryPushTracked(in wake, ref s_x001DirectSignalPushDropCount_AbyssalCavitationRuntime))
                 RecordDroppedSignal();
         }
 

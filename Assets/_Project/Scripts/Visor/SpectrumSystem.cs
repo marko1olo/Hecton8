@@ -1562,6 +1562,7 @@ namespace Hecton8.Visor
     [DefaultExecutionOrder(-95)]
     public sealed class SpectrumSystem : MonoBehaviour, ITickable, ILateFrameTickable, IAcousticPingEventListener, IAcousticEchoEventListener, IPingReturnSignalListener, IPhysicsAcousticImpulseEventListener, IGlobalRegistryHotSwapListener
     {
+        private static int s_x001SpectrumSystemSignalPushDropCount;
         private const int PassiveRadarAzimuthSectorCount = 8;
         private const int PassiveRadarElevationSectorCount = 4;
         private const int PassiveRadarSectorCount = PassiveRadarAzimuthSectorCount * PassiveRadarElevationSectorCount;
@@ -2243,7 +2244,7 @@ namespace Hecton8.Visor
                     Channel = AcousticPingSignal.ChannelActiveSonar,
                     Flags = AcousticPingSignal.FlagActiveSonar
                 };
-                SignalBus<AcousticPingSignal>.TryPush(in activeSonarSignal);
+                SignalBus<AcousticPingSignal>.TryPushTracked(in activeSonarSignal, ref s_x001SpectrumSystemSignalPushDropCount);
                 SubmitActiveSonarGeoPing(in activeSonarSignal, pulseTime, 0f);
                 if (SignalBus<AcousticPingSignal>.TryGetLatest(out _, out int activeSonarSequence))
                     _lastConsumedActiveSonarAcousticSequence = activeSonarSequence;
@@ -3205,7 +3206,7 @@ namespace Hecton8.Visor
             Vector4 primary = _activeSonarGeoPingCount > 0 ? _activeSonarGeoCentersRadius[0] : Vector4.zero;
             telemetryRing[index] = new ActiveSonarGeoTelemetryEntry
             {
-                Frame = unchecked((uint)SystemDispatcher.CurrentFrameIndex),
+                Frame = SystemDispatcher.CurrentFrameId,
                 ActiveRingCount = _activeSonarGeoPingCount,
                 PrimaryRadius = primary.w,
                 PrimaryCenter = new float3(primary.x, primary.y, primary.z),

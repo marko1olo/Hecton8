@@ -127,8 +127,9 @@ namespace Hecton8.Construction
     /// Rebuilds the placed habitat into a CSR adjacency graph for downstream power and atmosphere solvers.
     /// Owns only base-module topology. Point-to-point crate pipes remain under LogisticsPipeNode.
     /// </summary>
-    internal sealed class HabitatGraphManager : IDisposable
+    public sealed class HabitatGraphManager : IDisposable
     {
+        private static int s_x001HabitatGraphManagerSignalPushDropCount;
         private const float DefaultSocketQuantization = 0.05f;
         private const float OppositeDirectionDotThreshold = -0.85f;
         private const float EdgeResistancePerMeter = 0.05f;
@@ -1355,6 +1356,9 @@ namespace Hecton8.Construction
             for (int i = 0; i < damageSignals.Length; i++)
             {
                 CoreCombatDamageSignal signal = damageSignals[i];
+                if ((signal.Flags & CoreCombatDamageSignal.VisualOnlyFlag) != 0)
+                    continue;
+
                 if (!IsModuleImpactStressSignal(signal.SourceId, signal.DamageType, signal.Magnitude))
                     continue;
 
@@ -1602,7 +1606,7 @@ namespace Hecton8.Construction
                 DepthMeters = math.max(0f, depthMeters),
                 NodeId = hasGraphRecord ? module.NodeId : 0u,
                 ModuleHash = ResolveModuleStressRuntimeKey(baseModule, module, hasGraphRecord),
-                Frame = unchecked((uint)Time.frameCount),
+                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 Sequence = ++_moduleStressSequence,
                 SourceId = DamageSourceIds.HabitatIntegrity,
                 Flags = IsModuleStressLowTier(tier)
@@ -1611,7 +1615,7 @@ namespace Hecton8.Construction
                 StressIndex = (byte)math.min(byte.MaxValue, moduleIndex),
                 QualityTier = tierProfile
             };
-            SignalBus<BaseModuleCompromisedSignal>.TryPush(in signal);
+            SignalBus<BaseModuleCompromisedSignal>.TryPushTracked(in signal, ref s_x001HabitatGraphManagerSignalPushDropCount);
         }
 
         private void UploadModuleStressMatrix(int moduleCount, float peakStress01, HectonQualityTier tier)
@@ -1835,7 +1839,7 @@ namespace Hecton8.Construction
             if (_audioService != null)
                 return _audioService;
 
-            _audioService = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
+            _audioService = GlobalRegistry.Audio;
             return _audioService;
         }
 

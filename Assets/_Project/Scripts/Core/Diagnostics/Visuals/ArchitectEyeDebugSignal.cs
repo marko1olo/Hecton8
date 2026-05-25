@@ -9,6 +9,7 @@ namespace Hecton8.Core.Diagnostics.Visuals
     [Preserve]
     public static class ArchitectEyeDebugBus
     {
+        private static int s_x001ArchitectEyeDebugSignalSignalPushDropCount;
         /// <summary>Ensures the isolated diagnostics lane exists before first use.</summary>
         public static void EnsureInitialized()
         {
@@ -19,7 +20,7 @@ namespace Hecton8.Core.Diagnostics.Visuals
         public static void Push(in DebugSignal signal)
         {
             EnsureInitialized();
-            SignalBus<DebugSignal>.TryPush(in signal);
+            SignalBus<DebugSignal>.TryPushTracked(in signal, ref s_x001ArchitectEyeDebugSignalSignalPushDropCount);
         }
 
     }

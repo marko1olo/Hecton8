@@ -1792,7 +1792,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            uint frame = unchecked((uint)SystemDispatcher.CurrentFrameIndex);
+            uint frame = SystemDispatcher.CurrentFrameId;
             if (signal.Frame > frame)
                 return;
 

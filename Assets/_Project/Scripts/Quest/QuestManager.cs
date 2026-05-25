@@ -94,7 +94,7 @@ namespace Hecton8.Quest
             _serviceRegistered = ReferenceEquals(GlobalRegistry.Quest, this);
 
             TryRegisterHotSwapListener();
-            BindSaveService(Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance);
+            BindSaveService(GlobalRegistry.Save);
             _graphEvaluator?.Bind();
         }
 

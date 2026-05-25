@@ -932,8 +932,13 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
                 _playerRuntimeContext = currentService as IPlayerRuntimeContext;
                 break;
             case GlobalRegistryServiceSlot.Dispatcher:
-                RegisterToTickManager();
-                EnsureDeferredPhysicsBakeTeardownRegistered();
+                _registeredToTickManager = false;
+                _registeredToLateFrame = false;
+                if (currentService != null)
+                {
+                    RegisterToTickManager();
+                    EnsureDeferredPhysicsBakeTeardownRegistered();
+                }
                 break;
         }
     }

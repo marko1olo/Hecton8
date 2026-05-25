@@ -404,6 +404,8 @@ namespace Hecton8.Audio
     /// </summary>
     public static class ProceduralAudioEvents
     {
+        private static int s_x001DirectSignalPushDropCount_ProceduralAudioEvents;
+
         private const int ListenerCapacity = 8;
         private const int PendingAudioPingCapacity = 8;
         private const int PendingStructuralStressCapacity = 8;
@@ -880,7 +882,7 @@ namespace Hecton8.Audio
         private static bool PublishTypedAudioEvent(in AudioEvent audioEvent)
         {
             EnsureTypedSignalLaneConfigured();
-            return SignalBus<AudioEvent>.TryPush(in audioEvent);
+            return SignalBus<AudioEvent>.TryPushTracked(in audioEvent, ref s_x001DirectSignalPushDropCount_ProceduralAudioEvents);
         }
 
         private static void EnsureTypedSignalLaneConfigured()

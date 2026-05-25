@@ -1196,6 +1196,8 @@ namespace Hecton8.Quest
     /// </summary>
     public static class QuestDagDebugApi
     {
+        private static int s_x001QuestDagResolverRuntimeSignalPushDropCount;
+
         public static bool ForceCompleteNode(
             IDataVault vault,
             ref QuestDagBufferHandles handles,
@@ -1229,7 +1231,7 @@ namespace Hecton8.Quest
                 if ((uint)runtime.StateChunk < (uint)buffers.OldStateMasks.Length)
                     buffers.OldStateMasks[runtime.StateChunk] = newMask;
 
-                SignalBus<StateChangedSignal>.TryPush(new StateChangedSignal
+                SignalBus<StateChangedSignal>.TryPushTracked(new StateChangedSignal
                 {
                     FlippedMask = oldMask ^ newMask,
                     NewMask = newMask,
@@ -1238,7 +1240,7 @@ namespace Hecton8.Quest
                     Flags = 1,
                     Sequence = 0,
                     SourceHash = QuestDagRuntimeConstants.SignalSourceHash
-                });
+                }, ref s_x001QuestDagResolverRuntimeSignalPushDropCount);
                 return true;
             }
 

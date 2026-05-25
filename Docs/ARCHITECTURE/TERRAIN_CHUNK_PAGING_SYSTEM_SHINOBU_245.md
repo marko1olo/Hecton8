@@ -1,6 +1,8 @@
 ﻿# TERRAIN_CHUNK_PAGING_SYSTEM - SHINOBU_245
 
-Evidence class: STATIC_SOURCE / FILESYSTEM. Runtime proof remains pending Unity import, script compile, Play Mode, profiler, GCMonitor, Memory Profiler, payload validator, streaming boot, missing-file dump test, stale-handle/release test, and player build.
+Evidence class: STATIC_SOURCE / FILESYSTEM.
+
+Pending proof: Unity import, script compile, Play Mode, profiler, GCMonitor, Memory Profiler, payload validator, streaming boot, fault tests, player build.
 
 ## Authority Route
 
@@ -31,10 +33,11 @@ Evidence class: STATIC_SOURCE / FILESYSTEM. Runtime proof remains pending Unity 
 - Overflow or invalid capacity sets `TelemetryFaultCapacityOverflow`.
 - Initialization aborts before native aliases exist.
 
-- Worker/result safety is fenced without consuming metadata padding: while a slot is `Loading`, `FileOffset@12` temporarily stores the request `Sequence`; after success it is overwritten with the committed byte count.
+- Worker/result safety is fenced without consuming metadata padding.
+- While slot is `Loading`, `FileOffset@12` stores request `Sequence`; after success it stores committed byte count.
 - A worker result mutates metadata only when sector hash, sequence-in-`FileOffset`, and `Loading` state still match.
 - Shutdown releases generation handles only after worker termination and already-completed job finalization are confirmed.
-- Teardown does not force-complete pager jobs; unresolved jobs leave Vault buffers locked for deferred release rather than allowing a hidden main-thread stall or freeing memory under live native work.
+- Teardown does not force-complete pager jobs. Unresolved jobs leave Vault buffers locked for deferred release instead of stalling main thread or freeing live native memory.
 
 ## Binary Payload
 

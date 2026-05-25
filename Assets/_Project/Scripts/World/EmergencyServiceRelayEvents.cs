@@ -487,7 +487,7 @@ namespace Hecton8.World
         private static void ReportListenerRegistrationRejected()
         {
             _droppedListenerRegistrationCount++;
-            int frame = UnityEngine.Time.frameCount;
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (_lastListenerRejectedTelemetryFrame == frame)
                 return;
 
@@ -503,7 +503,7 @@ namespace Hecton8.World
             _listenerExceptionCount = UnityEngine.Mathf.Min(_listenerExceptionCount + 1, int.MaxValue);
             LogListenerDispatchException(exception);
 
-            int frame = UnityEngine.Time.frameCount;
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (_lastListenerExceptionTelemetryFrame == frame)
                 return;
 

@@ -180,6 +180,11 @@ namespace Hecton8.Tools.ToolKinematics.Contracts
     [StructLayout(LayoutKind.Explicit, Size = 16)]
     public partial struct MockTriggerPullSignal : ISignal
     {
+        public const int ExpectedCapacity = 8;
+        public const int MaxFrameSignals = 8;
+        public const int LowTierFrameSignals = 8;
+        public const uint LaneHash = 0x54323254u; // T22T
+
         [FieldOffset(0)] public uint ToolSlot;
         [FieldOffset(4)] public uint ToolHash;
         [FieldOffset(8)] public float Trigger01;
@@ -189,6 +194,11 @@ namespace Hecton8.Tools.ToolKinematics.Contracts
     [StructLayout(LayoutKind.Explicit, Size = 64)]
     public partial struct MockCarveRequestSignal : ISignal
     {
+        public const int ExpectedCapacity = 8;
+        public const int MaxFrameSignals = 8;
+        public const int LowTierFrameSignals = 2;
+        public const uint LaneHash = 0x54323243u; // T22C
+
         [FieldOffset(0)] public float3 HitPoint;
         [FieldOffset(12)] public float3 Normal;
         [FieldOffset(24)] public uint ToolHash;
@@ -204,6 +214,11 @@ namespace Hecton8.Tools.ToolKinematics.Contracts
     [StructLayout(LayoutKind.Explicit, Size = 32)]
     public partial struct ToolHeatSignal : ISignal
     {
+        public const int ExpectedCapacity = 8;
+        public const int MaxFrameSignals = 8;
+        public const int LowTierFrameSignals = 8;
+        public const uint LaneHash = 0x54323248u; // T22H
+
         [FieldOffset(0)] public uint ToolHash;
         [FieldOffset(4)] public uint Frame;
         [FieldOffset(8)] public float Heat01;
@@ -216,6 +231,11 @@ namespace Hecton8.Tools.ToolKinematics.Contracts
     [StructLayout(LayoutKind.Explicit, Size = 64)]
     public partial struct VfxSparkRequestSignal : ISignal
     {
+        public const int ExpectedCapacity = 8;
+        public const int MaxFrameSignals = 8;
+        public const int LowTierFrameSignals = 2;
+        public const uint LaneHash = 0x54323253u; // T22S
+
         [FieldOffset(0)] public float3 HitPoint;
         [FieldOffset(12)] public float3 Normal;
         [FieldOffset(24)] public uint MaterialHash;

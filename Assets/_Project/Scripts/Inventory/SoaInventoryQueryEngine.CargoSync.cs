@@ -186,6 +186,9 @@ namespace Hecton8.Inventory
 
     public static unsafe partial class SoaInventoryQueryEngine
     {
+
+        private static int s_x001DirectSignalPushDropCount_SoaInventoryQueryEngine_CargoSync;
+
         public const int CargoTelemetryCapacity = 300;
         public const int DefaultCargoTransactionCapacity = 64;
         public const int DefaultCargoLootCacheCapacity = 256;
@@ -602,7 +605,7 @@ namespace Hecton8.Inventory
                     StateFlags = 0
                 };
 
-                if (SignalBus<InventoryDeathLootCacheSignal>.TryPush(in signal))
+                if (SignalBus<InventoryDeathLootCacheSignal>.TryPushTracked(in signal, ref s_x001DirectSignalPushDropCount_SoaInventoryQueryEngine_CargoSync))
                     published++;
             }
 
@@ -631,9 +634,9 @@ namespace Hecton8.Inventory
 
             bool pushed = false;
             if (source.InventoryHash != 0u)
-                pushed |= SignalBus<InventoryChangedSignal>.TryPush(in source);
+                pushed |= SignalBus<InventoryChangedSignal>.TryPushTracked(in source, ref s_x001DirectSignalPushDropCount_SoaInventoryQueryEngine_CargoSync);
             if (dest.InventoryHash != 0u && dest.InventoryHash != source.InventoryHash)
-                pushed |= SignalBus<InventoryChangedSignal>.TryPush(in dest);
+                pushed |= SignalBus<InventoryChangedSignal>.TryPushTracked(in dest, ref s_x001DirectSignalPushDropCount_SoaInventoryQueryEngine_CargoSync);
             return pushed;
         }
 

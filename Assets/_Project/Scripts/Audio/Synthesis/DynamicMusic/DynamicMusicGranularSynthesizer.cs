@@ -1017,9 +1017,9 @@ namespace Hecton8.Audio.Synthesis
         private static void EnsureDynamicMusicSignalLaneCold()
         {
             SignalBus<DynamicMusicScalarSignal>.Configure(
-                expectedCapacity: 32,
-                maxFrameSignals: 64,
-                lowTierFrameSignals: 64,
+                expectedCapacity: DynamicMusicScalarSignal.ExpectedCapacity,
+                maxFrameSignals: DynamicMusicScalarSignal.MaxFrameSignals,
+                lowTierFrameSignals: DynamicMusicScalarSignal.LowTierFrameSignals,
                 laneHash: DynamicMusicScalarSignal.LaneHash);
             SignalBus<DynamicMusicScalarSignal>.EnsureInitialized();
         }

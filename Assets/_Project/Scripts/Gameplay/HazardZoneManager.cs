@@ -235,6 +235,7 @@ namespace Hecton8.Gameplay
     [DefaultExecutionOrder(-5695)]
     public sealed class HazardZoneManager : MonoBehaviour, ISlowTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener, IHazardZoneReadModel
     {
+        private static int s_x001HazardZoneManagerSignalPushDropCount;
         private const int HazardTypeCount = 4;
         private const int DefaultMaxZoneCount = 512;
         private const int MinZoneCapacity = 32;
@@ -1111,7 +1112,7 @@ namespace Hecton8.Gameplay
             signal.ChemicalHash = ToxicityHazardChemicalHash;
             signal.Frame = TimeSliceScheduler.CurrentFrameId;
             signal.Flags = 1;
-            SignalBus<ToxicityExposureSignal>.TryPush(in signal);
+            SignalBus<ToxicityExposureSignal>.TryPushTracked(in signal, ref s_x001HazardZoneManagerSignalPushDropCount);
         }
 
         private float ResolveToxicityResistance()

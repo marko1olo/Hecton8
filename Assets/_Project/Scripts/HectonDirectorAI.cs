@@ -50,6 +50,8 @@ namespace Hecton8.Systems.AI
     /// </summary>
     public static class DirectorAIEvents
     {
+        private static int s_x001DirectSignalPushDropCount_HectonDirectorAI;
+
         [StructLayout(LayoutKind.Explicit, Size = 32)]
         private struct DirectorAIEventPayload
         {
@@ -311,7 +313,7 @@ namespace Hecton8.Systems.AI
         {
             SignalBus<DirectorAIMusicSignal>.EnsureInitialized();
             DirectorAIMusicSignal signal = new DirectorAIMusicSignal(eventType, position, value, boolValue);
-            return SignalBus<DirectorAIMusicSignal>.TryPush(in signal);
+            return SignalBus<DirectorAIMusicSignal>.TryPushTracked(in signal, ref s_x001DirectSignalPushDropCount_HectonDirectorAI);
         }
 
         private static bool Enqueue(in DirectorAIEventPayload payload)

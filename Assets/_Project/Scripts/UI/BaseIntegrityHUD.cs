@@ -670,7 +670,7 @@ namespace Hecton8.UI
 
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-55)]
-    public sealed class BaseIntegrityHUD : MonoBehaviour, ISlowTickable, IGlobalRegistryHotSwapListener
+    public sealed class BaseIntegrityHUD : MonoBehaviour, ISlowTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         [Header("── Thresholds ─────────────────────────────")]
         [SerializeField, Range(0f, 1f)] private float warningThreshold = 0.75f;
@@ -688,7 +688,11 @@ namespace Hecton8.UI
         private IPlayerRuntimeContext _cachedPlayerContext;
         private ILocalizationTextReadModel _cachedLocalization;
         private bool _registered;
+        private bool _lateFrameRegistered;
         private bool _hotSwapListenerRegistered;
+        private readonly uint[] _pendingNotificationHashes = new uint[4];
+        private readonly byte[] _pendingNotificationTypes = new byte[4];
+        private int _pendingNotificationCount;
         private float _lastWarningIntegrity = 1f;
         private float _nextWarningTime;
         private float _lastAirQuality = 1f;
@@ -782,6 +786,26 @@ namespace Hecton8.UI
             PublishAirQualityState(nearestModule);
         }
 
+        public void LateFrameTick()
+        {
+            int count = math.min(_pendingNotificationCount, _pendingNotificationHashes.Length);
+            _pendingNotificationCount = 0;
+            for (int i = 0; i < count; i++)
+            {
+                uint messageHash = _pendingNotificationHashes[i];
+                byte type = _pendingNotificationTypes[i];
+                _pendingNotificationHashes[i] = 0u;
+                _pendingNotificationTypes[i] = 0;
+                if (messageHash == 0u)
+                    continue;
+
+                if (type == 1)
+                    NotificationEvents.TryPushRegisteredWarning(messageHash);
+                else
+                    NotificationEvents.TryPushRegisteredInfo(messageHash);
+            }
+        }
+
         private static BaseModule FindNearestActiveModule(in AbsoluteUniversePosition playerAup, double scanRadiusSq)
         {
             if (scanRadiusSq <= 0d)
@@ -856,7 +880,7 @@ namespace Hecton8.UI
                     ref _dangerFormatHash,
                     ResolveLocalizedSpan(LocalizationKeys.BASE_INTEGRITY_DANGER, "BASE CRITICAL: {0}% - BREACH IMMINENT!"),
                     integrityPercent);
-                NotificationEvents.TryPushRegisteredWarning(messageHash);
+                QueueNotification(messageHash, warning: true);
                 BaseIntegrityEvents.TryRaiseIntegrityWarning(integrity);
                 return;
             }
@@ -869,7 +893,7 @@ namespace Hecton8.UI
                     ref _criticalFormatHash,
                     ResolveLocalizedSpan(LocalizationKeys.BASE_INTEGRITY_CRITICAL, "HECTON-OS: MODULE INTEGRITY {0}% - REPAIRS REQUIRED."),
                     integrityPercent);
-                NotificationEvents.TryPushRegisteredWarning(messageHash);
+                QueueNotification(messageHash, warning: true);
                 BaseIntegrityEvents.TryRaiseIntegrityWarning(integrity);
                 return;
             }
@@ -882,7 +906,7 @@ namespace Hecton8.UI
                     ref _warningFormatHash,
                     ResolveLocalizedSpan(LocalizationKeys.BASE_INTEGRITY_WARNING, "BASE MODULE: INTEGRITY {0}%."),
                     integrityPercent);
-                NotificationEvents.TryPushRegisteredInfo(messageHash);
+                QueueNotification(messageHash, warning: false);
             }
         }
 
@@ -945,8 +969,21 @@ namespace Hecton8.UI
                     ref _airCriticalFormatHash,
                     "BASE AIR QUALITY CRITICAL: {0}%".AsSpan(),
                     NormalizedPercent(airQuality));
-                NotificationEvents.TryPushRegisteredWarning(messageHash);
+                QueueNotification(messageHash, warning: true);
             }
+        }
+
+        private void QueueNotification(uint messageHash, bool warning)
+        {
+            if (messageHash == 0u)
+                return;
+
+            if (_pendingNotificationCount >= _pendingNotificationHashes.Length)
+                _pendingNotificationCount = _pendingNotificationHashes.Length - 1;
+
+            _pendingNotificationHashes[_pendingNotificationCount] = messageHash;
+            _pendingNotificationTypes[_pendingNotificationCount] = warning ? (byte)1 : (byte)2;
+            _pendingNotificationCount++;
         }
 
         private bool ResolvePlayerTransform()
@@ -1070,15 +1107,23 @@ namespace Hecton8.UI
                 return;
 
             _registered = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.UI);
+            if (!_lateFrameRegistered)
+                _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
         }
 
         private void TryUnregister()
         {
-            if (!_registered)
-                return;
+            if (_lateFrameRegistered)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+                _lateFrameRegistered = false;
+            }
 
-            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.UI);
-            _registered = false;
+            if (_registered)
+            {
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.UI);
+                _registered = false;
+            }
         }
 
         private uint GetPercentNotificationHash(uint[] cache, ref uint cachedFormatHash, ReadOnlySpan<char> format, int percent)

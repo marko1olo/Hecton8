@@ -283,8 +283,12 @@ namespace Hecton8.Interaction
             object previousService,
             object currentService)
         {
-            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && currentService != null && isActiveAndEnabled)
-                RefreshPatchHoldDecayRegistration();
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                _registeredPatchHoldDecayTick = false;
+                if (currentService != null && isActiveAndEnabled)
+                    RefreshPatchHoldDecayRegistration();
+            }
         }
 
         private void ClearAcousticGuide()

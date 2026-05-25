@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
@@ -14,6 +14,7 @@ namespace Hecton8.Core
     [DefaultExecutionOrder(-8540)]
     public sealed class PrologueSequenceRegistryBridge : MonoBehaviour, IPrologueSequenceRuntime, IGlobalRegistryHotSwapListener
     {
+        private int _signalPushDropCount;
         private const uint SourceHash = PrologueSignalSourceHashes.SequenceDirector;
         private const uint ManualOverrideSourceHash = PrologueSignalSourceHashes.ManualOverrideLever;
         private const uint PlayerInputSignalSourceHash = 0x504C494Eu;
@@ -79,7 +80,7 @@ namespace Hecton8.Core
             }
         }
 
-        public uint CurrentFrame => unchecked((uint)math.max(0, Time.frameCount));
+        public uint CurrentFrame => Hecton8.Core.SystemDispatcher.CurrentFrameId;
 
         public bool ShouldSkipPrologue
         {
@@ -322,7 +323,7 @@ namespace Hecton8.Core
             signal.Paused = paused ? (byte)1 : (byte)0;
             signal.Flags = (byte)flags;
             signal.RestoreScalar = 1f;
-            SignalBus<SystemPauseSignal>.TryPush(in signal);
+            SignalBus<SystemPauseSignal>.TryPushTracked(in signal, ref _signalPushDropCount);
         }
 
         public void PublishMuffledBreathing(float intensity01, float durationSeconds)
@@ -335,7 +336,7 @@ namespace Hecton8.Core
             mixer.DuckingDb = -18f * safeIntensity;
             mixer.Frame = CurrentFrame;
             mixer.Flags = 1;
-            SignalBus<MixerStateSignal>.TryPush(in mixer);
+            SignalBus<MixerStateSignal>.TryPushTracked(in mixer, ref _signalPushDropCount);
 
             AcousticPingSignal ping = default;
             ping.PositionAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
@@ -344,7 +345,7 @@ namespace Hecton8.Core
             ping.SourceId = MuffledBreathingHash;
             ping.Channel = AcousticPingSignal.ChannelFabricScrape;
             ping.Flags = AcousticPingSignal.FlagFabricScrape;
-            SignalBus<AcousticPingSignal>.TryPush(in ping);
+            SignalBus<AcousticPingSignal>.TryPushTracked(in ping, ref _signalPushDropCount);
         }
 
         public void PublishHullTempCriticalWarning(float severity01)
@@ -355,7 +356,7 @@ namespace Hecton8.Core
             signal.Severity01 = math.saturate(severity01);
             signal.CooldownSeconds = 2f;
             signal.Priority = 1;
-            SignalBus<VocalWarningSignal>.TryPush(in signal);
+            SignalBus<VocalWarningSignal>.TryPushTracked(in signal, ref _signalPushDropCount);
         }
 
         public void PublishHeavyRumble(float intensity01, float durationSeconds)
@@ -367,7 +368,7 @@ namespace Hecton8.Core
             signal.SourceHash = SourceHash;
             signal.Frame = CurrentFrame;
             signal.Channel = HapticRequest.ChannelVehicleCritical;
-            SignalBus<HapticRequest>.TryPush(in signal);
+            SignalBus<HapticRequest>.TryPushTracked(in signal, ref _signalPushDropCount);
         }
 
         public void PublishManualReleasePrompt()
@@ -380,7 +381,7 @@ namespace Hecton8.Core
             diegetic.PromptKind = DiegeticHudSignal.PromptManualRelease;
             diegetic.Priority = 3;
             diegetic.Flags = DiegeticHudSignal.FlagPersistent;
-            SignalBus<DiegeticHudSignal>.TryPush(in diegetic);
+            SignalBus<DiegeticHudSignal>.TryPushTracked(in diegetic, ref _signalPushDropCount);
 
             HUDNotificationSignal hud = default;
             hud.MessageHash = ManualReleaseHash;
@@ -389,7 +390,7 @@ namespace Hecton8.Core
             hud.Frame = CurrentFrame;
             hud.Severity = 2;
             hud.Flags = 1;
-            SignalBus<HUDNotificationSignal>.TryPush(in hud);
+            SignalBus<HUDNotificationSignal>.TryPushTracked(in hud, ref _signalPushDropCount);
         }
 
         public void PublishMassiveImpact()
@@ -407,7 +408,7 @@ namespace Hecton8.Core
             signal.WhiteoutHoldSeconds = 0.12f;
             signal.Flags = PrologueCompleteSignal.FlagForceWhiteout;
             signal.Phase = PrologueCompleteSignal.PhaseOceanHandoff;
-            SignalBus<PrologueCompleteSignal>.TryPush(in signal);
+            SignalBus<PrologueCompleteSignal>.TryPushTracked(in signal, ref _signalPushDropCount);
         }
 
         public void ZeroUniverseVelocity()
@@ -428,7 +429,7 @@ namespace Hecton8.Core
             signal.RadiusMetersQ = 64;
             signal.Flags = SectorResidencyHydratedSignal.FlagPinned | SectorResidencyHydratedSignal.FlagProxyFallback;
             signal.ResidencyState = 1;
-            SignalBus<SectorResidencyHydratedSignal>.TryPush(in signal);
+            SignalBus<SectorResidencyHydratedSignal>.TryPushTracked(in signal, ref _signalPushDropCount);
         }
 
         public void PushTelemetry(PrologueStage stage, uint stateHash, byte flags)

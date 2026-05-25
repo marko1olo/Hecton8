@@ -954,7 +954,7 @@ namespace Hecton8.Graphics.VR
 
             telemetry[_telemetryCursor] = new FoveatedRenderTelemetryEntry
             {
-                Frame = unchecked((uint)Time.frameCount),
+                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 Sequence = _sequence++,
                 TargetLevel01 = _targetLevel01,
                 AppliedLevel01 = math.max(0f, _appliedLevel01),

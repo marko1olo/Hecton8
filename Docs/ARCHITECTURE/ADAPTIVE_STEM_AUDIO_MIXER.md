@@ -50,11 +50,12 @@ Evidence class: STATIC_SOURCE / FILESYSTEM path check. These anchors prove curre
 
 - Burst jobs use `FloatMode.Fast`, `NoAlias` unsafe pointers, and `UnsafeUtility.AsRef`.
 
-- `Tick` schedules the mock stimulus, tension, and crossfade job batch only when the continuous quality cadence elapses; skipped cadence frames keep the last mix frame and write lightweight telemetry.
+- `Tick` schedules stimulus, tension, and crossfade jobs only when quality cadence elapses; skipped frames keep the last mix and write lightweight telemetry.
 
 - Solver depends on mock/tension through `JobHandle.CombineDependencies`; the predator/depth/tension mock producer is Burst, not a managed oscillator.
 
-- Unity component assignment through `AudioSource.volume` and `AudioLowPassFilter.cutoffFrequency` is a cold/low-cadence legacy endpoint only. Primary runtime audio truth remains the DSPGraph/ParamSnapshot route. Audio runtime, profiler, GC, and platform proof remain absent.
+- Unity `AudioSource.volume` and `AudioLowPassFilter.cutoffFrequency` assignment is cold/low-cadence legacy endpoint only.
+- Primary audio truth remains DSPGraph/ParamSnapshot. Runtime, profiler, GC, and platform proof remain absent.
 
 - Runtime frame labels use the dispatcher's local simulation counter, not `Time.frameCount`.
 
@@ -81,4 +82,4 @@ Evidence class: STATIC_SOURCE / FILESYSTEM path check. These anchors prove curre
 
 - Editor rule/mix/telemetry reads use the non-blocking job flush gate and refuse vault access while audio jobs are still running.
 
-- Fault dump: `Docs/AgentLogs/Dump_STEM_MIXER.bin` when update cost exceeds 1000 us or non-finite state is detected; the dump writes the telemetry NativeArray as a span, without a managed staging `byte[]`.
+- Fault dump: `Docs/AgentLogs/Dump_STEM_MIXER.bin` when update cost exceeds 1000 us or non-finite state is detected; the dump writes telemetry NativeArray as a span, without a managed staging `byte[]`.

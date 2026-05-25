@@ -459,6 +459,19 @@ def main() -> int:
     manta_emergency_wreck = SCRIPTS / "Gameplay" / "MantaEmergencyWreck.cs"
     submarine_atmosphere_system = SCRIPTS / "SubmarineAtmosphereSystem.cs"
     submarine_structural_grid = SCRIPTS / "SubmarineStructuralGrid.cs"
+    hull_dent_shader_controller = SCRIPTS / "Vehicles" / "VFX" / "HullDentShaderController.cs"
+    player_runtime_context = SCRIPTS / "Core" / "PlayerRuntimeContext.cs"
+    physical_hand_controller = SCRIPTS / "Interaction" / "PhysicalHandController.cs"
+    deployable_sdf_drill_runtime = SCRIPTS / "Gameplay" / "Mining" / "DeployableSdfDrillRuntime.cs"
+    power_grid = SCRIPTS / "PowerGrid.cs"
+    vehicle_component_damage_runtime = SCRIPTS / "Physics" / "Vehicles" / "VehicleComponentDamageRuntime.cs"
+    submarine_dynamics_contracts = SCRIPTS / "Physics" / "Vehicles" / "SubmarineDynamicsContracts.cs"
+    habitat_graph_manager = SCRIPTS / "Construction" / "HabitatGraphManager.cs"
+    destructible_organic_manager = SCRIPTS / "World" / "DestructibleOrganicManager.cs"
+    foveated_simulation_manager = SCRIPTS / "Core" / "FoveatedSimulationManager.cs"
+    shinobu_flocking_avoidance = SCRIPTS / "AI" / "Ecosystem" / "ShinobuEcosystemBalancer.FlockingAvoidance.cs"
+    predator_cognition_domain = SCRIPTS / "Fauna" / "PredatorCognitionDomain.cs"
+    predator_acoustic_sdf = SCRIPTS / "Fauna" / "PredatorCognitionDomain.AcousticSdf.cs"
     abyssal_thermal_manager = SCRIPTS / "World" / "AbyssalThermalManager.cs"
     sargassum_micro_fauna_boids = SCRIPTS / "World" / "SargassumMicroFaunaBoids.cs"
     fauna_director = SCRIPTS / "FaunaDirector.cs"
@@ -873,6 +886,10 @@ def main() -> int:
         ballistics_runtime_text,
         "public static bool TombstonePrimitivesForTarget",
     )
+    ballistics_try_intersect_primitive_block = extract_csharp_block_after(
+        ballistics_runtime_text,
+        "private bool TryIntersectPrimitive",
+    )
     armor_debug_read_block = extract_csharp_block_after(
         armor_runtime_text,
         "public static bool TryGetArmorDebugBuffers",
@@ -991,6 +1008,99 @@ def main() -> int:
     submarine_hull_dent_block = extract_csharp_block_after(
         submarine_structural_grid_text,
         "private bool EnqueueHullImpactDecal",
+    )
+    submarine_hull_local_impact_block = extract_csharp_block_after(
+        submarine_structural_grid_text,
+        "private bool TryResolveLocalPointAup",
+    )
+    submarine_hull_local_direction_block = extract_csharp_block_after(
+        submarine_structural_grid_text,
+        "private bool TryResolveLocalDirection",
+    )
+    hull_dent_shader_text = read_source(hull_dent_shader_controller)
+    hull_dent_local_impact_block = extract_csharp_block_after(
+        hull_dent_shader_text,
+        "private bool TryResolveLocalImpactAup",
+    )
+    player_runtime_context_text = read_source(player_runtime_context)
+    player_runtime_survival_damage_block = extract_csharp_block_after(
+        player_runtime_context_text,
+        "private void PublishSurvivalDamageSignal",
+    )
+    physical_hand_text = read_source(physical_hand_controller)
+    physical_hand_velocity_block = extract_csharp_block_after(
+        physical_hand_text,
+        "private void TryPublishKinematicVelocitySignal",
+    )
+    deployable_drill_text = read_source(deployable_sdf_drill_runtime)
+    deployable_drill_damage_block = extract_csharp_block_after(
+        deployable_drill_text,
+        "private void PublishCombatDamage",
+    )
+    power_grid_text = read_source(power_grid)
+    power_short_circuit_block = extract_csharp_block_after(
+        power_grid_text,
+        "private void PublishElectricShortCircuitDamageSignal",
+    )
+    vehicle_component_damage_text = read_source(vehicle_component_damage_runtime)
+    vehicle_component_fixed_tick_block = extract_csharp_block_after(
+        vehicle_component_damage_text,
+        "public void FixedTick",
+    )
+    vehicle_component_gather_damage_block = extract_csharp_block_after(
+        vehicle_component_damage_text,
+        "private int GatherCombatDamageSignals",
+    )
+    vehicle_component_root_pose_block = extract_csharp_block_after(
+        vehicle_component_damage_text,
+        "private bool TryReadAuthoritativeRootPose",
+    )
+    submarine_dynamics_text = read_source(submarine_dynamics_contracts)
+    submarine_tensor_inverse_block = extract_csharp_block_after(
+        submarine_dynamics_text,
+        "private static bool TryMulInverse3x3",
+    )
+    submarine_linear_acceleration_block = extract_csharp_block_after(
+        submarine_dynamics_text,
+        "public static float3 ResolveLinearAcceleration",
+    )
+    submarine_angular_acceleration_block = extract_csharp_block_after(
+        submarine_dynamics_text,
+        "public static float3 ResolveAngularAcceleration",
+    )
+    habitat_graph_text = read_source(habitat_graph_manager)
+    habitat_graph_damage_block = extract_csharp_block_after(
+        habitat_graph_text,
+        "private void ConsumeModuleStressSignals",
+    )
+    destructible_organic_text = read_source(destructible_organic_manager)
+    dear_lie_stage_damage_block = extract_csharp_block_after(
+        destructible_organic_text,
+        "private int StageDearLieDamageEvents",
+    )
+    dear_lie_authoritative_preflight_block = extract_csharp_block_after(
+        destructible_organic_text,
+        "private static bool HasAnyAuthoritativeDearLieDamageSignal",
+    )
+    foveated_simulation_text = read_source(foveated_simulation_manager)
+    foveated_combat_damage_block = extract_csharp_block_after(
+        foveated_simulation_text,
+        "private void ApplyCombatDamageSignals",
+    )
+    shinobu_flocking_text = read_source(shinobu_flocking_avoidance)
+    shinobu_flocking_capture_block = extract_csharp_block_after(
+        shinobu_flocking_text,
+        "private void CaptureFlockingThreatSignals",
+    )
+    predator_cognition_text = read_source(predator_cognition_domain)
+    predator_cognition_damage_block = extract_csharp_block_after(
+        predator_cognition_text,
+        "private static void ProcessMesofaunaDamageSignals",
+    )
+    predator_acoustic_text = read_source(predator_acoustic_sdf)
+    predator_acoustic_damage_block = extract_csharp_block_after(
+        predator_acoustic_text,
+        "private static int AppendCombatDamageAcousticSignals",
     )
     abyssal_thermal_text = read_source(abyssal_thermal_manager)
     abyssal_boiling_block = extract_csharp_block_after(
@@ -1198,6 +1308,164 @@ def main() -> int:
                 "C# and shader inverse-trig are both scanned. Remaining shader sin/cos tokens are "
                 "presentation/bake inventory, not armor penetration truth."
             ),
+        },
+        "packedMetaProof": {
+            "verdict": (
+                "PASS"
+                if "private const uint MetaStatusBitsMask = 0x3FFu;" in combat_damage_text
+                and "private const int MetaWeakspotTierShift = 18;" in combat_damage_text
+                and "private const uint MetaWeakspotTierMask = 0x1u;" in combat_damage_text
+                and "private const int MetaDetailIndexShift = 19;" in combat_damage_text
+                and "private const int MetaDamageClassShift = 29;" in combat_damage_text
+                else "FAIL"
+            ),
+            "bitLayout": [
+                {"range": "0..7", "field": "damageType", "mask": "0xFF"},
+                {"range": "8..17", "field": "statusBits", "mask": "0x3FF"},
+                {"range": "18", "field": "weakspotTier", "mask": "0x1"},
+                {"range": "19..28", "field": "detailIndex", "mask": "0x3FF"},
+                {"range": "29..31", "field": "damageClass", "mask": "0x7"},
+            ],
+            "fracturedStatusBit": 1 << 9,
+            "fracturedPreservedByPackSignalMeta": (
+                "private const uint MetaStatusBitsMask = 0x3FFu;" in combat_damage_text
+            ),
+            "weakspotTierContract": (
+                "CombatWeakspotTier currently has None/Weakspot only; the old spare weakspot bit is used "
+                "to preserve CombatStatusBits.Fractured in the packed 32-bit meta word."
+            ),
+        },
+        "combatQualityWeightProof": {
+            "verdict": (
+                "PASS"
+                if "Middle = 1" in combat_damage_text
+                and "Ultra = 3" in combat_damage_text
+                and "float tier01 = math.saturate((byte)lod * (1f / (byte)CombatMathLod.Ultra));" in combat_damage_text
+                and "_requestedVisualQualityWeight01 = tier01 * tier01 * (3f - (2f * tier01));" in combat_damage_text
+                and "public static void SetCombatVisualQualityWeight(float weight01)" in combat_damage_text
+                else "FAIL"
+            ),
+            "tierSamples": {
+                "Low": 0.0,
+                "Middle": 0.25925925925925924,
+                "High": 0.7407407407407407,
+                "Ultra": 1.0,
+            },
+            "continuousOverride": "SetCombatVisualQualityWeight(float weight01)",
+            "truthOwnershipCaveat": (
+                "GlobalQualityWeight changes visual fidelity and optional feedback only. It must not change DTO layout, "
+                "damage authority, save identity, or central LUT/CAS ownership."
+            ),
+        },
+        "productionDirectionReuseProof": {
+            "verdict": (
+                "PASS"
+                if "float3 projectileDirection = ResolveExactDirection(signal.Direction);" in process_damage_execute_block
+                and "float3 armorNormal = armorSample.SurfaceNormal;" in process_damage_execute_block
+                and "float3 attackDirection = projectileDirection;" in process_damage_execute_block
+                and process_damage_execute_block.count("ResolveExactDirection(signal.Direction)") == 1
+                else "FAIL"
+            ),
+            "resolveExactDirectionSignalDirectionCallsInDamageLoop": process_damage_execute_block.count("ResolveExactDirection(signal.Direction)"),
+            "armorNormalSource": "armorSample.SurfaceNormal",
+            "rejectedDuplicateWork": (
+                "Before Loop 92 the production drain normalized signal.Direction twice and normalized detail.ArmorNormal "
+                "after it had already been replaced by the normalized armor sample surface normal."
+            ),
+        },
+        "armorRotationInverseProof": {
+            "verdict": (
+                "PASS"
+                if "float3 localFromAup = math.mul(math.conjugate(rotation)" in armor_runtime_text
+                and "math.inverse(rotation)" not in armor_runtime_text
+                and "q.value * math.rsqrt(math.max(lengthSq, 0.0001f))" in armor_runtime_text
+                and "views.TargetRotations[i] = new quaternion(math.select(" in armor_runtime_text
+                else "FAIL"
+            ),
+            "perHitInverseCalls": armor_runtime_text.count("math.inverse(rotation)"),
+            "unitRotationOwner": "RefreshArmorTargetSnapshots normalizes Transform.rotation before writing TargetRotations.",
+            "mathContract": "For normalized target rotation q, inverse(q) == conjugate(q).",
+        },
+        "ballisticsPrimitiveRotationProof": {
+            "verdict": (
+                "PASS"
+                if "quaternion rotation = BallisticsRuntime.NormalizeOrIdentity(primitive.Rotation);" in ballistics_try_intersect_primitive_block
+                and "quaternion inverseRotation = math.conjugate(rotation);" in ballistics_try_intersect_primitive_block
+                and "math.mul(rotation, localNormal)" in ballistics_try_intersect_primitive_block
+                and "math.mul(rotation, localHit)" in ballistics_try_intersect_primitive_block
+                and "math.inverse(BallisticsRuntime.NormalizeOrIdentity(primitive.Rotation))" not in ballistics_try_intersect_primitive_block
+                else "FAIL"
+            ),
+            "tryIntersectPrimitiveInverseCalls": ballistics_try_intersect_primitive_block.count("math.inverse("),
+            "tryIntersectPrimitiveRotationNormalizes": ballistics_try_intersect_primitive_block.count("NormalizeOrIdentity(primitive.Rotation)"),
+            "mathContract": "NormalizeOrIdentity returns a unit quaternion or identity; for unit q, inverse(q) == conjugate(q).",
+            "rejectedDuplicateWork": (
+                "Before Loop 94 primitive hit projection normalized primitive.Rotation three times and computed a generic "
+                "quaternion inverse. It now normalizes once, uses conjugate for local projection, and reuses the same "
+                "rotation for world normal and AUP hit reconstruction."
+            ),
+        },
+        "vehicleDamageRootRotationProof": {
+            "verdict": (
+                "PASS"
+                if "quaternion inverseRotation = math.conjugate(rootRotation);" in vehicle_component_fixed_tick_block
+                and "math.inverse(rootRotation)" not in vehicle_component_fixed_tick_block
+                and "rootRotation = NormalizeOrIdentity(_cachedRootRotation);" in vehicle_component_root_pose_block
+                and "rootRotation = NormalizeOrIdentity(new quaternion(rotation.x, rotation.y, rotation.z, rotation.w));" in vehicle_component_root_pose_block
+                and "rootRotation = quaternion.identity;" in vehicle_component_root_pose_block
+                else "FAIL"
+            ),
+            "fixedTickRootInverseCalls": vehicle_component_fixed_tick_block.count("math.inverse(rootRotation)"),
+            "unitRotationOwner": "TryReadAuthoritativeRootPose normalizes cached/editor Transform rotation and uses identity fallback.",
+            "mathContract": "For normalized root rotation q, inverse(q) == conjugate(q).",
+        },
+        "vehicleHydrodynamicTensorInverseProof": {
+            "verdict": (
+                "PASS"
+                if "private static bool TryMulInverse3x3(in float4x4 matrix, float3 vector, out float3 result)" in submarine_dynamics_text
+                and "float c00 = (a11 * a22) - (a12 * a21);" in submarine_tensor_inverse_block
+                and "float determinant = (a00 * c00) + (a01 * c01) + (a02 * c02);" in submarine_tensor_inverse_block
+                and "TryMulInverse3x3(in matrix, forceWorld, out float3 tensorAcceleration)" in submarine_linear_acceleration_block
+                and "TryMulInverse3x3(in matrix, torqueWorld, out float3 tensorAcceleration)" in submarine_angular_acceleration_block
+                and "math.inverse(matrix)" not in submarine_linear_acceleration_block
+                and "math.inverse(matrix)" not in submarine_angular_acceleration_block
+                and "math.determinant(matrix)" not in submarine_linear_acceleration_block
+                and "math.determinant(matrix)" not in submarine_angular_acceleration_block
+                else "FAIL"
+            ),
+            "remainingMathInverseMatrixCalls": submarine_dynamics_text.count("math.inverse(matrix)"),
+            "linearAccelerationUses3x3Solve": "TryMulInverse3x3(in matrix, forceWorld, out float3 tensorAcceleration)" in submarine_linear_acceleration_block,
+            "angularAccelerationUses3x3Solve": "TryMulInverse3x3(in matrix, torqueWorld, out float3 tensorAcceleration)" in submarine_angular_acceleration_block,
+            "mathContract": (
+                "AddedMassProfileDTO stores 3x3 hydrodynamic tensors in float4x4 lanes with c3 identity. "
+                "Linear/angular acceleration need only M^-1 * vector, so a direct 3x3 adjugate solve replaces "
+                "the general float4x4 inverse."
+            ),
+            "truthCaveat": (
+                "This is vehicle hydrodynamics, not armor penetration. The edit is limited to the tensor solve used "
+                "by vehicle force/torque application and keeps diagonal fallback behavior."
+            ),
+        },
+        "hullDentVisualRotationProof": {
+            "verdict": (
+                "PASS"
+                if "Quaternion inverseRotation = ConjugateUnitRotation(cachedTransform.rotation);" in submarine_hull_local_impact_block
+                and "Quaternion inverseRotation = ConjugateUnitRotation(cachedTransform.rotation);" in submarine_hull_local_direction_block
+                and "Quaternion inverseRotation = ConjugateUnitRotation(root.rotation);" in hull_dent_local_impact_block
+                and "Quaternion.Inverse" not in submarine_hull_local_impact_block
+                and "Quaternion.Inverse" not in submarine_hull_local_direction_block
+                and "Quaternion.Inverse" not in hull_dent_local_impact_block
+                and "private static Quaternion ConjugateUnitRotation(Quaternion rotation)" in submarine_structural_grid_text
+                and "private static Quaternion ConjugateUnitRotation(Quaternion rotation)" in hull_dent_shader_text
+                else "FAIL"
+            ),
+            "submarineStructuralGridQuaternionInverseCalls": (
+                submarine_hull_local_impact_block.count("Quaternion.Inverse") +
+                submarine_hull_local_direction_block.count("Quaternion.Inverse")
+            ),
+            "hullDentShaderQuaternionInverseCalls": hull_dent_local_impact_block.count("Quaternion.Inverse"),
+            "mathContract": "Unity Transform.rotation is unit; inverse(q) == conjugate(q) for damage feedback local projection.",
+            "truthCaveat": "This proof is for deferred visual dent projection only; central combat health truth still stays on LUT/CAS routes.",
         },
         "branchlessArmorLookupProof": {
             "sourceBranchlessnessVerdict": (
@@ -1654,10 +1922,78 @@ def main() -> int:
             ),
             "submarineHullDentUsesVisualOnlyFlag": (
                 "signal.Flags = CombatDamageSignal.DirectRuntimeFlag | CombatDamageSignal.VisualOnlyFlag;" in submarine_hull_dent_block and
-                "SignalBus<CombatDamageSignal>.TryPush(in signal)" in submarine_hull_dent_block
+                "SignalBus<CombatDamageSignal>.TryPush" in submarine_hull_dent_block
+            ),
+            "playerRuntimeSurvivalDamageUsesVisualOnlyFlag": (
+                "PlayerTargetHash" in player_runtime_survival_damage_block and
+                "SurvivalSourceHash" in player_runtime_survival_damage_block and
+                "CombatDamageSignal.VisualOnlyFlag" in player_runtime_survival_damage_block
+            ),
+            "physicalHandVelocityUsesVisualOnlyFlag": (
+                "signal.DamageType = 0x56524844u; // VRHD" in physical_hand_velocity_block and
+                "signal.Flags = CombatDamageSignal.DirectRuntimeFlag | CombatDamageSignal.VisualOnlyFlag;" in physical_hand_velocity_block
+            ),
+            "deployableDrillSelfDamageBroadcastUsesVisualOnlyFlag": (
+                "CombatDamageSignal.DirectRuntimeFlag" in deployable_drill_damage_block and
+                "CombatDamageSignal.VisualOnlyFlag" in deployable_drill_damage_block
+            ),
+            "powerShortCircuitBroadcastUsesVisualOnlyFlag": (
+                "DamageChannel.Power" in power_short_circuit_block and
+                "CombatDamageSignal.VisualOnlyFlag" in power_short_circuit_block
+            ),
+            "vehicleComponentDamageSkipsVisualOnlySignals": (
+                "SignalBus<CombatDamageSignal>.GetFrameSnapshot()" in vehicle_component_gather_damage_block and
+                "if ((signal.Flags & CombatDamageSignal.VisualOnlyFlag) != 0)" in vehicle_component_gather_damage_block and
+                contains_after(
+                    vehicle_component_gather_damage_block,
+                    "if ((signal.Flags & CombatDamageSignal.VisualOnlyFlag) != 0)",
+                    "continue;",
+                )
+            ),
+            "habitatGraphStressSkipsVisualOnlySignals": (
+                "SignalBus<CoreCombatDamageSignal>.GetFrameSnapshot()" in habitat_graph_damage_block and
+                (
+                    "if ((signal.Flags & CoreCombatDamageSignal.VisualOnlyFlag) != 0)\n"
+                    "                    continue;"
+                ) in habitat_graph_damage_block
+            ),
+            "dearLieDamageSkipsVisualOnlySignals": (
+                "SignalBus<CombatDamageSignal>.GetFrameSnapshot()" in dear_lie_stage_damage_block and
+                "if ((signal.Flags & CombatDamageSignal.VisualOnlyFlag) != 0)" in dear_lie_stage_damage_block and
+                contains_after(
+                    dear_lie_stage_damage_block,
+                    "if ((signal.Flags & CombatDamageSignal.VisualOnlyFlag) != 0)",
+                    "continue;",
+                )
+            ),
+            "dearLiePreflightIgnoresVisualOnlySignals": (
+                "!HasAnyAuthoritativeDearLieDamageSignal() && !dearLieGenerateMockDamageBurst" in destructible_organic_text and
+                "SignalBus<CombatDamageSignal>.GetFrameSnapshot()" in dear_lie_authoritative_preflight_block and
+                "CombatDamageSignal.VisualOnlyFlag" in dear_lie_authoritative_preflight_block and
+                "return true;" in dear_lie_authoritative_preflight_block
+            ),
+            "flockingThreatSkipsVisualOnlyDamage": (
+                "SignalBus<CombatDamageSignal>.GetFrameSnapshot()" in shinobu_flocking_capture_block and
+                "if ((signal.Flags & CombatDamageSignal.VisualOnlyFlag) != 0)" in shinobu_flocking_capture_block and
+                "FlockingThreatDamageHash" in shinobu_flocking_capture_block
+            ),
+            "predatorCognitionSkipsVisualOnlyDamage": (
+                "SignalBus<CombatDamageSignal>.GetFrameSnapshot()" in predator_cognition_damage_block and
+                "if ((signal.Flags & CombatDamageSignal.VisualOnlyFlag) != 0)" in predator_cognition_damage_block and
+                "StateFlee" in predator_cognition_damage_block
+            ),
+            "predatorAcousticSkipsVisualOnlyDamage": (
+                "SignalBus<CombatDamageSignal>.GetFrameSnapshot()" in predator_acoustic_damage_block and
+                "if ((signal.Flags & CombatDamageSignal.VisualOnlyFlag) != 0)" in predator_acoustic_damage_block and
+                "AppendAcousticStimulus" in predator_acoustic_damage_block
+            ),
+            "foveatedSimulationSkipsVisualOnlyDamage": (
+                "SignalBus<CombatDamageSignal>.GetFrameSnapshot()" in foveated_combat_damage_block and
+                "if ((signal.Flags & CombatDamageSignal.VisualOnlyFlag) != 0)" in foveated_combat_damage_block and
+                "LockTier0" in foveated_combat_damage_block
             ),
             "submarineHullDentStillUsesTypedVisualProjection": (
-                "SignalBus<HullDeformedSignal>.TryPush(in deformedSignal)" in read_source(SCRIPTS / "Vehicles" / "VFX" / "HullDentShaderController.cs")
+                "SignalBus<HullDeformedSignal>.TryPush" in hull_dent_shader_text
             ),
             "signalBusCoalescingKeepsVisualOnlySeparate": (
                 "((existing.Flags ^ incoming.Flags) & CombatDamageSignal.VisualOnlyFlag) != 0" in combat_damage_coalescing_block
@@ -1672,12 +2008,28 @@ def main() -> int:
                     "return false;",
                 )
                 and "signal.Flags = CombatDamageSignal.DirectRuntimeFlag | CombatDamageSignal.VisualOnlyFlag;" in submarine_hull_dent_block
+                and "SignalBus<CombatDamageSignal>.TryPush" in submarine_hull_dent_block
+                and "SignalBus<HullDeformedSignal>.TryPush" in hull_dent_shader_text
+                and "CombatDamageSignal.VisualOnlyFlag" in player_runtime_survival_damage_block
+                and "signal.Flags = CombatDamageSignal.DirectRuntimeFlag | CombatDamageSignal.VisualOnlyFlag;" in physical_hand_velocity_block
+                and "CombatDamageSignal.VisualOnlyFlag" in deployable_drill_damage_block
+                and "CombatDamageSignal.VisualOnlyFlag" in power_short_circuit_block
+                and "if ((signal.Flags & CombatDamageSignal.VisualOnlyFlag) != 0)" in vehicle_component_gather_damage_block
+                and "if ((signal.Flags & CoreCombatDamageSignal.VisualOnlyFlag) != 0)" in habitat_graph_damage_block
+                and "if ((signal.Flags & CombatDamageSignal.VisualOnlyFlag) != 0)" in dear_lie_stage_damage_block
+                and "CombatDamageSignal.VisualOnlyFlag" in dear_lie_authoritative_preflight_block
+                and "if ((signal.Flags & CombatDamageSignal.VisualOnlyFlag) != 0)" in shinobu_flocking_capture_block
+                and "if ((signal.Flags & CombatDamageSignal.VisualOnlyFlag) != 0)" in predator_cognition_damage_block
+                and "if ((signal.Flags & CombatDamageSignal.VisualOnlyFlag) != 0)" in predator_acoustic_damage_block
+                and "if ((signal.Flags & CombatDamageSignal.VisualOnlyFlag) != 0)" in foveated_combat_damage_block
                 and "((existing.Flags ^ incoming.Flags) & CombatDamageSignal.VisualOnlyFlag) != 0" in combat_damage_coalescing_block
                 else "FAIL"
             ),
             "contract": (
-                "Visual-only hull dent notifications may share the historical CombatDamageSignal lane for VFX consumers, "
-                "but central CombatDamageRuntime must reject them before LUT/CAS health mutation."
+                "Visual-only and owner-already-applied notifications may share the historical CombatDamageSignal lane "
+                "for VFX, haptic, AI, and diagnostic consumers, but central CombatDamageRuntime must reject them before "
+                "LUT/CAS health mutation. State-mutating secondary consumers must also skip visual-only payloads before "
+                "deriving vehicle damage, habitat stress, or flora destruction."
             ),
         },
         "combatTelemetryBoundsProof": {

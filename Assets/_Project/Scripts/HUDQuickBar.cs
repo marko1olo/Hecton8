@@ -155,7 +155,10 @@ namespace Hecton8.UI
                     _slotVisualsDirty = true;
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    RegisterToTickManager();
+                    _registeredToTickManager = false;
+                    _registeredToLateFrame = false;
+                    if (currentService != null)
+                        RegisterToTickManager();
                     break;
             }
         }

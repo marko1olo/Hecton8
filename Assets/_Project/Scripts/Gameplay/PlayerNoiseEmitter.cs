@@ -161,7 +161,7 @@ namespace Hecton8.Gameplay
             if (!PhysicsDeterminismSignals.TryGetLatestKccVelocity(out KccVelocitySignal signal) || signal.Sequence == 0u)
                 return false;
 
-            uint currentFrame = unchecked((uint)SystemDispatcher.CurrentFrameIndex);
+            uint currentFrame = SystemDispatcher.CurrentFrameId;
             uint signalFrame = signal.Frame != 0u ? signal.Frame : signal.Sequence;
             if (currentFrame != 0u &&
                 signalFrame != 0u &&

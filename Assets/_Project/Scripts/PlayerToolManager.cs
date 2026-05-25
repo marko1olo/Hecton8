@@ -43,6 +43,7 @@ namespace Hecton8.Gameplay
     [DisallowMultipleComponent]
     public sealed class PlayerToolManager : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, IModuleStatusEventListener, IGlobalRegistryHotSwapListener
     {
+        private static int s_x001PlayerToolManagerSignalPushDropCount;
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
         // ══════════════════════════════════════════════════════════
@@ -122,11 +123,18 @@ namespace Hecton8.Gameplay
         private Vector3 _anchorLoweredPosition;
         private uint _lastPlayerInputSignalSequence;
         private const uint PlayerInputSignalSourceHash = 0x504C494Eu;
-        private readonly string[] _slotNameCache = new string[4];
         private bool _assignedPoolsWarmed;
         private bool _handlingEquippedToolBreak;
         private bool _registeredToTick;
         private bool _registeredToLateFrame;
+        private bool _pendingSwapExecution;
+        private bool _pendingCurrentToolDespawn;
+        private bool _flushingToolLifecyclePresentation;
+        private bool _pendingToolSpawnExecution;
+        private GameObject _pendingToolSpawnPrefab;
+        private int _pendingToolSpawnSlotIndex;
+        private bool _pendingToolPoolDespawn;
+        private GameObject _pendingToolPoolDespawnInstance;
         private Transform _pendingToolPoseTransform;
         private PhysicalToolGripOffsets _pendingToolGripOffsets;
         private bool _pendingToolPoseFlush;
@@ -209,7 +217,6 @@ namespace Hecton8.Gameplay
             }
 
             ResolveTransportCoordinator();
-            RefreshSlotNameCache();
             PublishRuntimeContextState();
         }
 
@@ -252,7 +259,9 @@ namespace Hecton8.Gameplay
             TryUnregisterHotSwapListener();
 
             // Despavnim tekuschiy instrument pri otklyuchenii menedzhera
-            DespawnCurrentTool();
+            _flushingToolLifecyclePresentation = true;
+            DespawnCurrentToolImmediate();
+            _flushingToolLifecyclePresentation = false;
         }
 
         private void TryRegisterToTickManager()
@@ -400,6 +409,12 @@ namespace Hecton8.Gameplay
 
         public void LateFrameTick()
         {
+            _flushingToolLifecyclePresentation = true;
+            FlushPendingCurrentToolDespawn();
+            FlushPendingSwapExecution();
+            FlushPendingToolSpawnExecution();
+            FlushPendingToolPoolDespawn();
+            _flushingToolLifecyclePresentation = false;
             FlushPendingHandAnchorPose();
             FlushPendingToolPose();
         }
@@ -532,7 +547,7 @@ namespace Hecton8.Gameplay
                 BaselineInventoryChangedSignalRevision();
             }
 
-            DespawnCurrentTool();
+            DespawnCurrentToolImmediate();
             return true;
         }
 
@@ -559,10 +574,22 @@ namespace Hecton8.Gameplay
 
         public string GetSlotName(int slotIndex)
         {
-            if (slotIndex < 0 || slotIndex >= _slotNameCache.Length)
-                return null;
+            return ResolveSlotName(slotIndex);
+        }
 
-            return _slotNameCache[slotIndex];
+        public bool TryWriteSlotName(int slotIndex, Span<char> destination, out int length)
+        {
+            length = 0;
+            if (destination.Length == 0)
+                return false;
+
+            ReadOnlySpan<char> source = ResolveSlotNameSpan(slotIndex);
+            if (source.Length == 0)
+                return false;
+
+            length = Mathf.Min(source.Length, destination.Length);
+            source.Slice(0, length).CopyTo(destination);
+            return length > 0;
         }
 
         public string GetCurrentToolOperationalSummary()
@@ -573,9 +600,7 @@ namespace Hecton8.Gameplay
             if (_currentTool == null)
                 return "NO TOOL ARMED";
 
-            _toolSummaryBuffer.Clear();
-            _currentTool.WriteOperationalSummary(ref _toolSummaryBuffer);
-            return _toolSummaryBuffer.ToString();
+            return _currentTool.BuildLegacyOperationalSummaryString();
         }
 
         public bool TryWriteCurrentToolOperationalSummary(Span<char> destination, out int length)
@@ -623,9 +648,7 @@ namespace Hecton8.Gameplay
             if (_currentTool == null)
                 return "Arm a tool from quick slots or PDA loadout.";
 
-            _toolDirectiveBuffer.Clear();
-            _currentTool.WriteOperationalDirective(ref _toolDirectiveBuffer);
-            return _toolDirectiveBuffer.ToString();
+            return _currentTool.BuildLegacyOperationalDirectiveString();
         }
 
         public bool TryWriteCurrentToolOperationalDirective(Span<char> destination, out int length)
@@ -699,7 +722,7 @@ namespace Hecton8.Gameplay
                 Flags = ResolveToolLoadoutFlags()
             };
 
-            SignalBus<ToolLoadoutChangedSignal>.TryPush(in signal);
+            SignalBus<ToolLoadoutChangedSignal>.TryPushTracked(in signal, ref s_x001PlayerToolManagerSignalPushDropCount);
         }
 
         private static uint ResolveCurrentToolLoadoutFrame()
@@ -781,7 +804,6 @@ namespace Hecton8.Gameplay
 
             toolPrefabs[slotIndex] = prefab;
             EnsurePoolWarmup(prefab, toolPoolWarmupCount);
-            RefreshSlotNameCacheSlot(slotIndex);
             PublishToolLoadoutChanged(ToolLoadoutChangedSignal.ReasonAssignmentsChanged);
 
             if (!holsterIfCurrentInvalid || slotIndex != _currentSlotIndex)
@@ -882,9 +904,16 @@ namespace Hecton8.Gameplay
             int safeLength = Mathf.Min(source.Length, destination.Length - cursor);
             Span<char> target = destination.Slice(cursor, safeLength);
             for (int i = 0; i < safeLength; i++)
-                target[i] = char.ToUpperInvariant(source[i] == '_' ? ' ' : source[i]);
+                target[i] = ToUpperAscii(source[i] == '_' ? ' ' : source[i]);
 
             return cursor + safeLength;
+        }
+
+        private static char ToUpperAscii(char value)
+        {
+            return value >= 'a' && value <= 'z'
+                ? (char)(value - ('a' - 'A'))
+                : value;
         }
 
         private static int AppendInt(Span<char> destination, int cursor, int value)
@@ -936,7 +965,6 @@ namespace Hecton8.Gameplay
                 _suppressToolLoadoutSignal = previousSignalSuppression;
             }
 
-            RefreshSlotNameCache();
             PublishToolLoadoutChanged(ToolLoadoutChangedSignal.ReasonAssignmentsChanged);
             return true;
         }
@@ -1409,7 +1437,7 @@ namespace Hecton8.Gameplay
             {
                 // Net tekuschego — srazu spavnim
                 LogToolDebug("RequestSwap performing immediate swap");
-                PerformSwap();
+                QueueSwapExecution();
             }
         }
 
@@ -1432,7 +1460,7 @@ namespace Hecton8.Gameplay
                 if (prefab != null && handAnchor != null)
                 {
                     LogToolDebug("PerformSwap spawning slot");
-                    SpawnNewTool(prefab, _pendingSlotIndex);
+                    SpawnNewToolImmediate(prefab, _pendingSlotIndex);
                 }
             }
 
@@ -1479,7 +1507,7 @@ namespace Hecton8.Gameplay
             {
                 // Net anchor — propuskaem animatsiyu, vypolnyaem mgnovenno
                 if (_swapState == SwapState.Lowering)
-                    PerformSwap();
+                    QueueSwapExecution();
                 else
                     _swapState = SwapState.Idle;
                 return;
@@ -1504,7 +1532,7 @@ namespace Hecton8.Gameplay
 
                     if (_swapProgress >= 1f)
                     {
-                        PerformSwap();
+                        QueueSwapExecution();
                     }
 
                     break;
@@ -1533,10 +1561,58 @@ namespace Hecton8.Gameplay
         //  PRIVATE — SPAWN / DESPAWN
         // ══════════════════════════════════════════════════════════
 
+        private void QueueSwapExecution()
+        {
+            _pendingSwapExecution = true;
+        }
+
+        private void FlushPendingSwapExecution()
+        {
+            if (!_pendingSwapExecution)
+                return;
+
+            _pendingSwapExecution = false;
+            PerformSwap();
+        }
+
+        private void FlushPendingCurrentToolDespawn()
+        {
+            if (!_pendingCurrentToolDespawn)
+                return;
+
+            _pendingCurrentToolDespawn = false;
+            DespawnCurrentTool();
+        }
+
+        private void QueueToolSpawnExecution(GameObject prefab, int slotIndex)
+        {
+            _pendingToolSpawnPrefab = prefab;
+            _pendingToolSpawnSlotIndex = slotIndex;
+            _pendingToolSpawnExecution = true;
+        }
+
+        private void FlushPendingToolSpawnExecution()
+        {
+            if (!_pendingToolSpawnExecution)
+                return;
+
+            GameObject prefab = _pendingToolSpawnPrefab;
+            int slotIndex = _pendingToolSpawnSlotIndex;
+            _pendingToolSpawnPrefab = null;
+            _pendingToolSpawnSlotIndex = -1;
+            _pendingToolSpawnExecution = false;
+            SpawnNewToolImmediate(prefab, slotIndex);
+        }
+
         /// <summary>
         /// Spavnit instrument iz pula i nastraivaet ego.
         /// </summary>
         private void SpawnNewTool(GameObject prefab, int slotIndex)
+        {
+            QueueToolSpawnExecution(prefab, slotIndex);
+        }
+
+        private void SpawnNewToolImmediate(GameObject prefab, int slotIndex)
         {
             LogToolDebug("SpawnNewTool begin");
             EnsurePoolWarmup(prefab, toolPoolWarmupCount);
@@ -1641,6 +1717,58 @@ namespace Hecton8.Gameplay
         /// Bezopasno vyzyvat pri otsutstvii instrumenta.
         /// </summary>
         private void DespawnCurrentTool()
+        {
+            LogToolDebug("DespawnCurrentTool begin");
+            _externallyDockedTool = null;
+
+            if (ReferenceEquals(_currentTool, _batterySiphonTool))
+                ClearBatterySiphonLockout();
+
+            if (_currentTool != null)
+            {
+                _currentTool.OnUnequip();
+                _currentTool = null;
+                _currentActiveToolHash = 0u;
+            }
+
+            if (_currentInstance != null)
+            {
+                _currentInstance.transform.SetParent(null, false);
+                QueueToolPoolDespawn(_currentInstance);
+                _currentInstance = null;
+            }
+
+            _currentSlotIndex = -1;
+            LogToolDebug("DespawnCurrentTool complete currentSlot=-1");
+            PublishToolLoadoutChanged(ToolLoadoutChangedSignal.ReasonActiveSlotChanged);
+        }
+
+        private void QueueToolPoolDespawn(GameObject instance)
+        {
+            if (instance == null)
+                return;
+
+            _pendingToolPoolDespawnInstance = instance;
+            _pendingToolPoolDespawn = true;
+        }
+
+        private void FlushPendingToolPoolDespawn()
+        {
+            if (!_pendingToolPoolDespawn)
+                return;
+
+            GameObject instance = _pendingToolPoolDespawnInstance;
+            _pendingToolPoolDespawnInstance = null;
+            _pendingToolPoolDespawn = false;
+            if (instance == null)
+                return;
+
+            IObjectPoolService pool = _objectPool;
+            if (pool != null)
+                pool.Despawn(instance);
+        }
+
+        private void DespawnCurrentToolImmediate()
         {
             LogToolDebug("DespawnCurrentTool begin");
             _externallyDockedTool = null;
@@ -2196,20 +2324,6 @@ namespace Hecton8.Gameplay
             Holster();
         }
 
-        private void RefreshSlotNameCache()
-        {
-            for (int i = 0; i < _slotNameCache.Length; i++)
-                RefreshSlotNameCacheSlot(i);
-        }
-
-        private void RefreshSlotNameCacheSlot(int slotIndex)
-        {
-            if (slotIndex < 0 || slotIndex >= _slotNameCache.Length)
-                return;
-
-            _slotNameCache[slotIndex] = ResolveSlotName(slotIndex);
-        }
-
         private string ResolveSlotName(int slotIndex)
         {
             if (toolPrefabs == null || slotIndex < 0 || slotIndex >= toolPrefabs.Length)
@@ -2223,6 +2337,23 @@ namespace Hecton8.Gameplay
                 return tool.ToolData.itemName;
 
             return prefab.name;
+        }
+
+        private ReadOnlySpan<char> ResolveSlotNameSpan(int slotIndex)
+        {
+            if (toolPrefabs == null || slotIndex < 0 || slotIndex >= toolPrefabs.Length)
+                return ReadOnlySpan<char>.Empty;
+
+            GameObject prefab = toolPrefabs[slotIndex];
+            if (prefab == null)
+                return ReadOnlySpan<char>.Empty;
+
+            if (prefab.TryGetComponent(out PlayerTool tool) &&
+                tool.ToolData != null &&
+                !string.IsNullOrWhiteSpace(tool.ToolData.itemName))
+                return tool.ToolData.itemName.AsSpan();
+
+            return "TOOL".AsSpan();
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]

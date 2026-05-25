@@ -14,6 +14,7 @@ namespace Hecton8.Physiology
     [DisallowMultipleComponent]
     public sealed class PlayerStressMetricsRuntime : MonoBehaviour, ISlowTickable, IModuleStatusEventListener, IGlobalRegistryHotSwapListener
     {
+        private static int s_x001PlayerStressMetricsRuntimeSignalPushDropCount;
         private const float StressSubstepDeltaSeconds = 0.1f;
         private const int StressSubstepsPerSlowTick = 5;
         private const float DarknessLightThreshold01 = 0.2f;
@@ -442,7 +443,7 @@ namespace Hecton8.Physiology
                 Cause = cause,
                 Flags = flags
             };
-            SignalBus<PlayerStressSignal>.TryPush(in stressSignal);
+            SignalBus<PlayerStressSignal>.TryPushTracked(in stressSignal, ref s_x001PlayerStressMetricsRuntimeSignalPushDropCount);
         }
 
         private void EmitPanicAttack()
@@ -456,7 +457,7 @@ namespace Hecton8.Physiology
                 Severity = byte.MaxValue,
                 Flags = FlagPanicAttack
             };
-            SignalBus<TraumaSignal>.TryPush(in signal);
+            SignalBus<TraumaSignal>.TryPushTracked(in signal, ref s_x001PlayerStressMetricsRuntimeSignalPushDropCount);
         }
 
         private void TryEmitHallucination(in PlayerPose pose)
@@ -505,7 +506,7 @@ namespace Hecton8.Physiology
                 DebrisKind = GhostlyFishDebrisKind,
                 Flags = FlagHallucination
             };
-            SignalBus<DebrisSpawnSignal>.TryPush(in signal);
+            SignalBus<DebrisSpawnSignal>.TryPushTracked(in signal, ref s_x001PlayerStressMetricsRuntimeSignalPushDropCount);
         }
 
         private void WritePeakTelemetryIfNeeded()

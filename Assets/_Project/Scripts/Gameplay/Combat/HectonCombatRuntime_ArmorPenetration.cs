@@ -1323,7 +1323,7 @@ namespace Hecton8.Gameplay
             in ArmorPenetrationTuningDTO tuning)
         {
             double3 delta = impactAup - rootAup;
-            float3 localFromAup = math.mul(math.inverse(rotation), new float3((float)delta.x, (float)delta.y, (float)delta.z));
+            float3 localFromAup = math.mul(math.conjugate(rotation), new float3((float)delta.x, (float)delta.y, (float)delta.z));
             bool aupValid =
                 math.isfinite(impactAup.x) &
                 math.isfinite(impactAup.y) &
@@ -2135,7 +2135,7 @@ namespace Hecton8.Gameplay
                 _armorTelemetryCursor++;
                 proof = new ArmorPenetrationTelemetryEntry
                 {
-                    Frame = unchecked((uint)Time.frameCount),
+                    Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                     ImpactCount = unchecked((uint)count),
                     WeakPointHits = weakPointHits,
                     DeflectCount = deflectCount,

@@ -8,6 +8,7 @@ using System;
 using System.Threading;
 using Hecton8.Building;
 using Hecton8.Construction;
+using Hecton8.Core;
 using Hecton8.Dev;
 using Hecton8.Interaction;
 using Hecton8.Inventory;
@@ -16,6 +17,7 @@ using Hecton8.Items;
 using UnityEditor;
 #endif
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Hecton8.Gameplay
 {
@@ -27,7 +29,7 @@ namespace Hecton8.Gameplay
         [SerializeField] private PlayerToolManager toolManager;
         [SerializeField] private PlayerInventory playerInventory;
         [SerializeField] private PlayerBuilder playerBuilder;
-        [SerializeField] private ConstructionManager constructionManager;
+        [SerializeField, FormerlySerializedAs("constructionManager")] private MonoBehaviour constructionManagerProvider;
         [SerializeField] private ToolLoadoutProvisioner loadoutProvisioner;
         [SerializeField] private ItemData salvageProbeItem;
 
@@ -53,6 +55,7 @@ namespace Hecton8.Gameplay
 #pragma warning restore CS0414
 
         private bool _isRunning;
+        private ILogisticsService _constructionLogistics;
 
         private void Awake()
         {
@@ -85,7 +88,7 @@ namespace Hecton8.Gameplay
                 return;
 
             AutoResolveSceneReferences();
-            if (toolManager == null || playerInventory == null || playerBuilder == null || constructionManager == null)
+            if (toolManager == null || playerInventory == null || playerBuilder == null || _constructionLogistics == null)
             {
                 Debug.LogWarning($"[FieldToolSmoke] Missing references refs={DescribeRefs()}");
                 return;
@@ -285,7 +288,7 @@ namespace Hecton8.Gameplay
 
             Vector3 placePos = ResolvePlacementPose(cutterForwardDistance);
             Quaternion placeRot = Quaternion.LookRotation(GetForwardReference(), Vector3.up);
-            int beforeModuleCount = constructionManager.ModuleCount;
+            int beforeModuleCount = _constructionLogistics.ModuleCount;
             _debugLastStep = "DeployModuleForCutter";
             bool deployed = playerBuilder.DebugDeployActiveBuildable(placePos, placeRot, consumeCost: false);
             if (!deployed)
@@ -338,7 +341,7 @@ namespace Hecton8.Gameplay
             await DelayRealtimeAsync(settleDelay, cancellationToken);
 
             _debugLastStep = "VerifyCutter";
-            int afterModuleCount = constructionManager.ModuleCount;
+            int afterModuleCount = _constructionLogistics.ModuleCount;
             bool moduleGone = module == null || !module.gameObject.activeInHierarchy;
 
             if (!recovered || afterModuleCount >= beforeModuleCount + 1 || !moduleGone)
@@ -419,7 +422,11 @@ namespace Hecton8.Gameplay
 
         private BaseModule ResolveLastSpawnedModule()
         {
-            var modules = constructionManager.SpawnedModules;
+            ILogisticsService logistics = _constructionLogistics;
+            if (logistics == null)
+                return null;
+
+            var modules = logistics.SpawnedModules;
             if (modules == null || modules.Count == 0)
                 return null;
 
@@ -508,8 +515,8 @@ namespace Hecton8.Gameplay
                 playerInventory = (Hecton8.Core.GlobalRegistry.Player != null ? Hecton8.Core.GlobalRegistry.Player.Inventory : null);
             if (playerBuilder == null)
                 playerBuilder = (Hecton8.Core.GlobalRegistry.Player != null ? Hecton8.Core.GlobalRegistry.Player.PlayerBuilder : null);
-            if (constructionManager == null)
-                constructionManager = Hecton8.Core.GlobalRegistry.ConstructionRuntime;
+            ILogisticsService providerService = constructionManagerProvider as ILogisticsService;
+            _constructionLogistics = providerService ?? Hecton8.Core.GlobalRegistry.Logistics;
             if (loadoutProvisioner == null)
                 loadoutProvisioner = ToolLoadoutProvisioner.ActiveRuntimeInstance;
             if (salvageProbeItem == null)
@@ -522,7 +529,7 @@ namespace Hecton8.Gameplay
 
         private string DescribeRefs()
         {
-            return $"tools={(toolManager != null ? "Y" : "N")} inv={(playerInventory != null ? "Y" : "N")} builder={(playerBuilder != null ? "Y" : "N")} ctor={(constructionManager != null ? "Y" : "N")} prov={(loadoutProvisioner != null ? "Y" : "N")} item={(salvageProbeItem != null ? salvageProbeItem.name : "N")}";
+            return $"tools={(toolManager != null ? "Y" : "N")} inv={(playerInventory != null ? "Y" : "N")} builder={(playerBuilder != null ? "Y" : "N")} logistics={(_constructionLogistics != null ? "Y" : "N")} prov={(loadoutProvisioner != null ? "Y" : "N")} item={(salvageProbeItem != null ? salvageProbeItem.name : "N")}";
         }
 
         private void LogVerbose(string message)

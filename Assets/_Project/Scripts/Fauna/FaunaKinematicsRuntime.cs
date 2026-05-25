@@ -23,6 +23,7 @@ namespace Hecton8.AI
     [RequireComponent(typeof(FaunaBrain))]
     internal sealed class FaunaKinematicsRuntime : MonoBehaviour, IUpdatable, ILateFrameTickable, IOriginShiftListener, IDisposable, ILeviathanProceduralTunerSource, IGlobalRegistryHotSwapListener
     {
+        private int _signalPushDropCount;
         private const string TelemetryDumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_305.bin";
         private const string BiteTelemetryDumpRelativePath = "Docs/AgentLogs/Dump_FAUNA_BITE_IK_SOLVER.bin";
         private const ulong TelemetryDumpMagic = 0x4C455649494B3031UL;
@@ -1558,9 +1559,9 @@ namespace Hecton8.AI
                 debris.Flags = ResolveBiteDebrisFlags(pose.Flags);
                 debris.Quantity = ResolveBiteDebrisQuantity(_globalQualityWeight, pose.Flags);
                 if ((debris.Flags & DebrisSpawnSignal.FlagComputeShard) != 0)
-                    SignalBus<DebrisSpawnSignal>.TryPush(in debris);
+                    SignalBus<DebrisSpawnSignal>.TryPushTracked(in debris, ref _signalPushDropCount);
                 else
-                    SignalBus<DebrisSpawnSignal>.TryPush(in debris);
+                    SignalBus<DebrisSpawnSignal>.TryPushTracked(in debris, ref _signalPushDropCount);
                 PublishBiteHullDent(in pose, frame, debris.Intensity01);
 
                 HapticRequest haptic = default;
@@ -1571,7 +1572,7 @@ namespace Hecton8.AI
                 haptic.Frame = unchecked((uint)frame);
                 haptic.Channel = HapticRequest.ChannelCrush;
                 haptic.Flags = HapticRequest.FlagCrush;
-                SignalBus<HapticRequest>.TryPush(in haptic);
+                SignalBus<HapticRequest>.TryPushTracked(in haptic, ref _signalPushDropCount);
             }
 
             int biteAudioCooldownFrames = math.max(1, (int)math.ceil(BiteAudioCooldownSeconds * 60f));
@@ -1592,7 +1593,7 @@ namespace Hecton8.AI
                 signal.SourceId = pose.TargetHash;
                 signal.Channel = AcousticPingSignal.ChannelJawSnap;
                 signal.Flags = AcousticPingSignal.FlagJawSnap;
-                SignalBus<AcousticPingSignal>.TryPush(in signal);
+                SignalBus<AcousticPingSignal>.TryPushTracked(in signal, ref _signalPushDropCount);
             }
         }
 
@@ -1620,7 +1621,7 @@ namespace Hecton8.AI
             dent.QualityTier = ResolveQualityWeightByte(_globalQualityWeight);
             dent.Channel = AcousticPingSignal.ChannelJawSnap;
             dent.DamageType = BiteSparksSignalHash;
-            SignalBus<HullDeformedSignal>.TryPush(in dent);
+            SignalBus<HullDeformedSignal>.TryPushTracked(in dent, ref _signalPushDropCount);
         }
 
         private static byte ResolveBiteDebrisFlags(uint poseFlags)

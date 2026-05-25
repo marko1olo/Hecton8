@@ -84,6 +84,9 @@ Allowed global routes:
   - loop157: UI/Construction runtime singleton tails now route through `GlobalRegistry` cold cache and existing hot-swap state.
   - loop158: 23 world/environment/AI owners gained local lane reset or unregister/register rebinds before Dispatcher replacement registration; `AmbientBiotaDirector` no longer unregisters service identity during Dispatcher swap.
   - loop159: project-wide singleton owner-route grep and `?? GlobalRegistry|GlobalRegistry.TryGet` grep are zero; GI relay DataVault and weather fluid-current fallbacks moved to explicit cold owner-cache routes.
+  - loop160: 50 additional Atlas/audio/core/gameplay/interaction/lighting/world/UI/QA/tools/visor owners clear local Dispatcher lane flags before replacement re-register; touched-file `diff --check` passed, build blocked by guard.
+  - loop161: 19 remaining atmosphere/core/HUD/PDA/QA/quest/UI/visor/world owners clear stale Dispatcher/TickManager lane flags before replacement re-register; broad stale candidate scans now return 0.
+  - loop162: 29 source files move selected signal/blackbox/telemetry/event frame stamps from `Time.frameCount` to `SystemDispatcher` frame ownership; `HectonBiolumZone` caches BiolumManager/TickDispatcher/SimulationBucketer via hot-swap instead of runtime registry reads.
 - Scope: binary scalability event/tier tails outside Core bridge.
 - Scope: beacon/construction action fanout and BeaconNetwork `GetOrCreate` registry fallback.
 - Scope: SDF/Terrain `?? GlobalRegistry` fallbacks.
@@ -103,6 +106,14 @@ Allowed global routes:
   - FaunaBrain physics determinism compile fix.
 - Last zero-warning proof: `Docs/AgentLogs/Build_EXTERNAL_CODEX_hotpath_cleanup122_tick_registration.log`.
 - Runtime proof remains pending.
+- loop163/X_003: submarine room atmosphere and beacon network consumers moved to contract service routes.
+  - Owners: `SubmarineAtmosphereSystem` owns `ISubmarineAtmosphereRoomMutationSink`; `BeaconNetworkSystem` owns `IBeaconNetworkService`.
+  - Consumers: tool/world/dev-smoke routes use contract snapshots or the beacon service interface.
+  - Proof: `CompileWallX003Audit.py` concrete casts `979->973`; critical source using/FQN `0`; hot-path lookup `0`; build blocked by CPU/compiler guard.
+- loop164/X_003: construction logistics/habitat/parasite graph and vehicle docking physics-state routes moved to contract service surfaces.
+  - Owners: `ConstructionManager` owns `ILogisticsService`, `IHabitatGraphService`, and `IConstructionParasiteGraphService`; `GlobalPhysicsStateManager` owns `IPhysicsStateEventService`; `SubmarineFluidDynamics` owns `IDockedExternalMassSink`.
+  - Consumers: builder/dev smoke, construction UI, tools, drone fleet, spatial audio graph reads, flora parasite spread, base degradation, mod runtime catalog, game bootstrap clearing, and `VehicleDockingModule` use contract routes instead of concrete owner imports where safe.
+  - Proof: `CompileWallX003Audit.py` concrete casts `973->968`; critical source using/FQN `0`; hot-path lookup `0`; runtime concrete sibling refs remain `96`; build blocked by active compiler/CPU guard.
 
 ## Required Audit Commands
 

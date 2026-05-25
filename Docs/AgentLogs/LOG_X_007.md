@@ -884,3 +884,71 @@ Exact Microseconds saved:
 
 Verification:
 `python -B -c "import ast,pathlib; ast.parse(pathlib.Path('Tools/OOP_MathLOD_Scanner.py').read_text(encoding='utf-8'))"` passed. `git diff --check` passed for the scanner and carrion self-audit patch. Full scanner regenerated in `572.7s`: `scannedCSharpFiles = 2406`, `remainingTranscendentalTotal = 0`, `hardFailures = []`, `runtimeQualityStepGateSweepProof.qualityStepPatternAbsent = true`, `physiologyWorstCase.absError = 6.080794978657877e-08`. Build repeat is pending: latest gate sample had CPU `63`, no compiler process, and the project forbids `dotnet build` above 50% CPU.
+
+## 2026-05-25 Branch Boundary And Extreme Kernel Finiteness Proof
+
+What was wrong:
+The previous branch report was accurate but not explicit enough: approximation kernels were branchless, while whole Burst jobs still had valid safety branches. The proof needed to encode this boundary in JSON and numerically test all approximation kernels against critical inputs instead of relying only on source anchors.
+
+What was done:
+Extended `Tools/OOP_MathLOD_Scanner.py` with `burstBranchBoundaryProof` and `extremeKernelFinitenessProof`. The scanner now reports branch counts for the audited approximation kernel set and for relevant Burst jobs. It hard-fails if approximation kernels gain `if` or ternary syntax, or if any extreme-input approximation result is non-finite.
+
+Cinematic Cheats used:
+None. This is proof hardening. The production cheat remains bounded rational approximation plus continuous Math-LOD budgets.
+
+Exact Microseconds saved:
+0 verified microseconds. This change improves validation and regression detection; it does not claim runtime speed without profiler data.
+
+Verification:
+Full scanner regenerated in `473.3s`: `scannedCSharpFiles = 2406`, `remainingTranscendentalTotal = 0`, `hardFailures = []`, `approximationKernelTotalIfCount = 0`, `approximationKernelTotalTernaryCount = 0`, `extremeKernelFinitenessProof.nonFiniteOutputCount = 0`, exp `[0,4]` max abs error `7.629343333620531e-07`, physiology abs error `6.080794978657877e-08`. Recorded Burst safety branch counts: `PowerVoltageSolverJob` safety `if = 3`, edge-loop bounds `if/continue = 1`, `IntegrateBatteryChargeJob if = 7`, `ApplyEquipmentPowerDrainJob if = 7`. Build repeat is pending because CPU sampled at `51`, above the project no-build threshold.
+
+## 2026-05-25 Torture Job Ternary Reduction And Scanner Anchor Correction
+
+What was wrong:
+`MathLodTortureJob` still had three avoidable branch-style ternaries for non-finite counters and result flags. The full scanner also exposed a false hard failure in the topographical sonar proof because the validator looked at the first `ResolveWorkCurve` body while the file has both nested-job and runtime work-curve helpers.
+
+What was done:
+Converted the avoidable `MathLodTortureJob` ternaries to `math.select`. Left the telemetry cursor safety ternary intact to avoid invalid native-array reads. Corrected the topographical sonar anchor to validate the actual continuous sampling route and either continuous work-curve implementation.
+
+Cinematic Cheats used:
+None. This is branch proof and validator hardening.
+
+Exact Microseconds saved:
+0 verified microseconds. Expected gain is negligible in production; the value is a stricter torture proof and fewer branch-style operations in the validation job.
+
+Verification:
+Full scanner regenerated in `535.9s`: `scannedCSharpFiles = 2406`, `remainingTranscendentalTotal = 0`, `hardFailures = []`, `runtimeQualityStepGateSweepProof.topographicalSonarSamplingContinuous = true`, `mathLodTortureTernaryCount = 1`, `extremeKernelFinitenessProof.nonFiniteOutputCount = 0`. Build repeat blocked: CPU `99`, active `csc` PID `46556` and `dotnet` PID `32980`.
+
+## 2026-05-25 Power Destination Branch Mask Closure
+
+What was wrong:
+The power voltage CSR edge loop still used one destination bounds `if/continue`, and battery current integration had the same destination branch. Both were memory-safe, but they were still data-dependent branches in hot edge accumulation.
+
+What was done:
+Replaced both destination checks with clamped safe indices plus `math.select` conductance masks. Updated `Tools/OOP_MathLOD_Scanner.py` so regressions hard-fail through `powerVoltageDestinationMaskBranchless` and `integrateBatteryDestinationMaskBranchless`.
+
+Cinematic Cheats used:
+None. This preserves solver truth; invalid CSR destinations now contribute zero conductance instead of branching out of the edge loop.
+
+Exact Microseconds saved:
+0 verified microseconds. Static proof only; expected gain is one fewer destination branch per hot CSR edge visit.
+
+Verification:
+Full scanner regenerated in `552.7s`: `scannedCSharpFiles = 2406`, `remainingTranscendentalTotal = 0`, `hardFailures = []`, `powerVoltageEdgeLoopIfCount = 0`, `powerVoltageEdgeLoopContinueCount = 0`, `powerVoltageDestinationMaskBranchless = true`, `integrateBatteryDestinationMaskBranchless = true`. Build repeat blocked by CPU `96`, active `csc` PID `52460`, and active `dotnet` PID `54776`.
+
+## 2026-05-25 Power Destination Mask Equivalence Proof
+
+What was wrong:
+The destination branch removal had source anchors, but no numerical proof that invalid destinations still contribute exactly zero potential/current after safe-index masking.
+
+What was done:
+Added `scan_power_destination_mask_equivalence()` to `Tools/OOP_MathLOD_Scanner.py`. It compares old branch/continue behavior and new safe-index mask behavior across invalid destinations, mismatched node/potential lengths, NaN/inf conductance, near-zero conductance, and over-cap conductance.
+
+Cinematic Cheats used:
+None. This is solver equivalence proof.
+
+Exact Microseconds saved:
+0 verified microseconds. The proof exists to prevent a false branchless optimization from changing power graph truth.
+
+Verification:
+Full scanner regenerated in `553.5s`: `scannedCSharpFiles = 2406`, `remainingTranscendentalTotal = 0`, `hardFailures = []`, `powerDestinationMaskEquivalenceProof.checkedCases = 245`, `mismatchCount = 0`, `maxWeightedPotentialAbsDiff = 0`, `maxConductanceSumAbsDiff = 0`, `maxBatteryCurrentAbsDiff = 0`. Build repeat blocked by CPU `96`, active `csc` PID `55824`, and active `dotnet` PID `54420`.

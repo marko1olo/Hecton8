@@ -4,6 +4,7 @@ using Hecton8.Interaction;
 using Hecton8.World;
 using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Hecton8.Construction
 {
@@ -38,7 +39,7 @@ namespace Hecton8.Construction
 
         [Header("Logistics Registration")]
         [SerializeField] private bool registerWithConstructionManagerOnComplete = true;
-        [SerializeField] private ConstructionManager constructionManager;
+        [SerializeField, FormerlySerializedAs("constructionManager")] private MonoBehaviour constructionLogisticsProvider;
         [SerializeField] private BuildableData panelBuildableData;
         [SerializeField] private GameObject logisticsGraphEntryRoot;
 
@@ -66,7 +67,7 @@ namespace Hecton8.Construction
         private bool _weldGlowProxyRegistered;
         private bool _weldGlowTickRegistered;
         private bool _weldGlowTickSleeping;
-        private ConstructionManager _constructionManagerRuntime;
+        private ILogisticsService _constructionLogistics;
 
         public bool IsComplete => _complete;
         public byte CompletedMask => _completedMask;
@@ -76,14 +77,14 @@ namespace Hecton8.Construction
             _weldGlowProxyKey = unchecked((int)EntityId.ToULong(GetEntityId()) ^ 0x56525744);
             BindCorners();
             CacheCornerRuntimePositions();
-            CacheConstructionRuntimeCold();
+            CacheConstructionLogisticsCold();
         }
 
         private void OnEnable()
         {
             BindCorners();
             CacheCornerRuntimePositions();
-            CacheConstructionRuntimeCold();
+            CacheConstructionLogisticsCold();
             TryRegisterHotSwapListener();
             TryRegisterOriginShiftListener();
         }
@@ -301,17 +302,15 @@ namespace Hecton8.Construction
             if (!registerWithConstructionManagerOnComplete)
                 return;
 
-            ConstructionManager manager = constructionManager != null
-                ? constructionManager
-                : _constructionManagerRuntime;
-            if (manager == null)
+            ILogisticsService logistics = ResolveConstructionLogistics();
+            if (logistics == null)
                 return;
 
             GameObject graphEntry = logisticsGraphEntryRoot != null ? logisticsGraphEntryRoot : gameObject;
             if (panelBuildableData != null)
-                manager.RegisterModule(graphEntry, panelBuildableData);
+                logistics.RegisterModule(graphEntry, panelBuildableData);
             else
-                manager.RegisterModule(graphEntry);
+                logistics.RegisterModule(graphEntry);
         }
 
         private void BindCorners()
@@ -447,9 +446,16 @@ namespace Hecton8.Construction
             _weldGlowTickSleeping = false;
         }
 
-        private void CacheConstructionRuntimeCold()
+        private void CacheConstructionLogisticsCold()
         {
-            _constructionManagerRuntime = GlobalRegistry.ConstructionRuntime;
+            _constructionLogistics = ResolveConstructionLogistics();
+        }
+
+        private ILogisticsService ResolveConstructionLogistics()
+        {
+            ILogisticsService providerService = constructionLogisticsProvider as ILogisticsService;
+            ILogisticsService logistics = providerService ?? GlobalRegistry.Logistics;
+            return logistics;
         }
 
         private void TryRegisterHotSwapListener()
@@ -477,7 +483,7 @@ namespace Hecton8.Construction
             if (serviceSlot != GlobalRegistryServiceSlot.Logistics)
                 return;
 
-            _constructionManagerRuntime = currentService as ConstructionManager;
+            _constructionLogistics = currentService as ILogisticsService;
         }
 
         private static bool IsFiniteVector(Vector3 value)

@@ -42,21 +42,17 @@ namespace Hecton8.Gameplay
         // ══════════════════════════════════════════════════════════
 
         [Header("── Sway Settings (NASA-Punk) ─────────────────")]
-        [Tooltip("Skorost, s kotoroy model dogonyaet kameru. " +
-                 "Menshe = bolshe inertsii, tyazhelee oschuschenie.")]
+        [Tooltip("Skorost, s kotoroy model dogonyaet kameru. Menshe = bolshe inertsii, tyazhelee oschuschenie.")]
         [SerializeField] private float swaySpeed = 8f;
 
-        [Tooltip("Maksimalnoe otklonenie sway ot kamery (gradusy). " +
-                 "Ogranichivaet vizualnyy lag pri bystryh povorotah.")]
+        [Tooltip("Maksimalnoe otklonenie sway ot kamery (gradusy). Ogranichivaet vizualnyy lag pri bystryh povorotah.")]
         [SerializeField] private float swayMaxAngle = 12f;
 
         [Header("── LCD Screen ────────────────────────────────")]
-        [Tooltip("MeshRenderer malenkogo LCD-ekrana na modeli instrumenta. " +
-                 "Esli null — ekran ne obnovlyaetsya (net allokatsiy, net oshibok).")]
+        [Tooltip("MeshRenderer malenkogo LCD-ekrana na modeli instrumenta. Esli null - ekran ne obnovlyaetsya (net allokatsiy, net oshibok).")]
         public MeshRenderer screenRenderer;
 
-        [Tooltip("Indeks materiala na screenRenderer dlya LCD-ekrana. " +
-                 "Obychno 0, esli ekran — otdelnyy submesh.")]
+        [Tooltip("Indeks materiala na screenRenderer dlya LCD-ekrana. Obychno 0, esli ekran - otdelnyy submesh.")]
         [SerializeField] private int screenMaterialIndex;
 
         // ══════════════════════════════════════════════════════════
@@ -159,9 +155,7 @@ namespace Hecton8.Gameplay
             if (!GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform))
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError(
-                    "[BuilderTool] OnSpawn: Player transform could not be resolved via GameBootstrapper. " +
-                    "Builder tool will not function.");
+                Debug.LogError("[BuilderTool] OnSpawn: Player transform could not be resolved via GameBootstrapper. Builder tool will not function.");
 #endif
                 return;
             }
@@ -183,9 +177,7 @@ namespace Hecton8.Gameplay
             if (!playerRoot.TryGetComponent(out _playerInventory))
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning(
-                    "[BuilderTool] OnSpawn: PlayerInventory not found on Player root. " +
-                    "Resource display will be unavailable.");
+                Debug.LogWarning("[BuilderTool] OnSpawn: PlayerInventory not found on Player root. Resource display will be unavailable.");
 #endif
                 // Ne kritichno — prodolzhaem bez inventarya
             }
@@ -380,9 +372,7 @@ namespace Hecton8.Gameplay
         /// </summary>
         public override string BuildLegacyOperationalSummaryString()
         {
-            _legacyOperationalBuffer.Clear();
-            WriteOperationalSummary(ref _legacyOperationalBuffer);
-            return CreateLegacyString(in _legacyOperationalBuffer);
+            return "BUILDER";
         }
 
         public override void WriteOperationalSummary(ref FixedCharBuffer buffer)
@@ -401,9 +391,7 @@ namespace Hecton8.Gameplay
 
         public override string BuildLegacyOperationalDirectiveString()
         {
-            _legacyOperationalBuffer.Clear();
-            WriteOperationalDirective(ref _legacyOperationalBuffer);
-            return CreateLegacyString(in _legacyOperationalBuffer);
+            return "Restore builder link before field deployment.";
         }
 
         public override void WriteOperationalDirective(ref FixedCharBuffer buffer)
@@ -415,11 +403,6 @@ namespace Hecton8.Gameplay
             }
 
             _playerBuilder.WriteActiveBuildAdvice(ref buffer);
-        }
-
-        private static string CreateLegacyString(in FixedCharBuffer buffer)
-        {
-            return buffer.Length > 0 ? new string(buffer.Buffer, 0, buffer.Length) : string.Empty;
         }
 
         private static bool AppendText(ref FixedCharBuffer buffer, string value)

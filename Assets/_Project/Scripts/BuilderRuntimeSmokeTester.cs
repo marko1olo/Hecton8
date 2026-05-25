@@ -8,10 +8,12 @@ using System.Threading;
 using Hecton8.Bootstrap;
 using Hecton8.Building;
 using Hecton8.Construction;
+using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.Inventory;
 using Hecton8.World;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Hecton8.Dev
 {
@@ -21,7 +23,7 @@ namespace Hecton8.Dev
     {
         [Header("References")]
         [SerializeField] private PlayerBuilder playerBuilder;
-        [SerializeField] private ConstructionManager constructionManager;
+        [SerializeField, FormerlySerializedAs("constructionManager")] private MonoBehaviour constructionManagerProvider;
         [SerializeField] private PlayerInventory playerInventory;
         [SerializeField] private ToolLoadoutProvisioner loadoutProvisioner;
 
@@ -46,6 +48,7 @@ namespace Hecton8.Dev
         private readonly int[] _buildCostCountSnapshot = new int[BuildCostSnapshotCapacity];
         // COLD ALLOC: SpatialQueryHit[7] - registered placement probe scratch - owner: BuilderRuntimeSmokeTester
         private readonly SpatialQueryHit[] _placementProbeHits = new SpatialQueryHit[PlacementCandidateCount];
+        private ILogisticsService _constructionLogistics;
         private bool _isRunning;
         private float _nextWaitHeartbeatAt;
 
@@ -112,9 +115,9 @@ namespace Hecton8.Dev
 
             AutoResolveSceneReferences();
             LogVerbose($"RUN begin refs={DescribeResolvedRefs()}");
-            if (playerBuilder == null || constructionManager == null || playerInventory == null)
+            if (playerBuilder == null || _constructionLogistics == null || playerInventory == null)
             {
-                Debug.LogWarning("[BuilderSmoke] Missing PlayerBuilder, ConstructionManager or PlayerInventory.");
+                Debug.LogWarning("[BuilderSmoke] Missing PlayerBuilder, logistics service or PlayerInventory.");
                 return;
             }
 
@@ -151,7 +154,7 @@ namespace Hecton8.Dev
                     return;
                 }
 
-                int moduleCountBefore = constructionManager.ModuleCount;
+                int moduleCountBefore = _constructionLogistics.ModuleCount;
                 int countSnapshotLength = CaptureBuildCosts(buildable, _buildCostCountSnapshot);
                 if (countSnapshotLength < 0)
                     return;
@@ -171,7 +174,7 @@ namespace Hecton8.Dev
                     return;
                 }
 
-                int moduleCountAfterDeploy = constructionManager.ModuleCount;
+                int moduleCountAfterDeploy = _constructionLogistics.ModuleCount;
                 LogVerbose($"REGISTRY afterDeploy={moduleCountAfterDeploy}");
                 if (moduleCountAfterDeploy <= moduleCountBefore)
                 {
@@ -209,7 +212,7 @@ namespace Hecton8.Dev
                     return;
                 }
 
-                int moduleCountAfterRecover = constructionManager.ModuleCount;
+                int moduleCountAfterRecover = _constructionLogistics.ModuleCount;
                 LogVerbose($"REGISTRY afterRecover={moduleCountAfterRecover}");
                 if (moduleCountAfterRecover >= moduleCountAfterDeploy)
                 {
@@ -235,8 +238,8 @@ namespace Hecton8.Dev
             if (playerBuilder == null)
                 playerBuilder = (Hecton8.Core.GlobalRegistry.Player != null ? Hecton8.Core.GlobalRegistry.Player.PlayerBuilder : null);
 
-            if (constructionManager == null)
-                constructionManager = Hecton8.Core.GlobalRegistry.ConstructionRuntime;
+            ILogisticsService providerService = constructionManagerProvider as ILogisticsService;
+            _constructionLogistics = providerService ?? Hecton8.Core.GlobalRegistry.Logistics;
 
             if (playerInventory == null)
                 playerInventory = (Hecton8.Core.GlobalRegistry.Player != null ? Hecton8.Core.GlobalRegistry.Player.Inventory : null);
@@ -247,7 +250,7 @@ namespace Hecton8.Dev
 
         private string DescribeResolvedRefs()
         {
-            return $"builder={(playerBuilder != null ? "Y" : "N")} ctor={(constructionManager != null ? "Y" : "N")} inv={(playerInventory != null ? "Y" : "N")} prov={(loadoutProvisioner != null ? "Y" : "N")}";
+            return $"builder={(playerBuilder != null ? "Y" : "N")} logistics={(_constructionLogistics != null ? "Y" : "N")} inv={(playerInventory != null ? "Y" : "N")} prov={(loadoutProvisioner != null ? "Y" : "N")}";
         }
 
         private async Awaitable WaitRealtimeWithHeartbeatAsync(float duration, string phase, CancellationToken cancellationToken)
@@ -370,7 +373,11 @@ namespace Hecton8.Dev
 
         private BaseModule ResolveLastSpawnedModule()
         {
-            var modules = constructionManager.SpawnedModules;
+            ILogisticsService logistics = _constructionLogistics;
+            if (logistics == null)
+                return null;
+
+            var modules = logistics.SpawnedModules;
             if (modules == null || modules.Count == 0)
                 return null;
 

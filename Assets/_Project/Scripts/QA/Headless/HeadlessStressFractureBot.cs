@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Globalization;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -18,6 +18,7 @@ namespace Hecton8.QA.Headless
     [DefaultExecutionOrder(-9100)]
     public sealed class HeadlessStressFractureBot : MonoBehaviour, IFastTickable, IColdTickable, ILateFrameTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener
     {
+        private static int s_x001HeadlessStressFractureBotSignalPushDropCount;
         private const string AgentName = "HEADLESS_STRESS_FRACTURE_BOT";
         private const string RuntimeRootName = "[HeadlessStressFractureBot]";
         private const string CommandLineArg = "-h8fracturetest";
@@ -419,7 +420,16 @@ namespace Hecton8.QA.Headless
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
                 _dispatcher = currentService as ITickDispatcher;
-                if (currentService != null && !_finished && isActiveAndEnabled)
+                if (currentService == null)
+                {
+                    _registeredFast = false;
+                    _registeredCold = false;
+                    _registeredLate = false;
+                    _started = false;
+                    return;
+                }
+
+                if (!_finished && isActiveAndEnabled)
                 {
                     RegisterRuntimeLanes();
                     if (_started)
@@ -674,7 +684,7 @@ namespace Hecton8.QA.Headless
             AbsoluteUniversePosition centerAup = AbsoluteUniversePosition.FromAbsolutePosition(new double3(0d, -128d, 0d));
             uint frame = unchecked((uint)Time.frameCount);
             long chunkId = unchecked((long)0x4853464200010001UL);
-            SignalBus<SectorResidencyHydratedSignal>.TryPush(new SectorResidencyHydratedSignal
+            SignalBus<SectorResidencyHydratedSignal>.TryPushTracked(new SectorResidencyHydratedSignal
             {
                 CenterAup = centerAup,
                 ChunkId = chunkId,
@@ -682,7 +692,7 @@ namespace Hecton8.QA.Headless
                 RadiusMetersQ = 1000,
                 Flags = SectorResidencyHydratedSignal.FlagPinned,
                 ResidencyState = 1
-            });
+            }, ref s_x001HeadlessStressFractureBotSignalPushDropCount);
             SwarmDispersedSignal swarmSignal = new SwarmDispersedSignal
             {
                 PositionAup = centerAup,
@@ -693,7 +703,7 @@ namespace Hecton8.QA.Headless
                 Flags = 1,
                 QualityTier = 0
             };
-            SignalBus<SwarmDispersedSignal>.TryPush(in swarmSignal);
+            SignalBus<SwarmDispersedSignal>.TryPushTracked(in swarmSignal, ref s_x001HeadlessStressFractureBotSignalPushDropCount);
             _ecosystemDirectorReadyAtIssue = _ecosystemDirector != null && _ecosystemDirector.IsInitialized ? 1 : 0;
             _ecosystemStressIssued = 1;
             RecordBlackbox(EcosystemStressHash);
@@ -704,7 +714,7 @@ namespace Hecton8.QA.Headless
             AbsoluteUniversePosition centerAup = AbsoluteUniversePosition.FromAbsolutePosition(new double3(0d, -128d, 0d));
             uint frame = unchecked((uint)Time.frameCount);
             long chunkId = unchecked((long)(0x4853464200020000UL | (uint)_extremeFrame));
-            SignalBus<SectorDehydratedSignal>.TryPush(new SectorDehydratedSignal
+            SignalBus<SectorDehydratedSignal>.TryPushTracked(new SectorDehydratedSignal
             {
                 CenterAup = centerAup,
                 ChunkId = chunkId,
@@ -712,7 +722,7 @@ namespace Hecton8.QA.Headless
                 RadiusMetersQ = 1000,
                 Flags = SectorDehydratedSignal.FlagPinned,
                 ResidencyState = 0
-            });
+            }, ref s_x001HeadlessStressFractureBotSignalPushDropCount);
             MemorySnapshot snapshot = CaptureMemorySnapshot();
             _chunkUnloadNativeBytesBaseline = snapshot.NativeBytes;
             _chunkUnloadH8BytesBaseline = snapshot.H8Bytes;
@@ -834,13 +844,13 @@ namespace Hecton8.QA.Headless
                 SectorDelta = delta,
                 Flags = 1u
             });
-            SignalBus<RebaseSignal>.TryPush(new RebaseSignal
+            SignalBus<RebaseSignal>.TryPushTracked(new RebaseSignal
             {
                 ShiftMeters = shiftMeters,
                 ShiftFrameId = sequence,
                 GridDelta = delta,
                 Flags = 1u
-            });
+            }, ref s_x001HeadlessStressFractureBotSignalPushDropCount);
             AupSignalRoute.TryQueueShift(new AupShiftSignal
             {
                 ShiftMeters = shiftMeters,
@@ -977,7 +987,7 @@ namespace Hecton8.QA.Headless
         private void PublishCrashSignal(int exitCode, uint reasonHash, byte severity)
         {
             MemorySnapshot snapshot = CaptureMemorySnapshot();
-            SignalBus<CrashTelemetrySignal>.TryPush(new CrashTelemetrySignal
+            SignalBus<CrashTelemetrySignal>.TryPushTracked(new CrashTelemetrySignal
             {
                 SystemHash = RunnerHash,
                 ReasonHash = reasonHash,
@@ -987,7 +997,7 @@ namespace Hecton8.QA.Headless
                 NativeTrackedBytesMb = snapshot.NativeBytes * NativeBytesToMegabytes,
                 Severity = severity,
                 Flags = exitCode == 0 ? (byte)0 : (byte)1
-            });
+            }, ref s_x001HeadlessStressFractureBotSignalPushDropCount);
         }
 
         private void RecordBlackbox(uint eventHash)

@@ -292,7 +292,7 @@ namespace Hecton8.Ecosystem
 
         private void CacheSaveServiceCold()
         {
-            _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+            _saveService = GlobalRegistry.Save;
         }
 
         private void ClearRuntimeDependencies()

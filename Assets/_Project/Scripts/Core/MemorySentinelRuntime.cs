@@ -19,6 +19,7 @@ namespace Hecton8.Core
     [DefaultExecutionOrder(-8600)]
     public sealed unsafe class MemorySentinelRuntime : MonoBehaviour, IDispatcherSystem
     {
+        private static int s_x001MemorySentinelRuntimeSignalPushDropCount;
         private const uint SystemHash = 0x53483733u; // SH73
         private const int MaxTargets = 8;
         private const int RollbackByteCapacity = 8192;
@@ -187,7 +188,7 @@ namespace Hecton8.Core
             if (vault == null || !EnsureVaultBuffers(vault))
                 return;
 
-            uint frame = unchecked((uint)math.max(0, Time.frameCount));
+            uint frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             if (!CompleteValidationJob(forceComplete: false))
             {
                 RecordTelemetry(vault, frame, 0u, 0u, 0u, 0u, TelemetryFlagJobBusy, 0f);
@@ -372,9 +373,9 @@ namespace Hecton8.Core
             signal.TargetHash = MemorySentinelMath.ComputeTargetHash((int)bufferId, signal.ByteOffset);
             signal.ExpectedHash = expectedHash;
             signal.StoredHash = expectedHash;
-            signal.Frame = unchecked((uint)math.max(0, Time.frameCount));
+            signal.Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             signal.Flags = flags;
-            SignalBus<HashDeltaUpdateSignal>.TryPush(in signal);
+            SignalBus<HashDeltaUpdateSignal>.TryPushTracked(in signal, ref s_x001MemorySentinelRuntimeSignalPushDropCount);
 
             MemorySentinelRuntime runtime = s_active;
             if (runtime == null)
@@ -1109,7 +1110,7 @@ namespace Hecton8.Core
                 return;
             }
 
-            uint frame = unchecked((uint)math.max(0, Time.frameCount));
+            uint frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             uint bytesHashed = 0u;
             uint desyncsDetected = 0u;
             uint desyncsCorrected = 0u;
@@ -1427,7 +1428,7 @@ namespace Hecton8.Core
                 signal.Flags |= MemoryDesyncSignal.FlagPointerMismatch;
             }
 
-            SignalBus<MemoryDesyncSignal>.TryPush(in signal);
+            SignalBus<MemoryDesyncSignal>.TryPushTracked(in signal, ref s_x001MemorySentinelRuntimeSignalPushDropCount);
         }
 
         private static void PublishRollback(in MemorySentinelTargetDTO target, in ValidationStateDTO state, uint frame)
@@ -1442,7 +1443,7 @@ namespace Hecton8.Core
             signal.RollbackByteOffset = target.RollbackByteOffset;
             signal.TargetMemoryFingerprint = target.TargetMemoryFingerprint;
             signal.Flags = target.Flags;
-            SignalBus<MemorySentinelRollbackSignal>.TryPush(in signal);
+            SignalBus<MemorySentinelRollbackSignal>.TryPushTracked(in signal, ref s_x001MemorySentinelRuntimeSignalPushDropCount);
         }
 
         private static void PublishTeleportDesync(BufferID bufferId, uint frame, float quality, bool fatal)
@@ -1456,7 +1457,7 @@ namespace Hecton8.Core
                 signal.Flags |= MemoryDesyncSignal.FlagFatal;
             signal.Severity01 = fatal ? 1f : 0.95f;
             signal.GlobalQualityWeight = quality;
-            SignalBus<MemoryDesyncSignal>.TryPush(in signal);
+            SignalBus<MemoryDesyncSignal>.TryPushTracked(in signal, ref s_x001MemorySentinelRuntimeSignalPushDropCount);
         }
 
         private void RecordTelemetry(
@@ -1569,7 +1570,7 @@ namespace Hecton8.Core
             MockInventoryByteMutationJob mutationJob = new MockInventoryByteMutationJob
             {
                 MockInventory = mock,
-                Frame = unchecked((uint)math.max(0, Time.frameCount)),
+                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 MutationByteCount = 4
             };
             mutationJob.Execute();

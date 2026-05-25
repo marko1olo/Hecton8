@@ -56,6 +56,7 @@ namespace Hecton8.Gameplay
     [AddComponentMenu("Hecton/Gameplay/Bio Reactor")]
     public sealed class BioReactor : MonoBehaviour, IPowerComponent, ITickable, IUpdatable, ILateFrameTickable, IInteractable, IInteractableTextProvider, ILocalizationLanguageChangedListener, IGlobalRegistryHotSwapListener
     {
+        private static int s_x001BioReactorSignalPushDropCount;
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
         // ══════════════════════════════════════════════════════════
@@ -491,7 +492,7 @@ namespace Hecton8.Gameplay
 
         private void RefreshColdRegistryReferences()
         {
-            _audioService = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
+            _audioService = GlobalRegistry.Audio;
             _playerRuntime = GlobalRegistry.Player;
             _localizationRuntime = GlobalRegistry.LocalizationText;
         }
@@ -850,7 +851,7 @@ namespace Hecton8.Gameplay
                 ToxinLeak01 = math.saturate(severity01),
                 Flags = 1
             };
-            SignalBus<ReactorDamageSignal>.TryPush(in signal);
+            SignalBus<ReactorDamageSignal>.TryPushTracked(in signal, ref s_x001BioReactorSignalPushDropCount);
         }
 
         private void QueueMeltdownPlayerStatus(HectonSurvivalSystem survival, float damage01)
@@ -901,7 +902,7 @@ namespace Hecton8.Gameplay
             signal.SourceId = unchecked((uint)GetRuntimeId(this));
             signal.DoseKind = MeltdownRadiationDoseKind;
             signal.Flags = 1;
-            SignalBus<RadiationDoseSignal>.TryPush(in signal);
+            SignalBus<RadiationDoseSignal>.TryPushTracked(in signal, ref s_x001BioReactorSignalPushDropCount);
         }
 
         private static bool TryResolveRuntimeAup(Vector3 runtimePosition, out double3 positionAup)

@@ -412,9 +412,9 @@ namespace Hecton8.Construction
         private static void ConfigureSignalLane()
         {
             SignalBus<ConstructionPreviewSignal>.Configure(
-                expectedCapacity: 4,
-                maxFrameSignals: 8,
-                lowTierFrameSignals: 8,
+                expectedCapacity: ConstructionPreviewSignal.ExpectedCapacity,
+                maxFrameSignals: ConstructionPreviewSignal.MaxFrameSignals,
+                lowTierFrameSignals: ConstructionPreviewSignal.LowTierFrameSignals,
                 laneHash: ConstructionPreviewSignal.LaneHash);
             SignalBus<ConstructionPreviewSignal>.EnsureInitialized();
         }

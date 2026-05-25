@@ -10,7 +10,9 @@ Runtime voice playback does not use JSON, managed voice `AudioClip` tables, runt
 
 `OnAudioFilterRead` is a legacy Unity callback seam required by the SHINOBU_260 XML prompt.
 
-Project audio mandate still prefers DSPGraph/`IAudioOutputJob` for future hardening. Until then, the callback uses a pinned Unity `float[]` at the boundary and does not allocate inside the decode loop.
+Project audio mandate still prefers DSPGraph/`IAudioOutputJob` for future hardening.
+
+Until then, callback uses pinned Unity `float[]` at boundary and does not allocate inside decode loop.
 
 Default callback mode: master-listener mix.
 

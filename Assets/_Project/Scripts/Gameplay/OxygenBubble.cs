@@ -450,7 +450,7 @@ namespace Hecton8.Gameplay
 
         private void CacheRegistryServicesCold()
         {
-            _audioService = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
+            _audioService = GlobalRegistry.Audio;
             _objectPool = GlobalRegistry.ObjectPoolService;
             _playerRuntime = GlobalRegistry.Player;
         }
@@ -489,6 +489,8 @@ namespace Hecton8.Gameplay
                     _playerRuntime = currentService as IPlayerRuntimeContext;
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
+                    _isRegistered = false;
+                    _lateFrameRegistered = false;
                     if (currentService != null)
                         RegisterToTick();
                     break;

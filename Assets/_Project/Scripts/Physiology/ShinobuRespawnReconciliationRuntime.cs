@@ -22,6 +22,7 @@ namespace Hecton8.Physiology
     [AddComponentMenu("Hecton8/Physiology/Respawn Reconciliation Runtime")]
     public sealed unsafe class ShinobuRespawnReconciliationRuntime : MonoBehaviour, IGlobalRegistryHotSwapListener
     {
+        private static int s_x001ShinobuRespawnReconciliationRuntimeSignalPushDropCount;
         private const SystemID OwnerSystem = SystemID.GameplayPlayer;
         private const uint SystemHash = ShinobuRespawnConstants.SourceHash;
         private const int JobBufferLockCount = 16;
@@ -1510,7 +1511,7 @@ namespace Hecton8.Physiology
             fatal.Frame = job.Frame;
             fatal.Intensity01 = math.saturate(math.isfinite(job.Intensity01) ? job.Intensity01 : 1f);
             fatal.Flags = 1;
-            SignalBus<PlayerFatalPressureSignal>.TryPush(in fatal);
+            SignalBus<PlayerFatalPressureSignal>.TryPushTracked(in fatal, ref s_x001ShinobuRespawnReconciliationRuntimeSignalPushDropCount);
             return true;
         }
 

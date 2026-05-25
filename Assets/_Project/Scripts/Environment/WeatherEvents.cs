@@ -525,7 +525,7 @@ namespace Hecton8.Environment
         private static void ReportEventOverflow()
         {
             _droppedEventCount++;
-            int frame = Time.frameCount;
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (_lastEventOverflowTelemetryFrame == frame)
                 return;
 
@@ -539,7 +539,7 @@ namespace Hecton8.Environment
         private static void ReportListenerRegistrationRejected()
         {
             _droppedListenerRegistrationCount++;
-            int frame = Time.frameCount;
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (_lastListenerRejectedTelemetryFrame == frame)
                 return;
 
@@ -553,7 +553,7 @@ namespace Hecton8.Environment
         private static void ReportListenerDispatchException()
         {
             _listenerExceptionCount++;
-            int frame = Time.frameCount;
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (_lastListenerExceptionTelemetryFrame == frame)
                 return;
 

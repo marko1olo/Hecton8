@@ -18,6 +18,11 @@ namespace Hecton8.Core.Contracts.Signals
     [StructLayout(LayoutKind.Explicit, Size = PlayerMovementPresentationSignalLayout.FootstepStrideBytes)]
     public struct PlayerFootstepSignal : ISignal
     {
+        public const int ExpectedCapacity = 16;
+        public const int MaxFrameSignals = 32;
+        public const int LowTierFrameSignals = 8;
+        public const uint LaneHash = 0x5CFCFEBEu; // FNV32("PlayerFootstepSignal")
+
         [FieldOffset(0)] public uint SourceId;
         [FieldOffset(4)] public uint Frame;
         [FieldOffset(8)] public float Intensity01;
@@ -46,6 +51,11 @@ namespace Hecton8.Core.Contracts.Signals
     [StructLayout(LayoutKind.Explicit, Size = PlayerMovementPresentationSignalLayout.WaterSplashStrideBytes)]
     public struct PlayerWaterSplashSignal : ISignal
     {
+        public const int ExpectedCapacity = 8;
+        public const int MaxFrameSignals = 16;
+        public const int LowTierFrameSignals = 4;
+        public const uint LaneHash = 0x6411655Cu; // FNV32("PlayerWaterSplashSignal")
+
         [FieldOffset(0)] public uint SourceId;
         [FieldOffset(4)] public uint Frame;
         [FieldOffset(8)] public float Intensity01;
@@ -81,6 +91,11 @@ namespace Hecton8.Core.Contracts.Signals
     [StructLayout(LayoutKind.Explicit, Size = PlayerMovementPresentationSignalLayout.WaterTransitionStrideBytes)]
     public struct WaterTransitionSignal : ISignal
     {
+        public const int ExpectedCapacity = 8;
+        public const int MaxFrameSignals = 16;
+        public const int LowTierFrameSignals = 8;
+        public const uint LaneHash = 0x3EF2CD93u; // FNV32("WaterTransitionSignal")
+
         [FieldOffset(0)] public uint SourceId;
         [FieldOffset(4)] public uint Frame;
         [FieldOffset(8)] public float Intensity01;
@@ -105,6 +120,11 @@ namespace Hecton8.Core.Contracts.Signals
     [StructLayout(LayoutKind.Explicit, Size = PlayerMovementPresentationSignalLayout.ExhaleStrideBytes)]
     public struct PlayerExhaleSignal : ISignal
     {
+        public const int ExpectedCapacity = 16;
+        public const int MaxFrameSignals = 32;
+        public const int LowTierFrameSignals = 8;
+        public const uint LaneHash = 0x0C6B5471u; // FNV32("PlayerExhaleSignal")
+
         [FieldOffset(0)] public uint SourceId;
         [FieldOffset(4)] public uint Frame;
         [FieldOffset(8)] public byte Flags;
@@ -120,6 +140,11 @@ namespace Hecton8.Core.Contracts.Signals
     [StructLayout(LayoutKind.Explicit, Size = PlayerMovementPresentationSignalLayout.SprintStateStrideBytes)]
     public struct PlayerSprintStateSignal : ISignal
     {
+        public const int ExpectedCapacity = 8;
+        public const int MaxFrameSignals = 16;
+        public const int LowTierFrameSignals = 4;
+        public const uint LaneHash = 0x0141C365u; // FNV32("PlayerSprintStateSignal")
+
         [FieldOffset(0)] public uint SourceId;
         [FieldOffset(4)] public uint Frame;
         [FieldOffset(8)] public byte IsSprinting;
@@ -135,6 +160,11 @@ namespace Hecton8.Core.Contracts.Signals
     [StructLayout(LayoutKind.Explicit, Size = PlayerMovementPresentationSignalLayout.FatalPressureStrideBytes)]
     public struct PlayerFatalPressureSignal : ISignal
     {
+        public const int ExpectedCapacity = 8;
+        public const int MaxFrameSignals = 16;
+        public const int LowTierFrameSignals = 4;
+        public const uint LaneHash = 0x7F048B59u; // FNV32("PlayerFatalPressureSignal")
+
         [FieldOffset(0)] public uint SourceId;
         [FieldOffset(4)] public uint Frame;
         [FieldOffset(8)] public float Intensity01;
@@ -147,6 +177,11 @@ namespace Hecton8.Core.Contracts.Signals
     [StructLayout(LayoutKind.Explicit, Size = PlayerMovementPresentationSignalLayout.TransportBailoutStrideBytes)]
     public struct PlayerTransportBailoutSignal : ISignal
     {
+        public const int ExpectedCapacity = 4;
+        public const int MaxFrameSignals = 8;
+        public const int LowTierFrameSignals = 2;
+        public const uint LaneHash = 0xDD8B5153u; // FNV32("PlayerTransportBailoutSignal")
+
         [FieldOffset(0)] public uint SourceId;
         [FieldOffset(4)] public uint Frame;
         [FieldOffset(8)] public float Severity01;

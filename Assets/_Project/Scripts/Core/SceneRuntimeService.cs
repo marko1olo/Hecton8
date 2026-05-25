@@ -18,6 +18,7 @@ namespace Hecton8.Core
     [DefaultExecutionOrder(-9940)]
     public sealed class SceneRuntimeService : MonoBehaviour, ISceneService, IUpdatable, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener
     {
+        private static int s_x001SceneRuntimeServiceSignalPushDropCount;
         private const int SceneActivationWatchdogInitialFrames = 1200;
         private const int SceneActivationWatchdogRepeatFrames = 300;
         private const string MainMenuSceneName = "01_MAIN_MENU";
@@ -497,12 +498,12 @@ namespace Hecton8.Core
         {
             SystemPauseSignal signal = default;
             signal.SourceHash = MemoryTransitionPauseSourceHash;
-            signal.Frame = unchecked((uint)Time.frameCount);
+            signal.Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             signal.Sequence = unchecked(++_memoryLifecyclePauseSequence);
             signal.Paused = paused ? (byte)1 : (byte)0;
             signal.Flags = flags;
             signal.RestoreScalar = 1f;
-            SignalBus<SystemPauseSignal>.TryPush(in signal);
+            SignalBus<SystemPauseSignal>.TryPushTracked(in signal, ref s_x001SceneRuntimeServiceSignalPushDropCount);
         }
 
         private bool ReleaseSceneOwnedVaultBuffers()
@@ -774,7 +775,7 @@ namespace Hecton8.Core
 
         private static void BeginWorldDroneCrossfade()
         {
-            if (Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance is ISceneTransitionAudioBridge spatialAudio)
+            if (GlobalRegistry.Audio is ISceneTransitionAudioBridge spatialAudio)
             {
                 spatialAudio.BeginWorldDroneTransition(
                     WorldDroneLoadDb,
@@ -785,7 +786,7 @@ namespace Hecton8.Core
 
         private static void UpdateWorldDroneCrossfade(float normalized)
         {
-            if (Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance is ISceneTransitionAudioBridge spatialAudio)
+            if (GlobalRegistry.Audio is ISceneTransitionAudioBridge spatialAudio)
                 spatialAudio.SetWorldDroneTransitionProgress(normalized);
         }
 
@@ -878,7 +879,7 @@ namespace Hecton8.Core
             AppendServiceHandle(buffer, ref cursor, _TerminalBootTickLabelBytes, GlobalRegistry.TickManager, 1u, _terminalBootSeed, (uint)frame);
             AppendServiceHandle(buffer, ref cursor, _TerminalBootSceneLabelBytes, GlobalRegistry.Scene, 2u, _terminalBootSeed, (uint)frame);
             AppendServiceHandle(buffer, ref cursor, _TerminalBootPhysicsLabelBytes, GlobalRegistry.Physics, 3u, _terminalBootSeed, (uint)frame);
-            AppendServiceHandle(buffer, ref cursor, _TerminalBootAudioLabelBytes, Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance, 4u, _terminalBootSeed, (uint)frame);
+            AppendServiceHandle(buffer, ref cursor, _TerminalBootAudioLabelBytes, GlobalRegistry.Audio, 4u, _terminalBootSeed, (uint)frame);
 
             _terminalBootText.SetCharArray(_terminalBootBuffer, 0, cursor);
         }

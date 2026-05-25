@@ -236,7 +236,7 @@ namespace Hecton8.Gameplay
             if (cutResponder == null || playerTransform == null)
                 return;
 
-            uint frame = unchecked((uint)SystemDispatcher.CurrentFrameIndex);
+            uint frame = SystemDispatcher.CurrentFrameId;
             if (_lastCutFrame != 0u && frame - _lastCutFrame < CutRegistrationFrameStride)
                 return;
 

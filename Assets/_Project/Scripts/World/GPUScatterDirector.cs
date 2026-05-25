@@ -1311,7 +1311,7 @@ namespace Hecton8.World
                 int safeCursor = math.clamp(_scatterTelemetryCursor, 0, telemetryRing.Length - 1);
                 telemetryRing[safeCursor] = new ScatterTelemetryEntry
                 {
-                    Frame = unchecked((uint)Time.frameCount),
+                    Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                     Flags = resolvedFlags,
                     Center = center3,
                     AupOffsetXZ = (float2)_scatterStableCellBaseXZ,

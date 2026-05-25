@@ -1,7 +1,7 @@
 {
   "metadata": {
     "agent": "X_008",
-    "generatedUtc": "2026-05-25T00:25:47.019710+00:00",
+    "generatedUtc": "2026-05-25T02:15:53.437476+00:00",
     "root": "C:\\hades\\Hecton8",
     "evidenceClass": "STATIC_SOURCE_SCAN_AND_SOURCE_LAYOUT_DECLARATIONS",
     "runtimeProof": "PENDING_VERIFICATION_UNITY_IMPORT_BURST_DISASSEMBLY_PROFILER_NOT_RUN"
@@ -34,6 +34,90 @@
     "shaderInverseAngleInventory": [],
     "shaderTrigInventoryCount": 54,
     "projectAllTrigInventoryNote": "C# and shader inverse-trig are both scanned. Remaining shader sin/cos tokens are presentation/bake inventory, not armor penetration truth."
+  },
+  "packedMetaProof": {
+    "verdict": "PASS",
+    "bitLayout": [
+      {
+        "range": "0..7",
+        "field": "damageType",
+        "mask": "0xFF"
+      },
+      {
+        "range": "8..17",
+        "field": "statusBits",
+        "mask": "0x3FF"
+      },
+      {
+        "range": "18",
+        "field": "weakspotTier",
+        "mask": "0x1"
+      },
+      {
+        "range": "19..28",
+        "field": "detailIndex",
+        "mask": "0x3FF"
+      },
+      {
+        "range": "29..31",
+        "field": "damageClass",
+        "mask": "0x7"
+      }
+    ],
+    "fracturedStatusBit": 512,
+    "fracturedPreservedByPackSignalMeta": true,
+    "weakspotTierContract": "CombatWeakspotTier currently has None/Weakspot only; the old spare weakspot bit is used to preserve CombatStatusBits.Fractured in the packed 32-bit meta word."
+  },
+  "combatQualityWeightProof": {
+    "verdict": "PASS",
+    "tierSamples": {
+      "Low": 0.0,
+      "Middle": 0.25925925925925924,
+      "High": 0.7407407407407407,
+      "Ultra": 1.0
+    },
+    "continuousOverride": "SetCombatVisualQualityWeight(float weight01)",
+    "truthOwnershipCaveat": "GlobalQualityWeight changes visual fidelity and optional feedback only. It must not change DTO layout, damage authority, save identity, or central LUT/CAS ownership."
+  },
+  "productionDirectionReuseProof": {
+    "verdict": "PASS",
+    "resolveExactDirectionSignalDirectionCallsInDamageLoop": 1,
+    "armorNormalSource": "armorSample.SurfaceNormal",
+    "rejectedDuplicateWork": "Before Loop 92 the production drain normalized signal.Direction twice and normalized detail.ArmorNormal after it had already been replaced by the normalized armor sample surface normal."
+  },
+  "armorRotationInverseProof": {
+    "verdict": "PASS",
+    "perHitInverseCalls": 0,
+    "unitRotationOwner": "RefreshArmorTargetSnapshots normalizes Transform.rotation before writing TargetRotations.",
+    "mathContract": "For normalized target rotation q, inverse(q) == conjugate(q)."
+  },
+  "ballisticsPrimitiveRotationProof": {
+    "verdict": "PASS",
+    "tryIntersectPrimitiveInverseCalls": 0,
+    "tryIntersectPrimitiveRotationNormalizes": 1,
+    "mathContract": "NormalizeOrIdentity returns a unit quaternion or identity; for unit q, inverse(q) == conjugate(q).",
+    "rejectedDuplicateWork": "Before Loop 94 primitive hit projection normalized primitive.Rotation three times and computed a generic quaternion inverse. It now normalizes once, uses conjugate for local projection, and reuses the same rotation for world normal and AUP hit reconstruction."
+  },
+  "vehicleDamageRootRotationProof": {
+    "verdict": "PASS",
+    "fixedTickRootInverseCalls": 0,
+    "unitRotationOwner": "TryReadAuthoritativeRootPose normalizes cached/editor Transform rotation and uses identity fallback.",
+    "mathContract": "For normalized root rotation q, inverse(q) == conjugate(q)."
+  },
+  "vehicleHydrodynamicTensorInverseProof": {
+    "verdict": "PASS",
+    "remainingMathInverseMatrixCalls": 0,
+    "linearAccelerationUses3x3Solve": true,
+    "angularAccelerationUses3x3Solve": true,
+    "mathContract": "AddedMassProfileDTO stores 3x3 hydrodynamic tensors in float4x4 lanes with c3 identity. Linear/angular acceleration need only M^-1 * vector, so a direct 3x3 adjugate solve replaces the general float4x4 inverse.",
+    "truthCaveat": "This is vehicle hydrodynamics, not armor penetration. The edit is limited to the tensor solve used by vehicle force/torque application and keeps diagonal fallback behavior."
+  },
+  "hullDentVisualRotationProof": {
+    "verdict": "PASS",
+    "submarineStructuralGridQuaternionInverseCalls": 0,
+    "hullDentShaderQuaternionInverseCalls": 0,
+    "mathContract": "Unity Transform.rotation is unit; inverse(q) == conjugate(q) for damage feedback local projection.",
+    "truthCaveat": "This proof is for deferred visual dent projection only; central combat health truth still stays on LUT/CAS routes."
   },
   "branchlessArmorLookupProof": {
     "sourceBranchlessnessVerdict": "PASS",
@@ -81,7 +165,7 @@
         "mathSelectCount": 4,
         "forbiddenTrigCount": 0,
         "angleApiCount": 0,
-        "sourceBytes": 3271
+        "sourceBytes": 3273
       },
       "ResolveArmorAngleStep": {
         "explicitControlTokens": 0,
@@ -683,10 +767,22 @@
     "visualOnlyFlagDeclared": true,
     "centralBuilderRejectsVisualOnlySignals": true,
     "submarineHullDentUsesVisualOnlyFlag": true,
+    "playerRuntimeSurvivalDamageUsesVisualOnlyFlag": true,
+    "physicalHandVelocityUsesVisualOnlyFlag": true,
+    "deployableDrillSelfDamageBroadcastUsesVisualOnlyFlag": true,
+    "powerShortCircuitBroadcastUsesVisualOnlyFlag": true,
+    "vehicleComponentDamageSkipsVisualOnlySignals": true,
+    "habitatGraphStressSkipsVisualOnlySignals": true,
+    "dearLieDamageSkipsVisualOnlySignals": true,
+    "dearLiePreflightIgnoresVisualOnlySignals": true,
+    "flockingThreatSkipsVisualOnlyDamage": true,
+    "predatorCognitionSkipsVisualOnlyDamage": true,
+    "predatorAcousticSkipsVisualOnlyDamage": true,
+    "foveatedSimulationSkipsVisualOnlyDamage": true,
     "submarineHullDentStillUsesTypedVisualProjection": true,
     "signalBusCoalescingKeepsVisualOnlySeparate": true,
     "verdict": "PASS",
-    "contract": "Visual-only hull dent notifications may share the historical CombatDamageSignal lane for VFX consumers, but central CombatDamageRuntime must reject them before LUT/CAS health mutation."
+    "contract": "Visual-only and owner-already-applied notifications may share the historical CombatDamageSignal lane for VFX, haptic, AI, and diagnostic consumers, but central CombatDamageRuntime must reject them before LUT/CAS health mutation. State-mutating secondary consumers must also skip visual-only payloads before deriving vehicle damage, habitat stress, or flora destruction."
   },
   "combatTelemetryBoundsProof": {
     "recordChecksRingCreated": true,
@@ -1748,57 +1844,57 @@
     "sourceEvidence": [
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 229,
+        "line": 232,
         "text": "private const int MaxQueuedSignals = 1024;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 232,
+        "line": 235,
         "text": "private const int AtomicHealthCasRetryLimit = MaxQueuedSignals;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 680,
+        "line": 684,
         "text": "if (_queuedSignalCount >= MaxQueuedSignals)"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 713,
+        "line": 717,
         "text": "(uint)detailIndex >= (uint)MaxQueuedSignals ||"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 798,
+        "line": 802,
         "text": "SignalBudget = MaxQueuedSignals,"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 823,
+        "line": 827,
         "text": "_signalDetails.Length >= MaxQueuedSignals &&"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 825,
+        "line": 829,
         "text": "armorViews.SignalImpactAups.Length >= MaxQueuedSignals &&"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 1124,
+        "line": 1128,
         "text": "MaxQueuedSignals,"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 1128,
+        "line": 1132,
         "text": "PrewarmQueue(ref _damageSignals, MaxQueuedSignals);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 1129,
+        "line": 1133,
         "text": "_signalDetails = AllocateArray<CombatDamageSignalDetail>(MaxQueuedSignals, nameof(_signalDetails));"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 2253,
+        "line": 2257,
         "text": "if (!TryAtomicSubtractHealth(Health, slot, damage, out previousHealth, out float nextHealth))"
       },
       {
@@ -1905,57 +2001,57 @@
     "sourceEvidence": [
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 233,
+        "line": 236,
         "text": "private const int TelemetryFrameCapacity = 300;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 300,
+        "line": 303,
         "text": "private const byte TelemetryFlagQueueRejected = 1 << 2;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 676,
+        "line": 680,
         "text": "PublishQueueRejectAnomaly(TelemetryAnomalyQueueBusy, signal.Amount);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 682,
+        "line": 686,
         "text": "PublishQueueRejectAnomaly(TelemetryAnomalyQueueFull, signal.Amount);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 689,
+        "line": 693,
         "text": "PublishQueueRejectAnomaly(TelemetryAnomalyQueueStorage, signal.Amount);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 1412,
+        "line": 1416,
         "text": "private static void PublishQueueRejectAnomaly(uint anomalyHash, float amount)"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 1427,
+        "line": 1431,
         "text": "TelemetryFlagQueueRejected);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 1454,
+        "line": 1458,
         "text": "\"Dump_SHINOBU_318_Combat.bin\");"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 1468,
+        "line": 1472,
         "text": "int start = cursor >= (uint)count && count > 0"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 1475,
+        "line": 1479,
         "text": "WriteTelemetryEntry(writer, _telemetryRing[index]);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 1479,
+        "line": 1483,
         "text": "_telemetryDumpedThisSession = true;"
       },
       {
@@ -2000,27 +2096,27 @@
     "sourceEvidence": [
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 794,
+        "line": 798,
         "text": "DeflectSignalWriter = SignalBus<DeflectSignal>.ParallelWriter,"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 796,
+        "line": 800,
         "text": "ImpactSignalWriter = SignalBus<ImpactSignal>.ParallelWriter,"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 2173,
+        "line": 2177,
         "text": "EmitArmorImpactFeedback("
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 2179,
+        "line": 2183,
         "text": "ArmorImpactSignalFlagDirectionalDeflect);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 2186,
+        "line": 2190,
         "text": "EmitArmorDeflectFeedback("
       },
       {
@@ -2075,22 +2171,22 @@
     "sourceEvidence": [
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 418,
+        "line": 422,
         "text": "public static void Prewarm()"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 420,
+        "line": 424,
         "text": "EnsureInitialized();"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 457,
+        "line": 461,
         "text": "EnsureInitialized();"
       },
       {
         "file": "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
-        "line": 2075,
+        "line": 2076,
         "text": "CombatDamageRuntime.Prewarm();"
       }
     ]
@@ -2108,37 +2204,37 @@
     "sourceEvidence": [
       {
         "file": "Assets/_Project/Scripts/Gameplay/HectonPlayerHealth.cs",
-        "line": 748,
+        "line": 749,
         "text": "if (TryApplyAuthoritativeCombatDamagePacket(in packet, out float authoritativeDamage))"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/HectonPlayerHealth.cs",
-        "line": 753,
+        "line": 754,
         "text": "PublishDamageFeedback(in packet, authoritativeDamage);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/HectonPlayerHealth.cs",
-        "line": 758,
+        "line": 759,
         "text": "bool applied = TakeDamage(packet.Magnitude);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/HectonPlayerHealth.cs",
-        "line": 769,
+        "line": 770,
         "text": "PublishDamageFeedback(in packet, appliedDamage);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/HectonPlayerHealth.cs",
-        "line": 772,
+        "line": 773,
         "text": "private bool TryApplyAuthoritativeCombatDamagePacket(in DamagePacket packet, out float appliedDamage)"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/HectonPlayerHealth.cs",
-        "line": 788,
+        "line": 789,
         "text": "currentHealth = math.min(previousHealth, packetNextHealth);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/HectonPlayerHealth.cs",
-        "line": 810,
+        "line": 811,
         "text": "private void PublishDamageFeedback(in DamagePacket packet, float appliedDamage)"
       }
     ]
@@ -2153,17 +2249,17 @@
     "sourceEvidence": [
       {
         "file": "Assets/_Project/Scripts/Gameplay/HabitatIntegrityManager.cs",
-        "line": 434,
+        "line": 435,
         "text": "_baseModule.ApplyDamage(packet.Magnitude);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/HabitatIntegrityManager.cs",
-        "line": 438,
+        "line": 439,
         "text": "DispatchIntegrityChanged(packet.PreviousValue, packet.NextValue, signal);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/HabitatIntegrityManager.cs",
-        "line": 498,
+        "line": 499,
         "text": "public void DispatchIntegrityChanged(float prev, float next, HabitatDamageSignal src)"
       }
     ]
@@ -2171,11 +2267,11 @@
   "toolDamageRouteProof": {
     "defaultToolRoute": "ToolHitUtility.ApplyDamage legacy overload delegates to source-aware CombatDamageRuntime queue path.",
     "projectDamageQueueCallScanner": "balanced-parentheses call parser after comment/string stripping",
-    "projectDamageQueueCallCount": 9,
+    "projectDamageQueueCallCount": 8,
     "projectDamageQueueCalls": [
       {
         "file": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
-        "line": 6060,
+        "line": 6056,
         "argCount": 3,
         "args": [
           "in signal",
@@ -2201,7 +2297,7 @@
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/EnvironmentalHazard.cs",
-        "line": 666,
+        "line": 667,
         "argCount": 3,
         "args": [
           "in signal",
@@ -2213,21 +2309,8 @@
         "negatedAdmissionGate": false
       },
       {
-        "file": "Assets/_Project/Scripts/Gameplay/MantaEmergencyWreck.cs",
-        "line": 500,
-        "argCount": 3,
-        "args": [
-          "in signal",
-          "in detail",
-          "impactAup3"
-        ],
-        "text": "CombatDamageRuntime.TryQueueDamage(in signal, in detail, impactAup3);",
-        "returnsDirectly": false,
-        "negatedAdmissionGate": false
-      },
-      {
         "file": "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs",
-        "line": 5196,
+        "line": 5200,
         "argCount": 3,
         "args": [
           "in signal",
@@ -2240,7 +2323,7 @@
       },
       {
         "file": "Assets/_Project/Scripts/ToolHitUtility.cs",
-        "line": 246,
+        "line": 247,
         "argCount": 3,
         "args": [
           "in signal",
@@ -2253,7 +2336,7 @@
       },
       {
         "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
-        "line": 1611,
+        "line": 1612,
         "argCount": 3,
         "args": [
           "in signal",
@@ -2266,7 +2349,7 @@
       },
       {
         "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
-        "line": 1736,
+        "line": 1737,
         "argCount": 3,
         "args": [
           "in request",
@@ -2279,7 +2362,7 @@
       },
       {
         "file": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
-        "line": 6754,
+        "line": 6755,
         "argCount": 3,
         "args": [
           "in signal",
@@ -2390,57 +2473,57 @@
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/HabitatIntegrityManager.cs",
-        "line": 260,
+        "line": 261,
         "text": "TryRegisterCombatDamageTarget();"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/HabitatIntegrityManager.cs",
-        "line": 300,
+        "line": 301,
         "text": "TryRegisterCombatDamageTarget();"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/HabitatIntegrityManager.cs",
-        "line": 716,
+        "line": 717,
         "text": "private void TryRegisterCombatDamageTarget()"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/HabitatIntegrityManager.cs",
-        "line": 725,
+        "line": 726,
         "text": "_combatDamageRegistered = CombatDamageRuntime.RegisterTarget("
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/EnvironmentalHazard.cs",
-        "line": 635,
+        "line": 636,
         "text": "float3 localPoint = ResolveTargetLocalPoint(playerTransform, impactPoint);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/EnvironmentalHazard.cs",
-        "line": 644,
+        "line": 645,
         "text": "PackedMeta = CombatDamageRuntime.PackSignalMeta("
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/EnvironmentalHazard.cs",
-        "line": 666,
+        "line": 667,
         "text": "CombatDamageRuntime.TryQueueDamage(in signal, in detail, impactAup);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/EnvironmentalHazard.cs",
-        "line": 689,
+        "line": 690,
         "text": "LocalPoint = ResolveTargetLocalPoint(playerTransform, impactPoint),"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/EnvironmentalHazard.cs",
-        "line": 699,
+        "line": 700,
         "text": "private static float3 ResolveTargetLocalPoint(Transform targetTransform, Vector3 impactPoint)"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/EnvironmentalHazard.cs",
-        "line": 726,
+        "line": 727,
         "text": "return CombatDamageTypes.Thermal;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/EnvironmentalHazard.cs",
-        "line": 731,
+        "line": 732,
         "text": "return hazardType == HazardType.Heat ? CombatStatusBits.Burning : 0u;"
       },
       {
@@ -2455,272 +2538,232 @@
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/MantaEmergencyWreck.cs",
-        "line": 443,
-        "text": "if (!TryQueueFaunaCollisionDamage(faunaBrain, collision, damage))"
-      },
-      {
-        "file": "Assets/_Project/Scripts/Gameplay/MantaEmergencyWreck.cs",
-        "line": 449,
-        "text": "private bool TryQueueFaunaCollisionDamage(FaunaBrain faunaBrain, Collision collision, float damage)"
-      },
-      {
-        "file": "Assets/_Project/Scripts/Gameplay/MantaEmergencyWreck.cs",
-        "line": 482,
-        "text": "SourceId = DamageSourceIds.MantaEmergencyWreck,"
-      },
-      {
-        "file": "Assets/_Project/Scripts/Gameplay/MantaEmergencyWreck.cs",
-        "line": 486,
-        "text": "PackedMeta = CombatDamageRuntime.PackSignalMeta("
-      },
-      {
-        "file": "Assets/_Project/Scripts/Gameplay/MantaEmergencyWreck.cs",
-        "line": 494,
-        "text": "LocalPoint = localPoint3,"
-      },
-      {
-        "file": "Assets/_Project/Scripts/Gameplay/MantaEmergencyWreck.cs",
-        "line": 500,
-        "text": "CombatDamageRuntime.TryQueueDamage(in signal, in detail, impactAup3);"
-      },
-      {
-        "file": "Assets/_Project/Scripts/Gameplay/MantaEmergencyWreck.cs",
-        "line": 528,
-        "text": "LocalPoint = localPoint3,"
-      },
-      {
-        "file": "Assets/_Project/Scripts/Gameplay/MantaEmergencyWreck.cs",
-        "line": 532,
-        "text": "SourceId = DamageSourceIds.MantaEmergencyWreck,"
-      },
-      {
-        "file": "Assets/_Project/Scripts/Gameplay/MantaEmergencyWreck.cs",
-        "line": 883,
+        "line": 742,
         "text": "// COLD ALLOC: PoolSlotData[16] - emergency wreck dehydration slot metadata - owner: MantaEmergencyWreck"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/MantaEmergencyWreck.cs",
-        "line": 885,
+        "line": 744,
         "text": "// COLD ALLOC: ResidencyState[16] - emergency wreck dehydration restore state - owner: MantaEmergencyWreck"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/MantaEmergencyWreck.cs",
-        "line": 887,
+        "line": 746,
         "text": "// COLD ALLOC: int[16] - emergency wreck free residency slot stack - owner: MantaEmergencyWreck"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/MantaEmergencyWreck.cs",
-        "line": 889,
+        "line": 748,
         "text": "// COLD ALLOC: int[16] - emergency wreck active dehydrated slot list - owner: MantaEmergencyWreck"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/MantaEmergencyWreck.cs",
-        "line": 938,
+        "line": 797,
         "text": "GameObject runtimeRoot = new GameObject(\"[MantaEmergencyWreckResidencyRuntime]\"); // COLD ALLOC: GameObject[1] - emergency wreck dehydration runtime owner - owner: MantaEmergencyWreck"
       },
       {
         "file": "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs",
-        "line": 5151,
+        "line": 5155,
         "text": "!TryQueueBoilingFaunaDamage(faunaBrain, in hit, worldCenter, damageAmount))"
       },
       {
         "file": "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs",
-        "line": 5158,
+        "line": 5162,
         "text": "private bool TryQueueBoilingFaunaDamage("
       },
       {
         "file": "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs",
-        "line": 5177,
+        "line": 5181,
         "text": "SourceId = DamageSourceIds.SubmarineAtmosphereBoiling,"
       },
       {
         "file": "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs",
-        "line": 5181,
+        "line": 5185,
         "text": "PackedMeta = CombatDamageRuntime.PackSignalMeta("
       },
       {
         "file": "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs",
-        "line": 5182,
+        "line": 5186,
         "text": "CombatDamageTypes.Thermal,"
       },
       {
         "file": "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs",
-        "line": 5183,
+        "line": 5187,
         "text": "CombatStatusBits.Burning,"
       },
       {
         "file": "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs",
-        "line": 5189,
+        "line": 5193,
         "text": "LocalPoint = ResolveTargetLocalPoint(faunaTransform, impactPoint),"
       },
       {
         "file": "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs",
-        "line": 5196,
+        "line": 5200,
         "text": "CombatDamageRuntime.TryQueueDamage(in signal, in detail, impactAup);"
-      },
-      {
-        "file": "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs",
-        "line": 5217,
-        "text": "LocalPoint = ResolveTargetLocalPoint(faunaTransform, impactPoint),"
-      },
-      {
-        "file": "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs",
-        "line": 5218,
-        "text": "DamageType = CombatDamageTypes.Thermal,"
       },
       {
         "file": "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs",
         "line": 5221,
+        "text": "LocalPoint = ResolveTargetLocalPoint(faunaTransform, impactPoint),"
+      },
+      {
+        "file": "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs",
+        "line": 5222,
+        "text": "DamageType = CombatDamageTypes.Thermal,"
+      },
+      {
+        "file": "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs",
+        "line": 5225,
         "text": "SourceId = DamageSourceIds.SubmarineAtmosphereBoiling,"
       },
       {
         "file": "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs",
-        "line": 5244,
+        "line": 5248,
         "text": "private static float3 ResolveTargetLocalPoint(Transform targetTransform, Vector3 impactPoint)"
       },
       {
         "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
-        "line": 1596,
-        "text": "PackedMeta = CombatDamageRuntime.PackSignalMeta("
-      },
-      {
-        "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
         "line": 1597,
-        "text": "CombatDamageTypes.Thermal,"
+        "text": "PackedMeta = CombatDamageRuntime.PackSignalMeta("
       },
       {
         "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
         "line": 1598,
-        "text": "CombatStatusBits.Burning,"
-      },
-      {
-        "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
-        "line": 1604,
-        "text": "LocalPoint = ResolveTargetLocalPoint(targetTransform, positionWS),"
-      },
-      {
-        "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
-        "line": 1611,
-        "text": "CombatDamageRuntime.TryQueueDamage(in signal, in detail, impactAup);"
-      },
-      {
-        "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
-        "line": 1721,
-        "text": "PackedMeta = CombatDamageRuntime.PackSignalMeta("
-      },
-      {
-        "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
-        "line": 1722,
         "text": "CombatDamageTypes.Thermal,"
       },
       {
         "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
-        "line": 1723,
+        "line": 1599,
         "text": "CombatStatusBits.Burning,"
       },
       {
         "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
-        "line": 1729,
+        "line": 1605,
         "text": "LocalPoint = ResolveTargetLocalPoint(targetTransform, positionWS),"
       },
       {
         "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
-        "line": 1736,
+        "line": 1612,
+        "text": "CombatDamageRuntime.TryQueueDamage(in signal, in detail, impactAup);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+        "line": 1722,
+        "text": "PackedMeta = CombatDamageRuntime.PackSignalMeta("
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+        "line": 1723,
+        "text": "CombatDamageTypes.Thermal,"
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+        "line": 1724,
+        "text": "CombatStatusBits.Burning,"
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+        "line": 1730,
+        "text": "LocalPoint = ResolveTargetLocalPoint(targetTransform, positionWS),"
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+        "line": 1737,
         "text": "CombatDamageRuntime.TryQueueDamage(in request, in detail, impactAup);"
       },
       {
         "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
-        "line": 1835,
+        "line": 1836,
         "text": "LocalPoint = ResolveTargetLocalPoint(targetTransform, positionWS),"
       },
       {
         "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
-        "line": 1836,
+        "line": 1837,
         "text": "DamageType = CombatDamageTypes.Thermal,"
       },
       {
         "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
-        "line": 1864,
+        "line": 1865,
         "text": "private static float3 ResolveTargetLocalPoint(Transform targetTransform, Vector3 positionWS)"
       },
       {
         "file": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
-        "line": 6692,
+        "line": 6693,
         "text": "!TryQueueLeviathanStrikeDamage(_playerHealth, leviathanStrikeDamage, playerPosition, strikeDirection, impulseMagnitude))"
       },
       {
         "file": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
-        "line": 6700,
+        "line": 6701,
         "text": "private static bool TryQueueLeviathanStrikeDamage("
       },
       {
         "file": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
-        "line": 6727,
+        "line": 6728,
         "text": "SourceId = DamageSourceIds.FaunaLeviathanBite,"
       },
       {
         "file": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
-        "line": 6731,
+        "line": 6732,
         "text": "PackedMeta = CombatDamageRuntime.PackSignalMeta("
       },
       {
         "file": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
-        "line": 6754,
+        "line": 6755,
         "text": "CombatDamageRuntime.TryQueueDamage(in signal, in detail, impactAup);"
       },
       {
         "file": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
-        "line": 6783,
+        "line": 6784,
         "text": "SourceId = DamageSourceIds.FaunaLeviathanBite,"
       },
       {
         "file": "Assets/_Project/Scripts/ToolHitUtility.cs",
-        "line": 68,
+        "line": 69,
         "text": "public static bool ApplyDamage("
       },
       {
         "file": "Assets/_Project/Scripts/ToolHitUtility.cs",
-        "line": 81,
+        "line": 82,
         "text": "DamageSourceIds.PlayerToolImpact,"
       },
       {
         "file": "Assets/_Project/Scripts/ToolHitUtility.cs",
-        "line": 87,
+        "line": 88,
         "text": "public static bool ApplyDamage("
       },
       {
         "file": "Assets/_Project/Scripts/ToolHitUtility.cs",
-        "line": 103,
+        "line": 104,
         "text": "int safeSourceId = sourceId != 0 ? sourceId : DamageSourceIds.PlayerToolImpact;"
       },
       {
         "file": "Assets/_Project/Scripts/ToolHitUtility.cs",
-        "line": 108,
+        "line": 109,
         "text": "if (TryQueueCentralDamage("
       },
       {
         "file": "Assets/_Project/Scripts/ToolHitUtility.cs",
-        "line": 191,
+        "line": 192,
         "text": "private static bool TryQueueCentralDamage("
       },
       {
         "file": "Assets/_Project/Scripts/ToolHitUtility.cs",
-        "line": 234,
+        "line": 235,
         "text": "PackedMeta = CombatDamageRuntime.PackSignalMeta("
       },
       {
         "file": "Assets/_Project/Scripts/ToolHitUtility.cs",
-        "line": 241,
+        "line": 242,
         "text": "LocalPoint = localPoint3,"
       },
       {
         "file": "Assets/_Project/Scripts/ToolHitUtility.cs",
-        "line": 246,
+        "line": 247,
         "text": "CombatDamageRuntime.TryQueueDamage(in signal, in detail, impactAup);"
       },
       {
         "file": "Assets/_Project/Scripts/ToolHitUtility.cs",
-        "line": 285,
+        "line": 286,
         "text": "LocalPoint = localPoint3,"
       },
       {
@@ -2730,7 +2773,7 @@
       },
       {
         "file": "Assets/_Project/Scripts/KnifeTool.cs",
-        "line": 389,
+        "line": 385,
         "text": "DamageSourceIds.SurvivalBlade,"
       },
       {
@@ -2946,7 +2989,7 @@
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
         "line": 333,
-        "text": "ResolveLocalized(LocalizationKeys.HARPOON_CATEGORY, HarpoonCategory),"
+        "text": "StableText(LocalizationKeys.HARPOON_CATEGORY, HarpoonCategory),"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
@@ -2956,7 +2999,7 @@
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
         "line": 402,
-        "text": "new HarpoonTextSegment(ResolveLocalized(LocalizationKeys.HARPOON_HEADLINE_REEL_IMPULSE, \"HARPOON - REEL IMPULSE APPLIED\")),"
+        "text": "new HarpoonTextSegment(StableText(LocalizationKeys.HARPOON_HEADLINE_REEL_IMPULSE, \"HARPOON - REEL IMPULSE APPLIED\")),"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
@@ -2966,7 +3009,7 @@
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
         "line": 407,
-        "text": "new HarpoonTextSegment(ResolveLocalized(LocalizationKeys.HARPOON_RECOMMEND_REEL_IMPULSE, \"Pull it into reach or keep pressure until it drifts clear.\")),"
+        "text": "new HarpoonTextSegment(StableText(LocalizationKeys.HARPOON_RECOMMEND_REEL_IMPULSE, \"Pull it into reach or keep pressure until it drifts clear.\")),"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
@@ -2975,332 +3018,337 @@
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 513,
+        "line": 460,
+        "text": "return HarpoonCategory;"
+      },
+      {
+        "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
+        "line": 511,
         "text": "if (TryReadCachedAssessmentSnapshot(out HarpoonAssessment assessment))"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 546,
+        "line": 544,
         "text": "if (TryReadCachedAssessmentSnapshot(out HarpoonAssessment assessment))"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 578,
+        "line": 576,
         "text": "if (TryReadCachedAssessmentSnapshot(out HarpoonAssessment assessment))"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 608,
+        "line": 606,
         "text": "UnsafeUtility.SizeOf<GpuCableSplinePointDTO>()); // COLD ALLOC: GraphicsBuffer[2] - harpoon GPU tracer points - owner: HarpoonLauncherTool"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 613,
+        "line": 611,
         "text": "UnsafeUtility.SizeOf<float>()); // COLD ALLOC: GraphicsBuffer[1] - harpoon tracer stress scalar - owner: HarpoonLauncherTool"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 618,
+        "line": 616,
         "text": "UnsafeUtility.SizeOf<GpuCableDrawParamsDTO>()); // COLD ALLOC: GraphicsBuffer[1] - harpoon tracer draw constants - owner: HarpoonLauncherTool"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 619,
+        "line": 617,
         "text": "_tracerPropertyBlock ??= new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] - harpoon tracer GPU bindings - owner: HarpoonLauncherTool"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 633,
+        "line": 631,
         "text": "name = \"MAT_Runtime_HarpoonGpuTracer\","
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 778,
-        "text": "ResolveLocalized(LocalizationKeys.HARPOON_CATEGORY, HarpoonCategory),"
+        "line": 776,
+        "text": "StableText(LocalizationKeys.HARPOON_CATEGORY, HarpoonCategory),"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 874,
+        "line": 872,
         "text": "HarpoonAssessment tetherAssessment = new HarpoonAssessment("
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 875,
+        "line": 873,
         "text": "HarpoonTextSegment.FormatString("
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 878,
+        "line": 876,
         "text": "HarpoonTextSegment.FormatString("
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 881,
-        "text": "new HarpoonTextSegment(ResolveLocalized(LocalizationKeys.HARPOON_RECOMMEND_TETHER_REEL, \"Keep reeling for control or release to reset the lane.\")),"
+        "line": 879,
+        "text": "new HarpoonTextSegment(StableText(LocalizationKeys.HARPOON_RECOMMEND_TETHER_REEL, \"Keep reeling for control or release to reset the lane.\")),"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 886,
+        "line": 884,
         "text": "HarpoonTextSegment.FormatString("
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 914,
+        "line": 912,
         "text": "PublishAssessment(new HarpoonAssessment("
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 915,
+        "line": 913,
         "text": "HarpoonTextSegment.FormatString(\"HARPOON - EXOSUIT REEL [{0}]\", _grappleAnchorNameUpper ?? \"ANCHOR\"),"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 916,
+        "line": 914,
         "text": "HarpoonTextSegment.FormatStringFloat(\"{0} is holding the climb line at {1:0.0} m.\", _grappleAnchorName, ApproximateDistanceMeters(toolOrigin, anchorPointWS)),"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 917,
+        "line": 915,
         "text": "new HarpoonTextSegment(\"Keep reeling to climb. Stop reeling to bleed force before the next ledge move.\"),"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 1049,
+        "line": 1047,
         "text": "private bool TryReadCachedAssessmentSnapshot(out HarpoonAssessment assessment)"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 1055,
+        "line": 1053,
         "text": "private void StoreAssessment(HarpoonAssessment assessment)"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 1081,
+        "line": 1079,
         "text": "private HarpoonAssessment BuildAssessment(Collider target, float distance, bool tetherReady)"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 1085,
+        "line": 1083,
         "text": "return new HarpoonAssessment("
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 1094,
+        "line": 1092,
         "text": "if (TryBuildDescriptorAssessment(target, null, distance, tetherReady, out HarpoonAssessment noBodyDescriptorAssessment))"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 1099,
+        "line": 1097,
         "text": "return new HarpoonAssessment("
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 1100,
+        "line": 1098,
         "text": "new HarpoonTextSegment(\"HARPOON - EXOSUIT GRAPPLE LOCK\"),"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 1101,
+        "line": 1099,
         "text": "HarpoonTextSegment.FormatStringFloat(\"{0} accepted a static grapple lane at {1:0.0} m.\", ResolveAnchorLabel(), distance),"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 1102,
+        "line": 1100,
         "text": "new HarpoonTextSegment(\"Secondary reels the exosuit toward the anchor. Release input to stop climbing.\"),"
+      },
+      {
+        "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
+        "line": 1104,
+        "text": "return new HarpoonAssessment("
+      },
+      {
+        "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
+        "line": 1105,
+        "text": "new HarpoonTextSegment(StableText(LocalizationKeys.HARPOON_HEADLINE_CANNOT_REEL, \"HARPOON - TARGET CANNOT BE REELED\")),"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
         "line": 1106,
-        "text": "return new HarpoonAssessment("
-      },
-      {
-        "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 1107,
-        "text": "new HarpoonTextSegment(ResolveLocalized(LocalizationKeys.HARPOON_HEADLINE_CANNOT_REEL, \"HARPOON - TARGET CANNOT BE REELED\")),"
-      },
-      {
-        "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 1108,
         "text": "HarpoonTextSegment.FormatString("
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 1111,
-        "text": "new HarpoonTextSegment(ResolveLocalized(LocalizationKeys.HARPOON_RECOMMEND_CANNOT_REEL, \"Use cutter, builder, or move on.\")),"
+        "line": 1109,
+        "text": "new HarpoonTextSegment(StableText(LocalizationKeys.HARPOON_RECOMMEND_CANNOT_REEL, \"Use cutter, builder, or move on.\")),"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 1117,
+        "line": 1115,
         "text": "if (TryBuildDescriptorAssessment(target, body, distance, tetherReady, out HarpoonAssessment staticDescriptorAssessment))"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 1122,
+        "line": 1120,
         "text": "return new HarpoonAssessment("
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 1123,
+        "line": 1121,
         "text": "new HarpoonTextSegment(\"HARPOON - EXOSUIT GRAPPLE LOCK\"),"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 1124,
+        "line": 1122,
         "text": "HarpoonTextSegment.FormatStringFloat(\"{0} is fixed hard enough to hold a climb line at {1:0.0} m.\", ResolveAnchorLabel(), distance),"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 1125,
+        "line": 1123,
         "text": "new HarpoonTextSegment(\"Secondary reels the exosuit toward the anchor. Release input to stop climbing.\"),"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 1129,
+        "line": 1127,
         "text": "return new HarpoonAssessment("
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 1130,
-        "text": "new HarpoonTextSegment(ResolveLocalized(LocalizationKeys.HARPOON_HEADLINE_LOCKED_STRUCTURE, \"HARPOON - TARGET LOCKED TO STRUCTURE\")),"
+        "line": 1128,
+        "text": "new HarpoonTextSegment(StableText(LocalizationKeys.HARPOON_HEADLINE_LOCKED_STRUCTURE, \"HARPOON - TARGET LOCKED TO STRUCTURE\")),"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 1131,
+        "line": 1129,
         "text": "HarpoonTextSegment.FormatString("
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 1134,
-        "text": "new HarpoonTextSegment(ResolveLocalized(LocalizationKeys.HARPOON_RECOMMEND_LOCKED_STRUCTURE, \"Do not waste reel force on anchored structures.\")),"
+        "line": 1132,
+        "text": "new HarpoonTextSegment(StableText(LocalizationKeys.HARPOON_RECOMMEND_LOCKED_STRUCTURE, \"Do not waste reel force on anchored structures.\")),"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 1142,
+        "line": 1140,
         "text": "return new HarpoonAssessment("
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 1143,
+        "line": 1141,
         "text": "new HarpoonTextSegment(tetherReady"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 1146,
+        "line": 1144,
         "text": "HarpoonTextSegment.FormatStringFloatFloat(\"{0} weighs {1:0.0} kg at {2:0.0} m.\", ResolveCargoLabel(), body.mass, distance),"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 1147,
+        "line": 1145,
         "text": "new HarpoonTextSegment(tetherReady"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 1153,
+        "line": 1151,
         "text": "if (TryBuildDescriptorAssessment(target, body, distance, tetherReady, out HarpoonAssessment descriptorAssessment))"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 1156,
+        "line": 1154,
         "text": "return new HarpoonAssessment("
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 1157,
-        "text": "new HarpoonTextSegment(ResolveLocalized(LocalizationKeys.HARPOON_HEADLINE_MASS_EXCEEDS, \"HARPOON - MASS EXCEEDS REEL LIMIT\")),"
+        "line": 1155,
+        "text": "new HarpoonTextSegment(StableText(LocalizationKeys.HARPOON_HEADLINE_MASS_EXCEEDS, \"HARPOON - MASS EXCEEDS REEL LIMIT\")),"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 1158,
+        "line": 1156,
         "text": "HarpoonTextSegment.FormatStringFloatFloat("
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 1163,
-        "text": "new HarpoonTextSegment(ResolveLocalized(LocalizationKeys.HARPOON_RECOMMEND_MASS_EXCEEDS, \"Use propulsion or another route; reel force is not enough.\")),"
+        "line": 1161,
+        "text": "new HarpoonTextSegment(StableText(LocalizationKeys.HARPOON_RECOMMEND_MASS_EXCEEDS, \"Use propulsion or another route; reel force is not enough.\")),"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 1167,
+        "line": 1165,
         "text": "if (TryBuildDescriptorAssessment(target, body, distance, tetherReady, out HarpoonAssessment authoredAssessment))"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 1170,
+        "line": 1168,
         "text": "return new HarpoonAssessment("
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 1171,
+        "line": 1169,
         "text": "new HarpoonTextSegment(tetherReady"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 1174,
+        "line": 1172,
         "text": "HarpoonTextSegment.FormatStringFloat("
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 1178,
+        "line": 1176,
         "text": "new HarpoonTextSegment(tetherReady"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 1184,
+        "line": 1182,
         "text": "private bool TryBuildDescriptorAssessment(Collider target, Rigidbody body, float distance, bool tetherReady, out HarpoonAssessment assessment)"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 1194,
+        "line": 1192,
         "text": "if (FieldTargetSemantics.TryBuildHarpoonAssessment(descriptor, distance, mass, tetherReady, out FieldTargetSemantics.SemanticAssessment semantic))"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 1196,
+        "line": 1194,
         "text": "assessment = new HarpoonAssessment("
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 1207,
+        "line": 1205,
         "text": "private void RecordAssessmentLog(HarpoonAssessment titleAssessment, HarpoonAssessment detailAssessment)"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 1219,
-        "text": "ResolveLocalized(LocalizationKeys.HARPOON_CATEGORY, HarpoonCategory),"
+        "line": 1217,
+        "text": "StableText(LocalizationKeys.HARPOON_CATEGORY, HarpoonCategory),"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 1225,
+        "line": 1223,
         "text": "private void RecordOperationLog(string title, HarpoonTextSegment summary, string severity)"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 1232,
-        "text": "ResolveLocalized(LocalizationKeys.HARPOON_CATEGORY, HarpoonCategory),"
+        "line": 1230,
+        "text": "StableText(LocalizationKeys.HARPOON_CATEGORY, HarpoonCategory),"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 1263,
+        "line": 1261,
         "text": "private void PublishAssessment(HarpoonAssessment assessment)"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 1360,
+        "line": 1348,
         "text": "if (tokenIndex == '0' && (argumentMask & HarpoonTextSegment.HasStringArg0) != 0)"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 1367,
+        "line": 1355,
         "text": "else if (tokenIndex == '1' && (argumentMask & HarpoonTextSegment.HasFloatArg1) != 0)"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 1374,
+        "line": 1362,
         "text": "else if (tokenIndex == '2' && (argumentMask & HarpoonTextSegment.HasFloatArg2) != 0)"
       },
       {
         "file": "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
-        "line": 1392,
+        "line": 1380,
         "text": "private bool TryWriteAssessmentLogSummary(ref FixedCharBuffer buffer, HarpoonAssessment assessment)"
       },
       {
@@ -3350,12 +3398,12 @@
       },
       {
         "file": "Assets/_Project/Scripts/StunPistolTool.cs",
-        "line": 488,
+        "line": 484,
         "text": "private float ResolveStunDuration()"
       },
       {
         "file": "Assets/_Project/Scripts/StunPistolTool.cs",
-        "line": 748,
+        "line": 735,
         "text": "StunPistolTool.RecordRecoveryLog(_localization);"
       },
       {
@@ -3415,67 +3463,67 @@
       },
       {
         "file": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
-        "line": 387,
+        "line": 388,
         "text": "private const uint FaunaLeviathanBiteHashSalt = 0xB17ECCD1u;"
       },
       {
         "file": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
-        "line": 791,
+        "line": 792,
         "text": "TryRegisterCombatDamageTarget();"
       },
       {
         "file": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
-        "line": 918,
+        "line": 919,
         "text": "TryRegisterCombatDamageTarget();"
       },
       {
         "file": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
-        "line": 1963,
+        "line": 1964,
         "text": "empSignal.SourceHash = ResolveStableFaunaHash(FaunaLeviathanBiteHashSalt, DamageSourceIds.FaunaEmp);"
       },
       {
         "file": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
-        "line": 3772,
+        "line": 3773,
         "text": "signal.SourceHash = ResolveStableFaunaHash(FaunaLeviathanBiteHashSalt, 0u);"
       },
       {
         "file": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
-        "line": 6038,
+        "line": 6034,
         "text": "uint statusBits = IsApexPredator() ? CombatStatusBits.Stunned : 0u;"
       },
       {
         "file": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
-        "line": 6042,
+        "line": 6038,
         "text": "SourceId = IsApexPredator() ? DamageSourceIds.FaunaLeviathanBite : DamageSourceIds.FaunaBite,"
       },
       {
         "file": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
-        "line": 6046,
+        "line": 6042,
         "text": "PackedMeta = CombatDamageRuntime.PackSignalMeta("
       },
       {
         "file": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
-        "line": 6054,
+        "line": 6050,
         "text": "LocalPoint = localPoint3,"
       },
       {
         "file": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
-        "line": 6060,
+        "line": 6056,
         "text": "CombatDamageRuntime.TryQueueDamage(in signal, in detail, impactAup);"
       },
       {
         "file": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
-        "line": 6092,
+        "line": 6087,
         "text": "LocalPoint = localPoint3,"
       },
       {
         "file": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
-        "line": 6096,
+        "line": 6091,
         "text": "SourceId = IsApexPredator() ? DamageSourceIds.FaunaLeviathanBite : DamageSourceIds.FaunaBite,"
       },
       {
         "file": "Assets/_Project/Scripts/FaunaDirector.cs",
-        "line": 2834,
+        "line": 2883,
         "text": "ai.ApplyHibernationHealthSnapshot(state.health);"
       },
       {
@@ -3521,11 +3569,11 @@
     ]
   },
   "mantaWreckFaunaDamageRouteProof": {
-    "centralQueueBeforeFallback": true,
-    "registeredTargetDoesNotDirectFallbackOnQueueReject": true,
-    "unregisteredFallbackUsesOwnerPacket": true,
-    "stableSourceId": true,
-    "localPointAndAup": true,
+    "centralQueueBeforeFallback": false,
+    "registeredTargetDoesNotDirectFallbackOnQueueReject": false,
+    "unregisteredFallbackUsesOwnerPacket": false,
+    "stableSourceId": false,
+    "localPointAndAup": false,
     "sourceEvidence": [
       {
         "file": "Assets/_Project/Scripts/Gameplay/MantaEmergencyWreck.cs",
@@ -3534,67 +3582,12 @@
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/MantaEmergencyWreck.cs",
-        "line": 443,
-        "text": "if (!TryQueueFaunaCollisionDamage(faunaBrain, collision, damage))"
-      },
-      {
-        "file": "Assets/_Project/Scripts/Gameplay/MantaEmergencyWreck.cs",
-        "line": 444,
-        "text": "ApplyFaunaCollisionOwnerFallbackDamage(faunaBrain, collision, damage);"
-      },
-      {
-        "file": "Assets/_Project/Scripts/Gameplay/MantaEmergencyWreck.cs",
-        "line": 449,
-        "text": "private bool TryQueueFaunaCollisionDamage(FaunaBrain faunaBrain, Collision collision, float damage)"
-      },
-      {
-        "file": "Assets/_Project/Scripts/Gameplay/MantaEmergencyWreck.cs",
-        "line": 465,
-        "text": "if (TryResolveAupFromPlayerObserver(impactPoint, out AbsoluteUniversePosition impactAup) && impactAup.IsFinite())"
-      },
-      {
-        "file": "Assets/_Project/Scripts/Gameplay/MantaEmergencyWreck.cs",
-        "line": 473,
-        "text": "Vector3 localPoint = faunaBrain.transform.InverseTransformPoint(impactPoint);"
-      },
-      {
-        "file": "Assets/_Project/Scripts/Gameplay/MantaEmergencyWreck.cs",
-        "line": 482,
-        "text": "SourceId = DamageSourceIds.MantaEmergencyWreck,"
-      },
-      {
-        "file": "Assets/_Project/Scripts/Gameplay/MantaEmergencyWreck.cs",
-        "line": 500,
-        "text": "CombatDamageRuntime.TryQueueDamage(in signal, in detail, impactAup3);"
-      },
-      {
-        "file": "Assets/_Project/Scripts/Gameplay/MantaEmergencyWreck.cs",
-        "line": 504,
-        "text": "private void ApplyFaunaCollisionOwnerFallbackDamage(FaunaBrain faunaBrain, Collision collision, float damage)"
-      },
-      {
-        "file": "Assets/_Project/Scripts/Gameplay/MantaEmergencyWreck.cs",
-        "line": 516,
-        "text": "? faunaBrain.transform.InverseTransformPoint(impactPoint)"
-      },
-      {
-        "file": "Assets/_Project/Scripts/Gameplay/MantaEmergencyWreck.cs",
-        "line": 532,
-        "text": "SourceId = DamageSourceIds.MantaEmergencyWreck,"
-      },
-      {
-        "file": "Assets/_Project/Scripts/Gameplay/MantaEmergencyWreck.cs",
-        "line": 535,
-        "text": "faunaBrain.ReceiveDamage(in packet);"
-      },
-      {
-        "file": "Assets/_Project/Scripts/Gameplay/MantaEmergencyWreck.cs",
-        "line": 1075,
+        "line": 934,
         "text": "if (!TryResolveAupFromPlayerObserver(runtimePosition, out wreckAup))"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/MantaEmergencyWreck.cs",
-        "line": 1084,
+        "line": 943,
         "text": "private static bool TryResolveAupFromPlayerObserver("
       }
     ]
@@ -3611,72 +3604,72 @@
     "sourceEvidence": [
       {
         "file": "Assets/_Project/Scripts/Gameplay/EnvironmentalHazard.cs",
-        "line": 559,
+        "line": 560,
         "text": "if (!TryQueueCentralHazardDamage(playerHealth, damage))"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/EnvironmentalHazard.cs",
-        "line": 560,
+        "line": 561,
         "text": "ApplyOwnerHazardDamageFallback(playerHealth, damage);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/EnvironmentalHazard.cs",
-        "line": 595,
+        "line": 596,
         "text": "DamageSourceIds.EnvironmentHazard,"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/EnvironmentalHazard.cs",
-        "line": 618,
+        "line": 619,
         "text": "private bool TryQueueCentralHazardDamage(HectonPlayerHealth playerHealth, float damage)"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/EnvironmentalHazard.cs",
-        "line": 635,
+        "line": 636,
         "text": "float3 localPoint = ResolveTargetLocalPoint(playerTransform, impactPoint);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/EnvironmentalHazard.cs",
-        "line": 640,
+        "line": 641,
         "text": "SourceId = DamageSourceIds.EnvironmentHazard,"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/EnvironmentalHazard.cs",
-        "line": 646,
+        "line": 647,
         "text": "ResolveHazardStatusBits(),"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/EnvironmentalHazard.cs",
-        "line": 666,
+        "line": 667,
         "text": "CombatDamageRuntime.TryQueueDamage(in signal, in detail, impactAup);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/EnvironmentalHazard.cs",
-        "line": 670,
+        "line": 671,
         "text": "private void ApplyOwnerHazardDamageFallback(HectonPlayerHealth playerHealth, float damage)"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/EnvironmentalHazard.cs",
-        "line": 689,
+        "line": 690,
         "text": "LocalPoint = ResolveTargetLocalPoint(playerTransform, impactPoint),"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/EnvironmentalHazard.cs",
-        "line": 693,
+        "line": 694,
         "text": "SourceId = DamageSourceIds.EnvironmentHazard,"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/EnvironmentalHazard.cs",
-        "line": 696,
+        "line": 697,
         "text": "playerHealth.ReceiveDamage(in packet);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/EnvironmentalHazard.cs",
-        "line": 699,
+        "line": 700,
         "text": "private static float3 ResolveTargetLocalPoint(Transform targetTransform, Vector3 impactPoint)"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/EnvironmentalHazard.cs",
-        "line": 729,
+        "line": 730,
         "text": "private uint ResolveHazardStatusBits()"
       }
     ]
@@ -3700,157 +3693,157 @@
     "sourceEvidence": [
       {
         "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
-        "line": 1565,
+        "line": 1566,
         "text": "QueueBoilingDamage(targetObject, positionWS, temperatureCelsius, heat01, fixedDeltaTime, sourceId);"
       },
       {
         "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
-        "line": 1570,
+        "line": 1571,
         "text": "private void QueueBoilingDamage("
       },
       {
         "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
-        "line": 1582,
+        "line": 1583,
         "text": "if (!TryResolveRegisteredCombatTarget(targetObject, out int targetId, out Transform targetTransform))"
       },
       {
         "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
-        "line": 1584,
+        "line": 1585,
         "text": "if (TryResolveDamageReceiver(targetObject, out IDamageReceiver fallbackReceiver, out Transform fallbackTransform))"
       },
       {
         "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
-        "line": 1585,
+        "line": 1586,
         "text": "ApplyThermalOwnerFallbackDamage(fallbackReceiver, fallbackTransform, positionWS, amount, temperatureCelsius, sourceId);"
       },
       {
         "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
-        "line": 1604,
+        "line": 1605,
         "text": "LocalPoint = ResolveTargetLocalPoint(targetTransform, positionWS),"
-      },
-      {
-        "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
-        "line": 1610,
-        "text": "double3 impactAup = ResolveCombatImpactAup(positionWS);"
       },
       {
         "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
         "line": 1611,
-        "text": "CombatDamageRuntime.TryQueueDamage(in signal, in detail, impactAup);"
-      },
-      {
-        "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
-        "line": 1711,
-        "text": "if (TryResolveRegisteredCombatTarget(targetObject, out int targetId, out Transform targetTransform))"
-      },
-      {
-        "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
-        "line": 1729,
-        "text": "LocalPoint = ResolveTargetLocalPoint(targetTransform, positionWS),"
-      },
-      {
-        "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
-        "line": 1735,
         "text": "double3 impactAup = ResolveCombatImpactAup(positionWS);"
       },
       {
         "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
-        "line": 1736,
-        "text": "CombatDamageRuntime.TryQueueDamage(in request, in detail, impactAup);"
+        "line": 1612,
+        "text": "CombatDamageRuntime.TryQueueDamage(in signal, in detail, impactAup);"
       },
       {
         "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
-        "line": 1738,
-        "text": "else if (TryResolveDamageReceiver(targetObject, out IDamageReceiver fallbackReceiver, out Transform fallbackTransform))"
+        "line": 1712,
+        "text": "if (TryResolveRegisteredCombatTarget(targetObject, out int targetId, out Transform targetTransform))"
       },
       {
         "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
-        "line": 1740,
-        "text": "ApplyThermalOwnerFallbackDamage("
-      },
-      {
-        "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
-        "line": 1769,
-        "text": "private static bool TryResolveRegisteredCombatTarget("
-      },
-      {
-        "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
-        "line": 1780,
-        "text": "if (candidateId != 0 && CombatDamageRuntime.IsTargetRegistered(candidateId))"
-      },
-      {
-        "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
-        "line": 1793,
-        "text": "private static bool TryResolveDamageReceiver("
-      },
-      {
-        "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
-        "line": 1817,
-        "text": "private void ApplyThermalOwnerFallbackDamage("
-      },
-      {
-        "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
-        "line": 1835,
+        "line": 1730,
         "text": "LocalPoint = ResolveTargetLocalPoint(targetTransform, positionWS),"
       },
       {
         "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
-        "line": 1842,
+        "line": 1736,
+        "text": "double3 impactAup = ResolveCombatImpactAup(positionWS);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+        "line": 1737,
+        "text": "CombatDamageRuntime.TryQueueDamage(in request, in detail, impactAup);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+        "line": 1739,
+        "text": "else if (TryResolveDamageReceiver(targetObject, out IDamageReceiver fallbackReceiver, out Transform fallbackTransform))"
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+        "line": 1741,
+        "text": "ApplyThermalOwnerFallbackDamage("
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+        "line": 1770,
+        "text": "private static bool TryResolveRegisteredCombatTarget("
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+        "line": 1781,
+        "text": "if (candidateId != 0 && CombatDamageRuntime.IsTargetRegistered(candidateId))"
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+        "line": 1794,
+        "text": "private static bool TryResolveDamageReceiver("
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+        "line": 1818,
+        "text": "private void ApplyThermalOwnerFallbackDamage("
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+        "line": 1836,
+        "text": "LocalPoint = ResolveTargetLocalPoint(targetTransform, positionWS),"
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+        "line": 1843,
         "text": "receiver.ReceiveDamage(in packet);"
       },
       {
         "file": "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs",
-        "line": 5151,
+        "line": 5155,
         "text": "!TryQueueBoilingFaunaDamage(faunaBrain, in hit, worldCenter, damageAmount))"
       },
       {
         "file": "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs",
-        "line": 5153,
+        "line": 5157,
         "text": "ApplyBoilingFaunaOwnerFallbackDamage(faunaBrain, in hit, worldCenter, damageAmount);"
       },
       {
         "file": "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs",
-        "line": 5158,
+        "line": 5162,
         "text": "private bool TryQueueBoilingFaunaDamage("
       },
       {
         "file": "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs",
-        "line": 5177,
+        "line": 5181,
         "text": "SourceId = DamageSourceIds.SubmarineAtmosphereBoiling,"
       },
       {
         "file": "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs",
-        "line": 5189,
+        "line": 5193,
         "text": "LocalPoint = ResolveTargetLocalPoint(faunaTransform, impactPoint),"
       },
       {
         "file": "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs",
-        "line": 5195,
+        "line": 5199,
         "text": "TryResolveImpactAup(in hit, impactPoint, out double3 impactAup);"
       },
       {
         "file": "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs",
-        "line": 5200,
+        "line": 5204,
         "text": "private void ApplyBoilingFaunaOwnerFallbackDamage("
       },
       {
         "file": "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs",
-        "line": 5217,
+        "line": 5221,
         "text": "LocalPoint = ResolveTargetLocalPoint(faunaTransform, impactPoint),"
       },
       {
         "file": "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs",
-        "line": 5221,
+        "line": 5225,
         "text": "SourceId = DamageSourceIds.SubmarineAtmosphereBoiling,"
       },
       {
         "file": "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs",
-        "line": 5224,
+        "line": 5228,
         "text": "faunaBrain.ReceiveDamage(in packet);"
       },
       {
         "file": "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs",
-        "line": 5259,
+        "line": 5263,
         "text": "private static bool TryResolveImpactAup(in SpatialQueryHit hit, Vector3 impactPoint, out double3 impactAup)"
       }
     ]
@@ -3864,120 +3857,120 @@
     "sourceEvidence": [
       {
         "file": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
-        "line": 6692,
+        "line": 6693,
         "text": "!TryQueueLeviathanStrikeDamage(_playerHealth, leviathanStrikeDamage, playerPosition, strikeDirection, impulseMagnitude))"
       },
       {
         "file": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
-        "line": 6694,
+        "line": 6695,
         "text": "ApplyLeviathanStrikeOwnerFallbackDamage(_playerHealth, leviathanStrikeDamage, playerPosition);"
       },
       {
         "file": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
-        "line": 6700,
+        "line": 6701,
         "text": "private static bool TryQueueLeviathanStrikeDamage("
       },
       {
         "file": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
-        "line": 6727,
+        "line": 6728,
         "text": "SourceId = DamageSourceIds.FaunaLeviathanBite,"
       },
       {
         "file": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
-        "line": 6739,
+        "line": 6740,
         "text": "LocalPoint = ResolveLeviathanStrikeLocalPoint(targetTransform, safeImpactPoint),"
       },
       {
         "file": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
-        "line": 6746,
+        "line": 6747,
         "text": "if (TryResolveAupFromRuntimeOrigin(safeImpactPoint, out AbsoluteUniversePosition impactPointAup) &&"
       },
       {
         "file": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
-        "line": 6754,
+        "line": 6755,
         "text": "CombatDamageRuntime.TryQueueDamage(in signal, in detail, impactAup);"
       },
       {
         "file": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
-        "line": 6758,
+        "line": 6759,
         "text": "private static void ApplyLeviathanStrikeOwnerFallbackDamage("
       },
       {
         "file": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
-        "line": 6779,
+        "line": 6780,
         "text": "LocalPoint = ResolveLeviathanStrikeLocalPoint(targetTransform, safeImpactPoint),"
       },
       {
         "file": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
-        "line": 6783,
+        "line": 6784,
         "text": "SourceId = DamageSourceIds.FaunaLeviathanBite,"
       },
       {
         "file": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
-        "line": 6786,
+        "line": 6787,
         "text": "playerHealth.ReceiveDamage(in packet);"
       },
       {
         "file": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
-        "line": 6789,
+        "line": 6790,
         "text": "private static float3 ResolveLeviathanStrikeLocalPoint(Transform targetTransform, Vector3 impactPoint)"
       }
     ]
   },
   "continuousQualityProof": {
     "activeBinaryMathLodFieldsRemoved": true,
-    "legacyEnumAdapterOnly": true,
+    "legacyEnumAdapterOnly": false,
     "continuousQualitySetter": true,
     "globalQualityCombinesContinuously": true,
     "sourceEvidence": [
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 349,
+        "line": 352,
         "text": "private static float _requestedVisualQualityWeight01 = 1f;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 350,
+        "line": 353,
         "text": "private static float _visualQualityWeight01 = 1f;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 361,
-        "text": "_requestedVisualQualityWeight01 = lod == CombatMathLod.Low ? 0f : 1f;"
+        "line": 365,
+        "text": "_requestedVisualQualityWeight01 = tier01 * tier01 * (3f - (2f * tier01));"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 365,
+        "line": 369,
         "text": "public static void SetCombatVisualQualityWeight(float weight01)"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 367,
+        "line": 371,
         "text": "_requestedVisualQualityWeight01 = SanitizeQualityWeight01(weight01);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 1107,
+        "line": 1111,
         "text": "_requestedVisualQualityWeight01 = 1f;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 1108,
+        "line": 1112,
         "text": "_visualQualityWeight01 = 1f;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 1991,
+        "line": 1995,
         "text": "float qualityWeight01 = SignalBusRegistry.GlobalQualityWeight01;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 1992,
+        "line": 1996,
         "text": "float requestedWeight01 = SanitizeQualityWeight01(_requestedVisualQualityWeight01);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 1993,
+        "line": 1997,
         "text": "_visualQualityWeight01 = SanitizeQualityWeight01(qualityWeight01) * requestedWeight01;"
       }
     ]
@@ -3987,52 +3980,52 @@
     "combatDirectMutationHits": [
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 223,
+        "line": 225,
         "text": "Rigidbody CombatPushbackBody { get; }"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 339,
+        "line": 342,
         "text": "private static Rigidbody[] _targetBodies;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 771,
+        "line": 775,
         "text": "Health = _health,"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 1162,
+        "line": 1166,
         "text": "_targetBodies = new Rigidbody[MaxTargets]; // COLD ALLOC: Rigidbody[2048] - cached pushback bodies for combat receivers - owner: CombatDamageRuntime"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 1576,
+        "line": 1580,
         "text": "Rigidbody body = _targetBodies[slot];"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 1675,
+        "line": 1679,
         "text": "return hit.Rigidbody != null &&"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 1676,
+        "line": 1680,
         "text": "TryResolveRegisteredTargetFromTransform(hit.Rigidbody.transform, out targetId, out receiverTransform);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 1839,
+        "line": 1851,
         "text": "private static Rigidbody ResolveReceiverBody(IDamageReceiver receiver)"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 1847,
+        "line": 1859,
         "text": "if (component.TryGetComponent(out Rigidbody body))"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime_StatusEffects.cs",
-        "line": 793,
+        "line": 796,
         "text": "Health = _health,"
       },
       {
@@ -4057,17 +4050,17 @@
       "sourceEvidence": [
         {
           "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-          "line": 1296,
+          "line": 1300,
           "text": "receiver.ReceiveDamage(in packet);"
         },
         {
           "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-          "line": 1297,
+          "line": 1301,
           "text": "DispatchManagedSideEffects(in result, receiver, slot);"
         },
         {
           "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-          "line": 1511,
+          "line": 1515,
           "text": "private static void DispatchManagedSideEffects(in CombatDamageResult result, IDamageReceiver receiver, int slot)"
         }
       ]
@@ -4079,62 +4072,62 @@
       "sourceEvidence": [
         {
           "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-          "line": 458,
+          "line": 462,
           "text": "if (!CanMutateTargets())"
         },
         {
           "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-          "line": 523,
+          "line": 527,
           "text": "if (!CanMutateTargets())"
         },
         {
           "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-          "line": 584,
+          "line": 588,
           "text": "if (!_slotByTargetId.IsCreated || !CanMutateTargets())"
         },
         {
           "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-          "line": 603,
+          "line": 607,
           "text": "if (!_slotByTargetId.IsCreated || !CanMutateTargets())"
         },
         {
           "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-          "line": 620,
+          "line": 624,
           "text": "if (!_slotByTargetId.IsCreated || !CanMutateTargets())"
         },
         {
           "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-          "line": 1012,
+          "line": 1016,
           "text": "if (_damageJobScheduled && DispatcherJobSwap.TryComplete(ref _damageJobHandle, forceComplete: false))"
         },
         {
           "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-          "line": 1015,
+          "line": 1019,
           "text": "FinishArmorPenetrationScheduledCompletion();"
         },
         {
           "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-          "line": 1031,
+          "line": 1035,
           "text": "DispatchResults();"
         },
         {
           "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-          "line": 1045,
+          "line": 1049,
           "text": "DispatcherJobSwap.TryComplete(ref _damageJobHandle, forceComplete: true);"
         },
         {
           "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-          "line": 1047,
+          "line": 1051,
           "text": "FinishArmorPenetrationScheduledCompletion();"
         },
         {
           "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-          "line": 1201,
+          "line": 1205,
           "text": "private static bool CanMutateTargets()"
         },
         {
           "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-          "line": 1203,
+          "line": 1207,
           "text": "return !_damageJobScheduled && !_statusJobScheduled;"
         }
       ]

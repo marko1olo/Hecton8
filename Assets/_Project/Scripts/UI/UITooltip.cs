@@ -145,7 +145,10 @@ namespace Hecton8.UI
             object currentService)
         {
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                _registered = false;
                 RefreshTickRegistration();
+            }
         }
 
         // ══════════════════════════════════════════════════════════

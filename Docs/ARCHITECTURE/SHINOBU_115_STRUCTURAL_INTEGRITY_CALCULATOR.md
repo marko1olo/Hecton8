@@ -185,14 +185,17 @@ All structural Burst jobs use `[NoAlias]` on job-owned `NativeArray` fields and 
 
 `DepthPressure -> SdfAnchor -> GraphStress -> CollapseSignals(serial ascending node scan) -> EdgeSever -> Telemetry`
 
-- Before scheduling, the runtime locks every Vault buffer captured by the job chain: states, node AUPs, CSR offsets, CSR destinations, edge flags, telemetry ring, telemetry cursor, tuning, and optional SDF.
+- Before scheduling, runtime locks every Vault buffer captured by job chain.
+- Locked buffers: states, node AUPs, CSR offsets/destinations, edge flags, telemetry ring/cursor, tuning, optional SDF.
 - Cold boot/mock/CSV jobs are synchronous only when no solver fence is alive, and they still lock the Vault buffers whose pointers they pass to immediate jobs.
 
 ## GPU Upload
 
 Structural state uploads use double-buffered `GraphicsBuffer` instances with `GraphicsBuffer.UsageFlags.LockBufferForWrite`.
 
-`_HectonStructuralIntegrityStateBuffer` is the shader-facing Dear Lie lane; gameplay collapse remains scalar Vault truth. `_HectonStructuralIntegrityParams.z` may carry local visual quality from `HomeostasisBrain`, but cannot feed back into stress or collapse.
+`_HectonStructuralIntegrityStateBuffer` is the shader-facing Dear Lie lane; gameplay collapse remains scalar Vault truth.
+
+`_HectonStructuralIntegrityParams.z` may carry local visual quality from `HomeostasisBrain`, but cannot feed stress/collapse.
 
 ## Assembly Boundary
 

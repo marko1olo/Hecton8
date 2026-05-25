@@ -3574,7 +3574,7 @@ namespace Hecton8.Core.Contracts.Signals
         private void RunMockContentionEditorBlocking()
         {
             JobHandle handle;
-            uint frame = unchecked((uint)Time.frameCount);
+            uint frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             if (!SignalThreadLocalScratchpad.ScheduleMockContention(
                     _signalCount,
                     double3.zero,

@@ -46,7 +46,8 @@ Owner: SHINOBU_274 / Radiation Scrubber
 
 ## Exact Dose And Grid Safety
 
-- External dose uses `_pendingExternalDoseRad`, so atmospheric/solar/trauma rads are included once as exact dose. External intensity still drives `CurrentExposureRate` and shader/static severity but is not multiplied by `dt` a second time.
+- External dose uses `_pendingExternalDoseRad`; atmospheric/solar/trauma rads are included once as exact dose.
+- External intensity still drives `CurrentExposureRate` and shader/static severity, without second `dt` multiply.
 - Iodine reductions consume pending external dose before accumulated dose to prevent same-frame hidden radiation debt.
 - Diffusion read/write parity is tracked by `_gridBuffersSwapped`; `RefreshVaultViews` maps the current front/back buffers without copying the whole grid.
 - Public `RegisterSource` and `ReportExternalDose` scalar ingress is explicit finite-safe before SignalBus payload construction. Non-finite source intensity is rejected; non-finite external intensity fails closed to zero.

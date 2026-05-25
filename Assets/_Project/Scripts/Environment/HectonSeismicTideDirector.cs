@@ -932,6 +932,7 @@ namespace Hecton8.Environment
     [AddComponentMenu("Hecton/Environment/Seismic Tide Director")]
     public sealed class HectonSeismicTideDirector : MonoBehaviour, ISeismicDirector, IUpdatable, ISlowTickable, ILateFrameTickable, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener
     {
+        private int _signalPushDropCount;
         private const int TelemetryCapacity = 300;
         private const int SeismicTuningSlots = 1;
         private const int SeismicOutputSlots = 1;
@@ -1642,7 +1643,7 @@ namespace Hecton8.Environment
             signal.SourceHash = SeismicDirectorSourceHash;
             signal.Frame = ResolveSimulationFrame();
             signal.EventTypeHash = SeismicDirectorSourceHash;
-            SignalBus<SeismicSignal>.TryPush(in signal);
+            SignalBus<SeismicSignal>.TryPushTracked(in signal, ref _signalPushDropCount);
         }
 
         private void PublishRumbleSignal(float audioRumble, bool hasPlayerAup, in AbsoluteUniversePosition playerAup)
@@ -1663,7 +1664,7 @@ namespace Hecton8.Environment
             signal.PrimaryMaterialId = 0;
             signal.SecondaryMaterialId = 0;
             signal.Flags = 1;
-            SignalBus<ImpactSignal>.TryPush(in signal);
+            SignalBus<ImpactSignal>.TryPushTracked(in signal, ref _signalPushDropCount);
         }
 
         private void PublishRockfallDebris(uint seed, bool hasPlayerAup, in AbsoluteUniversePosition playerAup)
@@ -1691,7 +1692,7 @@ namespace Hecton8.Environment
                 debris.Intensity01 = intensity;
                 debris.DebrisKind = DebrisSpawnSignal.DebrisKindRockShard;
                 debris.Flags = DebrisSpawnSignal.FlagComputeShard;
-                SignalBus<DebrisSpawnSignal>.TryPush(in debris);
+                SignalBus<DebrisSpawnSignal>.TryPushTracked(in debris, ref _signalPushDropCount);
             }
         }
 
@@ -1923,25 +1924,25 @@ namespace Hecton8.Environment
             if (_seismicSignalLanesPrewarmed)
                 return;
 
-            SignalBus<MockNarrativeTriggerSignal>.Configure(4, maxFrameSignals: 8, lowTierFrameSignals: 2, laneHash: SeismicDirectorConstants.NarrativeMockHash);
+            SignalBus<MockNarrativeTriggerSignal>.Configure(MockNarrativeTriggerSignal.ExpectedCapacity, maxFrameSignals: MockNarrativeTriggerSignal.MaxFrameSignals, lowTierFrameSignals: MockNarrativeTriggerSignal.LowTierFrameSignals, laneHash: MockNarrativeTriggerSignal.LaneHash);
             SignalBus<MockNarrativeTriggerSignal>.EnsureInitialized();
 
-            SignalBus<DebrisAvalancheSignal>.Configure(8, maxFrameSignals: 16, lowTierFrameSignals: 4, laneHash: SeismicDirectorConstants.TectonicDebrisHash);
+            SignalBus<DebrisAvalancheSignal>.Configure(DebrisAvalancheSignal.ExpectedCapacity, maxFrameSignals: DebrisAvalancheSignal.MaxFrameSignals, lowTierFrameSignals: DebrisAvalancheSignal.LowTierFrameSignals, laneHash: DebrisAvalancheSignal.LaneHash);
             SignalBus<DebrisAvalancheSignal>.EnsureInitialized();
 
-            SignalBus<AcousticShockwaveSignal>.Configure(8, maxFrameSignals: 16, lowTierFrameSignals: 4, laneHash: SeismicDirectorConstants.AcousticShockHash);
+            SignalBus<AcousticShockwaveSignal>.Configure(AcousticShockwaveSignal.ExpectedCapacity, maxFrameSignals: AcousticShockwaveSignal.MaxFrameSignals, lowTierFrameSignals: AcousticShockwaveSignal.LowTierFrameSignals, laneHash: AcousticShockwaveSignal.LaneHash);
             SignalBus<AcousticShockwaveSignal>.EnsureInitialized();
 
-            SignalBus<GlobalPanicSignal>.Configure(8, maxFrameSignals: 16, lowTierFrameSignals: 4, laneHash: SeismicDirectorConstants.PanicShockHash);
+            SignalBus<GlobalPanicSignal>.Configure(GlobalPanicSignal.ExpectedCapacity, maxFrameSignals: GlobalPanicSignal.MaxFrameSignals, lowTierFrameSignals: GlobalPanicSignal.LowTierFrameSignals, laneHash: GlobalPanicSignal.LaneHash);
             SignalBus<GlobalPanicSignal>.EnsureInitialized();
 
-            SignalBus<SeismicSignal>.Configure(64, maxFrameSignals: 64, lowTierFrameSignals: 16, laneHash: 0x4A180124u);
+            SignalBus<SeismicSignal>.Configure(SeismicSignal.ExpectedCapacity, maxFrameSignals: SeismicSignal.MaxFrameSignals, lowTierFrameSignals: SeismicSignal.LowTierFrameSignals, laneHash: SeismicSignal.LaneHash);
             SignalBus<SeismicSignal>.EnsureInitialized();
 
-            SignalBus<SeismicShockwaveSignal>.Configure(16, maxFrameSignals: 32, lowTierFrameSignals: 4, laneHash: SeismicDirectorConstants.SeismicShockwaveHash);
+            SignalBus<SeismicShockwaveSignal>.Configure(SeismicShockwaveSignal.ExpectedCapacity, maxFrameSignals: SeismicShockwaveSignal.MaxFrameSignals, lowTierFrameSignals: SeismicShockwaveSignal.LowTierFrameSignals, laneHash: SeismicShockwaveSignal.LaneHash);
             SignalBus<SeismicShockwaveSignal>.EnsureInitialized();
 
-            SignalBus<EclipseGameplayEventPayload>.Configure(4, maxFrameSignals: 8, lowTierFrameSignals: 2, laneHash: SeismicDirectorConstants.EclipseGameplayHash);
+            SignalBus<EclipseGameplayEventPayload>.Configure(EclipseGameplayEventPayload.ExpectedCapacity, maxFrameSignals: EclipseGameplayEventPayload.MaxFrameSignals, lowTierFrameSignals: EclipseGameplayEventPayload.LowTierFrameSignals, laneHash: EclipseGameplayEventPayload.LaneHash);
             SignalBus<EclipseGameplayEventPayload>.EnsureInitialized();
             _seismicSignalLanesPrewarmed = true;
         }
@@ -2475,7 +2476,7 @@ namespace Hecton8.Environment
             if (signal.Fire == 0u)
                 return;
 
-            SignalBus<MockNarrativeTriggerSignal>.TryPush(in signal);
+            SignalBus<MockNarrativeTriggerSignal>.TryPushTracked(in signal, ref _signalPushDropCount);
             TrySpawnSeismicEvent(signal.EpicenterAUP, signal.Magnitude, tuning.NoiseFrequency, tuning.DecayRate, SeismicDirectorConstants.NarrativeMockHash);
         }
 
@@ -2568,7 +2569,7 @@ namespace Hecton8.Environment
             shockwaveSignal.Frame = frame;
             shockwaveSignal.Sequence = _seismicEventSequence;
             shockwaveSignal.Flags = 1u;
-            SignalBus<SeismicShockwaveSignal>.TryPush(in shockwaveSignal);
+            SignalBus<SeismicShockwaveSignal>.TryPushTracked(in shockwaveSignal, ref _signalPushDropCount);
 
             SeismicSignal seismicSignal = default;
             seismicSignal.EpicenterAUP = seismicEvent.EpicenterAUP;
@@ -2586,7 +2587,7 @@ namespace Hecton8.Environment
             seismicSignal.EventTypeHash = seismicEvent.EventTypeHash;
             seismicSignal.Sequence = unchecked((ushort)_seismicEventSequence);
             seismicSignal.Flags = SeismicSignal.FlagRadialWave | 1;
-            SignalBus<SeismicSignal>.TryPush(in seismicSignal);
+            SignalBus<SeismicSignal>.TryPushTracked(in seismicSignal, ref _signalPushDropCount);
 
             GlobalPanicSignal panic = default;
             panic.EpicenterAup = epicenter;
@@ -2595,7 +2596,7 @@ namespace Hecton8.Environment
             panic.SourceHash = SeismicDirectorSourceHash;
             panic.Frame = frame;
             panic.Flags = 1u;
-            SignalBus<GlobalPanicSignal>.TryPush(in panic);
+            SignalBus<GlobalPanicSignal>.TryPushTracked(in panic, ref _signalPushDropCount);
 
             if (magnitude < SeismicDirectorConstants.SevereMagnitude)
                 return;
@@ -2613,7 +2614,7 @@ namespace Hecton8.Environment
             avalanche.SourceHash = SeismicDirectorSourceHash;
             avalanche.Frame = frame;
             avalanche.Flags = 1u;
-            SignalBus<DebrisAvalancheSignal>.TryPush(in avalanche);
+            SignalBus<DebrisAvalancheSignal>.TryPushTracked(in avalanche, ref _signalPushDropCount);
 
             double3 origin = epicenter.ToAbsoluteDouble3();
             for (int i = 0; i < 8; i++)
@@ -2631,7 +2632,7 @@ namespace Hecton8.Environment
                 debris.DebrisKind = DebrisSpawnSignal.DebrisKindRockShard;
                 debris.Flags = DebrisSpawnSignal.FlagComputeShard;
                 debris.Quantity = 16;
-                SignalBus<DebrisSpawnSignal>.TryPush(in debris);
+                SignalBus<DebrisSpawnSignal>.TryPushTracked(in debris, ref _signalPushDropCount);
             }
         }
 
@@ -2645,7 +2646,7 @@ namespace Hecton8.Environment
             shockwave.SourceHash = SeismicDirectorSourceHash;
             shockwave.Frame = frame;
             shockwave.Flags = 1u;
-            SignalBus<AcousticShockwaveSignal>.TryPush(in shockwave);
+            SignalBus<AcousticShockwaveSignal>.TryPushTracked(in shockwave, ref _signalPushDropCount);
 
             AcousticPingSignal ping = default;
             ping.PositionAup = epicenter;
@@ -2654,7 +2655,7 @@ namespace Hecton8.Environment
             ping.SourceId = SeismicDirectorSourceHash;
             ping.Channel = AcousticPingSignal.ChannelMetalStress;
             ping.Flags = AcousticPingSignal.FlagActiveSonar;
-            SignalBus<AcousticPingSignal>.TryPush(in ping);
+            SignalBus<AcousticPingSignal>.TryPushTracked(in ping, ref _signalPushDropCount);
 
             ImpactSignal impact = default;
             impact.PointAup = epicenter;
@@ -2663,7 +2664,7 @@ namespace Hecton8.Environment
             impact.MaterialHash = SubLowRumbleHash;
             impact.WeightClass = 3;
             impact.Flags = 1;
-            SignalBus<ImpactSignal>.TryPush(in impact);
+            SignalBus<ImpactSignal>.TryPushTracked(in impact, ref _signalPushDropCount);
         }
 
         private unsafe bool ResolveCelestialSolve(
@@ -3069,7 +3070,7 @@ namespace Hecton8.Environment
             payload.Frame = ResolveSimulationFrame();
             payload.Sequence = _celestialSequence;
             payload.Flags = 1u;
-            SignalBus<EclipseGameplayEventPayload>.TryPush(in payload);
+            SignalBus<EclipseGameplayEventPayload>.TryPushTracked(in payload, ref _signalPushDropCount);
         }
 
         private TideSolveResult BuildTideSolveFromCelestial(in EnvironmentStateDTO environmentState, in CelestialFlowModifierDTO flowModifier)
@@ -3491,7 +3492,7 @@ namespace Hecton8.Environment
             signal.SourceHash = SeismicDirectorSourceHash;
             signal.Frame = ResolveSimulationFrame();
             signal.EventTypeHash = SeismicDirectorSourceHash;
-            SignalBus<SeismicSignal>.TryPush(in signal);
+            SignalBus<SeismicSignal>.TryPushTracked(in signal, ref _signalPushDropCount);
         }
 
         private SeismicTuningDTO ReadSeismicTuning()
@@ -5602,7 +5603,7 @@ namespace Hecton8.Environment
             job.MagnitudeRichter = math.max(0.01f, math.min(8.6f, tuning.MaxRichterScale > 0f ? tuning.MaxRichterScale : 8.6f));
             job.FrequencyHz = math.max(0.1f, tuning.NoiseFrequency);
             job.DecayRate = math.max(0.001f, tuning.DecayRate);
-            job.Frame = (uint)Time.frameCount;
+            job.Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             job.Sequence = job.Frame ^ SeismicDirectorConstants.EmergencyFaultHash;
             job.EventTypeHash = SeismicDirectorConstants.EmergencyFaultHash;
             job.Run();
@@ -5620,6 +5621,11 @@ namespace Hecton8.Core.Contracts.Signals
     [StructLayout(LayoutKind.Explicit, Size = 64)]
     public partial struct MockNarrativeTriggerSignal : ISignal
     {
+        public const int ExpectedCapacity = 4;
+        public const int MaxFrameSignals = 8;
+        public const int LowTierFrameSignals = 2;
+        public const uint LaneHash = Hecton8.Environment.SeismicDirectorConstants.NarrativeMockHash;
+
         [FieldOffset(0)] public double3 EpicenterAUP;
         [FieldOffset(24)] public float Magnitude;
         [FieldOffset(28)] public float Intensity01;
@@ -5637,6 +5643,11 @@ namespace Hecton8.Core.Contracts.Signals
     [StructLayout(LayoutKind.Explicit, Size = 64)]
     public partial struct SeismicShockwaveSignal : ISignal
     {
+        public const int ExpectedCapacity = 16;
+        public const int MaxFrameSignals = 32;
+        public const int LowTierFrameSignals = 4;
+        public const uint LaneHash = Hecton8.Environment.SeismicDirectorConstants.SeismicShockwaveHash;
+
         [FieldOffset(0)] public double3 EpicenterAUP;
         [FieldOffset(24)] public float Magnitude;
         [FieldOffset(28)] public float RadiusMeters;
@@ -5655,6 +5666,11 @@ namespace Hecton8.Core.Contracts.Signals
     [StructLayout(LayoutKind.Explicit, Size = 32)]
     public partial struct EclipseGameplayEventPayload : ISignal
     {
+        public const int ExpectedCapacity = 4;
+        public const int MaxFrameSignals = 8;
+        public const int LowTierFrameSignals = 2;
+        public const uint LaneHash = Hecton8.Environment.SeismicDirectorConstants.EclipseGameplayHash;
+
         [FieldOffset(0)] public float EclipsePhase01;
         [FieldOffset(4)] public float BiolumMultiplier;
         [FieldOffset(8)] public float PredatorPressure01;
@@ -5671,6 +5687,11 @@ namespace Hecton8.Core.Contracts.Signals
     [StructLayout(LayoutKind.Explicit, Size = 128)]
     public partial struct DebrisAvalancheSignal : ISignal
     {
+        public const int ExpectedCapacity = 8;
+        public const int MaxFrameSignals = 16;
+        public const int LowTierFrameSignals = 4;
+        public const uint LaneHash = Hecton8.Environment.SeismicDirectorConstants.TectonicDebrisHash;
+
         [FieldOffset(0)] public AbsoluteUniversePosition CenterAup;
         [FieldOffset(48)] public float RadiusMeters;
         [FieldOffset(52)] public float Intensity01;
@@ -5693,6 +5714,11 @@ namespace Hecton8.Core.Contracts.Signals
     [StructLayout(LayoutKind.Explicit, Size = 128)]
     public partial struct AcousticShockwaveSignal : ISignal
     {
+        public const int ExpectedCapacity = 8;
+        public const int MaxFrameSignals = 16;
+        public const int LowTierFrameSignals = 4;
+        public const uint LaneHash = Hecton8.Environment.SeismicDirectorConstants.AcousticShockHash;
+
         [FieldOffset(0)] public AbsoluteUniversePosition CenterAup;
         [FieldOffset(48)] public float RadiusMeters;
         [FieldOffset(52)] public float Intensity01;
@@ -5715,6 +5741,11 @@ namespace Hecton8.Core.Contracts.Signals
     [StructLayout(LayoutKind.Explicit, Size = 128)]
     public partial struct GlobalPanicSignal : ISignal
     {
+        public const int ExpectedCapacity = 8;
+        public const int MaxFrameSignals = 16;
+        public const int LowTierFrameSignals = 4;
+        public const uint LaneHash = Hecton8.Environment.SeismicDirectorConstants.PanicShockHash;
+
         [FieldOffset(0)] public AbsoluteUniversePosition EpicenterAup;
         [FieldOffset(48)] public float RadiusMeters;
         [FieldOffset(52)] public float Intensity01;

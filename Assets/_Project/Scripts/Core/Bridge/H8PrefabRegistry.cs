@@ -13,6 +13,7 @@ namespace Hecton8.Core.Bridge
     [CreateAssetMenu(fileName = "H8PrefabRegistry", menuName = "Hecton-8/Bridge/Prefab Registry")]
     public sealed class H8PrefabRegistry : ScriptableObject
     {
+        private static int s_x001H8PrefabRegistrySignalPushDropCount;
         [Serializable]
         public sealed class Entry
         {
@@ -331,7 +332,7 @@ namespace Hecton8.Core.Bridge
             if (!Application.isPlaying)
                 return;
 
-            uint frame = unchecked((uint)Time.frameCount);
+            uint frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             PrefabAcousticSignatureSignal acoustic = new PrefabAcousticSignatureSignal
             {
                 PrefabHash = entry.HashID,
@@ -342,7 +343,7 @@ namespace Hecton8.Core.Bridge
                 OneDimensionalLutHash = entry.OneDimensionalLutHash,
                 Flags = entry.Flags
             };
-            SignalBus<PrefabAcousticSignatureSignal>.TryPush(in acoustic);
+            SignalBus<PrefabAcousticSignatureSignal>.TryPushTracked(in acoustic, ref s_x001H8PrefabRegistrySignalPushDropCount);
 
             PrefabLoreLinkSignal lore = new PrefabLoreLinkSignal
             {
@@ -353,7 +354,7 @@ namespace Hecton8.Core.Bridge
                 HighTierVisualHash = entry.HighTierVisualHash,
                 Flags = entry.Flags
             };
-            SignalBus<PrefabLoreLinkSignal>.TryPush(in lore);
+            SignalBus<PrefabLoreLinkSignal>.TryPushTracked(in lore, ref s_x001H8PrefabRegistrySignalPushDropCount);
         }
     }
 

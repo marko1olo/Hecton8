@@ -239,7 +239,7 @@ namespace Hecton8.Bootstrap
 
             BootstrapEventPayload payload = new BootstrapEventPayload
             {
-                Frame = unchecked((uint)Mathf.Max(0, SystemDispatcher.CurrentFrameIndex)),
+                Frame = SystemDispatcher.CurrentFrameId,
                 EventType = (ushort)BootstrapEventType.Complete,
                 StatusBits = 0
             };

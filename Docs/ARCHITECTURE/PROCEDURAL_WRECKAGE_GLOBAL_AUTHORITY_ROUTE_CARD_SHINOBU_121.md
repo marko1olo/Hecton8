@@ -52,11 +52,17 @@ Instrument:
 
 - [x] Black-box/telemetry route
 
-Producer/consumer phase: owner-local boot resolves Vault handles; generation jobs run in the world simulation dependency chain; renderer, physics, inventory, save/rollback, and QA consumers read staged snapshots in their owned phases.
+Producer/consumer phase: owner-local boot resolves Vault handles; generation jobs run in the world simulation dependency chain.
+
+Renderer, physics, inventory, save/rollback, and QA consumers read staged snapshots in owned phases.
 
 Cadence/capacity: generation/event driven, editor CSV poll 1 Hz editor-only, GPU upload dirty-output only; bounded Vault lanes for nodes, matrices, args, loot requests, collision proxies, and 300 telemetry rows.
 
-Producer phase: owner-local boot resolves Vault handles; generation jobs run in World simulation dependency chain; GPU upload occurs after returned JobHandle is completed by the caller's visual-sync phase.
+Producer phase:
+
+- Owner-local boot resolves Vault handles.
+- Generation jobs run in the World simulation dependency chain.
+- GPU upload waits for caller visual-sync completion of the returned `JobHandle`.
 
 Consumer phase: renderer upload reads `RenderMatrices`, `IndirectArgs`, `GpuScalars`; physics apply reads `CollisionProxies`; inventory/scavenging owner reads `LootRequests`; save/rollback owner reads `Nodes` and sector hash; QA reads `TelemetryRing`.
 

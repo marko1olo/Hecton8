@@ -200,7 +200,9 @@ Owner-local IDs are declared in `SubmarineAutopilotVaultRoute` to avoid widening
 
 
 
-The autopilot only writes desired velocity and route state. It does not move Transforms, Rigidbody bodies, or AUP state. Kinematic vehicle systems remain movement authority and may consume `AutopilotStateDTO.DesiredVelocity`.
+The autopilot only writes desired velocity and route state.
+
+It does not move Transforms, Rigidbody bodies, or AUP state. Kinematic vehicle systems remain movement authority.
 
 
 

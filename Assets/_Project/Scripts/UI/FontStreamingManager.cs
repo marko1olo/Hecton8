@@ -21,6 +21,7 @@ namespace Hecton8.UI
     [AddComponentMenu("Hecton8/UI/Font Streaming Manager")]
     public sealed class FontStreamingManager : MonoBehaviour, ILateFrameTickable, ILocalizationLanguageChangedListener, IGlobalRegistryHotSwapListener
     {
+        private static int s_x001FontStreamingManagerSignalPushDropCount;
         private const string RootName = "FontStreamingStatus";
         private const string DefaultStatusText = "[REBOOTING LANG_MODULE...]";
         private const string BiosFallbackStatusText = "[BIOS FONT FALLBACK ACTIVE]";
@@ -252,13 +253,13 @@ namespace Hecton8.UI
             UIRescaleRequestSignal signal = new UIRescaleRequestSignal
             {
                 SourceHash = _fontSwapRescaleHash,
-                Frame = unchecked((uint)Hecton8.Core.SystemDispatcher.CurrentFrameIndex),
+                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 Reason = UIRescaleReasonLocalizedFontSwap,
                 Language = (ushort)LocRegistry.ActiveLanguage,
                 Flags = 0u,
                 FontScale = 1f
             };
-            SignalBus<UIRescaleRequestSignal>.TryPush(in signal);
+            SignalBus<UIRescaleRequestSignal>.TryPushTracked(in signal, ref s_x001FontStreamingManagerSignalPushDropCount);
             DiegeticHudManualLayout.FlushGlobalRescaleRequests();
         }
 

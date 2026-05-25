@@ -1136,3 +1136,192 @@ Cinematic Cheats used: Fail-closed visual silence is preferred over a fake stamp
 Exact Microseconds saved: 0 us measured. Static impact: invalid stamp buffers cannot produce compute shader iteration over stale/invalid data.
 Verification: OOP scanner reports `PASS_STATIC_WITH_BUDGETED_UNITY_MESH_UPLOAD_RESIDUAL`, failed_gates=none. New proof field: `stamp_graphics_buffer_invalid_fail_closed=true`.
 Build: Not launched. Gate sampled CPU 59%, then 53% after wait, with zero active compiler/build processes. Project rule forbids dotnet build launch above 50% CPU.
+
+## 2026-05-25 Dear Lie Stamp Cold Invalid-Buffer Recovery
+
+What was wrong: `CreateResources()` recreated stamp `GraphicsBuffer` pairs only when a field was null. A non-null invalid buffer would make hot upload fail closed forever after a device/release fault.
+What was done: Added `IsGraphicsBufferReady()` and made the cold resource path recreate both cut-mask and damage-volume double buffers when either side is null or invalid. Hot visual-sync upload still does not allocate; it returns before shader count publication if no valid write buffer exists.
+Cinematic Cheats used: Dear Lie remains bounded to 16 commands and fails visually silent under hot faults; cold refresh repairs the command buffers before the next valid visual mask cycle.
+Exact Microseconds saved: 0 us measured. Static impact: recoverable GPU-buffer invalidation no longer leaves the dissolve route permanently muted, and no hot-path allocation was introduced.
+Verification: OOP scanner reports `PASS_STATIC_WITH_BUDGETED_UNITY_MESH_UPLOAD_RESIDUAL`, failed_gates=none. New proof field: `stamp_graphics_buffers_recreated_when_invalid=true`; `graphics_stamp_buffer_bounded=true`.
+Build: Pending CPU/process gate; no compile pass is claimed until the project rule allows a build launch.
+
+## 2026-05-25 Damage Volume Shader Idle Sample Gate
+
+What was wrong: `_HectonDamageVolumeActive` was enabled whenever a damage-volume texture existed, so idle terrain/voxel pixels could still pay for the 3D texture sample after visual damage energy decayed to zero.
+What was done: `SargassumCutManager.PublishGlobals()` now enables the damage-volume shader route only while damage energy, queued damage-volume stamps, or pending damage-volume delta work exists. Allocated idle textures no longer imply active shader sampling.
+Cinematic Cheats used: Dear Lie remains visible while damage exists; after decay, the fake route turns off at the shader flag instead of releasing/recreating GPU textures.
+Exact Microseconds saved: 0 us measured. Static impact: idle frames after drilling avoid the damage-volume 3D texture sample branch.
+Verification: OOP scanner reports `PASS_STATIC_WITH_BUDGETED_UNITY_MESH_UPLOAD_RESIDUAL`, failed_gates=none. New proof field: `damage_volume_shader_active_energy_gated=true`. Scoped diff-check passed with line-ending warnings only.
+Build: Pending CPU/process gate; no compile pass is claimed until the project rule allows a build launch.
+
+## 2026-05-25 RLE WAL Run Cap Tightening
+
+What was wrong: The report still showed architecture-level sparse RLE full-chunk theory at 262176 bytes, 96 bytes above the 262080-byte pager-sector payload. Runtime dense fallback and WAL guards made the queue safe, but staging geometry itself was not tight.
+What was done: Added `MaxVoxelDeltaRleRunsPerWalPayload = 32756` and clamped RLE run staging to that payload-derived cap. The full 32768-run chunk theory remains visible in the report, but staged WAL worst case now fits exactly in one sector payload.
+Cinematic Cheats used: None. This is persistence memory containment behind the Dear Lie visual delay.
+Exact Microseconds saved: 0 us measured. Static impact: architecture WAL staging worst case is now 262080 bytes, overage 0 bytes; no DTO layout, save sector size, or pager identity changed.
+Verification: OOP scanner reports `PASS_STATIC_WITH_BUDGETED_UNITY_MESH_UPLOAD_RESIDUAL`, failed_gates=none. `voxel_rle_architecture_wal_payload_guard=true` now requires the WAL-derived run cap.
+Build: Pending CPU/process gate; no compile pass is claimed until the project rule allows a build launch.
+
+## 2026-05-25 Compression Telemetry Dump Path Alignment
+
+What was wrong: RLE/compression telemetry dump helpers still defaulted to `Docs/AgentLogs/Dump_VOXEL_IO_SURGEON.bin`, while CURRENT_BATCH X_006 mandates `Docs/AgentLogs/Dump_SHINOBU_308_Voxel.bin` for voxel/paging budget breaches.
+What was done: Added a single `VoxelDeltaTelemetryDumpRelativePath` constant and routed all default compression telemetry dump overloads through the X_006 dump path. Override parameters remain for tests.
+Cinematic Cheats used: None.
+Exact Microseconds saved: 0 us measured. Static impact: compression latency/spike dumps and carve black-box dumps now share the same mandated forensic target.
+Verification: OOP scanner reports `PASS_STATIC_WITH_BUDGETED_UNITY_MESH_UPLOAD_RESIDUAL`, failed_gates=none. `x006_blackbox_dump_path_present=true` now requires the compression default path too.
+Build: Pending CPU/process gate; no compile pass is claimed until the project rule allows a build launch.
+
+## 2026-05-25 Surface Nets Invalid GraphicsBuffer Fail-Closed
+
+What was wrong: `VoxelSurfaceNetsGpuUploadDispatcher` treated non-null `GraphicsBuffer` references as initialized, even if Unity reported the underlying native resource invalid. That could push a sustained deformation mesh upload into `LockBufferForWrite` on a dead resource.
+What was done: Added `IsGraphicsBufferReady()`, made initialization proof require `IsValid()` on all five GPU buffers, and made upload begin release invalid resource sets for cold recreation before locking. A second selected-buffer guard faults the chunk with `VoxelMeshingFlags.GpuResourceInvalid` if device state changes mid-route. Cold release now calls `Release()` only on valid GraphicsBuffers and nulls invalid wrappers for recreation.
+Cinematic Cheats used: Fail-closed mesh upload delay. The Dear Lie pixel clip remains the visible mask while mesh geometry waits for a valid cold-recreated upload resource.
+Exact Microseconds saved: 0 us measured. Static impact: invalid GPU upload buffers cannot enter the lock/schedule/publication path; no hot GPU allocation was introduced.
+Verification: OOP scanner reports `PASS_STATIC_WITH_BUDGETED_UNITY_MESH_UPLOAD_RESIDUAL`, failed_gates=none. New gate: `surface_nets_gpu_invalid_buffer_fail_closed=true`.
+Build: Pending CPU/process gate; no compile pass is claimed until the project rule allows a build launch.
+
+## 2026-05-25 Surface Nets X_006 Dump Path Alignment
+
+What was wrong: Surface Nets slow extraction black-box dumps still wrote the agent copy to `Dump_SHINOBU_61.bin`, outside the X_006 forensic target.
+What was done: Changed `AgentDumpFileName` to `Dump_SHINOBU_308_Voxel.bin` and extended the scanner so the global X_006 black-box gate also requires the Surface Nets dump route.
+Cinematic Cheats used: None.
+Exact Microseconds saved: 0 us measured. Static impact: carve, compression, and Surface Nets stall forensics now converge on `Docs/AgentLogs/Dump_SHINOBU_308_Voxel.bin` while retaining the primary `Dump_MESH_SURGEON.bin` file.
+Verification: OOP scanner reports `PASS_STATIC_WITH_BUDGETED_UNITY_MESH_UPLOAD_RESIDUAL`, failed_gates=none. New gate: `surface_nets_blackbox_dump_path_x006=true`.
+Build: Not launched. Gate sampled CPU 88% with active `dotnet.exe` and `csc.exe` processes. Project rule forbids build launch above 50% CPU or while compiler/build processes exist.
+
+## 2026-05-25 Surface Nets Upload Finalize Invalid-Resource Guard
+
+What was wrong: Upload begin rejected invalid GPU buffers, but finalize could still publish `Uploaded` if a pending vertex/index/indirect buffer became invalid after scheduling and before unlock/publication.
+What was done: Finalize now validates pending upload resources after completed-job `Complete()` and before publishing the uploaded state. Invalid pending resources mark `VoxelMeshingFlags.GpuResourceInvalid`, clear pending state, and force cold release/recreate. Unlock paths skip invalid buffers.
+Cinematic Cheats used: Mesh publication delay. The shader-side Dear Lie visual path is allowed to cover the frame while mesh upload waits for a valid resource set.
+Exact Microseconds saved: 0 us measured. Static impact: render consumers cannot receive invalid Surface Nets upload buffers from a finalized upload.
+Verification: OOP scanner reports `PASS_STATIC_WITH_BUDGETED_UNITY_MESH_UPLOAD_RESIDUAL`, failed_gates=none. `surface_nets_gpu_invalid_buffer_fail_closed=true` now requires finalize invalid-resource rejection and valid-only unlock.
+Build: Pending CPU/process gate; no compile pass is claimed until the project rule allows a build launch.
+
+## 2026-05-25 Runtime Null-Volume Collider Fallback Sealed
+
+What was wrong: `ApplyVolumeMeshAsync` still had a play-mode null-volume collider fallback that could create `MeshCollider` or allocate a fallback bake proxy and schedule PhysX bake/upload when `VoxelPipelineData.SourceVolume` was missing.
+What was done: Added `VoxelMeshPipelineNullVolumeColliderFallbackFlag`. In play mode, missing source volume now records the black-box flag and returns visual-only success before root component search, collider creation, bake-proxy allocation, or fallback bake scheduling. Cinematic-fake bake-proxy cleanup search is editor/cold only.
+Cinematic Cheats used: Visual-only mesh publication. A malformed runtime volume gets visuals without immediate collision truth instead of spending a frame on emergency PhysX/component creation or hierarchy search.
+Exact Microseconds saved: 0 us measured. Static impact: runtime null-volume path no longer reaches `TryGetComponent` root collider lookup, `go.AddComponent<MeshCollider>()`, `EnsureVoxelBakeProxyCollider()`, or fallback deferred collider upload.
+Verification: OOP scanner reports `PASS_STATIC_WITH_BUDGETED_UNITY_MESH_UPLOAD_RESIDUAL`, failed_gates=none. `mesh_publication_volume_addcomponent_absent=true` now requires `runtime_null_volume_collider_fails_closed=true` and `cinematic_fake_proxy_search_editor_only=true`.
+Build: Pending CPU/process gate; no compile pass is claimed until the project rule allows a build launch.
+
+## 2026-05-25 Mesh-Pipeline Black Box X_006 Agent Copy
+
+What was wrong: Mesh-pipeline black-box faults wrote only `Docs/AgentLogs/Dump_VOXEL_MESH_PIPELINE.bin`; null-volume collider fallback and mesh-pool faults were outside the mandated X_006 dump target.
+What was done: `HectonVoxelEngine` now writes both the primary mesh-pipeline dump and an X_006 agent copy at `Docs/AgentLogs/Dump_SHINOBU_308_Voxel.bin` through one shared writer helper under `UNITY_EDITOR || DEVELOPMENT_BUILD`.
+Cinematic Cheats used: None.
+Exact Microseconds saved: 0 us measured. Static impact: mesh-pipeline fault evidence now shares the same X_006 dump chain as carve, RLE, and Surface Nets faults.
+Verification: OOP scanner reports `PASS_STATIC_WITH_BUDGETED_UNITY_MESH_UPLOAD_RESIDUAL`, failed_gates=none. `x006_blackbox_dump_path_present=true` now requires the mesh-pipeline agent copy.
+Build: A build was launched only after the gate opened at CPU 39% with no active compiler/build processes. It timed out after 244 seconds with no C# error output. Follow-up gate is closed at CPU 100% with active `dotnet.exe` and `VBCSCompiler.exe`; no second build was launched.
+
+## 2026-05-25 Teleport Reset Proof Updated For Always-Deferred Route
+
+What was wrong: `WorldChunkResidencyManager` now always defers teleport reset from `HandleTeleport`, but the scanner still required the older explicit `_residencyJobScheduled` branch. The code was stricter than the proof.
+What was done: Updated the scanner to prove the invariant instead of the old branch shape: `HandleTeleport` records pending AUP/reset state and does not call `ApplyTeleportResetNow`; `LateFrameTick` is accepted when it completes the residency job before applying the pending reset.
+Cinematic Cheats used: None.
+Exact Microseconds saved: 0 us measured. Static impact: the paging validator now accepts the stronger always-deferred teleport path while still rejecting teleport force-complete.
+Verification: OOP scanner reports `PASS_STATIC_WITH_BUDGETED_UNITY_MESH_UPLOAD_RESIDUAL`, failed_gates=none.
+Build: Covered by the same timed-out build attempt and closed follow-up gate above.
+
+## 2026-05-25 Dear Lie Compute Stamp Count Clamp
+
+What was wrong: C# upload counts were bounded, but `Hecton_SargassumCutMask.compute` and `Hecton_TerrainDamageVolume.compute` still looped directly on `_StampCount` / `_HectonDamageVolumeStampCount`. A corrupted uniform could read beyond the fixed 16-command `StructuredBuffer`.
+What was done: Added kernel-local 16-command constants and clamped both stamp counts to 0..16 before any command-buffer read. Updated `Tools/OOP_Voxel_Scanner.py` so `graphics_stamp_buffer_bounded` requires these compute-side clamps as well as C# upload saturation and invalid-buffer fail-closed paths.
+Cinematic Cheats used: Bounded Dear Lie visual stamping. The GPU fake processes at most 16 coalesced visual commands per dispatch while mesh truth remains delayed.
+Exact Microseconds saved: 0 us measured. Static impact: 60 Hz drilling cannot overflow the shader read loop even if a stamp-count uniform regresses above the GraphicsBuffer capacity.
+Verification: OOP scanner reports `PASS_STATIC_WITH_BUDGETED_UNITY_MESH_UPLOAD_RESIDUAL`, failed_gates=none. New proof fields: `cut_mask_shader_stamp_count_clamped=true`, `damage_volume_shader_stamp_count_clamped=true`. Scoped diff-check passed with line-ending warnings only.
+Build: Not launched. CPU sampled 100% and active `dotnet.exe` processes were present, including PID 54944 from the prior timed-out build attempt and PID 54456. Project rule forbids a second build while CPU is above 50% or compiler/build processes exist.
+
+## 2026-05-25 PhysX Bake Teardown Continuous Drain Budget
+
+What was wrong: Deferred PhysX bake teardown was nonblocking, but its drain cadence was a fixed normal/backpressure integer split instead of a continuous quality-scaled budget.
+What was done: Added a `GlobalQualityWeight` token bucket for `DrainDeferredVoxelPhysicsBakeTeardowns()`: 8 drains/frame at minimum survival, 32 drains/frame at visual overkill, with active backpressure lifting the budget to the 32-drain ceiling. Capacity remains 2048 normal + 512 emergency records; no force-complete path was added.
+Cinematic Cheats used: Collider/proxy truth can lag while Dear Lie visuals and existing collider state carry the frame; completed bake teardown cleanup catches up by cadence instead of sync.
+Exact Microseconds saved: 0 us measured. Static impact: teardown backlog is now quality-scaled and bounded without increasing memory or publishing PhysX mesh state.
+Verification: OOP scanner reports `PASS_STATIC_WITH_BUDGETED_UNITY_MESH_UPLOAD_RESIDUAL`, failed_gates=none. New proof field: `physics_bake_teardown_budget_continuous_quality_scaled=true`. Scoped diff-check passed with line-ending warnings only.
+Build: Pending CPU/process gate; no compile pass is claimed until the project rule allows a build launch.
+
+## 2026-05-25 Scheduled Carve Candidate Overflow Guard
+
+What was wrong: `TrySchedulePendingCarve` calculated candidate cells with `int` multiplication before the fixed write-buffer capacity check. A malformed large span could overflow before the guard.
+What was done: Added a `long`-based `TryResolveScheduledCarveCandidateCount` guard. Invalid or over-capacity spans write the voxel queue-overflow black-box flag and never schedule `CarveSdfJob`.
+Cinematic Cheats used: Fail-closed carving. The visible Dear Lie path can continue for bounded valid stamps; oversized truth updates are shed instead of corrupting the write arena.
+Exact Microseconds saved: 0 us measured. Static impact: scheduled carve job length cannot overflow before the fixed `ScheduledCarveWriteCapacity` guard.
+Verification: OOP scanner reports `PASS_STATIC_WITH_BUDGETED_UNITY_MESH_UPLOAD_RESIDUAL`, failed_gates=none. New proof field: `scheduled_carve_candidate_overflow_guard_present=true`.
+Build: Pending CPU/process gate; no compile pass is claimed until the project rule allows a build launch.
+
+## 2026-05-25 Deferred Collider Bake Keeps Visual Mesh Alive
+
+What was wrong: Deferred chunk collider bake teardown could pass `renderer == null`, then search the owner for a `MeshRenderer` and disable the published voxel visual while waiting for PhysX bake cleanup.
+What was done: `DisableDeferredVoxelBakePresentation` now receives teardown flags and only performs owner renderer lookup/disable for `DeferredVoxelBakeDestroyOwner` fallback teardown. Normal chunk-collider bake deferral no longer hides visuals.
+Cinematic Cheats used: Dear Lie visual continuity. Collision/proxy truth may lag, but the already-published mesh and shader clip remain visible.
+Exact Microseconds saved: 0 us measured. Static impact: delayed chunk PhysX bake no longer causes root renderer lookup or visual blackout.
+Verification: OOP scanner reports `PASS_STATIC_WITH_BUDGETED_UNITY_MESH_UPLOAD_RESIDUAL`, failed_gates=none. New proof field: `physics_bake_deferred_teardown_keeps_chunk_visuals=true`.
+Build: Pending CPU/process gate; no compile pass is claimed until the project rule allows a build launch.
+
+## 2026-05-25 Dear Lie Active GraphicsBuffer Validity Guard
+
+What was wrong: Decay-only cut-mask or damage-volume compute dispatch could bind a non-null but invalid active stamp `GraphicsBuffer`, because no new stamp upload meant the write-buffer resolver was not called.
+What was done: Added active buffer validity guards before both compute dispatches. Invalid active buffers request cold resource refresh and return before `SetBuffer`; resolver-null paths do the same.
+Cinematic Cheats used: Fail-closed visual update. The shader fake waits for valid GPU buffers instead of allocating or faulting on the hot path.
+Exact Microseconds saved: 0 us measured. Static impact: Dear Lie compute dispatch cannot bind invalid active stamp buffers, including zero-stamp recovery frames.
+Verification: OOP scanner reports `PASS_STATIC_WITH_BUDGETED_UNITY_MESH_UPLOAD_RESIDUAL`, failed_gates=none. New proof field: `active_stamp_buffers_validated_before_dispatch=true`.
+Build: Pending CPU/process gate; no compile pass is claimed until the project rule allows a build launch.
+
+## 2026-05-25 Carve Schedule Exception Black-Box Proof
+
+What was wrong: `CarveSdfJob.Schedule` exceptions produced only editor/development logging, so a stress scheduler fault could reset state without a fixed forensic artifact.
+What was done: The schedule catch now writes `VoxelBlackBoxInvalidPendingCarveFlag` and emits the X_006 black-box dump in development builds before normal cleanup.
+Cinematic Cheats used: None. This is failure forensics for the real carve job path.
+Exact Microseconds saved: 0 us measured. Static impact: carve scheduling faults are now captured in the last-300-frame ring and cannot vanish as log-only failures.
+Verification: OOP scanner reports `PASS_STATIC_WITH_BUDGETED_UNITY_MESH_UPLOAD_RESIDUAL`, failed_gates=none. New proof field: `scheduled_carve_schedule_exception_blackbox_present=true`.
+Build: Pending CPU/process gate; no compile pass is claimed until the project rule allows a build launch.
+
+## 2026-05-25 Unity MeshData Upload Fail-Closed Guard
+
+What was wrong: Surface and collider mesh publication allocated `MeshDataArray` before proving NativeArray/count consistency, and had no fail-finally if publication threw before `ApplyAndDisposeWritableMeshData`.
+What was done: Added `CanUploadMeshData`, converted both upload methods to `bool`, added pre-allocation guards, and dispose un-applied `MeshDataArray` in `finally`. Surface/collider call sites now stop on failed upload and release the relevant pooled collider mesh where applicable.
+Cinematic Cheats used: Fail-closed mesh publication. The Dear Lie visual route covers valid delayed updates; malformed mesh payloads are dropped into telemetry instead of publishing partial geometry.
+Exact Microseconds saved: 0 us measured. Static impact: bad async mesh data cannot create a Unity MeshData allocation or leak it before bounds/count proof.
+Verification: OOP scanner reports `PASS_STATIC_WITH_BUDGETED_UNITY_MESH_UPLOAD_RESIDUAL`, failed_gates=none. New proof field: `mesh_data_upload_guard_present=true`.
+Build: Pending CPU/process gate; no compile pass is claimed until the project rule allows a build launch.
+
+## 2026-05-25 Final Gate For Current X_006 Pass
+
+What was wrong: Build verification cannot be honestly claimed while the project build gate is closed.
+What was done: Re-ran `Tools/OOP_Voxel_Scanner.py` after the latest patches: `PASS_STATIC_WITH_BUDGETED_UNITY_MESH_UPLOAD_RESIDUAL`, failed_gates=none. Ran scoped `git diff --check` on X_006 files: warnings only for LF-to-CRLF normalization, no whitespace errors.
+Cinematic Cheats used: None.
+Exact Microseconds saved: 0 us measured. Static impact: validator proof is current; compile remains pending.
+Verification: CPU sampled 100% in the final build-gate poll, so `dotnet build` was not launched under the AGENTS.md rule forbidding builds above 50% CPU. No compile pass is claimed.
+Build: BLOCKED BY CPU GATE, not by C# errors from this pass.
+
+## 2026-05-25 PhysX Bake Burst Contract Removed
+
+What was wrong: `VoxelMeshBakeJob` called `UnityEngine.Physics.BakeMesh` while carrying `[BurstCompile]`, which is a false contract for a Unity Physics API call. The deferred visual guard also needed to prevent renderer disable even when a renderer reference is passed for a live chunk.
+What was done: Removed the Burst attribute from `VoxelMeshBakeJob`, kept admitted worker-job scheduling, and gated all deferred renderer disable work behind `DeferredVoxelBakeDestroyOwner`. Updated the scanner to require `physics_bake_job_not_burst_compiled=true` and the stricter visual-continuity route.
+Cinematic Cheats used: Collider truth can lag on the async bake path while the published voxel mesh and Dear Lie shader clip keep the visual state alive.
+Exact Microseconds saved: 0 us measured. Static impact: PhysX bake no longer pretends Burst compatibility, and deferred chunk collider bake cannot blank the visible voxel mesh.
+Verification: OOP scanner reports `PASS_STATIC_WITH_BUDGETED_UNITY_MESH_UPLOAD_RESIDUAL`, failed_gates=none. Scoped diff-check passed with LF-to-CRLF warnings only.
+Build: Not launched. CPU sampled 85% and active `dotnet.exe` plus `csc.exe` processes were present.
+
+## 2026-05-25 WAL Enqueue Counter Clamp Removed
+
+What was wrong: `TryEnqueueVoxelDeltaWalWrite` clamped `CounterWalPayloadBytes` to the WAL staging buffer length, so a corrupt over-length counter could be masked as a shorter write instead of being rejected.
+What was done: Changed WAL enqueue admission to reject raw byte counters above staging length or above `MaxVoxelDeltaWalPayloadBytes`. Tightened `Tools/OOP_Voxel_Scanner.py` so the RLE/WAL proof requires raw counter admission and both guards.
+Cinematic Cheats used: None. This is persistence integrity for deferred voxel deformation writes.
+Exact Microseconds saved: 0 us measured. Static impact: queued `world_data.h8bin` writes cannot hide corrupted payload length by clamping to buffer capacity.
+Verification: OOP scanner reports `PASS_STATIC_WITH_BUDGETED_UNITY_MESH_UPLOAD_RESIDUAL`, failed_gates=none. Scoped diff-check passed with LF-to-CRLF warnings only.
+Build: Pending CPU/process gate.
+
+## 2026-05-25 RLE Checksum And WAL Pack Counter Clamps Removed
+
+What was wrong: Checksum and WAL pack jobs still clamped `CounterCompressedBytes`, so a corrupt compressed-byte counter could produce a checksum or payload over a truncated byte range.
+What was done: Added raw compressed-byte validation in `VoxelDeltaChecksumHeaderJob` and `VoxelWalPayloadPackJob`. Invalid counters set `CounterFailure`, clear WAL payload bytes, and do not hash/pack repaired data. Scanner proof now requires these guards.
+Cinematic Cheats used: None.
+Exact Microseconds saved: 0 us measured. Static impact: worker-thread RLE persistence cannot convert corrupted counters into ambiguous `world_data.h8bin` writes.
+Verification: OOP scanner reports `PASS_STATIC_WITH_BUDGETED_UNITY_MESH_UPLOAD_RESIDUAL`, failed_gates=none. Scoped diff-check passed with LF-to-CRLF warnings only.
+Build: Not launched. CPU sampled 100%.

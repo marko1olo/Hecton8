@@ -168,7 +168,9 @@ Mock/procedural input uses `Unity.Mathematics.Random` only. Seeds mix exosuit ha
 
 Standalone helper jobs use the same deterministic Burst directive as the primary integrator.
 
-They sanitize non-finite inputs through `ExosuitMathGuards` before SDF, pressure, clamp, or heat math. They remain for tests/fallbacks; production owner phase schedules the single integration job to avoid tiny-job overhead.
+They sanitize non-finite inputs through `ExosuitMathGuards` before SDF, pressure, clamp, or heat math.
+
+They remain for tests/fallbacks; production owner phase schedules one integration job to avoid tiny-job overhead.
 
 
 

@@ -140,6 +140,7 @@ namespace Hecton8.VFX.PlasmaBeam
 
     public sealed unsafe class ShinobuPlasmaBeamRuntime : IGlobalRegistryHotSwapListener
     {
+        private static int s_x001ShinobuPlasmaBeamRuntimeSignalPushDropCount;
         public const int MaxBeamCount = 20;
         public const int MinRadialSegments = 3;
         public const int MaxRadialSegments = 8;
@@ -622,7 +623,7 @@ namespace Hecton8.VFX.PlasmaBeam
                 {
                     PlasmaBeamAcousticEchoTap tap = taps[i];
                     if (tap.Intensity01 > 0.001f)
-                        SignalBus<PlasmaBeamAcousticEchoTap>.TryPush(in tap);
+                        SignalBus<PlasmaBeamAcousticEchoTap>.TryPushTracked(in tap, ref s_x001ShinobuPlasmaBeamRuntimeSignalPushDropCount);
                 }
             }
 

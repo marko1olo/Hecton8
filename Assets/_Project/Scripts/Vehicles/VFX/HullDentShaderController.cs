@@ -17,6 +17,7 @@ namespace Hecton8.Vehicles.VFX
     [AddComponentMenu("Hecton/Vehicles/VFX/Hull Dent Shader Controller")]
     public sealed class HullDentShaderController : MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
+        private static int s_x001HullDentShaderControllerSignalPushDropCount;
         private const int MaxHullDents = 16;
         private const int RadiusQuantizationStepsPerMeter = 16;
         private const float InvRadiusQuantizationStepsPerMeter = 1f / RadiusQuantizationStepsPerMeter;
@@ -108,6 +109,7 @@ namespace Hecton8.Vehicles.VFX
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
                 _tickDispatcher = currentService as ITickDispatcher;
+                _registeredLateFrame = false;
                 if (isActiveAndEnabled)
                     TryRegisterLateFrameTickable();
 
@@ -731,7 +733,7 @@ namespace Hecton8.Vehicles.VFX
                 Intensity01 = intensity01,
                 TargetHash = signal.TargetHash,
                 SourceHash = signal.SourceHash,
-                Frame = signal.Frame != 0u ? signal.Frame : unchecked((uint)Time.frameCount),
+                Frame = signal.Frame != 0u ? signal.Frame : Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 TargetId = signal.TargetId,
                 SourceId = signal.SourceId,
                 ActiveDentCount = (byte)math.min(MaxHullDents, _activeDentCount),
@@ -740,7 +742,7 @@ namespace Hecton8.Vehicles.VFX
                 Channel = signal.Channel,
                 DamageType = signal.DamageType
             };
-            SignalBus<HullDeformedSignal>.TryPush(in deformedSignal);
+            SignalBus<HullDeformedSignal>.TryPushTracked(in deformedSignal, ref s_x001HullDentShaderControllerSignalPushDropCount);
         }
 
         private uint BuildTelemetryFlags()
@@ -785,7 +787,8 @@ namespace Hecton8.Vehicles.VFX
             if (!IsFiniteVector(relativeWorld))
                 return false;
 
-            Vector3 local = Quaternion.Inverse(root.rotation) * relativeWorld;
+            Quaternion inverseRotation = ConjugateUnitRotation(root.rotation);
+            Vector3 local = inverseRotation * relativeWorld;
             Vector3 scale = root.lossyScale;
             local.x /= ResolveSafeScale(scale.x);
             local.y /= ResolveSafeScale(scale.y);
@@ -800,6 +803,11 @@ namespace Hecton8.Vehicles.VFX
         private static bool IsFiniteVector(Vector3 value)
         {
             return float.IsFinite(value.x) && float.IsFinite(value.y) && float.IsFinite(value.z);
+        }
+
+        private static Quaternion ConjugateUnitRotation(Quaternion rotation)
+        {
+            return new Quaternion(-rotation.x, -rotation.y, -rotation.z, rotation.w);
         }
 
         private static bool IsFiniteVector(Vector4 value)

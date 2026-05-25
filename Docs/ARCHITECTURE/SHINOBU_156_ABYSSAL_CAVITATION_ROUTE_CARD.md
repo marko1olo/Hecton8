@@ -6,7 +6,8 @@ Status: HISTORICAL STATIC_SOURCE ORIENTATION / SUPERSEDED FOR LIVE SHOCKWAVE NAN
 
 - `SHINOBU_156_ABYSSAL_CAVITATION_ROUTE_CARD` is retained as historical route context for the original cavitation buffer range `71560..71570`.
 - The current live authority proof for the shockwave NaN guard, exact-overlap deterministic direction fallback, 32-byte force transport row `71571`, fault dump hardening, and shader cavitation link is `Docs/ARCHITECTURE/SHINOBU_248_SHOCKWAVE_NAN_ROUTE_CARD.md`.
-- Integrators must treat SHINOBU_248 as the current owner of the live route delta and must not interpret SHINOBU_156 and SHINOBU_248 as two concurrent owners of the same `71560..71571` authority surface.
+- Integrators must treat SHINOBU_248 as current live route delta owner.
+- Do not treat SHINOBU_156 and SHINOBU_248 as concurrent owners of authority surface `71560..71571`.
 
 ## R48 Exact Route Field Normalization
 

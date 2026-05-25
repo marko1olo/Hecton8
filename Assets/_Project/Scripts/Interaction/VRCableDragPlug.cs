@@ -706,8 +706,12 @@ namespace Hecton8.Interaction
             object previousService,
             object currentService)
         {
-            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && currentService != null && isActiveAndEnabled)
-                RefreshLateFrameRegistration();
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                _registeredLateFrame = false;
+                if (currentService != null && isActiveAndEnabled)
+                    RefreshLateFrameRegistration();
+            }
         }
 
 #if UNITY_EDITOR

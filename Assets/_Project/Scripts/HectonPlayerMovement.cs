@@ -55,6 +55,7 @@ namespace Hecton8.Gameplay
     [RequireComponent(typeof(Rigidbody))]
     public sealed class HectonPlayerMovement : MonoBehaviour, IUpdatable, IFixedTickable, ILateFrameTickable, IOriginShiftListener, ISargassumGlobalDragEventListener, ISonarPingEventListener, IInitializable, IGlobalRegistryHotSwapListener, IPlayerMovementContracts, IPlayerKinematicsMovementRuntime, IPlayerCuttingTensionService, IPlayerHypoxiaPresentationSink
     {
+        private int _signalPushDropCount;
         [StructLayout(LayoutKind.Explicit, Size = 96)]
         private struct CinematicFocusTelemetryEntry
         {
@@ -2897,7 +2898,7 @@ namespace Hecton8.Gameplay
             signal.LocomotionMode = (byte)_currentLocomotionMode;
             signal.SurfaceMode = (byte)math.select(0, 1, _isSurfaceSwimming);
             signal.Flags = (byte)(ResolvePlayerKinematicsTelemetryFlags() & 0xFFu);
-            SignalBus<MovementAcousticSignal>.TryPush(in signal);
+            SignalBus<MovementAcousticSignal>.TryPushTracked(in signal, ref _signalPushDropCount);
         }
 
         private void UpdateBrineLayerState(float fixedDeltaTime)
@@ -3046,7 +3047,7 @@ namespace Hecton8.Gameplay
                 : BrineLayerConstants.ExitedFlag;
             signal.FluidKind = BrineLayerConstants.FluidKindBrine;
             signal.SectorHash = sample.SectorHash;
-            SignalBus<FluidDensityChangedSignal>.TryPush(in signal);
+            SignalBus<FluidDensityChangedSignal>.TryPushTracked(in signal, ref _signalPushDropCount);
         }
 
         private void SyncSwimVatSpeedScalar(Vector3 velocity, SuitData suit)
@@ -3292,9 +3293,9 @@ namespace Hecton8.Gameplay
             anomaly.SystemHash = _playerKinematicsSourceId;
             anomaly.AnomalyHash = anomalyHash;
             anomaly.Scalar = _playerKinematicsNativeState.TelemetryFrameSequence;
-            anomaly.Frame = (uint)SystemDispatcher.CurrentFrameIndex;
+            anomaly.Frame = SystemDispatcher.CurrentFrameId;
             anomaly.Severity = 2;
-            SignalBus<TelemetryAnomalySignal>.TryPush(in anomaly);
+            SignalBus<TelemetryAnomalySignal>.TryPushTracked(in anomaly, ref _signalPushDropCount);
 
             string projectRoot = Directory.GetParent(Application.dataPath)?.FullName;
             if (string.IsNullOrEmpty(projectRoot))
@@ -7655,11 +7656,11 @@ namespace Hecton8.Gameplay
             {
                 FocusHash = _cinematicFocusHash,
                 PlayerInputDeltaSq = inputDeltaSq,
-                Frame = unchecked((uint)SystemDispatcher.CurrentFrameIndex),
+                Frame = SystemDispatcher.CurrentFrameId,
                 Reason = FocusBrokenSignal.ReasonPlayerLookInput,
                 Flags = _cinematicFocusFlags
             };
-            SignalBus<FocusBrokenSignal>.TryPush(in signal);
+            SignalBus<FocusBrokenSignal>.TryPushTracked(in signal, ref _signalPushDropCount);
             GlobalTelemetryBus.PublishPerformanceWarning(_cinematicFocusFaultHash, _cinematicFocusHash, inputDeltaSq);
             ClearCinematicFocus(true);
         }
@@ -8371,7 +8372,7 @@ namespace Hecton8.Gameplay
 
             blackBox[_cinematicFocusBlackBoxCursor] = new CinematicFocusTelemetryEntry
             {
-                Frame = unchecked((uint)SystemDispatcher.CurrentFrameIndex),
+                Frame = SystemDispatcher.CurrentFrameId,
                 FocusHash = _cinematicFocusHash,
                 PlayerGridX = playerAup.GridX,
                 PlayerGridY = playerAup.GridY,
@@ -8466,10 +8467,10 @@ namespace Hecton8.Gameplay
                 SourceHash = _cinematicFocusHash,
                 Intensity01 = safeIntensity,
                 DuckingDb = safeIntensity > 0f ? CinematicFocusAmbientDuckingDb : 0f,
-                Frame = unchecked((uint)SystemDispatcher.CurrentFrameIndex),
+                Frame = SystemDispatcher.CurrentFrameId,
                 Flags = _cinematicFocusFlags
             };
-            SignalBus<MixerStateSignal>.TryPush(in signal);
+            SignalBus<MixerStateSignal>.TryPushTracked(in signal, ref _signalPushDropCount);
             _cinematicFocusAudioDucked = safeIntensity > 0f;
         }
 
@@ -9891,11 +9892,11 @@ namespace Hecton8.Gameplay
                 DepthMeters = math.max(0f, _currentDepth),
                 CrushLimitMeters = math.max(crushDepthFullDepth, crushDepthStart),
                 Severity01 = groanT,
-                Frame = (uint)Mathf.Max(0, SystemDispatcher.CurrentFrameIndex),
+                Frame = SystemDispatcher.CurrentFrameId,
                 Priority = (byte)VocalWarningId.CrushDepth,
                 Flags = VocalWarningSignalFlags.HabitatIntegrityCompromised
             };
-            SignalBus<CrushWarningSignal>.TryPush(in signal);
+            SignalBus<CrushWarningSignal>.TryPushTracked(in signal, ref _signalPushDropCount);
             _hullStressGroanCooldownTimer = math.lerp(crushDepthGroanIntervalMax, crushDepthGroanIntervalMin, groanT);
         }
 
@@ -10650,11 +10651,11 @@ namespace Hecton8.Gameplay
             PlayerFootstepSignal signal = new PlayerFootstepSignal
             {
                 SourceId = PlayerSignalSourceId,
-                Frame = unchecked((uint)SystemDispatcher.CurrentFrameIndex),
+                Frame = SystemDispatcher.CurrentFrameId,
                 Intensity01 = 1f,
                 Flags = (byte)(_isGrounded ? 1 : 0)
             };
-            SignalBus<PlayerFootstepSignal>.TryPush(in signal);
+            SignalBus<PlayerFootstepSignal>.TryPushTracked(in signal, ref _signalPushDropCount);
         }
 
         private void PublishPlayerWaterSplashSignal(
@@ -10670,14 +10671,14 @@ namespace Hecton8.Gameplay
             PlayerWaterSplashSignal signal = new PlayerWaterSplashSignal
             {
                 SourceId = PlayerSignalSourceId,
-                Frame = unchecked((uint)SystemDispatcher.CurrentFrameIndex),
+                Frame = SystemDispatcher.CurrentFrameId,
                 Intensity01 = safeIntensity,
                 SurfaceY = math.isfinite(surfaceY) ? surfaceY : 0f,
                 VerticalSpeed = math.isfinite(verticalSpeed) ? math.max(0f, verticalSpeed) : 0f,
                 IsSubmerged = (byte)(isSubmerged ? 1 : 0),
                 Flags = 0
             };
-            SignalBus<PlayerWaterSplashSignal>.TryPush(in signal);
+            SignalBus<PlayerWaterSplashSignal>.TryPushTracked(in signal, ref _signalPushDropCount);
         }
 
         private void PublishPlayerExhaleSignal()
@@ -10685,10 +10686,10 @@ namespace Hecton8.Gameplay
             PlayerExhaleSignal signal = new PlayerExhaleSignal
             {
                 SourceId = PlayerSignalSourceId,
-                Frame = unchecked((uint)SystemDispatcher.CurrentFrameIndex),
+                Frame = SystemDispatcher.CurrentFrameId,
                 Flags = (byte)(_isSurfaceSwimming || IsPlayerSubmerged ? 1 : 0)
             };
-            SignalBus<PlayerExhaleSignal>.TryPush(in signal);
+            SignalBus<PlayerExhaleSignal>.TryPushTracked(in signal, ref _signalPushDropCount);
         }
 
         private void PublishPlayerSprintStateSignal(bool isSprinting)
@@ -10696,11 +10697,11 @@ namespace Hecton8.Gameplay
             PlayerSprintStateSignal signal = new PlayerSprintStateSignal
             {
                 SourceId = PlayerSignalSourceId,
-                Frame = unchecked((uint)SystemDispatcher.CurrentFrameIndex),
+                Frame = SystemDispatcher.CurrentFrameId,
                 IsSprinting = (byte)(isSprinting ? 1 : 0),
                 Flags = 0
             };
-            SignalBus<PlayerSprintStateSignal>.TryPush(in signal);
+            SignalBus<PlayerSprintStateSignal>.TryPushTracked(in signal, ref _signalPushDropCount);
         }
 
         private void PublishFatalPressureSignal(float intensity)
@@ -10708,11 +10709,11 @@ namespace Hecton8.Gameplay
             PlayerFatalPressureSignal signal = new PlayerFatalPressureSignal
             {
                 SourceId = PlayerSignalSourceId,
-                Frame = unchecked((uint)SystemDispatcher.CurrentFrameIndex),
+                Frame = SystemDispatcher.CurrentFrameId,
                 Intensity01 = math.isfinite(intensity) ? math.saturate(intensity) : 0f,
                 Flags = 0
             };
-            SignalBus<PlayerFatalPressureSignal>.TryPush(in signal);
+            SignalBus<PlayerFatalPressureSignal>.TryPushTracked(in signal, ref _signalPushDropCount);
         }
 
         private void PublishTransportBailoutSignal(float severity, Vector3 bailoutImpulse)
@@ -10723,12 +10724,12 @@ namespace Hecton8.Gameplay
             PlayerTransportBailoutSignal signal = new PlayerTransportBailoutSignal
             {
                 SourceId = PlayerSignalSourceId,
-                Frame = unchecked((uint)SystemDispatcher.CurrentFrameIndex),
+                Frame = SystemDispatcher.CurrentFrameId,
                 Severity01 = math.isfinite(severity) ? math.saturate(severity) : 0f,
                 WorldImpulse = safeImpulse,
                 Flags = 0
             };
-            SignalBus<PlayerTransportBailoutSignal>.TryPush(in signal);
+            SignalBus<PlayerTransportBailoutSignal>.TryPushTracked(in signal, ref _signalPushDropCount);
         }
 
         private void PublishWetLensDropletSignal(float intensity)
@@ -10750,7 +10751,7 @@ namespace Hecton8.Gameplay
                 Flags = VisorDropletSignal.FlagExternalSplash,
                 Sequence = unchecked((ushort)SystemDispatcher.CurrentFrameIndex)
             };
-            SignalBus<VisorDropletSignal>.TryPush(in signal);
+            SignalBus<VisorDropletSignal>.TryPushTracked(in signal, ref _signalPushDropCount);
         }
 
         private void PublishWaterTransitionSignal(
@@ -10768,7 +10769,7 @@ namespace Hecton8.Gameplay
             WaterTransitionSignal signal = new WaterTransitionSignal
             {
                 SourceId = PlayerSignalSourceId,
-                Frame = unchecked((uint)SystemDispatcher.CurrentFrameIndex),
+                Frame = SystemDispatcher.CurrentFrameId,
                 Intensity01 = math.saturate(intensity),
                 SurfaceY = surfaceY,
                 VerticalSpeed = math.max(0f, verticalSpeed),
@@ -10777,7 +10778,7 @@ namespace Hecton8.Gameplay
                 RuntimePosition = new float3(safeRuntimePosition.x, safeRuntimePosition.y, safeRuntimePosition.z),
                 AbsolutePosition = ToPlayerPresentationAup48(in transitionAup)
             };
-            SignalBus<WaterTransitionSignal>.TryPush(in signal);
+            SignalBus<WaterTransitionSignal>.TryPushTracked(in signal, ref _signalPushDropCount);
         }
 
         private static PlayerPresentationAup48 ToPlayerPresentationAup48(in AbsoluteUniversePosition aup)
@@ -11696,7 +11697,7 @@ namespace Hecton8.Gameplay
                 Channel = AcousticPingSignal.ChannelFabricScrape,
                 Flags = AcousticPingSignal.FlagFabricScrape
             };
-            SignalBus<AcousticPingSignal>.TryPush(in scrapePing);
+            SignalBus<AcousticPingSignal>.TryPushTracked(in scrapePing, ref _signalPushDropCount);
         }
 
         private void ApplyExosuitJumpJets(float fixedDeltaTime)

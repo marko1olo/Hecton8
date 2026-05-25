@@ -40,7 +40,9 @@ First 20 Minutes route binding:
 
 
 
-The submarine-to-flora bend path is a visual displacement field, not a physics interaction. Vehicles and other movers publish `WakeGeneratedSignal`; `FloraInteractionManager` resolves those wake sources into a Vault-owned 3D `FloraDisplacementDTO` field:
+Submarine-to-flora bend is a visual displacement field, not physics interaction.
+
+Vehicles and movers publish `WakeGeneratedSignal`; `FloraInteractionManager` resolves wake sources into Vault-owned 3D `FloraDisplacementDTO` field:
 
 
 
@@ -110,9 +112,11 @@ The ambient current overlay is also visual-only and is excluded from save, rollb
 
 - This fallback is a cold lifecycle fence only and does not add per-frame scene searches or persistent root ownership.
 
-- Compile-wall boundary: the runtime is isolated in `Hecton8.World.FloraAmbientSway.asmdef` with `autoReferenced=false`, `allowUnsafeCode=true`, references limited to `Hecton8.Core`, `Hecton8.Bootstrap.Contracts`, `Hecton8.Core.Contracts`, `Hecton8.Core.Memory`, and Unity Burst/Collections/Jobs/Mathematics, with no sibling domain assembly references.
+- Compile-wall boundary: runtime assembly `Hecton8.World.FloraAmbientSway` has `autoReferenced=false`, `allowUnsafeCode=true`, and only Core/Bootstrap/Memory plus Unity Burst/Collections/Jobs/Mathematics references.
+- No sibling domain assembly references.
 
-- The editor facade is isolated in `Hecton8.World.FloraAmbientSway.Editor.asmdef` and references the SHINOBU_267 runtime assembly plus direct public-surface dependencies `Hecton8.Core`, `Hecton8.Bootstrap.Contracts`, `Unity.Collections`, `Unity.Jobs`, and `Unity.Mathematics`; it has no sibling domain reference.
+- The editor facade assembly references SHINOBU_267 runtime plus public surfaces: `Hecton8.Core`, `Hecton8.Bootstrap.Contracts`, `Unity.Collections`, `Unity.Jobs`, `Unity.Mathematics`.
+- No sibling domain reference.
 
 - All SHINOBU_267 script folders, `.cs`, and `.asmdef` assets carry explicit `.meta` GUIDs so Unity import identity is source-controlled instead of generated per workstation.
 
@@ -180,8 +184,10 @@ Ambient overlay ABI proof:
 - Center motion: quantized AUP delta to integer cell shift.
 - Physical storage: modulo mapping.
 - `DecayFloraForcesJob` clears only newly exposed wrapped rows/layers unless reset requires a full active-range clear.
-- The shader receives `_HectonFloraSwayFieldRingOffset`, resolves it once per field-offset evaluation, and samples the same modulo mapping, so persistent wake energy stays spatially stable without physically shuffling the 64^3 buffer.
-- The mock injector sanitizes prior cell values and re-clamps to the same quality-scaled max displacement after adding synthetic force, so the CI/editor stress path cannot bypass the production magnitude guard.
+- Shader receives `_HectonFloraSwayFieldRingOffset`, resolves it once per field-offset evaluation, and samples the same modulo mapping.
+- Persistent wake energy stays spatially stable without physically shuffling the 64^3 buffer.
+- Mock injector sanitizes prior cell values and re-clamps to the quality-scaled max displacement after synthetic force.
+- CI/editor stress path cannot bypass production magnitude guard.
 - The field is uploaded through double-buffered `GraphicsBuffer` staging and sampled by `Hecton_IndirectVegetation.shader` via `_HectonFloraSwayDisplacementField`.
 - When this field is active, the shader fades out the old direct submarine sphere and direct player/interaction offsets to avoid double-bending.
 

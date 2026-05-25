@@ -11,6 +11,7 @@ SamplerState sampler_MainTex;
 StructuredBuffer<StampCommand> _StampCommands;
 
 int _StampCount;
+static const int HectonStampCommandCapacity = 16;
 float4 _ScrollUvOffset;
 float _Recovery;
 float4 _TexelSize;
@@ -32,8 +33,9 @@ void CSMain(uint3 dispatchThreadId : SV_DispatchThreadID)
 
     current = max(0.0, current - _Recovery);
 
+    int stampCount = min(max(_StampCount, 0), HectonStampCommandCapacity);
     [loop]
-    for (int stampIndex = 0; stampIndex < _StampCount; stampIndex++)
+    for (int stampIndex = 0; stampIndex < stampCount; stampIndex++)
     {
         float4 command = _StampCommands[stampIndex].UvRadiusStrength;
         float radius = max(command.z, 0.0001);

@@ -10,7 +10,9 @@ First 20 Minutes moment: World load, Swim, and Hazard readability on the selecte
 
 Route impact: Makes abyss/coral/flora bioluminescence visible and scalable during the first swim without per-material mutation, and supports darkness/hazard readability through one GPU matrix route.
 
-Shader variant boundary: SHINOBU_238 shader diffs add no new `#pragma`, `multi_compile`, or `shader_feature` lines. Existing shader variant debt is pre-existing and still requires normal project warmup/import proof before GREEN.
+Shader variant boundary: SHINOBU_238 shader diffs add no new `#pragma`, `multi_compile`, or `shader_feature` lines.
+
+Existing shader variant debt remains pre-existing and needs project warmup/import proof before GREEN.
 
 Proof required: Unity import, selected-route Play Mode, Frame Debugger shader-global proof, GCMonitor/profiler capture, and visual capture across low/middle/high/ultra `GlobalQualityWeight`.
 

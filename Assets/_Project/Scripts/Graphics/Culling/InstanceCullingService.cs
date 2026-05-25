@@ -280,7 +280,7 @@ namespace Hecton8.Graphics.Culling
 
             _lastShiftFrameId = shiftFrameId;
             WriteTelemetry(
-                unchecked((uint)Time.frameCount),
+                Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 _lastSourceInstanceCount,
                 _lastVisibleInstanceCount,
                 math.max(0, _lastSourceInstanceCount - _lastVisibleInstanceCount),
@@ -503,7 +503,7 @@ namespace Hecton8.Graphics.Culling
                 if (visible > OverloadVisibleThreshold)
                     flags |= TelemetryOverloadFlag;
                 WriteTelemetry(
-                    unchecked((uint)Time.frameCount),
+                    Hecton8.Core.SystemDispatcher.CurrentFrameId,
                     _lastSourceInstanceCount,
                     visible,
                     culled,
@@ -520,7 +520,7 @@ namespace Hecton8.Graphics.Culling
         private void WriteInvalidTelemetry()
         {
             WriteTelemetry(
-                unchecked((uint)Time.frameCount),
+                Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 _lastSourceInstanceCount,
                 _lastVisibleInstanceCount,
                 _lastCulledInstanceCount,

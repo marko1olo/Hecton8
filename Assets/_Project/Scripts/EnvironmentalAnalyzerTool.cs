@@ -140,7 +140,7 @@ namespace Hecton8.Gameplay
             if (!IsEquipped || _cooldown > 0f)
                 return;
 
-            if (TryGetAnalysisHit(out RaycastHit hit))
+            if (TryGetAnalysisHit(out InteractionSurfaceHit hit))
             {
                 AnalyzerAssessment assessment = BuildTargetAssessment(hit);
                 Publish(assessment);
@@ -226,9 +226,7 @@ namespace Hecton8.Gameplay
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public override string BuildLegacyOperationalSummaryString()
         {
-            _legacyOperationalBuffer.Clear();
-            WriteOperationalSummary(ref _legacyOperationalBuffer);
-            return CreateLegacyString(in _legacyOperationalBuffer);
+            return "ANALYZER";
         }
 
         public override void WriteOperationalSummary(ref FixedCharBuffer buffer)
@@ -254,9 +252,7 @@ namespace Hecton8.Gameplay
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public override string BuildLegacyOperationalDirectiveString()
         {
-            _legacyOperationalBuffer.Clear();
-            WriteOperationalDirective(ref _legacyOperationalBuffer);
-            return CreateLegacyString(in _legacyOperationalBuffer);
+            return "Primary reads the target. Secondary diagnoses suit risk and expedition state.";
         }
 
         public override void WriteOperationalDirective(ref FixedCharBuffer buffer)
@@ -276,7 +272,7 @@ namespace Hecton8.Gameplay
             AppendText(ref buffer, "Primary reads the target. Secondary diagnoses suit risk and expedition state.");
         }
 
-        private AnalyzerAssessment BuildTargetAssessment(RaycastHit hit)
+        private AnalyzerAssessment BuildTargetAssessment(InteractionSurfaceHit hit)
         {
             Collider collider = hit.collider;
             if (collider == null)
@@ -406,7 +402,7 @@ namespace Hecton8.Gameplay
         {
             assessment = default;
 
-            if (!TryGetAnalysisHit(out RaycastHit hit))
+            if (!TryGetAnalysisHit(out InteractionSurfaceHit hit))
             {
                 return false;
             }
@@ -478,7 +474,7 @@ namespace Hecton8.Gameplay
                 _notification.ShowWarning(in _hudBuffer);
         }
 
-        private bool TryGetAnalysisHit(out RaycastHit hit)
+        private bool TryGetAnalysisHit(out InteractionSurfaceHit hit)
         {
             if (!TryResolveAnalysisRay(out Vector3 origin, out Vector3 direction))
             {
@@ -486,7 +482,7 @@ namespace Hecton8.Gameplay
                 return false;
             }
 
-            return TryQueuePrimaryRaycast(origin, direction, range, analysisMask.value, QueryTriggerInteraction.Collide, out hit);
+            return TryResolvePrimarySurfaceHit(origin, direction, range, analysisMask.value, QueryTriggerInteraction.Collide, out hit);
         }
 
         private bool TryResolveAnalysisRay(out Vector3 origin, out Vector3 direction)
@@ -536,7 +532,7 @@ namespace Hecton8.Gameplay
                 assessment.Severity);
         }
 
-        private void ArchiveTargetIntel(RaycastHit hit, AnalyzerAssessment assessment)
+        private void ArchiveTargetIntel(InteractionSurfaceHit hit, AnalyzerAssessment assessment)
         {
             IScanLogService scanLog = _scanLog;
             if (scanLog == null || hit.collider == null)
@@ -869,7 +865,7 @@ namespace Hecton8.Gameplay
                 return false;
             }
 
-            summary = CreateLegacyString(in _logBuffer);
+            summary = CreatePersistentArchiveString(in _logBuffer);
             return !string.IsNullOrEmpty(summary);
         }
 
@@ -883,7 +879,7 @@ namespace Hecton8.Gameplay
             if (!AppendText(ref _logBuffer, prefix) || !AppendText(ref _logBuffer, value))
                 return false;
 
-            text = CreateLegacyString(in _logBuffer);
+            text = CreatePersistentArchiveString(in _logBuffer);
             return !string.IsNullOrEmpty(text);
         }
 
@@ -957,7 +953,7 @@ namespace Hecton8.Gameplay
             };
         }
 
-        private static string CreateLegacyString(in FixedCharBuffer buffer)
+        private static string CreatePersistentArchiveString(in FixedCharBuffer buffer)
         {
             return buffer.Length > 0
                 ? new string(buffer.Buffer, 0, buffer.Length)

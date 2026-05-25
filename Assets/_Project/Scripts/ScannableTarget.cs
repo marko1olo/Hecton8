@@ -114,12 +114,12 @@ namespace Hecton8.Gameplay
 
         public void Configure(string id, string title, string category, string summary)
         {
-            entryId = string.IsNullOrWhiteSpace(id) ? gameObject.name : id.Trim();
-            entryTitle = string.IsNullOrWhiteSpace(title) ? CachedToUpperInvariant(gameObject.name) : title.Trim();
-            entryCategory = string.IsNullOrWhiteSpace(category) ? "Unknown" : category.Trim();
+            entryId = string.IsNullOrWhiteSpace(id) ? gameObject.name : id;
+            entryTitle = string.IsNullOrWhiteSpace(title) ? gameObject.name : title;
+            entryCategory = string.IsNullOrWhiteSpace(category) ? "Unknown" : category;
             entrySummary = string.IsNullOrWhiteSpace(summary)
                 ? "Passive scan profile has been captured."
-                : summary.Trim();
+                : summary;
             RefreshResolvedStrings();
         }
 
@@ -172,7 +172,7 @@ namespace Hecton8.Gameplay
                 entryId = gameObject.name.Trim().ToLowerInvariant().Replace(' ', '_');
 
             if (string.IsNullOrWhiteSpace(entryTitle))
-                entryTitle = CachedToUpperInvariant(gameObject.name);
+                entryTitle = gameObject.name;
 
             if (string.IsNullOrWhiteSpace(entryCategory))
                 entryCategory = "Unknown";
@@ -182,11 +182,8 @@ namespace Hecton8.Gameplay
 #endif
 
         // ══════════════════════════════════════════════════════════
-        //  ZERO-GC STRING CACHING
+        //  RUNTIME STRING SNAPSHOTS
         // ══════════════════════════════════════════════════════════
-
-        private static readonly string[] _upperCacheKeys = new string[16]; // COLD ALLOC: string[16] - uppercase fallback key cache - owner: ScannableTarget
-        private static readonly string[] _upperCacheValues = new string[16]; // COLD ALLOC: string[16] - uppercase fallback value cache - owner: ScannableTarget
 
         private void EnsureResolvedStrings()
         {
@@ -197,12 +194,12 @@ namespace Hecton8.Gameplay
         private void RefreshResolvedStrings()
         {
             string objectName = gameObject.name;
-            _resolvedEntryId = string.IsNullOrWhiteSpace(entryId) ? objectName : entryId.Trim();
-            _resolvedEntryTitle = string.IsNullOrWhiteSpace(entryTitle) ? CachedToUpperInvariant(objectName) : entryTitle.Trim();
-            _resolvedEntryCategory = string.IsNullOrWhiteSpace(entryCategory) ? "Unknown" : entryCategory.Trim();
+            _resolvedEntryId = string.IsNullOrWhiteSpace(entryId) ? objectName : entryId;
+            _resolvedEntryTitle = string.IsNullOrWhiteSpace(entryTitle) ? objectName : entryTitle;
+            _resolvedEntryCategory = string.IsNullOrWhiteSpace(entryCategory) ? "Unknown" : entryCategory;
             _resolvedEntrySummary = string.IsNullOrWhiteSpace(entrySummary)
                 ? "Passive scan profile has been captured."
-                : entrySummary.Trim();
+                : entrySummary;
             _resolvedCategoryKind = ScannableCategoryUtility.Classify(_resolvedEntryCategory);
             _entityHash = H8DataHash.ComputeFnv1A32(_resolvedEntryId);
             InvalidateLoreTitleLookupCache();
@@ -534,19 +531,5 @@ namespace Hecton8.Gameplay
             return handle.BufferID != 0u && handle.Generation != 0u;
         }
 
-        private static string CachedToUpperInvariant(string input)
-        {
-            if (string.IsNullOrEmpty(input)) return input;
-
-            int hash = input.GetHashCode() & 0xF;
-            string cachedKey = _upperCacheKeys[hash];
-            if (cachedKey != null && string.Equals(cachedKey, input, System.StringComparison.Ordinal))
-                return _upperCacheValues[hash];
-
-            string upper = input.ToUpperInvariant();
-            _upperCacheKeys[hash] = input;
-            _upperCacheValues[hash] = upper;
-            return upper;
-        }
     }
 }

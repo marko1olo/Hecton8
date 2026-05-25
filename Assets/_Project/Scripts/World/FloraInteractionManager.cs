@@ -11,7 +11,6 @@ using Hecton8.Core.Memory;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Environment;
 using Hecton8.Gameplay;
-using Hecton8.Physics;
 using Hecton8.Systems.AI;
 using Hecton8.VFX.Wakes;
 using Hecton.Localization;
@@ -35,6 +34,7 @@ namespace Hecton8.World
     [DefaultExecutionOrder(-105)]
     public sealed class FloraInteractionManager : MonoBehaviour, ITickable, ISlowTickable, ILateFrameTickable, IOriginShiftListener, IProceduralSwayDirector, IGlobalRegistryHotSwapListener
     {
+        private static int s_x001FloraInteractionManagerSignalPushDropCount;
         private const int MaxModuleParentResolveDepth = 16;
 
         private static FloraInteractionManager s_ActiveRuntimeInstance;
@@ -1358,7 +1358,7 @@ namespace Hecton8.World
         private IFluidSurfaceCurrentReadModel _fluidReadModel;
         private HectonCelestialEngine _celestialEngine;
         private IAtmosphereReadModel _atmosphereReadModel;
-        private ConstructionManager _constructionManager;
+        private IConstructionParasiteGraphService _constructionParasiteGraph;
         private ISaveService _saveService;
         private Transform _activeScooterTransform;
         private Vector3 _lastPlayerPosition;
@@ -1792,7 +1792,7 @@ namespace Hecton8.World
             _fluidReadModel = null;
             _celestialEngine = null;
             _atmosphereReadModel = null;
-            _constructionManager = null;
+            _constructionParasiteGraph = null;
             _saveService = null;
             TryUnregister();
             ClearToxicSporeHazard();
@@ -1820,7 +1820,7 @@ namespace Hecton8.World
             _fluidReadModel = null;
             _celestialEngine = null;
             _atmosphereReadModel = null;
-            _constructionManager = null;
+            _constructionParasiteGraph = null;
             _saveService = null;
             TryUnregister();
             ClearToxicSporeHazard();
@@ -3063,7 +3063,7 @@ namespace Hecton8.World
                 Velocity = new float3(velocity.x, velocity.y, velocity.z),
                 SourceFlags = sourceKind
             };
-            SignalBus<WakeGeneratedSignal>.TryPush(in signal);
+            SignalBus<WakeGeneratedSignal>.TryPushTracked(in signal, ref s_x001FloraInteractionManagerSignalPushDropCount);
         }
 
         private void DrainWakeGeneratedSignals()
@@ -4581,7 +4581,7 @@ namespace Hecton8.World
                 SourceHash = WakeFluidImpulseSourceHash,
                 Flags = signal.SourceFlags
             };
-            SignalBus<FluidImpulseSignal>.TryPush(in impulse);
+            SignalBus<FluidImpulseSignal>.TryPushTracked(in impulse, ref s_x001FloraInteractionManagerSignalPushDropCount);
         }
 
         private void RecordWakeBlackBox(
@@ -4946,7 +4946,7 @@ namespace Hecton8.World
             signal.ChemicalHash = ToxicSporeChemicalHash;
             signal.Frame = TimeSliceScheduler.CurrentFrameId;
             signal.Flags = 1;
-            SignalBus<ToxicityExposureSignal>.TryPush(in signal);
+            SignalBus<ToxicityExposureSignal>.TryPushTracked(in signal, ref s_x001FloraInteractionManagerSignalPushDropCount);
         }
 
         private bool TryResolveToxicSporePlayerAup(Vector3 playerPositionWS, out AbsoluteUniversePosition playerAup)
@@ -6029,8 +6029,8 @@ namespace Hecton8.World
             if (!_parasiteNodes.IsCreated || _parasiteNodeCount >= _parasiteNodes.Length)
                 return;
 
-            ConstructionManager constructionManager = _constructionManager;
-            if (constructionManager == null)
+            IConstructionParasiteGraphService constructionParasiteGraph = _constructionParasiteGraph;
+            if (constructionParasiteGraph == null)
                 return;
 
             Dictionary<BaseModule, ModuleParasiteState>.Enumerator enumerator = _moduleParasiteStateBack.GetEnumerator();
@@ -6044,7 +6044,7 @@ namespace Hecton8.World
                 if (state.RootPowerDrainWatts <= 0.01f || state.MaxMatureAttachedSeconds <= 0.001f)
                     continue;
 
-                if (!constructionManager.TryResolveFungalMindTarget(sourceModule, out BaseModule targetModule, out float targetPotential))
+                if (!constructionParasiteGraph.TryResolveFungalMindTarget(sourceModule, out BaseModule targetModule, out float targetPotential))
                     continue;
 
                 if (targetModule == null ||
@@ -8072,11 +8072,11 @@ namespace Hecton8.World
             if (_atmosphereReadModel == null)
                 _atmosphereReadModel = GlobalRegistry.AtmosphereReadModel;
 
-            if (_constructionManager == null)
-                _constructionManager = GlobalRegistry.ConstructionRuntime;
+            if (_constructionParasiteGraph == null)
+                _constructionParasiteGraph = GlobalRegistry.ConstructionParasiteGraph;
 
             if (_saveService == null)
-                _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+                _saveService = GlobalRegistry.Save;
 
             RefreshCachedSubmarineContext();
         }
@@ -8535,7 +8535,7 @@ namespace Hecton8.World
                     _atmosphereReadModel = currentService as IAtmosphereReadModel;
                     break;
                 case GlobalRegistryServiceSlot.Logistics:
-                    _constructionManager = currentService as ConstructionManager;
+                    _constructionParasiteGraph = currentService as IConstructionParasiteGraphService;
                     break;
                 case GlobalRegistryServiceSlot.Save:
                     _saveService = currentService as ISaveService;

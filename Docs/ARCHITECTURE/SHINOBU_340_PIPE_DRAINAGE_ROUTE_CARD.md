@@ -67,7 +67,9 @@ Missing fluid or power lanes do not invent fallback truth. Telemetry flags the m
 
 `TryReadTuning()` is pure: no allocation, Vault growth, registry poll, job completion, or global mutation. Runtime caches DataVault in `OnEnable`; buffer creation is cold-only.
 
-Editor pressure x-ray does not poll `GlobalRegistry.DataVault` directly. It calls the runtime-owned `TryCopyPressureDebugSnapshot()` facade, which refuses reads while solver or mock jobs are scheduled and copies into editor-owned static arrays.
+Editor pressure x-ray does not poll `GlobalRegistry.DataVault` directly.
+
+It calls runtime-owned `TryCopyPressureDebugSnapshot()`, which refuses reads while solver/mock jobs run and copies into editor-owned static arrays.
 
 ## Human Tuning Bridge
 

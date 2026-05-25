@@ -76,6 +76,9 @@ namespace Hecton8.Gameplay
 
     public static class FlashlightEvents
     {
+
+        private static int s_x001DirectSignalPushDropCount_PlayerFlashlight;
+
         private const int ListenerCapacity = 16;
         private const int SignalCapacity = 16;
         private const uint FlashlightEventLaneHash = 0x464C4556u; // FLEV
@@ -240,7 +243,7 @@ namespace Hecton8.Gameplay
                 StateBits = isOn ? (ushort)1 : (ushort)0
             };
 
-            return SignalBus<FlashlightEventPayload>.TryPush(in payload);
+            return SignalBus<FlashlightEventPayload>.TryPushTracked(in payload, ref s_x001DirectSignalPushDropCount_PlayerFlashlight);
         }
 
         private static void DispatchRegisteredListeners(in FlashlightEventPayload payload)

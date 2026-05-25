@@ -188,7 +188,7 @@ namespace Hecton8.Physics.Vehicles
                 return;
             }
 
-            quaternion inverseRotation = math.inverse(rootRotation);
+            quaternion inverseRotation = math.conjugate(rootRotation);
             uint frame = ++_frameCounter;
             float quality = ResolveQualityWeight();
             uint vehicleHash = _resolvedVehicleHash;
@@ -635,6 +635,9 @@ namespace Hecton8.Physics.Vehicles
             for (int i = 0; i < signals.Length && count < capacity; i++)
             {
                 CombatDamageSignal signal = signals[i];
+                if ((signal.Flags & CombatDamageSignal.VisualOnlyFlag) != 0)
+                    continue;
+
                 if (acceptedTargetHash != 0u && signal.TargetHash != 0u && signal.TargetHash != acceptedTargetHash)
                     continue;
 

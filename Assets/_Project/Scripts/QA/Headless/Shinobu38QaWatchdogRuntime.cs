@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Globalization;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -234,6 +234,7 @@ namespace Hecton8.QA.Headless
     [DefaultExecutionOrder(-9200)]
     public sealed class Shinobu38QaWatchdogRuntime : MonoBehaviour, IFastTickable, IColdTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
+        private static int s_x001Shinobu38QaWatchdogRuntimeSignalPushDropCount;
         private const string AgentId = "SHINOBU_79";
         private const string RuntimeRootName = "[SHINOBU_79_QA_WATCHDOG]";
         private const string EnvironmentFlagName = "H8_QA_ENDURANCE_10KM";
@@ -1206,7 +1207,7 @@ namespace Hecton8.QA.Headless
                     State = SystemHealthIndexSignal.StateCritical,
                     Flags = SystemHealthIndexSignal.FlagAdrenaline
                 };
-                SignalBus<SystemHealthIndexSignal>.TryPush(in signal);
+                SignalBus<SystemHealthIndexSignal>.TryPushTracked(in signal, ref s_x001Shinobu38QaWatchdogRuntimeSignalPushDropCount);
                 vault.Flags |= VaultFlagLowTierEmergency;
                 _healthStressWasActive = true;
                 mockVault[0] = vault;

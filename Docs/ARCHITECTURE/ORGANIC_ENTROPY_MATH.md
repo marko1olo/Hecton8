@@ -493,7 +493,7 @@ Persistence contract:
   - every serialized SOA lane length equals `CellCount`;
   - black box ring is exactly 300 entries.
 
-- Scheduler entry points reject invalid config coefficients before fixed-point products run; base growth is capped to 255 and permille coefficients are capped to 1000 for the fast int path.
+- Scheduler entry points reject invalid coefficients before fixed-point products. Base growth caps at 255; permille coefficients cap at 1000 for the fast int path.
 
 - Mining tombstone writes are serial and deterministic for duplicate cell indices.
 
@@ -503,15 +503,16 @@ Persistence contract:
 
 - Negative macro-sector origins use C# remainder semantics before local-z banding; the Python harness carries a parity test for this edge case.
 
-- The Python harness uses a persistent nutrient scratch lane, a byte-state apex respawn lookup table, and row-based diffusion traversal to keep repeated entropy validation practical without changing acceptance output.
+- Python harness uses persistent nutrient scratch, byte-state apex respawn lookup, and row-based diffusion. Acceptance output is unchanged.
 
 - `Tools/test_world_entropy_sim.py` locks exported constants against the C# fast-path config bounds.
 
 - `WorldEntropySim.py` rejects non-positive `--days` values instead of silently clamping them.
 
-- `run_sim()` also rejects non-positive day counts, non-integer day counts, and any mode value other than the exact boolean `True`, so direct test/automation callers cannot bypass the CLI evidence guard.
+- `run_sim()` rejects non-positive days, non-integer days, and any mode value except boolean `True`; test callers cannot bypass the CLI evidence guard.
 
-- `calculate_balance()` also validates constants and rejects any mode value other than the exact boolean `True`; balance status is not defined for baseline runs or malformed acceptance metadata in this export.
+- `calculate_balance()` validates constants and rejects any mode value except exact boolean `True`.
+- Balance status is undefined for baseline runs or malformed acceptance metadata in this export.
 
 - `build_initial_state()` validates constants and requires an explicit boolean mode before allocating per-cell lists, so direct helper calls cannot bypass the grid cap, byte-lane guards, or helper mode contract.
 
@@ -521,9 +522,11 @@ Persistence contract:
 
 - The Python harness validates the biome constants contract before simulation: exactly four biomes with ids/names matching runtime indices `0..3`.
 
-- The Python harness also validates the same fast-path config envelope as the C# scheduler before simulation: base growth `1..255`, permille coefficients `0..1000`, positive lifecycle thresholds, and valid apex min/max days.
+- Python harness validates the same fast-path config envelope as the C# scheduler before simulation.
+- Bounds: base growth `1..255`, permille coefficients `0..1000`, positive lifecycle thresholds, valid apex min/max days.
 
-- Byte-lane constants are validated before simulation: passive nutrient recovery, mining nutrient penalty, and minimum nutrients must be `0..255`; biome temperature must be `1..255`; biome nutrient start must be `minimumNutrientsQ..255`.
+- Byte-lane constants validated before simulation: passive recovery, mining penalty, and minimum nutrients must be `0..255`; biome temperature must be `1..255`.
+- Biome nutrient start must be `minimumNutrientsQ..255`.
 
 - C# `HasValidConfig` rejects biome nutrient starts below `MinimumNutrientsQ`, so invalid config cannot seed a lane below its own nutrient floor before the first diffusion pass.
 

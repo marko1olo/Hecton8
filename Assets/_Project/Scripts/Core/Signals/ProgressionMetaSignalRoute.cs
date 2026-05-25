@@ -58,7 +58,7 @@ namespace Hecton8.Core
             ProgressionMetaSignal signal = new ProgressionMetaSignal
             {
                 EventHash = eventHash,
-                Frame = unchecked((uint)Time.frameCount),
+                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 Sequence = unchecked((uint)Interlocked.Increment(ref _sequence)),
                 Kind = kind,
                 ContextHash = contextHash

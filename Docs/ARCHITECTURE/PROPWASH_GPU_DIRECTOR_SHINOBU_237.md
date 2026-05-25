@@ -26,7 +26,8 @@ Authority route:
 
 - `Hecton_MarineSnow.compute` owns SDF/depth proximity, particle injection, propwash advection, AUP rebase, and indirect-visible count mutation.
 
-- `Hecton_MarineSnow.compute` tags propwash silt with particle flag bit 3; `Hecton_MarineSnow.shader` consumes the same bit and `_PropwashBiomeTint.rgb` so biome color reaches the visible material pass without widening the particle stride.
+- `Hecton_MarineSnow.compute` tags propwash silt with particle flag bit 3. Shader consumes the bit and `_PropwashBiomeTint.rgb`.
+- Biome color reaches the visible material pass without widening particle stride.
 
 - `HectonMarineSnowRenderer` submits through non-indexed `Graphics.DrawProceduralIndirect`; the indirect args buffer is 16 bytes and the CPU never reads the GPU visible particle count.
 

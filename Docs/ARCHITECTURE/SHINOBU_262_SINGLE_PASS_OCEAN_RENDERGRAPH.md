@@ -36,7 +36,9 @@ Evidence class: STATIC_SOURCE until Unity import, Console compile, Frame Debugge
 
 `GlobalQualityWeight` is continuous.
 
-It resolves wake texture size `256..1024` in 16-pixel quanta, scales foam intensity, and scales wake strength. It does not change DTO layout, truth ownership, save identity, or rollback authority.
+It resolves wake texture size `256..1024` in 16-pixel quanta, scales foam intensity, and scales wake strength.
+
+It does not change DTO layout, truth ownership, save identity, or rollback authority.
 
 ## Rollback Boundary
 

@@ -34,6 +34,7 @@ namespace Hecton8.Gameplay
     [DisallowMultipleComponent]
     public sealed class PlayerActionController : MonoBehaviour, ITickable, IUpdatable, IPlayerActionInterruptSink, IGlobalRegistryHotSwapListener
     {
+        private static int s_x001PlayerActionControllerSignalPushDropCount;
         private const float TwoPi = 6.28318530718f;
         private const uint KccVelocityInterruptMaxAgeFrames = 12u;
 
@@ -326,13 +327,13 @@ namespace Hecton8.Gameplay
             {
                 Progress01 = math.saturate(progress01),
                 ItemHash = ResolveItemHash(item),
-                Frame = unchecked((uint)SystemDispatcher.CurrentFrameIndex),
+                Frame = SystemDispatcher.CurrentFrameId,
                 ActiveToolSlot = PackActiveToolSlot(_lastToolSlotIndex),
                 ActionKind = ResolveActionKind(item),
                 Flags = item != null ? PlayerActionProgressSignal.FlagHasItem : (byte)0
             };
 
-            SignalBus<PlayerActionProgressSignal>.TryPush(in signal);
+            SignalBus<PlayerActionProgressSignal>.TryPushTracked(in signal, ref s_x001PlayerActionControllerSignalPushDropCount);
         }
 
         private void PublishActionCompleted(ItemData item, int anchorX, int anchorY)
@@ -344,14 +345,14 @@ namespace Hecton8.Gameplay
             PlayerActionCompletedSignal signal = new PlayerActionCompletedSignal
             {
                 ItemHash = ResolveItemHash(item),
-                Frame = unchecked((uint)SystemDispatcher.CurrentFrameIndex),
+                Frame = SystemDispatcher.CurrentFrameId,
                 InventoryAnchorX = PackInventoryAnchor(anchorX),
                 InventoryAnchorY = PackInventoryAnchor(anchorY),
                 ActionKind = ResolveActionKind(item),
                 Flags = flags
             };
 
-            SignalBus<PlayerActionCompletedSignal>.TryPush(in signal);
+            SignalBus<PlayerActionCompletedSignal>.TryPushTracked(in signal, ref s_x001PlayerActionControllerSignalPushDropCount);
         }
 
         private void PublishActionCancelled(ItemData item, float progress01, byte reason)
@@ -359,14 +360,14 @@ namespace Hecton8.Gameplay
             PlayerActionCancelledSignal signal = new PlayerActionCancelledSignal
             {
                 ItemHash = ResolveItemHash(item),
-                Frame = unchecked((uint)SystemDispatcher.CurrentFrameIndex),
+                Frame = SystemDispatcher.CurrentFrameId,
                 Progress01 = math.saturate(progress01),
                 ActionKind = ResolveActionKind(item),
                 Reason = reason,
                 Flags = item != null ? PlayerActionCancelledSignal.FlagHasItem : (byte)0
             };
 
-            SignalBus<PlayerActionCancelledSignal>.TryPush(in signal);
+            SignalBus<PlayerActionCancelledSignal>.TryPushTracked(in signal, ref s_x001PlayerActionControllerSignalPushDropCount);
         }
 
         private static uint ResolveItemHash(ItemData item)
@@ -431,7 +432,7 @@ namespace Hecton8.Gameplay
             if (!PhysicsDeterminismSignals.TryGetLatestKccVelocity(out KccVelocitySignal signal) || signal.Sequence == 0u)
                 return false;
 
-            uint currentFrame = unchecked((uint)SystemDispatcher.CurrentFrameIndex);
+            uint currentFrame = SystemDispatcher.CurrentFrameId;
             uint signalFrame = signal.Frame != 0u ? signal.Frame : signal.Sequence;
             if (currentFrame != 0u &&
                 signalFrame != 0u &&
@@ -601,7 +602,7 @@ namespace Hecton8.Gameplay
         private void CacheRegistryServicesCold()
         {
             _playerInventoryService = GlobalRegistry.PlayerInventory;
-            _audioService = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
+            _audioService = GlobalRegistry.Audio;
         }
 
         private void TryRegisterHotSwap()

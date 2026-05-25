@@ -985,6 +985,9 @@ namespace Hecton8.Core
             for (int signalIndex = 0; signalIndex < damageSignals.Length; signalIndex++)
             {
                 CombatDamageSignal signal = damageSignals[signalIndex];
+                if ((signal.Flags & CombatDamageSignal.VisualOnlyFlag) != 0)
+                    continue;
+
                 if (signal.TargetHash == 0u && signal.TargetId == 0)
                     continue;
 

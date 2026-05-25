@@ -1,4 +1,4 @@
-﻿using Hecton.Localization;
+using Hecton.Localization;
 using Hecton8.Audio;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
@@ -21,6 +21,7 @@ namespace Hecton8.Gameplay
     [RequireComponent(typeof(Collider))]
     public sealed class HarvestableOutcrop : MonoBehaviour, ICuttable, IInteractable, IInteractableTextProvider, IInteractionSignalConsumer, ILocalizationLanguageChangedListener, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
+        private static int s_x001HarvestableOutcropSignalPushDropCount;
         private const string DefaultInteractText = "Break Rock";
         private const float MinimumToolPower = 0.05f;
         private const uint OutcropShardSpeciesHash = 0xC0DEFACEu;
@@ -445,7 +446,7 @@ namespace Hecton8.Gameplay
             if (_pendingDebrisSignal)
             {
                 _pendingDebrisSignal = false;
-                SignalBus<DebrisSpawnSignal>.TryPush(in _pendingDebris);
+                SignalBus<DebrisSpawnSignal>.TryPushTracked(in _pendingDebris, ref s_x001HarvestableOutcropSignalPushDropCount);
                 _pendingDebris = default;
             }
 
@@ -652,7 +653,7 @@ namespace Hecton8.Gameplay
         {
             _playerInventoryService = GlobalRegistry.PlayerInventory;
             _persistentWorldRegistry = GlobalRegistry.PersistentWorldRegistry;
-            _audioService = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
+            _audioService = GlobalRegistry.Audio;
             _objectPool = GlobalRegistry.ObjectPoolService;
             _localizationManager = GlobalRegistry.LocalizationText;
         }
@@ -673,9 +674,9 @@ namespace Hecton8.Gameplay
                 Quantity = (ushort)math.min(quantity, (int)ushort.MaxValue),
                 SourceKind = ItemAcquiredSignalSourceKinds.HarvestableOutcrop,
                 Flags = 0,
-                Frame = unchecked((uint)SystemDispatcher.CurrentFrameIndex)
+                Frame = SystemDispatcher.CurrentFrameId
             };
-            SignalBus<ItemAcquiredSignal>.TryPush(in signal);
+            SignalBus<ItemAcquiredSignal>.TryPushTracked(in signal, ref s_x001HarvestableOutcropSignalPushDropCount);
         }
 
         private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition aup)

@@ -255,3 +255,27 @@ Solution: Manually split every confirmed `>=32` word paragraph/sentence with `ap
 Rejected Alternatives: Bulk regex rewriting; treating 32-word route facts as concise enough; changing source-owned `512` SignalBus capacity to prompt example `256`; launching a build for docs-only edits.
 Scalability potential: Low/Middle/High/Ultra runtime unchanged; active architecture now enforces smaller parse units while preserving source-owned constants and route identity.
 Hardware Impact: 0 us runtime; final proof reports `54.89104336635201%` active text reduction, `0` stale parameter files, and `0` architecture blocks at `>=32` words.
+
+## Decision 33 - 31-Word APEX Density Gate
+
+Problem: Loop 20 proved zero active architecture blocks at `>=32` words, but a stricter scan still found `96` blocks at `31` words.
+Solution: Manually split confirmed `>=31` word paragraphs, sentences, bullets, numbered lines, and table rows with `apply_patch`; then harden `Tools/OOP_Doc_Scanner.py` so architecture paragraphs, sentences, and structured lines fail at `>30` words.
+Rejected Alternatives: Bulk regex rewriting; preserving 31-word route facts as concise enough; changing source-owned `512` SignalBus capacity to prompt example `256`; launching a build for docs-only edits.
+Scalability potential: Low/Middle/High/Ultra runtime unchanged; active architecture now enforces smaller parse units without changing gameplay truth, DTO layout, save identity, or authority route.
+Hardware Impact: 0 us runtime; final proof reports `54.87674634739819%` active text reduction, `0` stale parameter files, and `0` architecture blocks at `>=31` words.
+
+## Decision 34 - 30-Word APEX Density Gate
+
+Problem: Loop 21 proved zero active architecture blocks at `>=31` words, but a stricter scan still found `107` blocks at `30` words.
+Solution: Manually split confirmed `>=30` word paragraphs, sentences, bullets, numbered lines, and table rows with `apply_patch`; then harden `Tools/OOP_Doc_Scanner.py` so architecture paragraphs, sentences, and structured lines fail at `>29` words.
+Rejected Alternatives: Bulk regex rewriting; preserving 30-word route facts as concise enough; changing source-owned `512` SignalBus capacity to prompt example `256`; launching a build for docs-only edits.
+Scalability potential: Low/Middle/High/Ultra runtime unchanged; active architecture now enforces smaller parse units without changing gameplay truth, DTO layout, save identity, or authority route.
+Hardware Impact: 0 us runtime; final proof reports `54.727998480643194%` active text reduction, `0` stale parameter files, and `0` architecture blocks at `>=30` words.
+
+## Decision 35 - 29-Word APEX Density Gate
+
+Problem: Loop 22 proved zero active architecture blocks at `>=30` words, but a stricter scan still found `122` blocks at exactly `29` words.
+Solution: Manually split every confirmed `>=29` word paragraph, sentence, bullet, numbered line, and table row with `apply_patch`; then harden `Tools/OOP_Doc_Scanner.py` so architecture paragraphs, sentences, and structured lines fail at `>28` words.
+Rejected Alternatives: Bulk regex rewriting; preserving 29-word route facts as concise enough; changing source-owned `512` SignalBus capacity to prompt example `256`; launching a build for docs-only edits.
+Scalability potential: Low/Middle/High/Ultra runtime unchanged; active architecture now enforces smaller parse units while preserving source-owned constants and route identity.
+Hardware Impact: 0 us runtime; final proof reports `54.71277175135032%` active text reduction, `0` stale parameter files, and `0` architecture blocks at `>=29` words.

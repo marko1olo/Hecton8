@@ -19,6 +19,9 @@ namespace Hecton8.Gameplay
 {
     public static partial class CombatDamageRuntime
     {
+        private static int s_x001DirectSignalPushDropCount_CombatDamageRuntime_StatusEffects;
+
+        private static int s_x001CombatDamageRuntime_StatusEffectsSignalPushDropCount;
         private const int StatusEffectTelemetryCapacity = 300;
         private const int StatusEffectTelemetryCursorLength = 2;
         private const int StatusEffectTelemetryWriteCursor = 0;
@@ -701,7 +704,7 @@ namespace Hecton8.Gameplay
             RefreshRuntimePolicy();
             float statusQualityWeight01 = ResolveStatusEffectQualityWeight01();
             _statusEffectLastQualityWeight01 = statusQualityWeight01;
-            _statusEffectFrameIndex = unchecked((uint)math.max(0, Time.frameCount));
+            _statusEffectFrameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             float safeDelta = math.max(0f, math.select(0f, deltaTime, math.isfinite(deltaTime)));
             _statusEvaluationAccumulatorSeconds = math.min(_statusEvaluationAccumulatorSeconds + safeDelta, 4f);
             CombatStatusEffectTuning tuning = ReadStatusEffectTuning();
@@ -870,7 +873,7 @@ namespace Hecton8.Gameplay
                 if (signal.Magnitude <= 0f || !math.isfinite(signal.Magnitude) || !math.all(math.isfinite(signal.ImpactAup)))
                     continue;
 
-                if (!SignalBus<CombatDamageSignal>.TryPush(in signal))
+                if (!SignalBus<CombatDamageSignal>.TryPushTracked(in signal, ref s_x001DirectSignalPushDropCount_CombatDamageRuntime_StatusEffects))
                     WriteStatusCounter(StatusEffectCounterAnomaly, unchecked((int)0x5319D001u));
             }
         }
@@ -907,7 +910,7 @@ namespace Hecton8.Gameplay
                     Reserved4 = 0UL,
                     Reserved5 = 0UL
                 };
-                SignalBus<BubbleSpawnSignal>.TryPush(in signal);
+                SignalBus<BubbleSpawnSignal>.TryPushTracked(in signal, ref s_x001CombatDamageRuntime_StatusEffectsSignalPushDropCount);
             }
         }
 
@@ -1311,7 +1314,7 @@ namespace Hecton8.Gameplay
         private static uint ResolveStatusEffectFrameIndex()
         {
             uint frame = _statusEffectFrameIndex;
-            return frame != 0u ? frame : unchecked((uint)math.max(0, Time.frameCount));
+            return frame != 0u ? frame : Hecton8.Core.SystemDispatcher.CurrentFrameId;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

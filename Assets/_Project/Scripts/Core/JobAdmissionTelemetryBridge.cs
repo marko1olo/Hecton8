@@ -10,6 +10,7 @@ namespace Hecton8.Core
     /// </summary>
     internal sealed class JobAdmissionTelemetryBridge : IJobAdmissionTelemetrySink
     {
+        private static int s_x001JobAdmissionTelemetryBridgeSignalPushDropCount;
         private const byte StarvedFlag = 1;
         private const byte NonFiniteFlag = 2;
 
@@ -19,7 +20,7 @@ namespace Hecton8.Core
             CpuStarvationSignal signal = new CpuStarvationSignal
             {
                 JobHash = jobHash,
-                Frame = unchecked((uint)Time.frameCount),
+                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 EstimatedCostMs = math.isfinite(estimatedCostMs) ? estimatedCostMs : 0f,
                 RemainingBudgetMs = math.isfinite(remainingBudgetMs) ? remainingBudgetMs : 0f,
                 CriticalDebtFrames = criticalDebtFrames,
@@ -27,7 +28,7 @@ namespace Hecton8.Core
                 Flags = StarvedFlag
             };
 
-            SignalBus<CpuStarvationSignal>.TryPush(in signal);
+            SignalBus<CpuStarvationSignal>.TryPushTracked(in signal, ref s_x001JobAdmissionTelemetryBridgeSignalPushDropCount);
             CrashTelemetryBuffer.ReportJobAdmissionState(
                 signal.Lane,
                 signal.JobHash,
@@ -65,7 +66,7 @@ namespace Hecton8.Core
             CpuStarvationSignal signal = new CpuStarvationSignal
             {
                 JobHash = jobHash,
-                Frame = unchecked((uint)Time.frameCount),
+                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 EstimatedCostMs = 0f,
                 RemainingBudgetMs = 0f,
                 CriticalDebtFrames = GlobalRegistry.JobAdmission != null ? GlobalRegistry.JobAdmission.CriticalDebtFrameCount : 0,
@@ -73,7 +74,7 @@ namespace Hecton8.Core
                 Flags = NonFiniteFlag
             };
 
-            SignalBus<CpuStarvationSignal>.TryPush(in signal);
+            SignalBus<CpuStarvationSignal>.TryPushTracked(in signal, ref s_x001JobAdmissionTelemetryBridgeSignalPushDropCount);
             CrashTelemetryBuffer.ReportJobAdmissionNonFinite(signal.Lane, signal.JobHash, value);
         }
     }

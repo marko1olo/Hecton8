@@ -16,6 +16,7 @@ namespace Hecton8.Visor
     [DisallowMultipleComponent]
     public unsafe sealed class DiegeticVisorLensRuntime : MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
+        private static int s_x001DiegeticVisorLensRuntimeSignalPushDropCount;
         private const int TelemetryCapacity = 300;
         private const int CsvBufferBytes = 4096;
         private const int BinaryProbeBytes = 64;
@@ -1013,7 +1014,7 @@ namespace Hecton8.Visor
             signal.Condensation01 = Sanitize01(state.CondensationLevel);
             signal.Flags = 1u;
             signal.Sequence = _breachSequence++;
-            SignalBus<VisorBreachSignal>.TryPush(in signal);
+            SignalBus<VisorBreachSignal>.TryPushTracked(in signal, ref s_x001DiegeticVisorLensRuntimeSignalPushDropCount);
             _breachCooldown = BreachPublishCooldownSeconds;
         }
 

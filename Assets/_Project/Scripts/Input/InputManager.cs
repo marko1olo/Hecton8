@@ -63,6 +63,9 @@ namespace Hecton8.Input
             "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T",
             "U", "V", "W", "X", "Y", "Z"
         };
+        private const string KeyboardBindingChipFallback = "<b><color=#AEE8FF>KBD</color> KEY</b>";
+        private const string GamepadBindingChipFallback = "<b><color=#AEE8FF>PAD</color> KEY</b>";
+        private const string XrBindingChipFallback = "<b><color=#AEE8FF>XR</color> KEY</b>";
 
         private IInputActionCollection2 _generatedInputActions;
         private InputActionAsset _runtimeInputActionAsset;
@@ -1159,8 +1162,8 @@ namespace Hecton8.Input
             if (TryResolveBindingAlias(controlName, isKeyboard, isMouse, isGamepad, out display))
                 return true;
 
-            display = controlName.ToString().Trim().ToUpperInvariant();
-            return !string.IsNullOrWhiteSpace(display);
+            display = path;
+            return true;
         }
 
         private static bool TryWriteBindingDisplayStringFromPath(
@@ -1309,7 +1312,7 @@ namespace Hecton8.Input
         private static bool TryResolveSingleCharacterLabel(char value, out string display)
         {
             display = string.Empty;
-            char upper = char.ToUpperInvariant(value);
+            char upper = ToUpperAscii(value);
             if (upper >= '0' && upper <= '9')
             {
                 display = SingleCharacterBindingLabels[upper - '0'];
@@ -1336,7 +1339,7 @@ namespace Hecton8.Input
         {
             charsWritten = 0;
             if (TryResolveSingleNormalizedChar(controlName, out char single) && char.IsLetterOrDigit(single))
-                return TryWriteChar(char.ToUpperInvariant(single), buffer, bufferOffset, out charsWritten);
+                return TryWriteChar(ToUpperAscii(single), buffer, bufferOffset, out charsWritten);
 
             if (isKeyboard)
             {
@@ -1466,7 +1469,7 @@ namespace Hecton8.Input
 
                 if (tokenIndex < prefixLength)
                 {
-                    if (char.ToLowerInvariant(c) != prefix[tokenIndex])
+                    if (ToLowerAscii(c) != prefix[tokenIndex])
                         return false;
                 }
                 else if (tokenIndex == prefixLength)
@@ -1494,7 +1497,7 @@ namespace Hecton8.Input
                 if (c == '-' || char.IsWhiteSpace(c))
                     continue;
 
-                if (tokenIndex >= token.Length || char.ToLowerInvariant(c) != token[tokenIndex])
+                if (tokenIndex >= token.Length || ToLowerAscii(c) != token[tokenIndex])
                     return false;
 
                 tokenIndex++;
@@ -1552,7 +1555,7 @@ namespace Hecton8.Input
                 return false;
 
             for (int i = 0; i < length; i++)
-                buffer[bufferOffset + i] = char.ToUpperInvariant(value[start + i]);
+                buffer[bufferOffset + i] = ToUpperAscii(value[start + i]);
 
             charsWritten = length;
             return true;
@@ -1627,9 +1630,11 @@ namespace Hecton8.Input
 
         private static string FormatBindingChip(string display, InputDisplayStyle displayStyle)
         {
-            string sanitized = string.IsNullOrWhiteSpace(display) ? "?" : display.Trim().ToUpperInvariant();
-            string prefix = IsXRDisplayStyle(displayStyle) ? "XR" : IsGamepadDisplayStyle(displayStyle) ? "\u25C6" : "\u2328";
-            return $"<b><color=#AEE8FF>{prefix}</color> {sanitized}</b>";
+            return IsXRDisplayStyle(displayStyle)
+                ? XrBindingChipFallback
+                : IsGamepadDisplayStyle(displayStyle)
+                    ? GamepadBindingChipFallback
+                    : KeyboardBindingChipFallback;
         }
 
         private static bool TryGetBindingGlyphMarkup(InputAction action, int bindingIndex, out string markup)
@@ -1715,11 +1720,25 @@ namespace Hecton8.Input
 
             for (int i = 0; i < length; i++)
             {
-                if (char.ToLowerInvariant(tokenSpan[start + i]) != expected[i])
+                if (ToLowerAscii(tokenSpan[start + i]) != expected[i])
                     return false;
             }
 
             return true;
+        }
+
+        private static char ToUpperAscii(char value)
+        {
+            return value >= 'a' && value <= 'z'
+                ? (char)(value - 32)
+                : value;
+        }
+
+        private static char ToLowerAscii(char value)
+        {
+            return value >= 'A' && value <= 'Z'
+                ? (char)(value + 32)
+                : value;
         }
 
         private void CaptureInputDisplayStyle(InputAction.CallbackContext context)
@@ -2862,7 +2881,7 @@ namespace Hecton8.Input
                     if (current == '-')
                         continue;
 
-                    if (expectedIndex >= expected.Length || char.ToLowerInvariant(current) != expected[expectedIndex])
+                    if (expectedIndex >= expected.Length || ToLowerAscii(current) != expected[expectedIndex])
                         return false;
 
                     expectedIndex++;

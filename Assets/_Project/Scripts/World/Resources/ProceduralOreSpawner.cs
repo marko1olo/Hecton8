@@ -19,6 +19,7 @@ namespace Hecton8.World
     [DisallowMultipleComponent]
     public sealed class ProceduralOreSpawner : MonoBehaviour, ISlowTickable, ILateFrameTickable, IDisposable, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener, IWorldResourceSpawnerReadModel, IWorldResourceSpawnerCommandModel, IWorldResourceSpawnerReadDependencySink
     {
+        private static int s_x001ProceduralOreSpawnerSignalPushDropCount;
         private const string OwnerName = nameof(ProceduralOreSpawner);
         private const int DefaultOreCapacity = 2048;
         private const int MinimumOreCapacity = 64;
@@ -2290,7 +2291,7 @@ namespace Hecton8.World
             acquiredSignal.SourceKind = 2;
             acquiredSignal.Flags = 0;
             acquiredSignal.Frame = frame;
-            SignalBus<ItemAcquiredSignal>.TryPush(in acquiredSignal);
+            SignalBus<ItemAcquiredSignal>.TryPushTracked(in acquiredSignal, ref s_x001ProceduralOreSpawnerSignalPushDropCount);
 
             ResourceDepletionDeltaSignal depletionSignal = default;
             depletionSignal.SectorHash = _currentSectorHash;
@@ -2300,7 +2301,7 @@ namespace Hecton8.World
             depletionSignal.WordIndex = (ushort)wordIndex;
             depletionSignal.Operation = 1;
             depletionSignal.Flags = 0;
-            SignalBus<ResourceDepletionDeltaSignal>.TryPush(in depletionSignal);
+            SignalBus<ResourceDepletionDeltaSignal>.TryPushTracked(in depletionSignal, ref s_x001ProceduralOreSpawnerSignalPushDropCount);
 
             ClearRenderedSlot(views, deterministicSlot, oreIndex);
             _depletedCullCount = math.max(0, _depletedCullCount + 1);

@@ -1277,3 +1277,126 @@ Verification:
 - Compile: not launched after Loop 54. Build guard was red: `CpuLoad=100`, `CompilerProcessCount=2`.
 - Last compile proof: Loop 53 `dotnet build Assembly-CSharp.csproj --no-restore` passed with 0 errors and 2 external `Hecton8.Input.csproj` warnings, elapsed 00:00:51.08.
 - Runtime profiler/GCMonitor proof: not run.
+
+## 2026-05-25 - X_011 Loop 55 Beacon/Scanner/Tool HUD-Adjacent String Backstop
+
+What was wrong:
+- Core VWS/subtitle/audio-log scan stayed clean, but adjacent player-facing text systems still had runtime string materialization patterns.
+- `BeaconRuntime` and `BeaconNetworkSystem` used fake "zero-GC" uppercase caches backed by `ToUpperInvariant()` strings.
+- `BeaconNetworkSystem` pulled the beacon prefix through `GetOrFallback` before creating labels.
+- `FieldOperationLogSystem` normalized source/title/summary/severity with `Trim().ToUpperInvariant()` and base `PlayerTool` legacy APIs materialized `FixedCharBuffer` through `ToString()`.
+- `ScannableTarget` runtime configure/refresh uppercased and trimmed scan titles/categories/summaries.
+
+What was done:
+- Removed `BeaconRuntime` uppercase cache and localized string fallback from runtime label configuration; empty labels now use the stable `"BEACON"` literal.
+- Changed `BeaconNetworkSystem` prefix resolution to `GetRawSpanOrFallback` into a fixed prefix buffer before creating the persistent beacon label string.
+- Collapsed beacon trim-log fallback text to stable literals instead of managed localization string calls.
+- Removed field-operation source/title/summary trim/uppercase materialization; severity now uses a span ASCII compare and returns stable constants.
+- Changed base `PlayerTool` legacy string APIs to return stable strings/cached authored tool names directly and removed the unused legacy scratch buffer.
+- Removed runtime `ScannableTarget` uppercase/trim materialization for configured/resolved titles/categories/summaries.
+
+Cinematic Cheats used:
+- Stable literals and fixed prefix buffers for presentation text.
+- ASCII severity classification instead of culture/globalization string normalization.
+- Persistent identity strings kept only where save/network identity requires them.
+
+Exact Microseconds saved:
+- 0 measured. Static expected gain is removal of uppercase/trim/cache churn in beacon/scanner/tool HUD-adjacent presentation and field-operation record normalization. Unity profiler/GCMonitor was not run.
+
+Verification:
+- Focused scan over `VocalWarningSystem`, `VocalBankPlaybackRuntime`, `BabelSubtitleSyncRuntime`, `SubtitleManager`, `AudioLogSystem`, and `AudioLogPickup`: 0 hits for `Time.frameCount`, coroutine timing, TMP string sinks, string materializers, exception-message construction, VWS heap tokens, legacy subtitle queue tokens, `GetOrFallback`, and `ResolveLocalized`.
+- Patched 5-file scan over `BeaconRuntime`, `BeaconNetworkSystem`, `FieldOperationLogSystem`, `PlayerTool`, and `ScannableTarget`: remaining hits are classified as persistent beacon id/label `string.Create`, persistent field-operation log buffer-to-string storage, and editor-only `ScannableTarget.OnValidate`.
+- `git diff --check` on patched files: only LF->CRLF warnings.
+- Build: not launched. Guard remained red after wait: `CpuLoad=85`, `CompilerProcessCount=0`; prior probe was `CpuLoad=61`, `CompilerProcessCount=1` with Unity dotnet active.
+- Residual honesty: `BeaconDeployerTool` still has a managed localized assessment/log route (`ResolveLocalized`, `GetOrFallback`, one legacy `new string`). It is outside the Betty/subtitle lane but not zero-GC and needs a separate span-struct migration.
+- Runtime profiler/GCMonitor proof: not run.
+
+## 2026-05-25 - X_011 Loop 56 Tool Operational Text And Archive Boundary Cleanup
+
+What was wrong:
+- The core Betty/subtitle/audio-log route was still statically clean, but tool-level operational summaries/directives and diagnostics still contained legacy string-localization and buffer-to-string materialization routes.
+- `BeaconDeployerTool`, `RepairTool`, `KnifeTool`, `SalvageSamplerTool`, `StunPistolTool`, `EnvironmentalAnalyzerTool`, `BuilderTool`, `HarpoonLauncherTool`, `PropulsionTool`, `LaserCutter`, and `ScannerTool` had stale `ResolveLocalized`/`GetOrFallback`, `CreateLegacyString`, Babel buffer `new string`, or compile-time string-plus noise.
+- `ScannerTool` used `FixedCharBuffer.Append("+")` for a one-character sign marker.
+
+What was done:
+- Collapsed active legacy operational summary/directive APIs in the touched tools to stable fallback-only text rather than managed localized string construction.
+- Removed legacy buffer-to-string helpers from HUD refresh paths; sampler/analyzer remaining `new string` helpers are now explicitly named persistent archive helpers.
+- Removed dynamic sampler resource/recovery HUD strings in favor of stable fallback labels.
+- Added `FixedCharBuffer.Append(char)` and changed the scanner signed-component plus marker to a direct char append.
+- Removed compile-time tooltip/dev-log string-plus noise in `BuilderTool` and `LaserCutter` so the scanner output is not polluted by constant literals.
+
+Cinematic Cheats used:
+- Stable fallback text in legacy string APIs instead of runtime localization materialization.
+- Fixed char buffers and span copying for presentation text.
+- Persistent archive/save strings left only at explicit identity/archive boundaries.
+
+Exact Microseconds saved:
+- 0 measured. Static expected gain is removal of managed localization/buffer-to-string churn from tool operational refresh and one-character string append calls. No Unity profiler/GCMonitor run.
+
+Verification:
+- Focused scan over `VocalWarningSystem`, `VocalBankPlaybackRuntime`, `BabelSubtitleSyncRuntime`, `SubtitleManager`, `AudioLogSystem`, and `AudioLogPickup`: 0 hits for direct `Time.frameCount`, coroutine timing, TMP string sinks, managed string materializers, exception-message construction, VWS heap tokens, legacy subtitle queue tokens, localization string APIs, interpolation, and string-plus concat.
+- Tool scan over the 11 touched tool files plus `FixedCharBuffer`: 0 string-plus concat hits. Materializer scan leaves exactly three classified residuals: `SalvageSamplerTool.CreatePersistentArchiveString`, `EnvironmentalAnalyzerTool.CreatePersistentArchiveString`, and `FixedCharBuffer.ToString()`.
+- Selected non-editor audio/UI/narrative/quest/PDA/interaction/progression scan over 216 files: 0 direct frame reads, 0 coroutine timing, 0 TMP string sinks, 0 localization string APIs, 0 VWS heap tokens, 0 exception-message construction, and 0 interpolation. Remaining managed materializers are editor-only DAG/lore tooling and `PDAMarkerRegistry` save identity.
+- `git diff --check` on touched files: only LF->CRLF warnings.
+- Build: not launched. Guard was red: `CpuLoad=96`, `CompilerProcessCount=3` (`dotnet`, `dotnet`, `VBCSCompiler`).
+- Last compile proof remains Loop 53: `dotnet build Assembly-CSharp.csproj --no-restore` passed with 0 errors and 2 external `Hecton8.Input.csproj` warnings, elapsed 00:00:51.08.
+- Runtime profiler/GCMonitor proof: not run.
+
+## 2026-05-25 - X_011 Loop 57 Build Guard Retry
+
+What was wrong:
+- Loop 56 touched runtime source, so compile verification was needed.
+- The local build guard did not allow a safe build launch because CPU/compiler state remained red.
+
+What was done:
+- Ran 24 guard attempts before build.
+- Did not launch `dotnet build` because the guard never opened.
+
+Cinematic Cheats used:
+- None. This was verification gating only.
+
+Exact Microseconds saved:
+- 0 measured. Wall-clock guard wait was about 151400000 us.
+
+Verification:
+- Guard attempts 1-24: CPU ranged 51-100; compiler process count ranged 0-2.
+- Attempt 14 had `CompilerProcessCount=0` but `CpuLoad=100`, so build still stayed blocked.
+- Final sample: `CpuLoad=100`, `CompilerProcessCount=2`.
+- Last compile proof remains Loop 53: `dotnet build Assembly-CSharp.csproj --no-restore` passed with 0 errors and 2 external `Hecton8.Input.csproj` warnings, elapsed 00:00:51.08.
+- Runtime profiler/GCMonitor proof: not run.
+
+## 2026-05-25 - X_011 Loop 58 Input/UI/Core String Perimeter Hardening
+
+What was wrong:
+- `InputManager` still had an actual managed fallback: `controlName.ToString().Trim().ToUpperInvariant()` and interpolated fallback glyph chips.
+- `ZeroGCStringCache` was not zero-GC on misses; it uppercased into a fresh managed string.
+- `MemoryBudgetTracker`, `RebindingManager`, and `UserOptionsPersistence` had development diagnostics that concatenated strings and exception messages.
+- `GameStartContext` persisted ticks with `long.ToString()` and wrote diagnostic `Current.ToString()`.
+- `InteractionUI` refreshed prompt caches through `GetExpandedOrFallback`, a legacy managed localization string API.
+- `PlayerExplorationTracker` had a raw string-plus dump path in a blackbox boundary.
+
+What was done:
+- Replaced the unknown binding-display fallback with the existing binding path reference and kept hot display writes on caller-owned char buffers.
+- Replaced InputManager culture casing with ASCII char transforms and stable fallback glyph chip literals.
+- Replaced fake uppercase string caching with `ZeroGCStringCache.TryWriteUpperAscii`.
+- Collapsed memory-budget, rebind, and options diagnostics to stable literal logs.
+- Packed game-start handoff ticks into two `PlayerPrefs.SetInt` values; kept legacy string-read fallback only for old handoff keys.
+- Made `InteractionUI.ResolveLocalizedExpanded` return authored fallback strings and rely on the existing `TryExpandText(..., char[])` render path for button-token expansion.
+- Replaced PDA cartography blackbox raw string-plus path with `Path.Combine`/`Path.GetFullPath`.
+
+Cinematic Cheats used:
+- Stable authored prompt strings instead of managed localized prompt cache materialization.
+- ASCII casing for technical binding labels.
+- Packed integer timestamp persistence instead of decimal text persistence.
+
+Exact Microseconds saved:
+- 0 measured. Static expected gain is removal of binding-display, prompt-cache, and diagnostic heap churn. No Unity profiler/GCMonitor run.
+
+Verification:
+- Focused Betty/subtitle/audio-log scan: 0 hits for direct frame reads, coroutine timing, TMP string sinks, managed string materializers, exception-message construction, VWS heap tokens, legacy subtitle queue tokens, localization string APIs, interpolation, and string-plus concat.
+- Touched 8-file scan: 0 hits for `ToString`, `new string`, `string.Create`, `string.Concat`, interpolation, raw string-plus concat, TMP string sinks, `GetOrFallback`, `ResolveLocalized`, exception-message construction, `ToUpperInvariant`, and `ToLowerInvariant`.
+- Selected non-editor audio/UI/narrative/quest/PDA/input/interaction timing scan: 0 hits for `Time.frameCount`, `WaitForSeconds`, coroutine tokens, and `IEnumerator`.
+- Expanded selected text scan residuals are classified: editor-gated DAG/lore tooling, `PDAMarkerRegistry` save ID, `PDAExchangeSystem` save summary, legacy `LocalizationManager` string API declarations, and literal plus signs written into char buffers.
+- `git diff --check` on touched files: only LF->CRLF warnings.
+- Build: guarded `dotnet build --no-restore` launched once at `CpuLoad=38`, `CompilerProcessCount=0`, but failed with NETSDK1004 because `Temp/obj/Assembly-CSharp/project.assets.json` is missing. Guarded restore then made 18 attempts and did not launch because CPU/compiler state stayed red; final sample `CpuLoad=79`, `CompilerProcessCount=8`.
+- Last compile proof remains Loop 53; runtime profiler/GCMonitor proof: not run.

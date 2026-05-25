@@ -39,7 +39,8 @@ Remediated in the 2026-05-21 pass:
 - TerminalOS layout source moved to `Assets/_SourceData/UI/TerminalOS`; the runtime `StreamingAssets` route is gone.
 
 - Core/Origin, Fauna, Power, Thermodynamics, Auxiliary, and Hadal Forge text sources moved/guarded to `Assets/_SourceData/...`; player builds do not read those CSVs from `StreamingAssets`.
-- Propwash wake profile source moved to `Assets/_SourceData/VFX/Propwash`; CSV staging buffers/background reader/file IO are compiled only under `UNITY_EDITOR`, and player builds use deterministic default wake rows until binary hydration exists.
+- Propwash wake profile source moved to `Assets/_SourceData/VFX/Propwash`; CSV staging/reader/file IO compile only under `UNITY_EDITOR`.
+- Player builds use deterministic default wake rows until binary hydration exists.
 - KCC locomotion environment profile source moved to `Assets/_SourceData/Physics/KCC`; no runtime `StreamingAssets` text artifact remains for that route.
 
 ## Current Owner Groups

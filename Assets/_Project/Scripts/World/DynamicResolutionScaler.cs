@@ -51,7 +51,7 @@ namespace Hecton8.World
     /// </remarks>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-130)] // Run after CullingManager
-    public sealed class DynamicResolutionScaler : MonoBehaviour, ITickable, ISaveable, IDynamicResolutionRuntime, IGlobalRegistryHotSwapListener
+    public sealed class DynamicResolutionScaler : MonoBehaviour, ITickable, ILateFrameTickable, ISaveable, IDynamicResolutionRuntime, IGlobalRegistryHotSwapListener
     {
         private const string StablePressureStateLabel = "Stable";
         private const string RecoveringPressureStateLabel = "Recovering";
@@ -132,9 +132,12 @@ namespace Hecton8.World
         private int _recoveryHoldFramesRemaining = 0;
         private float _startupGraceRemainingSeconds;
         private bool _registered;
+        private bool _lateFrameRegistered;
         private bool _serviceRegistered;
         private bool _saveRegistered;
         private bool _hotSwapRegistered;
+        private bool _renderScaleApplyQueued;
+        private bool _applyingRenderScaleLateFrame;
         private LODQualityPreset _qualityPreset = LODQualityPreset.Medium;
         private float _smoothedFrameTimeMs;
         private float _peakFrameTimeMs;
@@ -327,15 +330,22 @@ namespace Hecton8.World
                 return;
 
             _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
+            if (!_lateFrameRegistered)
+                _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregister()
         {
+            if (_lateFrameRegistered)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                _lateFrameRegistered = false;
+            }
+
             if (!_registered)
                 return;
 
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
-
             _registered = false;
         }
 
@@ -400,7 +410,7 @@ namespace Hecton8.World
         private void CacheRegistryServicesCold()
         {
             if (_saveService == null)
-                _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+                _saveService = GlobalRegistry.Save;
         }
 
         private void TryRegisterHotSwapListener()
@@ -775,6 +785,17 @@ namespace Hecton8.World
             _debugRenderScaleOverrideValue = 0f;
         }
 
+        public void LateFrameTick()
+        {
+            if (!_renderScaleApplyQueued)
+                return;
+
+            _renderScaleApplyQueued = false;
+            _applyingRenderScaleLateFrame = true;
+            ApplyRenderScale();
+            _applyingRenderScaleLateFrame = false;
+        }
+
         private bool HandleStartupGrace(float dt, float observedFrameTime)
         {
             if (_startupGraceRemainingSeconds <= 0f)
@@ -812,6 +833,12 @@ namespace Hecton8.World
         {
             if (_urpAsset == null)
                 return;
+
+            if (Application.isPlaying && !_applyingRenderScaleLateFrame)
+            {
+                _renderScaleApplyQueued = true;
+                return;
+            }
 
             _minRenderScale = IsFinite(_minRenderScale) && _minRenderScale > 0f
                 ? Mathf.Clamp(_minRenderScale, SystemOverrideMinimumRenderScale, ResolveMaxRenderScale())

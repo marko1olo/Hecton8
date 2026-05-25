@@ -14,6 +14,7 @@ namespace Hecton8.Core.Bridge
 {
     public static unsafe class H8BridgeFacadeRuntime
     {
+        private static int s_x001H8BridgeFacadeRuntimeSignalPushDropCount;
         public const int BlackBoxFrameCount = 300;
         public const int MaxDesignFacadeValueBytes = 64 * 1024;
         private const uint NanVaccinationHash = 0xA5AFE001u;
@@ -100,11 +101,11 @@ namespace Hecton8.Core.Bridge
                 OffsetBytes = -1,
                 OldValue = 0f,
                 NewValue = 0f,
-                Frame = unchecked((uint)Time.frameCount),
+                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 BufferId = (ushort)BufferID.BridgeDesignFacadeValues,
                 Flags = extraFlags
             };
-            SignalBus<DataVaultUpdateSignal>.TryPush(in signal);
+            SignalBus<DataVaultUpdateSignal>.TryPushTracked(in signal, ref s_x001H8BridgeFacadeRuntimeSignalPushDropCount);
             GlobalTelemetryBus.PublishModTelemetry(facadeHash, H8BridgeHashes.BridgeHeartbeat, 0f);
         }
 
@@ -190,11 +191,11 @@ namespace Hecton8.Core.Bridge
                 OffsetBytes = entry.OffsetBytes,
                 OldValue = oldValue,
                 NewValue = value,
-                Frame = unchecked((uint)Time.frameCount),
+                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 BufferId = (ushort)BufferID.BridgeDesignFacadeValues,
                 Flags = (ushort)(entry.Flags | extraFlags)
             };
-            SignalBus<DataVaultUpdateSignal>.TryPush(in signal);
+            SignalBus<DataVaultUpdateSignal>.TryPushTracked(in signal, ref s_x001H8BridgeFacadeRuntimeSignalPushDropCount);
             GlobalTelemetryBus.PublishModTelemetry(facadeHash, entry.FieldHash, value);
             return true;
         }
@@ -291,7 +292,7 @@ namespace Hecton8.Core.Bridge
                 PrefabCount = 0u,
                 InputBindingCount = 0u,
                 Checksum = ComputeFacadeChecksum(facade),
-                Frame = unchecked((uint)Time.frameCount),
+                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 Flags = facade.DesignerOverride ? (uint)H8DesignValueFlags.DesignerOverride : 0u,
                 EstimatedVramBytes = facade.EstimateVramBytes(),
                 OneDimensionalLutHash = facade.OneDimensionalLutHash,
@@ -378,7 +379,7 @@ namespace Hecton8.Core.Bridge
 
             H8FacadeTelemetryEntry telemetry = new H8FacadeTelemetryEntry
             {
-                Frame = unchecked((uint)Time.frameCount),
+                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 FacadeHash = facadeHash,
                 FieldHash = entry.FieldHash,
                 OffsetBytes = entry.OffsetBytes,

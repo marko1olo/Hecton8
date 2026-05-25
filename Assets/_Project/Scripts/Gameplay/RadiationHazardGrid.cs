@@ -26,6 +26,7 @@ namespace Hecton8.Gameplay
     [AddComponentMenu("Hecton8/Gameplay/Radiation Hazard Grid")]
     public sealed unsafe class RadiationHazardGrid : MonoBehaviour, ISlowTickable, IOriginShiftListener, ISaveable, IGlobalRegistryHotSwapListener
     {
+        private static int _signalPushDropCount;
         public const int GridResolution = 32;
         public const int GridCellCount = GridResolution * GridResolution * GridResolution;
         public const int MaxSourceCount = 64;
@@ -265,7 +266,7 @@ namespace Hecton8.Gameplay
                 Operation = RadiationSourceSignal.OperationUpsert,
                 Flags = 0
             };
-            SignalBus<RadiationSourceSignal>.TryPush(in signal);
+            SignalBus<RadiationSourceSignal>.TryPushTracked(in signal, ref _signalPushDropCount);
         }
 
         public static void UnregisterSource(int sourceId)
@@ -278,7 +279,7 @@ namespace Hecton8.Gameplay
                 SourceId = sourceId,
                 Operation = RadiationSourceSignal.OperationRemove
             };
-            SignalBus<RadiationSourceSignal>.TryPush(in signal);
+            SignalBus<RadiationSourceSignal>.TryPushTracked(in signal, ref _signalPushDropCount);
         }
 
         public static void ReportExternalDose(float dose, float intensity01, Vector3 runtimePosition)
@@ -312,7 +313,7 @@ namespace Hecton8.Gameplay
                 DoseKind = RadiationDoseAtmosphereKind,
                 Flags = 0
             };
-            SignalBus<RadiationDoseSignal>.TryPush(in signal);
+            SignalBus<RadiationDoseSignal>.TryPushTracked(in signal, ref _signalPushDropCount);
         }
 
         internal static bool TrySampleRadiationIntensity01(Vector3 runtimePosition, out float intensity01)
@@ -1372,7 +1373,7 @@ namespace Hecton8.Gameplay
 
         private void RefreshColdRegistryReferences()
         {
-            _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+            _saveService = GlobalRegistry.Save;
             _dataVault = GlobalRegistry.DataVault;
             _voxelSdfReadModel = GlobalRegistry.VoxelSonarSdf;
         }
@@ -1402,6 +1403,10 @@ namespace Hecton8.Gameplay
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.Dispatcher:
+                    _registeredSimulationPhase = false;
+                    _registeredPostSimulationPhase = false;
+                    _registeredVisualSyncPhase = false;
+                    _registeredSlowTick = false;
                     if (currentService != null)
                         TryRegisterRuntimeLanes();
                     break;
@@ -2049,7 +2054,7 @@ namespace Hecton8.Gameplay
                 if (signal.SourceId == 0)
                     continue;
 
-                SignalBus<RadiationSourceSignal>.TryPush(in signal);
+                SignalBus<RadiationSourceSignal>.TryPushTracked(in signal, ref _signalPushDropCount);
             }
         }
 
@@ -2173,7 +2178,7 @@ namespace Hecton8.Gameplay
                 DoseKind = doseKind,
                 Flags = UsesSparseRadiationCadence(ResolveGlobalQualityWeight(), _currentSimulationFrame) ? (byte)1 : (byte)0
             };
-            SignalBus<RadiationDoseSignal>.TryPush(in signal);
+            SignalBus<RadiationDoseSignal>.TryPushTracked(in signal, ref _signalPushDropCount);
         }
 
         private void EmitGeigerIfNeeded(in AbsoluteUniversePosition playerAup, float intensity01)
@@ -2204,7 +2209,7 @@ namespace Hecton8.Gameplay
                 Channel = GeigerAcousticChannel,
                 Flags = 1
             };
-            SignalBus<AcousticPingSignal>.TryPush(in signal);
+            SignalBus<AcousticPingSignal>.TryPushTracked(in signal, ref _signalPushDropCount);
         }
 
         private void PushVisualGlobals(float dose, float intensity01)

@@ -67,6 +67,7 @@ namespace Hecton8.UI
         private bool _registeredLateFrame;
         private bool _uiBuilt;
         private bool _projectionScheduled;
+        private bool _hideDotsQueued;
         private bool _hotSwapListenerRegistered;
         private Canvas _targetCanvas;
         private Camera _viewCamera;
@@ -136,8 +137,7 @@ namespace Hecton8.UI
             {
                 if (_projectionScheduled)
                     return;
-                HideDots();
-                ApplyRootAlpha(0f);
+                QueueHideDots();
                 return;
             }
 
@@ -148,8 +148,7 @@ namespace Hecton8.UI
             {
                 if (_projectionScheduled)
                     return;
-                HideDots();
-                ApplyRootAlpha(0f);
+                QueueHideDots();
                 return;
             }
 
@@ -159,16 +158,14 @@ namespace Hecton8.UI
             ISpatialAudioImpactEmitterReadModel audioManager = _cachedAudioManager;
             if (audioManager == null)
             {
-                HideDots();
-                ApplyRootAlpha(0f);
+                QueueHideDots();
                 return;
             }
 
             int emitterCount = audioManager.CopyActiveImpactEmitterSamples(_impactEmitterSamples);
             if (emitterCount <= 0)
             {
-                HideDots();
-                ApplyRootAlpha(0f);
+                QueueHideDots();
                 return;
             }
 
@@ -177,7 +174,12 @@ namespace Hecton8.UI
 
         public void LateFrameTick()
         {
-            TryCompleteProjectionIfScheduled();
+            if (TryCompleteProjectionIfScheduled() && _hideDotsQueued)
+            {
+                _hideDotsQueued = false;
+                HideDots();
+                ApplyRootAlpha(0f);
+            }
         }
 
         private void HandleSonarPingSent(float intensity)
@@ -353,8 +355,7 @@ namespace Hecton8.UI
             float3 viewForward = (float3)(viewRotation * Vector3.forward);
             if (!TryResolveViewAup(viewPosition, out AbsoluteUniversePosition listenerAup))
             {
-                HideDots();
-                ApplyRootAlpha(0f);
+                QueueHideDots();
                 return;
             }
 
@@ -381,9 +382,8 @@ namespace Hecton8.UI
             }
 
             _pendingProjectionCount = safeCount;
-            _projectionScheduled = false;
-            ApplyProjectedDots(safeCount);
-            _pendingProjectionCount = 0;
+            _projectionScheduled = true;
+            _hideDotsQueued = false;
         }
 
         private static AcousticRadarBlipOutput ProjectImpactBlip(
@@ -501,6 +501,11 @@ namespace Hecton8.UI
             ApplyProjectedDots(_pendingProjectionCount);
             _pendingProjectionCount = 0;
             return true;
+        }
+
+        private void QueueHideDots()
+        {
+            _hideDotsQueued = true;
         }
 
         private void ApplyProjectedDots(int activeCount)

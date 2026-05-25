@@ -157,7 +157,7 @@ namespace Hecton8.Gameplay
         public IWaterHeatInjectionService WaterHeatInjectionService => fluidDynamics;
 
         /// <inheritdoc />
-        public SubmarineAtmosphereSystem AtmosphereSystem => atmosphereSystem;
+        public ISubmarineAtmosphereRoomReadModel AtmosphereSystem => atmosphereSystem;
 
         /// <inheritdoc />
         public SubmarineStructuralGrid StructuralGrid => structuralGrid;

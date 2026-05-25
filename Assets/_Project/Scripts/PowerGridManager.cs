@@ -18,6 +18,7 @@ namespace Hecton8.Power
     [DefaultExecutionOrder(-5500)]
     public sealed class PowerGridManager : MonoBehaviour, ISlowTickable, ILateFrameTickable, IPowerGridService, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener
     {
+        private static int s_x001PowerGridManagerSignalPushDropCount;
         private static List<PowerGrid> _allGrids;
 
         internal static PowerGridManager ActiveRuntimeInstance { get; private set; }
@@ -654,7 +655,7 @@ namespace Hecton8.Power
                 Priority = (byte)highestBrownoutTier,
                 Flags = flags
             };
-            SignalBus<BrownoutSignal>.TryPush(in signal);
+            SignalBus<BrownoutSignal>.TryPushTracked(in signal, ref s_x001PowerGridManagerSignalPushDropCount);
             float quality = ResolveMathLodQualityWeight();
             HectonShaderGlobalDataVaultBridge.PublishPowerBrownout(new Vector4(
                 supplyRatio,

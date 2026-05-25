@@ -17,6 +17,7 @@ namespace Hecton8.Power
 {
     public sealed unsafe class BatteryChargerLogisticsRuntime : IBatteryChargerLogisticsService, IGlobalRegistryHotSwapListener
     {
+        private static int s_x001BatteryChargerLogisticsRuntimeSignalPushDropCount;
         private const uint SystemHash = 0x53323330u; // S230
         private const uint PreSimulationHash = 0x32333050u;
         private const uint SimulationHash = 0x32333053u;
@@ -692,7 +693,14 @@ namespace Hecton8.Power
             }
 
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
-                RegisterDispatcherPhases();
+            {
+                _registeredPreSimulation = false;
+                _registeredSimulation = false;
+                _registeredPostSimulation = false;
+                _registeredVisualSync = false;
+                if (currentService != null)
+                    RegisterDispatcherPhases();
+            }
         }
 
         private void TryRegisterHotSwapListener()
@@ -1517,7 +1525,7 @@ namespace Hecton8.Power
             signal.SourceId = BatteryChargerLogisticsConstants.HumSourceHash;
             signal.Channel = AcousticPingSignal.ChannelMetalStress;
             signal.Flags = 0;
-            SignalBus<AcousticPingSignal>.TryPush(in signal);
+            SignalBus<AcousticPingSignal>.TryPushTracked(in signal, ref s_x001BatteryChargerLogisticsRuntimeSignalPushDropCount);
         }
 
         private static bool TryWriteAbsoluteAupFields(ref AcousticPingSignal signal, double3 absolutePosition)

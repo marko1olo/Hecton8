@@ -76,7 +76,10 @@ namespace Hecton8.Visor
             private Material _material;
             private RuntimeState _runtimeState;
             private GraphicsBuffer _sootGlobalsBuffer;
+            private GraphicsBuffer _sootGlobalsBufferA;
+            private GraphicsBuffer _sootGlobalsBufferB;
             private SootGlobalsDTO _lastSootGlobals;
+            private int _sootGlobalsWriteIndex;
             private bool _hasSootGlobals;
 
             public SootPass()
@@ -140,8 +143,12 @@ namespace Hecton8.Visor
 
             public void Dispose()
             {
-                _sootGlobalsBuffer?.Release();
+                _sootGlobalsBufferA?.Release();
+                _sootGlobalsBufferB?.Release();
+                _sootGlobalsBufferA = null;
+                _sootGlobalsBufferB = null;
                 _sootGlobalsBuffer = null;
+                _sootGlobalsWriteIndex = 0;
                 _hasSootGlobals = false;
             }
 
@@ -153,17 +160,30 @@ namespace Hecton8.Visor
                     return false;
                 }
 
-                if (_sootGlobalsBuffer != null && _sootGlobalsBuffer.IsValid())
+                if (_sootGlobalsBufferA != null && _sootGlobalsBufferA.IsValid() &&
+                    _sootGlobalsBufferB != null && _sootGlobalsBufferB.IsValid())
+                {
+                    if (_sootGlobalsBuffer == null)
+                        _sootGlobalsBuffer = _sootGlobalsBufferA;
                     return true;
+                }
 
-                _sootGlobalsBuffer?.Release();
-                _sootGlobalsBuffer = new GraphicsBuffer(
+                _sootGlobalsBufferA?.Release();
+                _sootGlobalsBufferB?.Release();
+                _sootGlobalsBufferA = new GraphicsBuffer(
                     GraphicsBuffer.Target.Constant,
                     GraphicsBuffer.UsageFlags.LockBufferForWrite,
                     1,
                     SootGlobalsStrideBytes);
+                _sootGlobalsBufferB = new GraphicsBuffer(
+                    GraphicsBuffer.Target.Constant,
+                    GraphicsBuffer.UsageFlags.LockBufferForWrite,
+                    1,
+                    SootGlobalsStrideBytes);
+                _sootGlobalsBuffer = _sootGlobalsBufferA;
+                _sootGlobalsWriteIndex = 1;
                 _hasSootGlobals = false;
-                return _sootGlobalsBuffer.IsValid();
+                return _sootGlobalsBufferA.IsValid() && _sootGlobalsBufferB.IsValid();
             }
 
             private bool UpdateSootGlobals(FeatureSettings settings, RuntimeState runtimeState)
@@ -189,9 +209,15 @@ namespace Hecton8.Visor
                     return true;
                 }
 
-                NativeArray<SootGlobalsDTO> mapped = _sootGlobalsBuffer.LockBufferForWrite<SootGlobalsDTO>(0, 1);
+                GraphicsBuffer writeBuffer = (_sootGlobalsWriteIndex & 1) == 0 ? _sootGlobalsBufferA : _sootGlobalsBufferB;
+                if (writeBuffer == null || !writeBuffer.IsValid())
+                    return false;
+
+                NativeArray<SootGlobalsDTO> mapped = writeBuffer.LockBufferForWrite<SootGlobalsDTO>(0, 1);
                 mapped[0] = globals;
-                _sootGlobalsBuffer.UnlockBufferAfterWrite<SootGlobalsDTO>(1);
+                writeBuffer.UnlockBufferAfterWrite<SootGlobalsDTO>(1);
+                _sootGlobalsBuffer = writeBuffer;
+                _sootGlobalsWriteIndex ^= 1;
                 _lastSootGlobals = globals;
                 _hasSootGlobals = true;
                 Shader.SetGlobalConstantBuffer(ShaderConstants.SootGlobalsBufferId, _sootGlobalsBuffer, 0, SootGlobalsStrideBytes);

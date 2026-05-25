@@ -208,7 +208,7 @@ namespace Hecton8.Meta
                 _discoveryManager = GlobalRegistry.Discovery;
 
             if (_saveService == null)
-                _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+                _saveService = GlobalRegistry.Save;
 
             RefreshSurvivalSignalBinding();
             return ResolveOwnersHot();

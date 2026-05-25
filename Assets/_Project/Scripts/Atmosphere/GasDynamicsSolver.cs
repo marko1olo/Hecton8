@@ -691,6 +691,9 @@ namespace Hecton8.Atmosphere
                 case GlobalRegistryServiceSlot.TickManager:
                     if (currentService == null || currentService is ITickDispatcher)
                         _tickDispatcher = currentService as ITickDispatcher;
+                    _registeredTicks = false;
+                    if (currentService != null && isActiveAndEnabled)
+                        TryRegisterTicks();
                     break;
                 case GlobalRegistryServiceSlot.PlayerMovementContracts:
                     _playerMovementContracts = currentService as IPlayerMovementContracts;
@@ -967,7 +970,7 @@ namespace Hecton8.Atmosphere
                 DeltaTime = math.max(0f, deltaTime),
                 RoomCount = _roomCount,
                 BulkheadCount = _bulkheadCount,
-                FrameIndex = (uint)math.max(0, Time.frameCount),
+                FrameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 PlayerO2KPaPerSecond = FiniteNonNegativeOrZero(playerOxygenKPaPerSecond),
                 PlayerCO2KPaPerSecond = FiniteNonNegativeOrZero(playerCarbonDioxideKPaPerSecond),
                 FireO2KPaPerSecond = FiniteNonNegativeOrZero(fireOxygenDrainKPaPerSecond),
@@ -1980,7 +1983,7 @@ namespace Hecton8.Atmosphere
             public uint _pad1;
         }
 
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private struct BaseHibernationWakeCatchUpJob : IJob
         {
             public int BaseId;
@@ -2107,7 +2110,7 @@ namespace Hecton8.Atmosphere
             }
         }
 
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private struct GasDynamicsStepJob : IJob
         {
             public float DeltaTime;

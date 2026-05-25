@@ -189,6 +189,7 @@ namespace Hecton8.Physics
     [DefaultExecutionOrder(-5000)]
     public sealed class HectonFluidEngine : MonoBehaviour, IFixedTickable, IPostFixedTickable, ILateFrameTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener, IAbyssalFlowGpuReadModel, IAnalyticalFlowReadModel, IAmbientCurrentReadModel, IFluidSurfaceCurrentReadModel, IFluidBubbleBurstSink, IFluidCurrentWriteSink, IBuoyancyObjectRegistry
     {
+        private static int s_x001HectonFluidEngineSignalPushDropCount;
 #if UNITY_EDITOR
         private const string GpuBuoyancyComputeAssetPath = "Assets/_Project/Art/Shaders/Hecton_GpuBuoyancy.compute";
         private const string AbyssalFlowFieldComputeAssetPath = "Assets/_Project/Art/Shaders/AbyssalFlowField.compute";
@@ -2606,7 +2607,7 @@ namespace Hecton8.Physics
             Vector3 observerPosition = lodObserver != null ? lodObserver.position : Vector3.zero;
             _oceanSurfaceTelemetry[writeIndex] = new OceanSurfaceTelemetryEntry
             {
-                FrameIndex = (uint)Time.frameCount,
+                FrameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 OriginShiftSequence = _lastOriginShiftSequence,
                 ActiveFloaters = activeCount,
                 SleepingFloaters = _lastOceanSleepCount,
@@ -4492,7 +4493,7 @@ namespace Hecton8.Physics
                 SecondaryMaterialId = 0,
                 Flags = 0
             };
-            SignalBus<ImpactSignal>.TryPush(in signal);
+            SignalBus<ImpactSignal>.TryPushTracked(in signal, ref s_x001HectonFluidEngineSignalPushDropCount);
 
             double3 absolutePosition = impactAup.ToAbsoluteDouble3();
             SplashEvent splashEvent = new SplashEvent
@@ -4519,7 +4520,7 @@ namespace Hecton8.Physics
                 DebrisKind = DebrisSpawnSignal.DebrisKindWaterSplash,
                 Flags = 0
             };
-            SignalBus<DebrisSpawnSignal>.TryPush(in debrisSignal);
+            SignalBus<DebrisSpawnSignal>.TryPushTracked(in debrisSignal, ref s_x001HectonFluidEngineSignalPushDropCount);
         }
 
         private static byte ResolveImpactWeightClass(float intensity01)
@@ -5544,7 +5545,7 @@ namespace Hecton8.Physics
                     acoustic.SourceId = MaelstromSourceHash;
                     acoustic.Channel = MaelstromAcousticChannel;
                     acoustic.Flags = 1;
-                    SignalBus<AcousticPingSignal>.TryPush(in acoustic);
+                    SignalBus<AcousticPingSignal>.TryPushTracked(in acoustic, ref s_x001HectonFluidEngineSignalPushDropCount);
                     _nextMaelstromAudioTime = now + MaelstromAudioIntervalSeconds;
                 }
             }
@@ -5649,13 +5650,13 @@ namespace Hecton8.Physics
             damage.DamageType = CombatDamageTypes.Pressure;
             damage.TargetHash = targetHash;
             damage.SourceHash = MaelstromSourceHash;
-            damage.Frame = unchecked((uint)Time.frameCount);
+            damage.Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             damage.SourceId = (ushort)(MaelstromSourceHash & 0xffffu);
             damage.TargetId = targetHash != 0u ? (ushort)math.min(targetHash, (uint)ushort.MaxValue) : (ushort)0;
             damage.Channel = MaelstromAcousticChannel;
             damage.Flags = Hecton8.Core.Contracts.Signals.CombatDamageSignal.DirectRuntimeFlag;
             damage.IntegrityDelta = 1;
-            SignalBus<CombatDamageSignal>.TryPush(in damage);
+            SignalBus<CombatDamageSignal>.TryPushTracked(in damage, ref s_x001HectonFluidEngineSignalPushDropCount);
             return true;
         }
 

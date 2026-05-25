@@ -878,7 +878,7 @@ namespace Hecton8.Gameplay
             _atlasSignal = Hecton8.Core.GlobalRegistry.AtlasSignal;
             _atlas6Directive = Hecton8.Core.GlobalRegistry.Atlas6Directive;
             _questRuntime = GlobalRegistry.QuestSystem;
-            _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+            _saveService = Hecton8.Core.GlobalRegistry.Save;
             _localization = Hecton8.Core.GlobalRegistry.LocalizationText;
         }
 

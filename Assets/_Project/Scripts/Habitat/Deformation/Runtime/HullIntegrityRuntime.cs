@@ -25,6 +25,8 @@ namespace Hecton8.Habitat.Deformation
 #endif
         , IHabitatModuleDeformationReadModel, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener
     {
+        private static int s_x001DirectSignalPushDropCount_HullIntegrityRuntime;
+
         private const float DefaultWaterDensity = 1025f;
         private const float DefaultGravity = 9.80665f;
         private const float DefaultDamageToSipScale = 0.18f;
@@ -1210,7 +1212,7 @@ namespace Hecton8.Habitat.Deformation
                         Channel = AcousticPingSignal.ChannelMetalStress,
                         Flags = AcousticPingSignal.FlagActiveSonar
                     };
-                    if (!SignalBus<AcousticPingSignal>.TryPush(in acoustic))
+                    if (!SignalBus<AcousticPingSignal>.TryPushTracked(in acoustic, ref s_x001DirectSignalPushDropCount_HullIntegrityRuntime))
                         IncrementSignalDropCounter(counters);
                 }
             }
@@ -1237,7 +1239,7 @@ namespace Hecton8.Habitat.Deformation
                     FlowRate01 = math.saturate(ratio),
                     Flags = 1
                 };
-                if (!SignalBus<FluidIncursionSignal>.TryPush(in flood))
+                if (!SignalBus<FluidIncursionSignal>.TryPushTracked(in flood, ref s_x001DirectSignalPushDropCount_HullIntegrityRuntime))
                     IncrementSignalDropCounter(counters);
             }
 
@@ -1257,7 +1259,7 @@ namespace Hecton8.Habitat.Deformation
                 QualityTier = _cachedQualityProfileByte
             };
 
-            if (!SignalBus<BaseModuleCompromisedSignal>.TryPush(in compromised))
+            if (!SignalBus<BaseModuleCompromisedSignal>.TryPushTracked(in compromised, ref s_x001DirectSignalPushDropCount_HullIntegrityRuntime))
                 IncrementSignalDropCounter(counters);
             counters[HullIntegrityConstants.CounterBreachPending] = 0;
         }
@@ -1995,7 +1997,7 @@ namespace Hecton8.Habitat.Deformation
                 Channel = 0,
                 DamageType = source.DamageType
             };
-            if (!SignalBus<HullDeformedSignal>.TryPush(in signal))
+            if (!SignalBus<HullDeformedSignal>.TryPushTracked(in signal, ref s_x001DirectSignalPushDropCount_HullIntegrityRuntime))
                 IncrementSignalDropCounter(counters);
         }
 

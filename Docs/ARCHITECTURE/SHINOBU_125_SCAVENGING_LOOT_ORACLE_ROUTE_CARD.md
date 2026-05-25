@@ -123,7 +123,9 @@ Review disposition: `YELLOW / STATIC_SOURCE_ONLY`. Proof required before GREEN: 
 
 
 
-Producer phase: `ResourceNode` queues request, `ScavengingLootOracleRuntime` resolves/publishes at Core late-frame. The publish completion is an explicit `[BLOCKING_SYNC_POINT]` signal flush fence because `SignalBus<T>.ParallelWriter` has no producer-handle registration route.
+Producer phase: `ResourceNode` queues request; `ScavengingLootOracleRuntime` resolves/publishes at Core late-frame.
+
+Publish completion is an explicit `[BLOCKING_SYNC_POINT]` flush because `SignalBus<T>.ParallelWriter` has no producer-handle registration route.
 
 
 
@@ -161,7 +163,8 @@ Yield sample authority: `ResourceNode.ResolveYieldSampleDeltaSeconds()` returns 
 - Loot VFX scalar is `math.lerp(0.1f, 1.0f, sanitizedQuality)`.
 - Mining impact debris count follows a smooth polynomial from small bursts to dense chip sprays.
 - Non-finite quality input fails closed to 0.0 through `ScavengingLootOracleMath.SanitizeQualityWeight()` before mock requests, queued requests, runtime resolution, telemetry, and impact-debris math.
-- Editor tuning behavior: `Procedural Loot Tuner` writes continuous tool/rare sliders into active Vault CDF rows; biome slider writes only biome modifier rows; no player hot-path managed tuning table is introduced.
+- Editor tuning: `Procedural Loot Tuner` writes continuous tool/rare sliders into active Vault CDF rows.
+- Biome slider writes only biome modifier rows; no player hot-path managed tuning table is introduced.
 
 
 Payload/data shape: unmanaged explicit DTOs and signals.

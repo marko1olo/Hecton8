@@ -408,7 +408,7 @@ namespace Hecton8.Construction
 
         private static void ReportOverflowOncePerFrame()
         {
-            int frame = Time.frameCount;
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (_lastOverflowWarningFrame == frame)
                 return;
 

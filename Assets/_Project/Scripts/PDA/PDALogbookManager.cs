@@ -202,7 +202,7 @@ namespace Hecton8.PDA
             if (!enabled)
                 return;
 
-            _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+            _saveService = GlobalRegistry.Save;
             TryRegisterHotSwapListener();
             TryRegisterWithSaveManager();
             RebindOwnerSubscriptions();
@@ -782,7 +782,7 @@ namespace Hecton8.PDA
                 return;
 
             if (_saveService == null)
-                _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+                _saveService = GlobalRegistry.Save;
 
             if (_saveService == null)
                 return;

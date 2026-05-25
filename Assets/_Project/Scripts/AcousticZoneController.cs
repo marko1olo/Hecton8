@@ -1,4 +1,4 @@
-﻿// ============================================================================
+// ============================================================================
 // HECTON-8 - AcousticZoneController.cs
 // Manages acoustic-zone transitions between open water and dry base interiors.
 //
@@ -26,7 +26,7 @@
 //     -> Tick: AcousticZoneController detects edge
 //       -> snapshot.TransitionTo(transitionDuration)
 //       -> SpatialAudioManager.PlayStatic2D(transitionClip)
-//       -> SignalBus<AcousticZoneChangedEvent>.TryPush(isInterior)
+//       -> SignalBus<AcousticZoneChangedEvent>.TryPushTracked(isInterior)
 //
 // ZERO GC:
 //   - Tick: one bool comparison plus edge detection. Zero allocation.
@@ -65,6 +65,8 @@ namespace Hecton8.Audio
     /// </summary>
     public static class AcousticZoneEvents
     {
+        private static int s_x001DirectSignalPushDropCount_AcousticZoneController;
+
         private const uint FloodMuffleLaneHash = 0x464C4D46u; // FLMF
         private const int FloodMuffleSignalCapacity = 32;
         private static bool _floodMuffleInitialized;
@@ -98,7 +100,7 @@ namespace Hecton8.Audio
         public static bool TryRaise(in AcousticZoneChangedEvent payload)
         {
             EnsureInitialized();
-            return SignalBus<AcousticZoneChangedEvent>.TryPush(in payload);
+            return SignalBus<AcousticZoneChangedEvent>.TryPushTracked(in payload, ref s_x001DirectSignalPushDropCount_AcousticZoneController);
         }
 
         [Obsolete("Acoustic zone producers must use TryRaise so bounded SignalBus rejection is visible.", true)]
@@ -111,7 +113,7 @@ namespace Hecton8.Audio
         public static bool TryRaiseFloodMuffle(in HabitatFloodAcousticMuffleSignal payload)
         {
             EnsureFloodMuffleInitialized();
-            return SignalBus<HabitatFloodAcousticMuffleSignal>.TryPush(in payload);
+            return SignalBus<HabitatFloodAcousticMuffleSignal>.TryPushTracked(in payload, ref s_x001DirectSignalPushDropCount_AcousticZoneController);
         }
 
         [Obsolete("Flood muffle producers must use TryRaiseFloodMuffle so bounded SignalBus rejection is visible.", true)]
@@ -1038,7 +1040,7 @@ namespace Hecton8.Audio
 
         private void CacheRegistryServicesCold()
         {
-            CacheAudioService(Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance);
+            CacheAudioService(GlobalRegistry.Audio);
             CacheSoundscapeReadModel(GlobalRegistry.SoundscapeTierReadModel);
             _atmosphereReadModel = GlobalRegistry.AtmosphereReadModel;
         }

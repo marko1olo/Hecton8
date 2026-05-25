@@ -34,6 +34,7 @@ namespace Hecton8.Environment
         IGlobalRegistryHotSwapListener,
         IGlobalRegistryHotSwapRefListener
     {
+        private static int s_x001HectonMarineSnowRendererSignalPushDropCount;
         private const float BiolumeSurgeDurationSeconds = 4f;
         private const int DefaultParticleThreadGroupSize = 64;
         private const int DefaultClearKernelTileSize = 8;
@@ -1702,11 +1703,11 @@ namespace Hecton8.Environment
                 Vector = result.VectorWS,
                 Radius = result.Radius,
                 Lifetime = result.Lifetime,
-                Frame = unchecked((uint)Time.frameCount),
+                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 SourceHash = VehicleWakeSourceHash,
                 Flags = result.Flags
             };
-            SignalBus<FluidImpulseSignal>.TryPush(in signal);
+            SignalBus<FluidImpulseSignal>.TryPushTracked(in signal, ref s_x001HectonMarineSnowRendererSignalPushDropCount);
             _vehicleWakePublishCooldown = VehicleWakePublishCooldownSeconds;
         }
 
@@ -4528,7 +4529,7 @@ namespace Hecton8.Environment
 
             uint flags = finite ? 0u : 1u;
             uint hash = 2166136261u;
-            hash = MixTelemetryHash(hash, unchecked((uint)Time.frameCount));
+            hash = MixTelemetryHash(hash, Hecton8.Core.SystemDispatcher.CurrentFrameId);
             hash = MixTelemetryHash(hash, unchecked((uint)math.max(0, _activeParticleCount)));
             hash = MixTelemetryHash(hash, unchecked((uint)math.max(0, _allocatedParticleCapacity)));
             hash = MixTelemetryHash(hash, math.asuint(_lastVehicleThrottle));

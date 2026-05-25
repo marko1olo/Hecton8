@@ -31,7 +31,9 @@ Burst job receives Vault-backed arrays and cached SignalBus writer. It does not 
 | `74007` | `NarrativePoiCsvScratch` | `long` | `4` | `NarrativePoiTriggers` |
 | `74008` | `NarrativePoiPresentation` | `NarrativePoiPresentationDTO` | `10000` | `NarrativePoiTriggers` |
 
-All lanes are acquired with `NativeArrayOptions.UninitializedMemory`. Active POI rows, bucket ranges, counters, cursor, and state masks are explicitly overwritten by owner code before use. Release is centralized through `AupNarrativePoiVault.ReleaseBuffers`.
+All lanes use `NativeArrayOptions.UninitializedMemory`.
+
+Owner code overwrites active POI rows, bucket ranges, counters, cursor, and state masks before use. Release path: `AupNarrativePoiVault.ReleaseBuffers`.
 
 ## DTO ABI
 
@@ -75,7 +77,8 @@ It is the Vault-owned cold managed-presentation mirror lane, not a private `Nati
 - 8. Registry rebuild/sync treats discovered POI hash identity as the AUP solver exhaustion source.
 - 9. Legacy serialized `narrativeAupTriggeredMask` remains a mirror for old public save/API compatibility.
 - 10. It is not the large-POI runtime identity route.
-- 9. `LateFrameTick()` finalizes only completed jobs through `DispatcherJobFence.TryFinalizeCompleted`. Forced completion is limited to teardown/registry mutation. `HectonNarrativeDirector` now declares no private `NativeArray`, `NativeList`, or `NativeHashMap` fields for the POI trigger route.
+- 9. `LateFrameTick()` finalizes only completed jobs through `DispatcherJobFence.TryFinalizeCompleted`. Forced completion is limited to teardown/registry mutation.
+- `HectonNarrativeDirector` declares no private `NativeArray`, `NativeList`, or `NativeHashMap` fields for the POI trigger route.
 
 ## Quality And Dear Lie
 

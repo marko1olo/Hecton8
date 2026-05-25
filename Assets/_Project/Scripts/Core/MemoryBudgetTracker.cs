@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Globalization;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -49,14 +48,7 @@ namespace Hecton8.Core
             {
                 record.WarningIssued = true;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning(
-                    "[MemoryBudgetTracker] " +
-                    ownerName +
-                    " exceeded persistent budget. Used=" +
-                    FormatBytes(record.TotalBytes) +
-                    ", Budget=" +
-                    FormatBytes(record.BudgetBytes) +
-                    ".");
+                Debug.LogWarning("[MemoryBudgetTracker] Persistent native budget exceeded.");
 #endif
             }
             else if (!exceededBudget)
@@ -108,11 +100,5 @@ namespace Hecton8.Core
             }
         }
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-        private static string FormatBytes(long bytes)
-        {
-            return (bytes * GlobalTelemetryBus.BytesToMegabytes).ToString("F2", CultureInfo.InvariantCulture) + " MB";
-        }
-#endif
     }
 }

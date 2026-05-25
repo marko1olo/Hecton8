@@ -111,7 +111,9 @@ Fabricators attached to logistics grid accept local SoA success immediately. Loc
 
 ## Fault Route
 
-`CraftingFastFailTelemetryEntry[300]` records evaluated recipes, unlock culls, mask culls, SIMD successes, inventory version, quality, and state hash. Slow validation slices above `200 us` dump raw fixed rows to `Docs/AgentLogs/Dump_SHINOBU_317.bin`.
+`CraftingFastFailTelemetryEntry[300]` records recipes, unlock culls, mask culls, SIMD successes, inventory version, quality, and state hash.
+
+Slow validation slices above `200 us` dump raw fixed rows to `Docs/AgentLogs/Dump_SHINOBU_317.bin`.
 
 ## Dear Lie
 

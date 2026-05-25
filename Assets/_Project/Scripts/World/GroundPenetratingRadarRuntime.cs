@@ -20,6 +20,7 @@ namespace Hecton8.World
     [AddComponentMenu("Hecton8/World/Ground Penetrating Radar Runtime")]
     public sealed class GroundPenetratingRadarRuntime : MonoBehaviour, IUpdatable, ILateFrameTickable, IRenderable, IGroundRadarService, IDisposable, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener
     {
+        private static int s_x001GroundPenetratingRadarRuntimeSignalPushDropCount;
         private const string OwnerName = "TERRAIN_GPR_SYSTEM";
         private const byte SubsurfaceAcousticChannel = 3;
         private const byte GprReturnState = 7;
@@ -925,7 +926,7 @@ namespace Hecton8.World
             if (!TryResolveRuntimeAup(_lastProbeOrigin, out AbsoluteUniversePosition positionAup))
                 return;
 
-            SignalBus<AcousticPingSignal>.TryPush(new AcousticPingSignal
+            SignalBus<AcousticPingSignal>.TryPushTracked(new AcousticPingSignal
             {
                 PositionAup = positionAup,
                 RadiusMeters = scanRadiusMeters,
@@ -933,9 +934,9 @@ namespace Hecton8.World
                 SourceId = GprSourceHash,
                 Channel = SubsurfaceAcousticChannel,
                 Flags = 1
-            });
+            }, ref s_x001GroundPenetratingRadarRuntimeSignalPushDropCount);
 
-            SignalBus<ToolAcousticSignal>.TryPush(new ToolAcousticSignal
+            SignalBus<ToolAcousticSignal>.TryPushTracked(new ToolAcousticSignal
             {
                 ToolHash = GprSourceHash,
                 TargetHash = GprReturnHash,
@@ -945,7 +946,7 @@ namespace Hecton8.World
                 Frame = frameId,
                 State = GprReturnState,
                 Flags = 1
-            });
+            }, ref s_x001GroundPenetratingRadarRuntimeSignalPushDropCount);
         }
 
         private static bool TryResolveRuntimeAup(float3 runtimePosition, out AbsoluteUniversePosition positionAup)

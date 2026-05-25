@@ -50,7 +50,9 @@ Solved state emits as unmanaged signal. Downstream gameplay decides what a node 
 
 
 
-`DecryptionPuzzleDTO` is the prompt-required 32-byte explicit layout. The runtime avoids false sharing by evaluating puzzle rows in a fused single Burst `IJob`, not by parallel writes to adjacent 32-byte rows.
+`DecryptionPuzzleDTO` is prompt-required 32-byte explicit layout.
+
+Runtime avoids false sharing with fused single Burst `IJob`, not parallel writes to adjacent 32-byte rows.
 
 
 
@@ -116,7 +118,8 @@ No decryption Burst job, read accessor, or hot helper polls `GlobalRegistry`.
 - On non-finite state or >0.1 ms solver budget, the owner frame copies fixed telemetry rows oldest-to-newest into a cold-created `DecryptionBlackBoxDumpWriter` command and returns.
 - Disk I/O for `Dump_SHINOBU_273.bin` is handled by the background writer thread.
 - The dump format is a 24-byte little-endian header followed by raw 64-byte `DecryptionTelemetryEntry` rows.
-- Backpressure is reported through `GlobalTelemetryBus.PublishPerformanceWarning` with `FaultDecryptionDumpBackpressure`; the owner frame does not call `FileStream` or `BinaryWriter` from the decryption fault path, and the decryption writer does not use `BinaryWriter`.
+- Backpressure is reported through `GlobalTelemetryBus.PublishPerformanceWarning` with `FaultDecryptionDumpBackpressure`.
+- Owner frame does not call `FileStream`/`BinaryWriter` from the fault path; decryption writer does not use `BinaryWriter`.
 
 
 
@@ -196,7 +199,8 @@ Loop 13 shader variant closure:
 
 - Loop 17 dispatcher-frame and Vault-count closure: `TerminalOsRuntime` no longer passes Unity `Time.frameCount` into decryption schedule, knob input, telemetry, or `TerminalUnlockedSignal`.
 - `TryScheduleDecryptionPipeline` runs only after `SystemDispatcher.CurrentFrameId` resolves. `TryFinalizeDecryptionJob()` records telemetry against stored `_decryptionScheduleFrame`, not current dispatcher/Unity frame.
-- The fused solver row count is clamped by puzzle and terminal Vault lengths, zero-length knob input fails closed, and `ValidateNativeBuffers()` refuses `_nativeResourcesReady` unless terminal/decryption buffers meet their requested capacities.
+- Fused solver row count clamps by puzzle and terminal Vault lengths; zero-length knob input fails closed.
+- `ValidateNativeBuffers()` refuses `_nativeResourcesReady` unless terminal/decryption buffers meet requested capacities.
 
 
 

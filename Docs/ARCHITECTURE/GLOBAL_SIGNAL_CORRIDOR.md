@@ -35,7 +35,9 @@ Owner Source: `Assets/_Project/Scripts/Core/GlobalSignals.cs`
 
 | Direct `CreateQueue(...)` native queue slots in `InitializeAllQueues()` | 73 |
 
-| Typed `SignalBus<T>.EnsureInitialized()` lanes in the `GlobalSignals` initialization surface | 135 by 2026-05-20 R38 source recapture; direct `CreateQueue(...)` slots remain 73; `SignalBus<T>.Configure/EnsureInitialized` hits inside `GlobalSignals.cs` are 271 |
+| Typed `SignalBus<T>.EnsureInitialized()` lanes | 135 by 2026-05-20 R38 source recapture |
+| Direct `CreateQueue(...)` slots | 73 remain |
+| `SignalBus<T>.Configure/EnsureInitialized` hits in `GlobalSignals.cs` | 271 |
 
 | Modding validator source `ISignal` structs | static validator pass: `Status=PASS`, `SchemaRevision=16`, `SourceSignals=162`, `ModCommandSizeBytes=64`; STATIC_SOURCE / PY_TOOL only; no compile/import/runtime/profiler/GC/platform/mod-smoke proof |
 
@@ -65,7 +67,9 @@ Owner Source: `Assets/_Project/Scripts/Core/GlobalSignals.cs`
 - Cache-line-critical producer storms must not use it as the primary route; they use owner-local or Vault-backed thread-local scratch plus deterministic commit.
 - `GlobalSignals.OpenSignalWriterForProducerPhase<TSignal>()` opens only the requested typed bridge lane; it must not prewarm every direct `GlobalSignals` queue.
 
-Adjacent Core helpers follow the same vocabulary: writer acquisition uses `Open*` names, while compatibility aliases must be treated as low-frequency bridge debt. `TryGet*` surfaces must not initialize queue storage.
+Adjacent Core helpers use the same vocabulary.
+
+Writer acquisition uses `Open*` names; compatibility aliases are low-frequency bridge debt. `TryGet*` surfaces must not initialize queue storage.
 
 Exposed writer lanes:
 

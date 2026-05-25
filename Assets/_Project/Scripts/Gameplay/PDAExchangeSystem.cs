@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Hecton.Localization;
 using Hecton8.AtlasSignal;
 using Hecton8.Core;
@@ -15,6 +15,7 @@ namespace Hecton8.Gameplay
     [AddComponentMenu("Hecton8/Gameplay/PDA Exchange System")]
     public sealed class PDAExchangeSystem : MonoBehaviour, ISaveable, IUpdatable, IGlobalRegistryHotSwapListener
     {
+        private static int s_x001PDAExchangeSystemSignalPushDropCount;
         public readonly struct TransactionSnapshot
         {
             public readonly BarterOfferData Offer;
@@ -590,7 +591,7 @@ namespace Hecton8.Gameplay
         {
             _playerRuntime = GlobalRegistry.Player;
             _scanLogRuntime = GlobalRegistry.ScanLogService;
-            _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+            _saveService = GlobalRegistry.Save;
         }
 
         private void AutoResolve(bool resolveHud)
@@ -659,7 +660,7 @@ namespace Hecton8.Gameplay
                 return;
 
             if (_saveService == null)
-                _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+                _saveService = GlobalRegistry.Save;
 
             if (_saveService == null)
                 return;
@@ -763,7 +764,7 @@ namespace Hecton8.Gameplay
             PdaExchangeStateChangedSignal signal = new PdaExchangeStateChangedSignal
             {
                 SourceId = _signalSourceId,
-                Frame = unchecked((uint)SystemDispatcher.CurrentFrameIndex),
+                Frame = SystemDispatcher.CurrentFrameId,
                 OfferCount = OfferCount,
                 RecentTransactionCount = _recentTransactionCount,
                 ExecutionStateCount = _executionStateCount,
@@ -771,7 +772,7 @@ namespace Hecton8.Gameplay
                 Flags = flags
             };
 
-            SignalBus<PdaExchangeStateChangedSignal>.TryPush(in signal);
+            SignalBus<PdaExchangeStateChangedSignal>.TryPushTracked(in signal, ref s_x001PDAExchangeSystemSignalPushDropCount);
         }
 
         private bool IsUnlocked(BarterOfferData offer)

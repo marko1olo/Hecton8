@@ -1,4 +1,3 @@
-using Hecton8.Atmosphere;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Physics;
@@ -59,7 +58,7 @@ namespace Hecton8.Gameplay
         IWaterHeatInjectionService WaterHeatInjectionService { get; }
 
         /// <summary>Optional fixed-step atmosphere owner attached to this submarine root.</summary>
-        SubmarineAtmosphereSystem AtmosphereSystem { get; }
+        ISubmarineAtmosphereRoomReadModel AtmosphereSystem { get; }
 
         /// <summary>Optional structural breach read/write owner attached to this submarine root.</summary>
         SubmarineStructuralGrid StructuralGrid { get; }

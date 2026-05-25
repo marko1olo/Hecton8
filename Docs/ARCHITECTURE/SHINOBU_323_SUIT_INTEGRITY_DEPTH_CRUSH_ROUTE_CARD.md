@@ -92,8 +92,14 @@ Solver publishes buckling, overpressure, integrity loss, and quality to shader g
 
 `UberNoir`/HUD owns screen-edge warp, spider cracks, and concussive deformation illusion.
 
-Complexity before Dear Lie: potential scene broadphase/mesh deformation route `O(trigger pairs + mesh vertices)`.
-Complexity after Dear Lie: `O(entityCount)` scalar Burst evaluation with `O(1)` player-row presentation publish.
+Complexity before Dear Lie:
+
+- potential scene broadphase/mesh deformation route `O(trigger pairs + mesh vertices)`
+
+Complexity after Dear Lie:
+
+- `O(entityCount)` scalar Burst evaluation
+- `O(1)` player-row presentation publish
 
 ## Fault Route
 

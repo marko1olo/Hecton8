@@ -722,7 +722,7 @@ namespace Hecton8.Core
 
             TelemetryEvent telemetryEvent = new TelemetryEvent
             {
-                FrameIndex = isMainThread ? unchecked((uint)Time.frameCount) : 0u,
+                FrameIndex = isMainThread ? Hecton8.Core.SystemDispatcher.CurrentFrameId : 0u,
                 EventType = (uint)eventType,
                 SubjectHash = subjectHash,
                 ContextHash = contextHash,

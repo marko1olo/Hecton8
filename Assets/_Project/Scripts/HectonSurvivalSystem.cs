@@ -211,15 +211,16 @@ namespace Hecton8.Gameplay
     /// Attach to the player GameObject and assign a SurvivalStats asset.
     ///
     /// FEATURES:
-    ///   • Zero-GC Tick System (ISlowTickable, ILateFrameTickable)
-    ///   • Atmospheric Hazards (Pressure, Temperature, Radiation)
-    ///   • Suit Resource Management (O2, Energy, Integrity)
-    ///   • Persistence (ISaveable)
-    ///   • Throttled HUD Events
+    ///   ï¿½ Zero-GC Tick System (ISlowTickable, ILateFrameTickable)
+    ///   ï¿½ Atmospheric Hazards (Pressure, Temperature, Radiation)
+    ///   ï¿½ Suit Resource Management (O2, Energy, Integrity)
+    ///   ï¿½ Persistence (ISaveable)
+    ///   ï¿½ Throttled HUD Events
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class HectonSurvivalSystem : MonoBehaviour, ISlowTickable, ILateFrameTickable, ISaveable, IGlobalRegistryHotSwapListener, IPlayerSurvivalEnvironmentReadModel, IPlayerBleedingReadModel
     {
+        private static int s_x001HectonSurvivalSystemSignalPushDropCount;
         // ---------------------------------------------------------
         //  INSPECTOR
         // ---------------------------------------------------------
@@ -346,7 +347,7 @@ namespace Hecton8.Gameplay
         private PlayerRuntimeContext _runtimeContext;
         private IPlayerRuntimeContext _playerRuntimeContext;
         private Unity.Mathematics.Random _traumaRandom;
-        private FixedCharBuffer _telemetryBuffer = new FixedCharBuffer(512); // COLD ALLOC: char[512] — telemetry construction — owner: HectonSurvivalSystem
+        private FixedCharBuffer _telemetryBuffer = new FixedCharBuffer(512); // COLD ALLOC: char[512] ï¿½ telemetry construction ï¿½ owner: HectonSurvivalSystem
         private const float HazardGraceDuration = 3f;
         private const float SaveVelocityHardCapMetersPerSecond = 80f;
         private const float SaveVelocityHardCapSq = SaveVelocityHardCapMetersPerSecond * SaveVelocityHardCapMetersPerSecond;
@@ -648,7 +649,7 @@ namespace Hecton8.Gameplay
         private void RefreshColdRegistryReferences()
         {
             _atmosphereRuntime = GlobalRegistry.AtmosphereReadModel;
-            _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+            _saveService = GlobalRegistry.Save;
             _survivalDataVault = GlobalRegistry.DataVault;
         }
 
@@ -658,7 +659,7 @@ namespace Hecton8.Gameplay
                 return;
 
             if (_saveService == null)
-                _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+                _saveService = GlobalRegistry.Save;
 
             if (_saveService == null)
                 return;
@@ -748,6 +749,8 @@ namespace Hecton8.Gameplay
                     }
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
+                    _registeredSlowTickable = false;
+                    _registeredLateFrameTickable = false;
                     if (currentService != null)
                         TryRegisterTickOwners();
                     break;
@@ -2051,7 +2054,7 @@ namespace Hecton8.Gameplay
             if (!PhysicsDeterminismSignals.TryGetLatestKccVelocity(out KccVelocitySignal signal) || signal.Sequence == 0u)
                 return false;
 
-            uint currentFrame = unchecked((uint)SystemDispatcher.CurrentFrameIndex);
+            uint currentFrame = SystemDispatcher.CurrentFrameId;
             uint signalFrame = signal.Frame != 0u ? signal.Frame : signal.Sequence;
             if (currentFrame != 0u &&
                 signalFrame != 0u &&
@@ -2720,7 +2723,7 @@ namespace Hecton8.Gameplay
             signal.ChemicalHash = _NutritionalToxicityChemicalHash;
             signal.Frame = TimeSliceScheduler.CurrentFrameId;
             signal.Flags = 1;
-            SignalBus<ToxicityExposureSignal>.TryPush(in signal);
+            SignalBus<ToxicityExposureSignal>.TryPushTracked(in signal, ref s_x001HectonSurvivalSystemSignalPushDropCount);
         }
 
         private void PublishEnvironmentalToxicityStatus(float toxicity01, float exposureScale, float dt)
@@ -2758,7 +2761,7 @@ namespace Hecton8.Gameplay
             signal.ChemicalHash = _EnvironmentalToxicityChemicalHash;
             signal.Frame = TimeSliceScheduler.CurrentFrameId;
             signal.Flags = 1;
-            SignalBus<ToxicityExposureSignal>.TryPush(in signal);
+            SignalBus<ToxicityExposureSignal>.TryPushTracked(in signal, ref s_x001HectonSurvivalSystemSignalPushDropCount);
         }
 
         internal static bool ShouldApplyNutritionalToxicityOnConsume(ItemData item)
@@ -3402,9 +3405,9 @@ namespace Hecton8.Gameplay
             if (string.IsNullOrWhiteSpace(databaseText))
                 return false;
 
-            // COLD ALLOC: List<SurvivalDatabaseItemParameters>[256] — injected survival database row staging during cold parse — owner: HectonSurvivalSystem
+            // COLD ALLOC: List<SurvivalDatabaseItemParameters>[256] ï¿½ injected survival database row staging during cold parse ï¿½ owner: HectonSurvivalSystem
             List<SurvivalDatabaseItemParameters> parsedRows = new List<SurvivalDatabaseItemParameters>(SurvivalDatabaseRowCapacity);
-            // COLD ALLOC: Dictionary<string, int>[16] — survival database header column map during cold parse — owner: HectonSurvivalSystem
+            // COLD ALLOC: Dictionary<string, int>[16] ï¿½ survival database header column map during cold parse ï¿½ owner: HectonSurvivalSystem
             Dictionary<string, int> columnLookup = new Dictionary<string, int>(SurvivalDatabaseColumnCapacity, StringComparer.Ordinal);
 
             bool headerFound = false;
@@ -3451,7 +3454,7 @@ namespace Hecton8.Gameplay
             if (!headerFound || parsedRows.Count == 0)
                 return false;
 
-            // COLD ALLOC: Dictionary<string, int>[parsedRows.Count] — StableId to injected item-parameter index map — owner: HectonSurvivalSystem
+            // COLD ALLOC: Dictionary<string, int>[parsedRows.Count] ï¿½ StableId to injected item-parameter index map ï¿½ owner: HectonSurvivalSystem
             parsedLookup = new Dictionary<string, int>(parsedRows.Count, StringComparer.Ordinal);
             for (int i = 0; i < parsedRows.Count; i++)
             {
@@ -3462,7 +3465,7 @@ namespace Hecton8.Gameplay
                 parsedLookup.Add(stableId, i);
             }
 
-            // COLD ALLOC: SurvivalDatabaseItemParameters[parsedRows.Count] — immutable injected item-parameter snapshot — owner: HectonSurvivalSystem
+            // COLD ALLOC: SurvivalDatabaseItemParameters[parsedRows.Count] ï¿½ immutable injected item-parameter snapshot ï¿½ owner: HectonSurvivalSystem
             parsedItems = parsedRows.ToArray();
             return true;
         }
@@ -3598,7 +3601,7 @@ namespace Hecton8.Gameplay
                 return false;
 
             ReadOnlySpan<char> databaseSpan = databaseText.AsSpan();
-            // COLD ALLOC: SurvivalDatabaseItemRecord[256] — injected survival database row staging during cold parse — owner: HectonSurvivalSystem
+            // COLD ALLOC: SurvivalDatabaseItemRecord[256] ï¿½ injected survival database row staging during cold parse ï¿½ owner: HectonSurvivalSystem
             NativeArray<SurvivalDatabaseItemRecord> stagingRows = H8Memory.Allocate<SurvivalDatabaseItemRecord>(
                 SurvivalDatabaseRowCapacity,
                 SystemID.GameplayPlayer,
@@ -3677,7 +3680,7 @@ namespace Hecton8.Gameplay
                 }
             }
 
-            // COLD ALLOC: SurvivalDatabaseItemRecord[parsedRowCount] — immutable injected item-parameter snapshot — owner: HectonSurvivalSystem
+            // COLD ALLOC: SurvivalDatabaseItemRecord[parsedRowCount] ï¿½ immutable injected item-parameter snapshot ï¿½ owner: HectonSurvivalSystem
             parsedItems = H8Memory.Allocate<SurvivalDatabaseItemRecord>(
                 parsedItemCount,
                 SystemID.GameplayPlayer,

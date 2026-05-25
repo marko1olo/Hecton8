@@ -61,9 +61,11 @@ Expected max events/reads per frame:
 - `ResolveMaxActiveDecals()` uses smoothed `GlobalQualityWeight` to lerp 8..128.
 - Thermal pressure increases decay pressure.
 - Shader crack/refraction detail scales by quality and `NormalRefractionIntensity`; DTO layout and authority route do not change.
-- Active Noir integration is pre-tonemap only; URP Volume Tonemapping owns final ACES, so `Hecton_VisorGlitchACES.shader` must not apply a local fragment tonemap curve or clamp HDR color with `saturate(color)`.
+- Active Noir integration is pre-tonemap only; URP Volume Tonemapping owns final ACES.
+- `Hecton_VisorGlitchACES.shader` must not apply local fragment tonemap or clamp HDR color with `saturate(color)`.
 - Active Noir timing follows the dispatcher route: `TimeSliceScheduler.CurrentFrameId` supplies frame/profile cadence and finite `SystemDispatcher.CurrentFrameDeltaTime` advances wrapped visual phase. Unity `Time.*` is not part of the owned wound/noir route.
-- Active Noir CBuffer publication is owned by `HectonVisorUberPostFeature.LateFrameTick`; `AddRenderPasses()` only consumes the last valid buffer and enqueues the RenderGraph pass. One-record mock/parameter math is direct scalar code, not synchronous `IJob.Run()`.
+- Active Noir CBuffer publication is owned by `HectonVisorUberPostFeature.LateFrameTick`.
+- `AddRenderPasses()` consumes last valid buffer and enqueues RenderGraph pass. One-record mock/parameter math is direct scalar code.
 - Shared host player-context path consumes cached `IPlayerRuntimeContext` snapshots; render enqueue does not call `PlayerRuntimeContextService.TryGetActiveRuntimeContext()`.
 - Touched host file no longer imports `Hecton8.Gameplay`; survival status and hull stress come from owner-published snapshot DTOs.
 - Wet-lens stays presentation-only from cached movement owner.
@@ -112,7 +114,8 @@ Profiler marker:
 Loop 20 render ownership addendum:
 - `DeferredDecalPass` binds wound atlas state inside the RenderGraph raster function; no material atlas mutation remains in setup.
 - `HectonVisorUberPostFeature.AddRenderPasses()` stages reconstruction camera/runtime input and consumes the last active reconstruction CBuffer only. `LateFrameTick()` owns reconstruction constant upload, Vault mirror write, telemetry write, and dump emission.
-- Visor post trauma scalars/textures are carried through pass data and bound with command-buffer globals inside the raster function. The legacy visor post shader no longer uses `UnityPerMaterial` for those fields.
+- Visor post trauma scalars/textures pass through pass data and bind with command-buffer globals inside raster function.
+- Legacy visor post shader no longer uses `UnityPerMaterial` for those fields.
 - Owned visor post/reconstruction shaders consume dispatcher-published visual time globals, not shader `_Time`.
 - Noir/reconstruction CSV profile selection reads fixed cold snapshots after parse; hot paths do not resolve profile Vault NativeArrays.
 

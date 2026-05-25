@@ -56,7 +56,7 @@ Current migration boundary:
 - SHINOBU active bridges do not fall back to `GlobalRegistry.DataVault`; binding/`InitializeVault()` run cold in `BindRuntimeReferences()`. Active snap/validation use pure cached-vault gates.
 - `HectonBlueprintPreviewBatch` likewise binds its builder-holography `VaultGenerationHandle<T>` descriptors in `Awake()`/`OnEnable()` through `EnsureBuffersCold()`; active upload and signal consumption use `TryReadCachedBuffers()` with `IDataVault.TryResolveHandle(...)` only.
 - The mutating socket-alignment bridge is named `TryUpdateShinobuSocketAlignment()` because it can prepare owner-local CSR rows, schedule jobs, finalize prior results, and update cached pose state.
-- `EvaluateSocketSnappingJob` is scheduled as an `IJobParallelFor`; `SelectBestSocketSnapJob` depends on that handle, reduces into a reserved sink row in the same `SnapResults` Vault lane, and is finalized only through `DispatcherJobFence.TryFinalizeCompleted`.
+- `EvaluateSocketSnappingJob` is `IJobParallelFor`; `SelectBestSocketSnapJob` depends on it, reduces into the `SnapResults` sink row, and finalizes through `DispatcherJobFence.TryFinalizeCompleted`.
 - Builder holography/SDF validation:
   - `BuildBuilderGhostStateJob` schedules first.
   - `ValidateBuilderGhostPlacementJob` depends on it.
@@ -105,7 +105,7 @@ Current migration boundary:
 
 - The authored semantic placement-rule cache no longer owns a reusable `List<MonoBehaviour>` buffer or active `IBuildPlacementRule` interface dispatch.
 - `CacheActivePlacementRule()` performs cold direct sealed-component lookup for the known `DeepDrillModule` and `AutonomousExtractorModule` providers, stores a byte rule-kind tag, and active preview validation calls `ValidatePlacementWithService()` / `ValidatePlacementWithRuntime()` with cached dependencies.
-- Deep-drill validation no longer builds an `InteractionPacket`, stamps Unity time, or polls `GlobalRegistry.InteractionSignals`; its static active-provider registry is fixed `DeepDrillModule[128]` plus `s_ActiveModuleCount` rather than a growable managed list.
+- Deep-drill validation no longer builds `InteractionPacket`, stamps Unity time, or polls `GlobalRegistry.InteractionSignals`. Active providers use fixed `DeepDrillModule[128]` plus `s_ActiveModuleCount`.
 - Extractor validation no longer creates its runtime owner during validation and no longer scores candidates through transform-position fallback.
 - The remaining extractor `Physics.OverlapSphereNonAlloc` is a documented semantic-rule residue until the resource-node owner publishes an unmanaged spatial snapshot.
 
@@ -188,7 +188,7 @@ Current migration boundary:
 
 
 
-- `ModuleSocket` components remain only for the legacy authored-socket branch outside the SHINOBU Vault snap route. SHINOBU occupancy no longer performs authored-component hierarchy scans or marks authored components after placement.
+- `ModuleSocket` components remain only for legacy authored sockets outside the SHINOBU Vault snap route. SHINOBU occupancy performs no authored-component hierarchy scans.
 
 
 
@@ -201,7 +201,8 @@ Current migration boundary:
 - Snap topology hash uses Vault counters/module/connection rows.
 - It prepares only the owner-local CSR cache.
 - It fails closed when construction owner has not published target socket rows.
-- The occupied-cell validator path now scans finite `ConstructionSocketModuleDTO.RootAup` rows from the same Vault view and compares AUP-local integer `GridPos`; it no longer locks or hydrates `ConstructionBuilderOccupancy` from managed scene modules.
+- Occupied-cell validator scans finite `ConstructionSocketModuleDTO.RootAup` rows from the same Vault view and compares AUP-local integer `GridPos`.
+- It no longer locks or hydrates `ConstructionBuilderOccupancy` from managed scene modules.
 - `TryCommitShinobuSnapOccupancy()` no longer requires scene-list index or spawned-module transform read.
 - Placed-module rows use `SceneModuleListIndex = -1`.
 - Pose source: already selected placement command.

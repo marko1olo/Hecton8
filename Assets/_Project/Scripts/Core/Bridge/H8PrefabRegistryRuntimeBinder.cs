@@ -10,6 +10,7 @@ namespace Hecton8.Core.Bridge
 {
     public static unsafe class H8PrefabRegistryRuntimeBinder
     {
+        private static int s_x001H8PrefabRegistryRuntimeBinderSignalPushDropCount;
         public static bool Bind(H8PrefabRegistry registry, IDataVault vault)
         {
             if (registry == null || vault == null)
@@ -55,7 +56,7 @@ namespace Hecton8.Core.Bridge
             long totalVramBytes = 0L;
             bool publishRuntimeSignals = Application.isPlaying;
             PrefabRegistry runtimeRegistry = publishRuntimeSignals ? GlobalRegistry.PrefabRegistryRuntime : null;
-            uint frame = publishRuntimeSignals ? unchecked((uint)Time.frameCount) : 0u;
+            uint frame = publishRuntimeSignals ? Hecton8.Core.SystemDispatcher.CurrentFrameId : 0u;
             int activeCount = 0;
 
             for (int i = 0; i < count; i++)
@@ -86,7 +87,7 @@ namespace Hecton8.Core.Bridge
                     OneDimensionalLutHash = entry.OneDimensionalLutHash,
                     Flags = entry.Flags
                 };
-                SignalBus<PrefabAcousticSignatureSignal>.TryPush(in acoustic);
+                SignalBus<PrefabAcousticSignatureSignal>.TryPushTracked(in acoustic, ref s_x001H8PrefabRegistryRuntimeBinderSignalPushDropCount);
 
                 PrefabLoreLinkSignal lore = new PrefabLoreLinkSignal
                 {
@@ -97,7 +98,7 @@ namespace Hecton8.Core.Bridge
                     HighTierVisualHash = entry.HighTierVisualHash,
                     Flags = entry.Flags
                 };
-                SignalBus<PrefabLoreLinkSignal>.TryPush(in lore);
+                SignalBus<PrefabLoreLinkSignal>.TryPushTracked(in lore, ref s_x001H8PrefabRegistryRuntimeBinderSignalPushDropCount);
             }
 
             Thread.MemoryBarrier();
@@ -158,11 +159,11 @@ namespace Hecton8.Core.Bridge
                 OffsetBytes = -1,
                 OldValue = 0f,
                 NewValue = entryCount > 0 ? entryCount : 0f,
-                Frame = unchecked((uint)Time.frameCount),
+                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 BufferId = (ushort)bufferId,
                 Flags = 0
             };
-            SignalBus<DataVaultUpdateSignal>.TryPush(in signal);
+            SignalBus<DataVaultUpdateSignal>.TryPushTracked(in signal, ref s_x001H8PrefabRegistryRuntimeBinderSignalPushDropCount);
         }
     }
 

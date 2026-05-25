@@ -32,7 +32,7 @@ Route:
 - `ColorGrading`: contrast, saturation, temperature, depth tint.
 - `QualityAndLimits`: quality, stress, toxicity, A/B split.
 
-- CSV color profile selection is cached as one active `NoirColorProfileDTO` and refreshed on a continuous quality-scaled cadence from 18 frames at low quality to 2 frames at high quality.
+- CSV color profile selection is cached as one active `NoirColorProfileDTO`; refresh cadence scales from 18 frames at low quality to 2 frames at high quality.
 
 - Player survival/movement references are cached from registry replacement.
 - If player context initializes late, SHINOBU_235 retries through cached `IPlayerRuntimeContext`.

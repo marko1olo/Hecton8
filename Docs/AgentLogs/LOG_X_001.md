@@ -905,3 +905,152 @@ Proof:
 - Touched-file brace delta: 0.
 
 Build status -> Not launched. Latest guard reported `CPU=100 compiler_count=0`; AGENTS blocks `dotnet build` above 50 percent CPU.
+
+## 2026-05-25 - SIGNAL_MAIN_THREAD_TRYPUSH_REFUSAL_TRACKING_X_001
+
+What was wrong:
+- Main-thread `SignalBus<T>.TryPush(...)` producers were bounded, but selected owners still discarded the bool and lost local refusal evidence.
+- Obsolete `GlobalSignals.Publish/Push` compatibility methods were compile-time banned for new code, but their internal typed-lane drops were not counted in bridge state.
+
+What was done:
+- Patched 25 code files.
+- Added `SignalBus<T>.TryPushTracked(in T, ref int)` for caller-owned refusal counters.
+- Converted 177 selected owner push sites across 22 runtime owners to `TryPushTracked`.
+- Added `SignalBridgeState.LegacyPublishDropCount` and routed obsolete facade publishes through `TryPushLegacy`.
+- Restored one DroneFleet owner-local native heap call to `heap.TryPush` and increments the local counter on heap refusal.
+
+Cinematic cheats used:
+- No new simulation was added. This pass only exposes refused facts at the producer edge.
+- Presentation-heavy signals still shed through existing lane capacity/stress policies; no managed text, dictionary, or delegate fallback was added.
+
+Exact microseconds saved:
+- 0us verified. No Unity Play Mode/profiler/GCMonitor capture was run.
+- Static effect only: owner-local refusal counters now survive 5000-signal bursts without heap allocation or native queue capacity inflation.
+
+Proof:
+- Report: `Docs/Reports/SIGNAL_MAIN_THREAD_TRYPUSH_REFUSAL_TRACKING_X_001.md`.
+- `SignalBus<T>.TryPushTracked(...)` call sites: 177.
+- `GlobalSignals.LegacyFacade` `TryPushLegacy(...)` refs: 116 total including helper declaration.
+- Changed-file direct `.TryPush(...)` refs: 2 helper/wrapper bodies.
+- Bad tracked receiver scan: 0.
+- Changed-file brace delta regression count: 0.
+- Signal DTO banned-field scan: 0.
+- Runtime `GlobalSignals.Publish/Push/TryDequeue/*Writer`: 0 outside allowed zones.
+- `SignalBus<T>.Push`: 0.
+- First-party `HectonEventBus.Publish/Subscribe/Unsubscribe`: 0 outside ModdingAPI/Editor/Tests.
+- `ThreadSafeCommandQueue.Enqueue`: 0.
+- Scoped core signal payload/contract banned-field scan: 0.
+- `git diff --check`: no errors; LF-to-CRLF warnings only.
+
+Build status -> Not launched. Latest guard reported `CPU=99 compiler_count=0`; AGENTS blocks `dotnet build` above 50 percent CPU.
+## 2026-05-25 - Producer Edge TryPush Refusal Closure
+
+What was wrong:
+70 selected runtime producer owners still had simple statement-level `SignalBus<T>.TryPush(...)` calls where the returned bool was discarded. The lane-level queue rejected overflow without heap growth, but the producer owner had no local refusal evidence for black-box diagnostics.
+
+What was done:
+Patched 70 code files. Converted selected one-line producers to `SignalBus<T>.TryPushTracked(..., ref ownerDropCounter)`. Added file-qualified owner counters to avoid partial-class duplicate fields. Fixed helper-surface fallout in `SystemDispatcher`, `PhysicsEventBus`, and `LaserCutterEvents`.
+
+Cinematic cheats used:
+No visual simulation was added. The pass buys future visual overkill by preserving deterministic bounded signal ingress and making producer-edge overload visible without raising lane capacity.
+
+Exact microseconds saved:
+0us verified. No Unity profiler or GCMonitor capture was run. Static result: direct external statement-level `TryPush` reduced to 75, `TryPushTracked` total now 346, legacy hot-route scan remains 0.
+
+Proof:
+- Report: `Docs/Reports/SIGNAL_PRODUCER_EDGE_TRYPUSH_REFUSAL_CLOSURE_X_001.md`.
+- Code files patched this pass: 70.
+- `SignalBus<T>.TryPushTracked(...)` in this pass file set: 169.
+- Owner-local `s_x001...SignalPushDropCount` fields in this pass file set: 73.
+- Owner-counter containment scan: 0 missing local fields.
+- Runtime legacy hot-route scan: 0 hits outside allowed zones.
+- Changed-file brace delta: 0.
+- `git diff --check`: no errors; LF-to-CRLF warnings only.
+
+Build status -> Not launched. Latest guard reported `CPU=100 compiler_count=2` with active `dotnet` and `csc`; AGENTS blocks `dotnet build` above 50 percent CPU or when another compiler is active.
+
+## 2026-05-25 - TryPush Zero Remainder Closure
+
+What was wrong:
+75 external runtime statement-level `SignalBus<T>.TryPush(...)` producers still discarded the bounded enqueue result. This was not a heap allocation route, but it hid producer-edge refusal under signal storms.
+
+What was done:
+Converted the remaining 75 call sites to `SignalBus<T>.TryPushTracked(...)`, added owner-local static drop counters, handled both simple `in signal` calls and multiline object-initializer calls, and fixed the `QuestDagDebugApi` counter containment miss after mechanical insertion.
+
+Cinematic cheats used:
+None. This is infrastructure backpressure and forensics work. Existing presentation lanes remain free to spend capacity on visual overkill through explicit route cards; gameplay DTO layout and truth ownership were not changed.
+
+Exact microseconds saved:
+0us verified. No Unity profiler, Play Mode, GCMonitor, or Memory Profiler capture was run.
+
+Proof:
+- Report: `Docs/Reports/SIGNAL_TRYPUSH_ZERO_REMAINDER_CLOSURE_X_001.md`.
+- External statement-level direct `SignalBus<T>.TryPush(...)`: 0.
+- Total `SignalBus<T>.TryPushTracked(...)`: 422.
+- Bad tracked receiver scan: 0.
+- Owner-counter containment scan: 0.
+- External runtime `GlobalSignals.Publish/Push/TryDequeue/*Writer`, `SignalBus<T>.Push`, first-party `HectonEventBus.Publish/Subscribe/Unsubscribe`, and `ThreadSafeCommandQueue.Enqueue`: 0.
+- Runtime `ISignal` DTO banned-field scan: 0 across 287 structs.
+- Code-aware brace delta: 0.
+- `git diff --check`: no errors; LF-to-CRLF warnings only.
+
+Build status -> Not launched. Latest guard reported `CPU=100 compiler_count=2` with active `csc` PID 39508 and `dotnet` PID 32980; AGENTS blocks `dotnet build` above 50 percent CPU or when another compiler is active.
+
+## 2026-05-25 - DTO Contract And Direct TryPush Closure
+
+What was wrong:
+Multi-owner and boot-sensitive `SignalBus<T>` lanes still had an order-dependent first-initializer risk. A producer could initialize native storage with generic defaults before the real owner `Configure(...)` call ran. Direct bool-return `SignalBus<T>.TryPush(...)` edges were bounded, but the tracked refusal surface was not universal.
+
+What was done:
+Patched 54 runtime/code files. Added DTO-owned capacity/hash constants plus `SignalLanePolicyCache<T>` cold default entries for 41 lanes across music, construction, seaglide, core health/presentation, seismic/environment, inventory/economy, tool kinematics, and Terminal OS. Rewired selected owner `Configure(...)` calls to use DTO constants. Added `SignalBus<T>.DirectTrackedDropTotal` and no-ref `TryPushTracked(in T)`. Converted 66 remaining external runtime bool-return `TryPush(...)` edges across 35 files to `TryPushTracked(...)`.
+
+Cinematic cheats used:
+No new simulation was added. The pass keeps signal storms bounded so saved CPU/native memory can be spent by explicit visual consumers later. Low-tier behavior is deterministic drop/coalescing; high and ultra tiers can raise explicit DTO capacities without changing truth ownership or DTO layout.
+
+Exact microseconds saved:
+0us verified. No Unity profiler, Play Mode, GCMonitor, or Memory Profiler capture was run. Static result only: early generic-default native lane initialization is prevented for the 41 touched lanes, and direct-edge refusal is counted without heap allocation.
+
+Proof:
+- Report: `Docs/Reports/SIGNAL_DTO_CONTRACT_AND_DIRECT_TRYPUSH_CLOSURE_X_001.md`.
+- Code files touched this pass: 54.
+- DTO-owned contract defaults added/normalized: 41 lanes.
+- External runtime direct `SignalBus<T>.TryPush(...)` conversions: 66.
+- Total `SignalBus<T>.TryPushTracked(...)`: 487.
+- No-ref direct tracked call sites: 65.
+- External runtime hot-route scan including `GlobalSignals.Publish/Push/TryDequeue/*Writer`, `SignalBus<T>.Push`, external `SignalBus<T>.TryPush`, first-party `HectonEventBus.Publish/Subscribe/Unsubscribe`, and `ThreadSafeCommandQueue.Enqueue`: 0.
+- Runtime `ISignal` DTO banned-field scan: 0.
+- Selected magic configure scan: 0.
+- Touched-file brace delta: 0.
+- `git diff --check`: no errors; LF-to-CRLF warnings only.
+
+Build status -> Not launched. Final guard reported `CPU=41.9 compiler_count=2` with active `csc` PID 50660 and `dotnet` PID 54776; AGENTS blocks `dotnet build` when another compiler/build process is active.
+
+## 2026-05-25 - Owner-Counter TryPush Closure
+
+What was wrong:
+The temporary no-ref `SignalBus<T>.TryPushTracked(in T)` path counted refusal on the generic lane. That was bounded and zero-GC, but it was still not owner-local black-box evidence. A producer could lose facts under a 5000-signal storm without an owner-local counter matching its frame state.
+
+What was done:
+Patched 36 runtime/code files. Converted 65 external runtime no-ref tracked calls to `TryPushTracked(..., ref ownerCounter)`. Inserted 35 owner-local static counters. Removed `DirectTrackedDropTotal`, `_directTrackedDropTotal`, and the no-ref tracked overload from `SignalBus<T>`.
+
+Cinematic cheats used:
+No visual simulation was added. This pass preserves performance budget for future presentation work by refusing signal storms deterministically and recording the refusal at the owner edge instead of increasing lane capacity.
+
+Exact microseconds saved:
+0us verified. No Unity profiler, Play Mode, GCMonitor, Memory Profiler, or player build was run. Static result: owner-local refusal evidence now covers all previously no-ref tracked direct producers without heap allocation.
+
+Proof:
+- Report: `Docs/Reports/SIGNAL_OWNER_COUNTER_TRYPUSH_CLOSURE_X_001.md`.
+- Code files touched this pass: 36.
+- External no-ref `TryPushTracked(in payload)` call sites: 0.
+- Owner-tracked direct calls: 65.
+- Owner-local direct signal drop counters: 35.
+- Removed generic direct counter hits: 0.
+- Owner counter missing declarations: 0.
+- Owner counter unused declarations: 0.
+- Runtime `GlobalSignals.Publish/Push/TryDequeue/*Writer`, `SignalBus<T>.Push`, external `SignalBus<T>.TryPush`, first-party `HectonEventBus.Publish/Subscribe/Unsubscribe`, and `ThreadSafeCommandQueue.Enqueue`: 0.
+- Runtime `ISignal` DTO banned-field scan: 0.
+- Touched-file brace delta: 0.
+- `git diff --check`: no errors; LF-to-CRLF warnings only.
+
+Build status -> Not launched. Final guard reported `CPU=99.4 compiler_count=2` with active `csc` PID 56252 and `dotnet` PID 54420; AGENTS blocks `dotnet build` above 50 percent CPU or when another compiler/build process is active.

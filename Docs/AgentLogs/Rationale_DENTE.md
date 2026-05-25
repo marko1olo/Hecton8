@@ -590,6 +590,14 @@ Residual risk:
 - PDF export still depends on a configured local Chromium/Edge binary; queue/backoff/worker isolation remains production infrastructure work.
 - Vite chunk size warning remains open.
 
+## 2026-05-25 - Outpatient Medical Card 025/u Plan
+
+Problem: DENTE had a generic medical-record extract but no dedicated source-verified `025/u` outpatient medical card. Labeling the extract as official Order 274n output would be false because 025/u has separate card sections for organization header, patient registration/insurance, diagnosis sheets, specialist visit records, dynamic observation, consultations, commissions, hospitalization/surgery/xray dose, lab/functional results and epicrisis.
+Solution: Add a dedicated document kind and structured payload for `025/u`; render each implemented section explicitly; block issue unless the payload is built from signed source visits, has one or more clinical tooth rows in a specialist visit record, and confirms Order 274n mapping plus third-party-data review.
+Rejected Alternatives: Reusing `medical_record_extract`; emitting a blank scanned PDF shell; auto-filling unknown fields with plausible text; making the card visit-required instead of source-visit-driven; claiming legal electronic exchange without UKEP/MIS/GIS contour.
+Scalability potential: Low tier uses one compact payload form for the active signed visit. Middle tier can add multi-visit import into the same arrays. High/ultra tier can add signed PDF/PDF-A, EGISZ/MIS routes and batch card generation without changing the payload owner.
+Hardware Impact: 0 us Unity runtime. API work is bounded date/source validation and HTML rendering on document actions only; browser work is one conditionally mounted editor.
+
 ## 2026-05-24 - Web Route Render Gating
 
 Problem: The web shell had a 656 kB main chunk warning and, more importantly for actual feel, `App.tsx` rendered most major work surfaces at once as hidden DOM. That meant a doctor opening one view still paid React/DOM construction cost for unrelated panels such as Imaging, Documents, Finance, Communications and Settings.
@@ -942,3 +950,120 @@ Residual risk:
 - `DENTE_TELEGRAM_CLINIC_BOTS_JSON` remains prototype storage; production still needs encrypted DB-backed bot configs, tenant auth and webhook-secret rotation.
 - Official outpatient medical-card form `025/у` mapping still needs source-verified field implementation before DENTE can claim exact 274n outpatient card generation.
 - Vite chunk size warning remains open.
+
+## 2026-05-25 - Outpatient Medical Card 025/u
+
+Problem: DENTE could generate medical-record extracts/copy/release documents, but it could not generate a dedicated outpatient medical card 025/у from Health Ministry Order N 274n. Calling the generic extract an official outpatient card would be false, and issuing a card from unsigned visit notes would create a bad legal trail.
+Solution: Added `outpatient_medical_card_025u` as a first-class shared document kind, DB enum migration, structured payload schema, server render template, missing-payload guard, signed-source/date/period issue blockers, clinical-tooth-row blocker, doctor-facing payload editor, Telegram/Communications workflow entry and documentation. The renderer uses clinic legal facts, patient administrative facts, final diagnoses, signed specialist visit records, clinical tooth rows, observations/events/X-ray dose sections, final epicrisis and explicit operator confirmations. Official anchor is `https://publication.pravo.gov.ru/document/0001202505300033`; DENTE still does not claim ЕГИСЗ/MIS electronic exchange or УКЭП signing for 025/у.
+Rejected Alternatives: Reusing `medical_record_extract`; free-text 025/у payload; allowing draft issue without signed source visits; storing Telegram-issued medical facts; claiming official electronic medical-card storage from HTML/PDF output.
+Scalability potential: Low tier uses one compact visible payload editor and server-rendered HTML/PDF. Middle tier can add more 274n forms with the same typed payload/source/blocker pattern. High/ultra tier can add signed electronic exchange, XSD/ЕГИСЗ integration and DB-backed source snapshots without changing document kind ownership.
+Hardware Impact: 0 us Unity runtime. API cost is bounded validation/render over selected signed visits and payload rows. Browser cost is limited to the selected Documents payload editor because inactive editors are not mounted. Mobile Documents smoke passed at 390 px with no horizontal overflow.
+
+Evidence:
+- CLI_COMPILE: `npm run typecheck -w @dental/shared` passed.
+- CLI_COMPILE: `npm run typecheck -w @dental/api` passed.
+- CLI_COMPILE: `npm run typecheck -w @dental/web` passed.
+- CLI_COMPILE: `npm run build` passed for shared, api and web; residual Vite warning: web `assets/index-CwFm35PI.js` 676.25 kB > 500 kB.
+- CLI_TEST: `npm run smoke:documents-catalog` passed with `renderedCount:31` including `outpatient_medical_card_025u`.
+- CLI_TEST: `npm run smoke:document-payloads` passed and checked `outpatient_medical_card_025u`.
+- CLI_TEST: `npm run smoke:document-guards` passed with missing-payload 025/у guard.
+- CLI_TEST: `npm run smoke:document-issue-chains` passed with `outpatient025uSignedSourceGuard`, `outpatient025uDateGuard` and `outpatient025uSourcePeriodGuard`.
+- CLI_TEST: `npm run smoke:document-payload-ui-source` passed with conditional 025/у payload editor source guards.
+- CLI_TEST: `npm run smoke:document-legal-confirmations` passed with `confirmedLiteralFields:65`.
+- CLI_TEST: `npm run smoke:telegram-bot` passed for `@dentecrm_bot` synthetic flow.
+- CLI_TEST: `npm run smoke:telegram-control-ui-source` passed.
+- CLI_TEST: `npm run smoke:api-text-encoding` passed with `mojibakeHits:0`.
+- CLI_TEST: `npm run smoke:russian-fallback-source` passed.
+- CLI_TEST: `npm run smoke:db-runtime-contract` passed.
+- BROWSER_SMOKE: `SMOKE_SELECTOR=.documents-panel SMOKE_DISMISS_ONBOARDING=1 npm run smoke:mobile -- http://127.0.0.1:5173/#documents` passed at 390 px with overflow 0.
+- DOC_CHECK: `README.md`, `docs/12-document-generation-forms.md`, and `docs/13-dente-telegram-bot-plan.md` updated with implemented 025/у behavior and limitations.
+
+Residual risk:
+- 025/у electronic exchange remains out of scope until DENTE has a real MIS/ЕГИСЗ/УКЭП contour.
+- Additional Order N 274n forms beyond 025/у still need separate typed payloads and blockers.
+- Web bundle chunk warning increased to 676.25 kB and remains open.
+
+## 2026-05-25 - Outpatient 025/u Local Draft Recovery
+
+Problem: The 025/u payload editor is long enough that a browser reload or accidental navigation could destroy real operator work before issue. At the same time, storing medical free text in global UI preferences would turn preference storage into a hidden clinical data cache. The KND XML documentation also overclaimed XSD readiness where code only shapes fields and does not validate against a real external schema.
+Solution: Added a scoped local draft store for `outpatient_medical_card_025u` keyed by document kind, patient and visit. The store hydrates only 025/u editor fields, caps entries to 60, and resets signed-source/274n/third-party confirmations on hydrate. Global UI preference smoke now rejects 025/u clinical fields. Documentation now states KND XML is shaped to published fields and still needs external XSD/EDO validation before official submission.
+Rejected Alternatives: Saving clinical draft text in global UI preferences; auto-persisting legal confirmations; claiming XSD compliance without a validator; forcing operators to retype long 025/u payloads after refresh.
+Scalability potential: Low tier uses cheap browser-local recovery for one doctor workstation. Middle tier can move the same scoped draft contract to encrypted server drafts per tenant/user. High/ultra tier can add MIS/EGISZ/EDO source snapshots, XSD validation and signed exchange without changing document-kind ownership.
+Hardware Impact: 0 us Unity runtime. Browser impact is one bounded localStorage JSON read/write for active 025/u only; inactive document editors remain unmounted. Low-end clinic PCs avoid re-rendering all forms and avoid retyping losses.
+
+Evidence:
+- CLI_COMPILE: `npm run typecheck -w @dental/web` passed.
+- CLI_COMPILE: `npm run build -w @dental/web` passed; residual Vite warning: `assets/index-DlM45n0F.js` 683.60 kB > 500 kB.
+- CLI_COMPILE: `npm run build` passed for shared, api and web; same residual Vite warning.
+- CLI_TEST: `npm run smoke:document-payload-ui-source` passed with draft-source guards.
+- CLI_TEST: `npm run smoke:ui-preferences` passed with `forbiddenClinicalKeyCount:16`.
+- CLI_TEST: `npm run smoke:document-payloads` passed.
+- CLI_TEST: `npm run smoke:documents-catalog` passed with `renderedCount:31`.
+- CLI_TEST: `npm run smoke:api-text-encoding` passed with `mojibakeHits:0`.
+- CLI_TEST: `npm run smoke:russian-fallback-source` passed.
+- BROWSER_SMOKE: `SMOKE_SELECTOR=.documents-panel SMOKE_DISMISS_ONBOARDING=1 npm run smoke:mobile -- http://127.0.0.1:5173/#documents` passed at 390 px with overflow 0.
+- BROWSER_SMOKE: CDP reload check selected 025/u, typed `TEST-025-DRAFT`, verified `dental-crm:document-payload-drafts:v1`, reloaded and confirmed restored value with overflow 0.
+- DOC_CHECK: `README.md`, `docs/12-document-generation-forms.md`, and `docs/03-ux-principles.md` updated.
+
+Residual risk:
+- Local drafts are browser-local recovery, not encrypted tenant-synced clinical storage.
+- KND XML still lacks real XSD validator/source checksum automation.
+- Official source URL checks are static; fetch/checksum evidence is still missing.
+- Web chunk warning remains open at 683.60 kB.
+
+## 2026-05-25 - FNS KND 1151156 Source Pinning
+
+Problem: KND 1151156 XML generation had an internal structural preflight, but official FNS source attachments were only loose URLs in metadata/docs. If the FNS page changed, DENTE had no local proof of which appendices and XSD the implementation was checked against.
+Solution: Rechecked the official FNS Order EA-7-11/824@ page. Added `docs/legal-sources/fns-knd-1151156.json` with appendices 1-4 and `UT_SVOPLMEDUSL_1_278_00_05_01_02.xsd`, including URL, byte size and SHA-256. Added the XSD URL to `tax_deduction_certificate.sourceUrls`, added `smoke:official-document-sources`, and documented the source-pinning boundary.
+Rejected Alternatives: Treating the order page URL alone as enough; fetching the network in every default smoke; claiming the pinned XSD equals official validation; adding a generic XML validator without proving the FNS schema.
+Scalability potential: Low tier gets deterministic offline source proof. Middle tier can add periodic admin source-refresh checks. High/ultra tier can add real XSD validation, KEP signing, EDO/TKS submission and receipt lifecycle under the same source manifest boundary.
+Hardware Impact: 0 us Unity runtime. API/web runtime cost is one extra metadata URL only. The new smoke runs cold in Node and does not touch the app hot path.
+
+Evidence:
+- OFFICIAL_SOURCE: FNS order page `https://www.nalog.gov.ru/rn77/about_fts/docs/14112883/` showed publication date 2023-12-05, document date 2023-11-08, KND 1151156, page update 2026-05-25, appendices 1-4 and XSD.
+- SOURCE_HASH: `pril1_14112883.pdf` SHA-256 `520bee5e688f6dc1da4c8edf109e07409a90fd9791af999a9d551fc7824500d2`.
+- SOURCE_HASH: `pril2_14112883.docx` SHA-256 `32543ac7f100184de3d27d6632b48f77b5c9cd0b2d91db6ed81bd1dfb9aa0938`.
+- SOURCE_HASH: `pril3_14112883.doc` SHA-256 `c850f344d213711dfe40e12a8d3e41c3f9dbf1bab9f07eb080d01ab76d4ae6b9`.
+- SOURCE_HASH: `pril4_14112883.docx` SHA-256 `18ab0c72674998feda85427aa44ee7aaeb81e3f66ff089f816c07b12304db0c7`.
+- SOURCE_HASH: `UT_SVOPLMEDUSL_1_278_00_05_01_02.xsd` SHA-256 `c6f4b26841436853add552324a690c8cee0d9f66072d750cb502098839a1ec83`.
+- CLI_COMPILE: `npm run typecheck -w @dental/shared` passed.
+- CLI_COMPILE: `npm run build -w @dental/shared` passed.
+- CLI_COMPILE: `npm run build` passed for shared, api and web; residual Vite warning: web `assets/index-D68nz3qQ.js` 683.60 kB > 500 kB.
+- CLI_TEST: `npm run smoke:official-document-sources` passed with `attachmentCount:5` and pinned XSD SHA-256.
+- CLI_TEST: `npm run smoke:documents-catalog` passed with `renderedCount:31`.
+- CLI_TEST: `npm run smoke:tax-knd-xml` passed.
+- CLI_TEST: `npm run smoke:api-text-encoding` passed with `mojibakeHits:0`.
+- CLI_TEST: `npm run smoke:document-payloads` passed.
+- CLI_TEST: `npm run smoke:russian-fallback-source` passed.
+
+Residual risk:
+- Source pinning is not official XSD validation.
+- No KEP signature, EDO/TKS submission, operator protocol or FNS receipt lifecycle yet.
+- Default smoke does not live-fetch FNS; the manifest must be refreshed deliberately when legal/source updates are reviewed.
+- Web chunk warning remains open at 683.60 kB.
+
+## 2026-05-25 - KND XML Structural Preflight
+
+Problem: KND 1151156 XML export was frozen and documented as a draft, but the API returned bytes for archival without its own final structural preflight. A malformed template regression could be snapshotted before an external operator/XSD contour ever sees it.
+Solution: Added `validateKnd1151156XmlDraft` inside `apps/api/src/documents/taxXml.ts`. It performs bounded string checks for XML declaration, `Файл`/`Документ`/`СведРасхУсл` tag balance, `Документ/@КНД="1184043"`, `ВерсФорм="5.01"`, `КодНО`, `ОтчГод`, `НомерСвед` length, `НомКорр="0"`, `ПрПациент`, payer/patient node rules, service-code sums, technical placeholder tokens and mojibake markers before the first XML snapshot can be stored.
+Rejected Alternatives: Claiming official XSD validation without loading the FNS XSD; adding a generic XML dependency that still would not prove the FNS schema; delaying all checks to an external EDO operator and allowing DENTE to archive obviously broken XML.
+Scalability potential: Low tier gets cheap deterministic preflight on manual export. Middle tier can wire the same failure surface into an operator queue. High/ultra tier can add real FNS XSD validation, source checksum pinning, KEP signing and EDO submission without changing the issued-document snapshot route.
+Hardware Impact: 0 us Unity runtime. API cost is one bounded pass over a single generated XML string during manual tax XML export; no hot path, no browser cost, no added dependency.
+
+Evidence:
+- CLI_COMPILE: `npm run typecheck -w @dental/api` passed.
+- CLI_COMPILE: `npm run build -w @dental/api` passed.
+- CLI_COMPILE: `npm run build` passed for shared, api and web; residual Vite warning: web `assets/index-DlM45n0F.js` 683.60 kB > 500 kB.
+- CLI_TEST: `npm run smoke:tax-knd-xml` passed after full build with preflight source guards and self/non-self XML structural assertions.
+- CLI_TEST: `npm run smoke:api-text-encoding` passed with `mojibakeHits:0`.
+- CLI_TEST: `npm run smoke:documents-catalog` passed with `renderedCount:31`.
+- CLI_TEST: `npm run smoke:document-payloads` passed.
+- CLI_TEST: `npm run smoke:russian-fallback-source` passed.
+- DOC_CHECK: `README.md` and `docs/12-document-generation-forms.md` now state internal preflight plus remaining external XSD/ЭДО/КЭП requirement.
+- SOURCE_CHECK: Official FNS source page for Order N ЕА-7-11/824@ still exposes KND 1151156 and attached XSD as of the checked page update; DENTE did not implement that XSD validator in this loop.
+
+Residual risk:
+- This is DENTE structural preflight, not official XSD validation.
+- No FNS XSD download/checksum pinning yet.
+- No KEP signature, ТКС/ЭДО submission, operator protocol or receipt lifecycle yet.
+- Web chunk warning remains open at 683.60 kB.

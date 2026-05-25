@@ -461,10 +461,10 @@ namespace Hecton8.Construction
             if (moduleRuntimeId != 0)
                 _moduleRuptureStates[moduleRuntimeId] = true;
 
-            ConstructionManager constructionManager = GlobalRegistry.ConstructionRuntime;
-            if (constructionManager != null)
+            IConstructionParasiteGraphService constructionParasiteGraph = GlobalRegistry.ConstructionParasiteGraph;
+            if (constructionParasiteGraph != null)
             {
-                constructionManager.NotifyModuleParasiteRootStateChanged(baseModule);
+                constructionParasiteGraph.NotifyModuleParasiteRootStateChanged(baseModule);
             }
             else
             {

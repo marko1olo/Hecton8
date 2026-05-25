@@ -67,7 +67,7 @@ Runtime path:
 - Platform route: standalone uses PC/PC High plus Low/Medium/High URP assets.
 - Android uses Mobile/Quest plus Low/Quest URP assets; iOS uses Mobile plus Low URP.
 - Manual no-target setup scans/repairs all by explicit menu action.
-- The guard throws if scoped renderer feature references, feature-map entries, compute binding, mono/array kernels, injection point, disabled forced-full-res mode, activation scale, or required URP camera depth texture settings are missing.
+- Guard throws on missing scoped renderer feature refs, feature-map entries, compute binding, mono/array kernels, injection point, forced-full-res disable, activation scale, or URP depth settings.
 
 DTO:
 

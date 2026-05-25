@@ -12,7 +12,7 @@
 //
 // Retained:
 //   - Archimedean spiral search, fallback, nearshore search.
-//   - Zero-GC ground-probe fields: _rayOrigin and _hitInfo.
+//   - Zero-GC ground-probe fields: _groundProbeOrigin and _hitInfo.
 //   - Rigidbody teleport with kinematic/interpolation/velocity reset.
 //   - Unity 6 Awaitable API.
 //
@@ -121,14 +121,14 @@ public class HectonPlayerSpawner : MonoBehaviour
     [SerializeField] private float minSeaFloorHeight = 4800f;
 
     // ══════════════════════════════════════════════════════════════
-    // Inspector: raycast settings
+    // Inspector: ground probe settings
     // ══════════════════════════════════════════════════════════════
 
-    [Header("=== Raycast Settings ===")]
-    [Tooltip("World-space height used for downward terrain raycasts.")]
-    [SerializeField] private float raycastOriginHeight = 10000f;
+    [Header("=== Ground Probe Settings ===")]
+    [Tooltip("World-space height used for downward cached terrain probes.")]
+    [SerializeField] private float groundProbeOriginHeight = 10000f;
 
-    [Tooltip("Terrain layers used by spawn raycasts.")]
+    [Tooltip("Terrain layers accepted by spawn ground probes.")]
     [SerializeField] private LayerMask terrainLayerMask = Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;
 
     // ══════════════════════════════════════════════════════════════
@@ -148,7 +148,7 @@ public class HectonPlayerSpawner : MonoBehaviour
     [Tooltip("Player height offset above water or ground.")]
     [SerializeField] private float spawnHeightOffset = 2f;
 
-    [Tooltip("Delay between raycast retries while waiting for MapMagic terrain, in seconds.")]
+    [Tooltip("Delay between ground-probe retries while waiting for MapMagic terrain, in seconds.")]
     [SerializeField] private float retryDelay = 0.5f;
 
     [Tooltip("Maximum terrain generation wait in phase 1, in seconds.")]
@@ -159,7 +159,7 @@ public class HectonPlayerSpawner : MonoBehaviour
     // ══════════════════════════════════════════════════════════════
 
     [Header("=== Deadlock Protection (v3.1) ===")]
-    [Tooltip("Maximum raycast retries for one spiral point.\n" +
+    [Tooltip("Maximum ground-probe retries for one spiral point.\n" +
              "If terrain does not appear within maxRetriesPerPoint * retryDelay seconds, the point is skipped.\n" +
              "10 retries * 0.5s = 5 seconds maximum per point.")]
     [SerializeField] private int maxRetriesPerPoint = 10;
@@ -174,10 +174,10 @@ public class HectonPlayerSpawner : MonoBehaviour
     // ══════════════════════════════════════════════════════════════
 
     /// <summary>
-    /// Predallotsirovannaya tochka nachala legacy-probe lucha.
+    /// Predallotsirovannaya tochka nachala cached terrain probe.
     /// Pereispolzuetsya vo vseh poverhnostnyh probah bez sozdaniya novyh Vector3.
     /// </summary>
-    private Vector3 _rayOrigin;
+    private Vector3 _groundProbeOrigin;
 
     /// <summary>
     /// Predallotsirovannaya pozitsiya spavna.
@@ -344,7 +344,7 @@ public class HectonPlayerSpawner : MonoBehaviour
         bool terrainReady = false;
         float waitTimer = 0f;
 
-        _rayOrigin.Set(searchOrigin.x, raycastOriginHeight, searchOrigin.y);
+        _groundProbeOrigin.Set(searchOrigin.x, groundProbeOriginHeight, searchOrigin.y);
 
         while (!terrainReady)
         {
@@ -397,11 +397,11 @@ public class HectonPlayerSpawner : MonoBehaviour
         //  v3.1 FIX: Per-point retry counter.
         //
         //  BYLO (v3.0, DEDLOK):
-        //    if (!Raycast) { await delay; continue; }
+        //    if (!GroundProbe) { await delay; continue; }
         //    // continue propuskaet spiralIndex++ → vechnyy tsikl.
         //
         //  STALO (v3.1, BEZOPASNO):
-        //    if (!Raycast) {
+        //    if (!GroundProbe) {
         //        retryCount++;
         //        if (retryCount >= maxRetriesPerPoint) {
         //            retryCount = 0;
@@ -411,7 +411,7 @@ public class HectonPlayerSpawner : MonoBehaviour
         //        }
         //        continue;
         //    }
-        //    retryCount = 0;  // reset on successful raycast
+        //    retryCount = 0;  // reset on successful ground probe
         //    → evaluate point
         //    → AdvanceSpiral()
         //
@@ -460,11 +460,11 @@ public class HectonPlayerSpawner : MonoBehaviour
             float testX = searchOrigin.x + cosAngle * currentRadius;
             float testZ = searchOrigin.y + sinAngle * currentRadius;
 
-            _rayOrigin.Set(testX, raycastOriginHeight, testZ);
+            _groundProbeOrigin.Set(testX, groundProbeOriginHeight, testZ);
 
             if (TryResolveGroundHit(out _hitInfo))
             {
-                // ── Raycast uspeshen — sbrasyvaem schetchik popytok ──
+                // Ground probe succeeded - reset the per-point retry counter.
                 retryCount = 0;
 
                 SpawnSearchResult result = EvaluatePointFromHit(testX, testZ);
@@ -564,7 +564,7 @@ public class HectonPlayerSpawner : MonoBehaviour
             float testX = searchOrigin.x + cosAngle * currentRadius;
             float testZ = searchOrigin.y + sinAngle * currentRadius;
 
-            _rayOrigin.Set(testX, raycastOriginHeight, testZ);
+            _groundProbeOrigin.Set(testX, groundProbeOriginHeight, testZ);
 
             if (TryResolveGroundHit(out _hitInfo))
             {
@@ -728,12 +728,12 @@ public class HectonPlayerSpawner : MonoBehaviour
     private bool TryResolveGroundHit(out SpawnGroundHit hit)
     {
         hit = default;
-        if (!TryResolveCachedTerrainHeight(_rayOrigin.x, _rayOrigin.z, out float groundY))
+        if (!TryResolveCachedTerrainHeight(_groundProbeOrigin.x, _groundProbeOrigin.z, out float groundY))
             return false;
 
-        hit.point = new Vector3(_rayOrigin.x, groundY, _rayOrigin.z);
+        hit.point = new Vector3(_groundProbeOrigin.x, groundY, _groundProbeOrigin.z);
         hit.normal = Vector3.up;
-        hit.distance = Mathf.Max(0f, _rayOrigin.y - groundY);
+        hit.distance = Mathf.Max(0f, _groundProbeOrigin.y - groundY);
         return true;
     }
 
@@ -748,7 +748,7 @@ public class HectonPlayerSpawner : MonoBehaviour
 
     private SpawnSearchResult EvaluatePoint(float x, float z)
     {
-        _rayOrigin.Set(x, raycastOriginHeight, z);
+        _groundProbeOrigin.Set(x, groundProbeOriginHeight, z);
 
         if (!TryResolveGroundHit(out _hitInfo))
         {
@@ -854,7 +854,7 @@ public class HectonPlayerSpawner : MonoBehaviour
             return Vector3.zero;
         }
 
-        uint currentFrame = unchecked((uint)SystemDispatcher.CurrentFrameIndex);
+        uint currentFrame = SystemDispatcher.CurrentFrameId;
         uint signalFrame = signal.Frame != 0u ? signal.Frame : signal.Sequence;
         if (currentFrame != 0u &&
             signalFrame != 0u &&
@@ -1059,7 +1059,7 @@ public class HectonPlayerSpawner : MonoBehaviour
 #if UNITY_EDITOR
     /// <summary>
     /// Vizualizatsiya v redaktore: tochka poiska, uroven morya,
-    /// minimalnaya glubina i luch Raycast.
+    /// minimalnaya glubina i liniya cached terrain probe.
     /// </summary>
     private void OnDrawGizmosSelected()
     {
@@ -1078,10 +1078,10 @@ public class HectonPlayerSpawner : MonoBehaviour
             searchOrigin.x, minSeaFloorHeight, searchOrigin.y);
         Gizmos.DrawCube(minDepthOrigin, new Vector3(500f, 0.1f, 500f));
 
-        // Luch Raycast
+        // Cached terrain probe line
         Gizmos.color = Color.yellow;
         Vector3 rayStart = new Vector3(
-            searchOrigin.x, raycastOriginHeight, searchOrigin.y);
+            searchOrigin.x, groundProbeOriginHeight, searchOrigin.y);
         Gizmos.DrawLine(rayStart, origin);
     }
 

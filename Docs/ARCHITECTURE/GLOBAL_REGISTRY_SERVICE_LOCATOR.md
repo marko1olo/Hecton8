@@ -180,7 +180,9 @@ A local private cache is not a singleton. Cross-domain global `Instance` is a re
 
 - integer blend scale of 1000
 
-This is presentation/scalability state, not gameplay determinism state. Consumers cache the scalability owner or read published snapshots; they do not query registry slots in hot loops for quality state.
+This is presentation/scalability state, not gameplay determinism state.
+
+Consumers cache the scalability owner or read published snapshots; hot loops do not query registry slots for quality state.
 
 ## Hashing
 

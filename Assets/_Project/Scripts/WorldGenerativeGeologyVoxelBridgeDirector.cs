@@ -303,6 +303,8 @@ namespace Hecton8.World
             else if (currentService != null)
                 _runtimeDispatcherReady = true;
 
+            _registeredToFrameTickManager = false;
+            _registeredToSlowTickManager = false;
             TryRegisterRuntimeCallbacks();
         }
 

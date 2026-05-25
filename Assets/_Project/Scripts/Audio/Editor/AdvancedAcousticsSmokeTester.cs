@@ -172,10 +172,10 @@ namespace Hecton8.Audio.Editor
                 AssertContains(spatialColdRuntimeServices, "_cachedPlayerCriticalAudio = GlobalRegistry.PlayerCriticalAudioSignals", "Spatial audio seeds player-critical DSP sink only during cold cache refresh", builder, ref failureCount);
                 AssertNotContains(spatialPrologueQueue, "GlobalRegistry.", "Prologue audio transition queue uses cached player-critical runtime", builder, ref failureCount);
                 AssertNotContains(spatialHighSpeedQueue, "GlobalRegistry.", "High-speed impact queue uses cached player-critical runtime", builder, ref failureCount);
-                AssertContains(spatialColdRuntimeServices, "_cachedConstructionManager = GlobalRegistry.ConstructionRuntime", "Spatial audio seeds habitat portal construction runtime only during cold cache refresh", builder, ref failureCount);
+                AssertContains(spatialColdRuntimeServices, "_cachedHabitatGraph = GlobalRegistry.HabitatGraph", "Spatial audio seeds habitat portal graph only during cold cache refresh", builder, ref failureCount);
                 AssertContains(spatial, "GlobalRegistryServiceSlot.Logistics", "Spatial audio listens for construction/logistics runtime rebinding", builder, ref failureCount);
-                AssertContains(spatial, "_cachedConstructionManager = currentService as ConstructionManager", "Spatial audio refreshes cached construction runtime from hot-swap payload", builder, ref failureCount);
-                AssertNotContains(spatialHabitatPortalGraph, "GlobalRegistry.", "Habitat acoustic portal graph uses cached construction runtime", builder, ref failureCount);
+                AssertContains(spatial, "_cachedHabitatGraph = currentService as IHabitatGraphService", "Spatial audio refreshes cached habitat graph from hot-swap payload", builder, ref failureCount);
+                AssertNotContains(spatialHabitatPortalGraph, "GlobalRegistry.", "Habitat acoustic portal graph uses cached habitat graph route", builder, ref failureCount);
                 AssertNotContains(spatialPortalPath, "GlobalRegistry.ScalabilityTier", "Spatial audio portal path does not poll scalability registry directly", builder, ref failureCount);
                 AssertNotContains(spatialUsePortalPath, "GlobalRegistry.ScalabilityTier", "Spatial audio portal policy does not poll scalability registry directly", builder, ref failureCount);
                 AssertNotContains(spatialVoiceLimit, "GlobalRegistry.ScalabilityTier", "Spatial audio voice-limit policy does not poll scalability registry directly", builder, ref failureCount);

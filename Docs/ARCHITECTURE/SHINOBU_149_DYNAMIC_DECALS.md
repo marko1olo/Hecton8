@@ -81,7 +81,9 @@ Dropped-request accounting is saturating. Partial mock-request clamps and full-q
 
 Visual sync locks the complete Vault mutation envelope before signal ingestion.
 
-Full envelope: `Instances`, `UploadScratch`, `RuntimeState`, `TelemetryRing`, `Tuning`, `MaterialProfiles`. Upload telemetry patching, tuning writes, CSV profile ingest, fault marking, and black-box reads use smaller dedicated envelopes, avoiding stale-handle Vault access.
+Full envelope: `Instances`, `UploadScratch`, `RuntimeState`, `TelemetryRing`, `Tuning`, `MaterialProfiles`.
+
+Upload telemetry patching, tuning writes, CSV profile ingest, fault marking, and black-box reads use smaller dedicated envelopes.
 
 Editor/debug reads also use Vault lock envelopes.
 

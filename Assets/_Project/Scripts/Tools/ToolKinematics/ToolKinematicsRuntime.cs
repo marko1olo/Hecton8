@@ -17,12 +17,9 @@ namespace Hecton8.Tools.ToolKinematics
     [DefaultExecutionOrder(-9917)]
     public sealed class ToolKinematicsRuntime : MonoBehaviour, IFixedTickable, IPostFixedTickable, ISlowTickable, IGlobalRegistryHotSwapListener
     {
+        private static int _signalPushDropCount;
         public const int MaxToolCapacity = 8;
         public const int BeamVerticesPerTool = 64;
-        private const uint MockTriggerLaneHash = 0x54323254u; // T22T
-        private const uint MockCarveLaneHash = 0x54323243u; // T22C
-        private const uint ToolHeatLaneHash = 0x54323248u; // T22H
-        private const uint ToolSparkLaneHash = 0x54323253u; // T22S
 #if UNITY_EDITOR
         private const int CsvBufferBytes = 4096;
         private const string EquipmentStatsFileName = "equipment_stats.csv";
@@ -374,14 +371,14 @@ namespace Hecton8.Tools.ToolKinematics
                 MockTriggerPullSignal trigger = buffers.MockTriggerSignals[i];
                 if (trigger.Frame != 0u && trigger.Trigger01 > 0f)
                 {
-                    SignalBus<MockTriggerPullSignal>.TryPush(in trigger);
+                    SignalBus<MockTriggerPullSignal>.TryPushTracked(in trigger, ref _signalPushDropCount);
                     PublishGlobalTriggerBridge(in trigger);
                 }
 
                 ToolHeatSignal heat = buffers.HeatSignals[i];
                 if (heat.Frame != 0u)
                 {
-                    SignalBus<ToolHeatSignal>.TryPush(in heat);
+                    SignalBus<ToolHeatSignal>.TryPushTracked(in heat, ref _signalPushDropCount);
                     ToolScreenExportDTO screen = (uint)i < (uint)buffers.ScreenExports.Length ? buffers.ScreenExports[i] : default;
                     PublishGlobalToolStateBridge(in heat, in screen);
                     PublishGlobalToolAcousticBridge(in heat, in screen);
@@ -389,42 +386,42 @@ namespace Hecton8.Tools.ToolKinematics
 
                 VfxSparkRequestSignal spark = buffers.SparkRequests[i];
                 if (spark.Frame != 0u && spark.Intensity01 > 0f)
-                    SignalBus<VfxSparkRequestSignal>.TryPush(in spark);
+                    SignalBus<VfxSparkRequestSignal>.TryPushTracked(in spark, ref _signalPushDropCount);
 
                 MockCarveRequestSignal carve = buffers.CarveRequests[i];
                 if (carve.Frame != 0u && carve.MaterialHash != 0u)
-                    SignalBus<MockCarveRequestSignal>.TryPush(in carve);
+                    SignalBus<MockCarveRequestSignal>.TryPushTracked(in carve, ref _signalPushDropCount);
             }
         }
 
         private static void EnsureSignalLanesReady()
         {
             SignalBus<MockTriggerPullSignal>.Configure(
-                MaxToolCapacity,
-                maxFrameSignals: MaxToolCapacity,
-                lowTierFrameSignals: MaxToolCapacity,
-                laneHash: MockTriggerLaneHash);
+                MockTriggerPullSignal.ExpectedCapacity,
+                maxFrameSignals: MockTriggerPullSignal.MaxFrameSignals,
+                lowTierFrameSignals: MockTriggerPullSignal.LowTierFrameSignals,
+                laneHash: MockTriggerPullSignal.LaneHash);
             SignalBus<MockTriggerPullSignal>.EnsureInitialized();
 
             SignalBus<ToolHeatSignal>.Configure(
-                MaxToolCapacity,
-                maxFrameSignals: MaxToolCapacity,
-                lowTierFrameSignals: MaxToolCapacity,
-                laneHash: ToolHeatLaneHash);
+                ToolHeatSignal.ExpectedCapacity,
+                maxFrameSignals: ToolHeatSignal.MaxFrameSignals,
+                lowTierFrameSignals: ToolHeatSignal.LowTierFrameSignals,
+                laneHash: ToolHeatSignal.LaneHash);
             SignalBus<ToolHeatSignal>.EnsureInitialized();
 
             SignalBus<VfxSparkRequestSignal>.Configure(
-                MaxToolCapacity,
-                maxFrameSignals: MaxToolCapacity,
-                lowTierFrameSignals: 2,
-                laneHash: ToolSparkLaneHash);
+                VfxSparkRequestSignal.ExpectedCapacity,
+                maxFrameSignals: VfxSparkRequestSignal.MaxFrameSignals,
+                lowTierFrameSignals: VfxSparkRequestSignal.LowTierFrameSignals,
+                laneHash: VfxSparkRequestSignal.LaneHash);
             SignalBus<VfxSparkRequestSignal>.EnsureInitialized();
 
             SignalBus<MockCarveRequestSignal>.Configure(
-                MaxToolCapacity,
-                maxFrameSignals: MaxToolCapacity,
-                lowTierFrameSignals: 2,
-                laneHash: MockCarveLaneHash);
+                MockCarveRequestSignal.ExpectedCapacity,
+                maxFrameSignals: MockCarveRequestSignal.MaxFrameSignals,
+                lowTierFrameSignals: MockCarveRequestSignal.LowTierFrameSignals,
+                laneHash: MockCarveRequestSignal.LaneHash);
             SignalBus<MockCarveRequestSignal>.EnsureInitialized();
         }
 
@@ -440,7 +437,7 @@ namespace Hecton8.Tools.ToolKinematics
                 DominantController = (byte)math.min(trigger.ToolSlot, 255u),
                 Flags = trigger.Trigger01 > 0.0001f ? (byte)1 : (byte)0
             };
-            SignalBus<ToolTriggerSignal>.TryPush(in globalTrigger);
+            SignalBus<ToolTriggerSignal>.TryPushTracked(in globalTrigger, ref _signalPushDropCount);
         }
 
         private static void PublishGlobalToolStateBridge(in ToolHeatSignal heat, in ToolScreenExportDTO screen)
@@ -460,7 +457,7 @@ namespace Hecton8.Tools.ToolKinematics
                 Flags = flags,
                 ToolTypeId = ResolveToolTypeId(heat.ToolHash)
             };
-            SignalBus<ToolStateChangedSignal>.TryPush(in state);
+            SignalBus<ToolStateChangedSignal>.TryPushTracked(in state, ref _signalPushDropCount);
         }
 
         private static void PublishGlobalToolAcousticBridge(in ToolHeatSignal heat, in ToolScreenExportDTO screen)
@@ -479,7 +476,7 @@ namespace Hecton8.Tools.ToolKinematics
                 State = ToolAcousticSignal.StateLaserLoop,
                 Flags = ToolAcousticSignal.FlagLooping
             };
-            SignalBus<ToolAcousticSignal>.TryPush(in acoustic);
+            SignalBus<ToolAcousticSignal>.TryPushTracked(in acoustic, ref _signalPushDropCount);
         }
 
         private static byte ResolveToolTypeId(uint toolHash)

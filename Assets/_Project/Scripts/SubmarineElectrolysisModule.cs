@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Hecton.Localization;
-using Hecton8.Atmosphere;
 using Hecton8.Core;
 using Hecton8.Logistics;
 using Hecton8.Physics;
@@ -10,6 +9,7 @@ using Hecton8.World;
 using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Hecton8.Gameplay
 {
@@ -395,7 +395,7 @@ namespace Hecton8.Gameplay
         private const int InitialElectrolysisCapacity = 8;
 
         [Header("References")]
-        [SerializeField] private SubmarineAtmosphereSystem atmosphereSystem;
+        [SerializeField, FormerlySerializedAs("atmosphereSystem")] private MonoBehaviour atmosphereSystemSource;
         [SerializeField] private SubmarineFluidDynamics fluidDynamics;
         [SerializeField] private BaseModule hostModule;
         [SerializeField] private PowerNode powerNode;
@@ -459,6 +459,7 @@ namespace Hecton8.Gameplay
         private bool _registered;
         private int _oxygenPipeNodeIndex = -1;
         private float _pendingPipeOxygenUnits;
+        private ISubmarineAtmosphereRoomMutationSink _atmosphereSystem;
 
         /// <inheritdoc />
         public float PowerRating => _isOperating ? -math.max(0f, powerDrawWatts) : 0f;
@@ -530,7 +531,7 @@ namespace Hecton8.Gameplay
             if (!CanUseRuntimeDispatcher())
                 return;
 
-            if (atmosphereSystem == null || powerNode == null)
+            if (_atmosphereSystem == null || !_atmosphereSystem.IsAtmosphereRuntimeActive || powerNode == null)
             {
                 ResetOxygenPipeDemand();
                 return;
@@ -563,8 +564,8 @@ namespace Hecton8.Gameplay
             }
 
             if (!TryQueuePipeOxygen(oxygenUnits))
-                atmosphereSystem.InjectOxygenUnits(targetRoomIndex, oxygenUnits);
-            atmosphereSystem.InjectRoomTemperatureDeltaCelsius(targetRoomIndex, FiniteNonNegativeOrZero(temperatureRisePerSlowTickCelsius));
+                _atmosphereSystem.InjectOxygenUnits(targetRoomIndex, oxygenUnits);
+            _atmosphereSystem.InjectRoomTemperatureDeltaCelsius(targetRoomIndex, FiniteNonNegativeOrZero(temperatureRisePerSlowTickCelsius));
 
             Vector3 position = ResolveCinematicPulsePosition();
             float safeThreatRadius = FiniteAtLeast(threatRadiusMeters, 1f);
@@ -620,11 +621,18 @@ namespace Hecton8.Gameplay
                     hostModule = GetComponentInParent<BaseModule>();
             }
 
-            if (atmosphereSystem == null)
-                atmosphereSystem = GetComponentInParent<SubmarineAtmosphereSystem>();
+            if (_atmosphereSystem == null || !_atmosphereSystem.IsAtmosphereRuntimeActive)
+            {
+                _atmosphereSystem = atmosphereSystemSource as ISubmarineAtmosphereRoomMutationSink;
+                if (_atmosphereSystem == null || !_atmosphereSystem.IsAtmosphereRuntimeActive)
+                    _atmosphereSystem = ComponentReferenceUtility.ResolveParentService<ISubmarineAtmosphereRoomMutationSink>(this);
+            }
 
-            if (fluidDynamics == null && atmosphereSystem != null)
-                atmosphereSystem.TryGetComponent(out fluidDynamics);
+            if (fluidDynamics == null)
+            {
+                if (!TryGetComponent(out fluidDynamics))
+                    fluidDynamics = ComponentReferenceUtility.ResolveParentService<SubmarineFluidDynamics>(this);
+            }
 
             if (_pipeGraphService == null)
                 _pipeGraphService = GlobalRegistry.FluidPipeGraph;
@@ -807,8 +815,8 @@ namespace Hecton8.Gameplay
 
         private int ResolvePipeNetworkId()
         {
-            if (atmosphereSystem != null)
-                return unchecked((int)EntityId.ToULong(atmosphereSystem.GetEntityId()));
+            if (_atmosphereSystem != null && _atmosphereSystem.IsAtmosphereRuntimeActive)
+                return _atmosphereSystem.RuntimeEntityIdHash;
             if (hostModule != null)
                 return unchecked((int)EntityId.ToULong(hostModule.GetEntityId()));
 
@@ -905,15 +913,19 @@ namespace Hecton8.Gameplay
 
         internal void FlushPendingPipeOxygenToAtmosphere()
         {
+            if (_atmosphereSystem == null || !_atmosphereSystem.IsAtmosphereRuntimeActive)
+                CacheReferences();
+
             if (_pendingPipeOxygenUnits <= 0f ||
                 !math.isfinite(_pendingPipeOxygenUnits) ||
-                atmosphereSystem == null)
+                _atmosphereSystem == null ||
+                !_atmosphereSystem.IsAtmosphereRuntimeActive)
             {
                 _pendingPipeOxygenUnits = 0f;
                 return;
             }
 
-            atmosphereSystem.InjectOxygenUnits(targetRoomIndex, _pendingPipeOxygenUnits);
+            _atmosphereSystem.InjectOxygenUnits(targetRoomIndex, _pendingPipeOxygenUnits);
             _pendingPipeOxygenUnits = 0f;
         }
 
@@ -948,8 +960,12 @@ namespace Hecton8.Gameplay
             object previousService,
             object currentService)
         {
-            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && currentService != null && isActiveAndEnabled)
-                TryStartRuntimeLifecycle();
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                _registered = false;
+                if (currentService != null && isActiveAndEnabled)
+                    TryStartRuntimeLifecycle();
+            }
         }
 
         private static bool CanUseRuntimeDispatcher()

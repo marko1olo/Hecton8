@@ -395,7 +395,7 @@ namespace Hecton8.Audio.Prologue
                 GranularStress01 = 0f,
                 SplashdownGain01 = 0f,
                 PortalBlend01 = 0f,
-                Frame = unchecked((uint)Hecton8.Core.SystemDispatcher.CurrentFrameIndex),
+                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 Sequence = ++_transitionSequence,
                 SourceHash = SourceHash,
                 Stage = AudioTransitionState.StageSpace,
@@ -414,7 +414,7 @@ namespace Hecton8.Audio.Prologue
 
         private void RefreshRuntimeServicesCold()
         {
-            CacheAudioService(Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance);
+            CacheAudioService(GlobalRegistry.Audio);
             _tickDispatcher = GlobalRegistry.TickDispatcher;
         }
 

@@ -18,7 +18,7 @@ Graphics route cold gates:
 
 Unsupported mobile/GLES-era targets release PDA graphics buffers and fail closed.
 
-- The shader reconstructs a camera ray per pixel, intersects the uploaded PDA plane, resolves atlas UVs, samples `_CameraDepthTexture` for soft scene occlusion, and applies continuous glass refraction from `GlobalQualityWeight`.
+- Shader path: reconstruct camera ray per pixel, intersect uploaded PDA plane, resolve atlas UVs, sample `_CameraDepthTexture`, and apply `GlobalQualityWeight` glass refraction.
 - Quality below `0.20` uses one direct atlas sample; `0.20..0.36` fades in refraction, and `0.52..0.88` fades in chromatic taps through uniform math LOD.
 - There is no wrist World-Space Canvas route in this projector.
 
@@ -69,7 +69,7 @@ Forbidden sinks: `StateRingBuffer`, Merkle hashing, save identity, rollback trut
 
 - Mutation routes use generation-checked `TryResolveHandle` only inside the owner write phase.
 - Public/editor read routes use `TryReadOnlyHandle` through `TryReadOnlyPdaProjectionVaultBuffer`, so `TryGetActivePdaProjectionTuning`, `TryGetActivePdaProjectionTelemetry`, and gizmo reads cannot expose mutable Vault rows, create buffers, or grow buffers.
-- Fault dumps still use the legacy `TryReadHandle` validation path only to obtain a raw read pointer for binary export; dump execution is a fault path, not a public accessor.
+- Fault dumps use legacy `TryReadHandle` validation only to obtain a raw read pointer for binary export. Dump execution is not a public accessor.
 
 Selected-object SceneView gizmo treats `PdaStateDTO.LocalToWorld` as camera-relative presentation truth.
 

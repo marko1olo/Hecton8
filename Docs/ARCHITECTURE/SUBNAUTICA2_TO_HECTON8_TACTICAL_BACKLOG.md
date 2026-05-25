@@ -16,7 +16,9 @@ It is not an order to copy Subnautica 2. It is a pressure test against the HECTO
 
 Problem:
 
-`Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin` exists in the current X_012 scan; route-specific boot proof remains pending. Boot code must reject a missing or invalid production arena. `Data/Balance/Baked/H8StaticData.bin` exists, but it is a different contract.
+`Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin` exists in current X_012 scan; route-specific boot proof remains pending.
+
+Boot must reject missing or invalid production arena. `Data/Balance/Baked/H8StaticData.bin` exists, but it is a different contract.
 
 Required result:
 

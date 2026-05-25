@@ -240,7 +240,9 @@ When prerequisites span multiple words, the runtime falls back to the flattened 
 - It calls the procedural registration seam on `QuestManager`.
 - Route: `QuestStateManager.TryUpsertProceduralDirective(...)`.
 
-If no authored scarcity row covers Titanium Scrap, `ResourceScarcityDirector` seeds one runtime fallback definition for `Data_TitaniumScrap` so the structural-survival directive lane still exists in production scenes that missed authoring.
+If no scarcity row covers Titanium Scrap, `ResourceScarcityDirector` seeds one fallback definition for `Data_TitaniumScrap`.
+
+The structural-survival directive lane still exists in under-authored production scenes.
 
 Runtime shape:
 

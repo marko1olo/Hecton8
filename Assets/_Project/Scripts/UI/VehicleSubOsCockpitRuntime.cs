@@ -250,9 +250,13 @@ namespace Hecton8.UI
         private VaultGenerationHandle<float4x4> _buttonMatricesHandle;
         private VaultGenerationHandle<CockpitTelemetryEntry> _telemetryRingHandle;
 
-        private GraphicsBuffer _sonarTapBuffer;
+        private GraphicsBuffer _sonarTapBufferA;
+        private GraphicsBuffer _sonarTapBufferB;
+        private GraphicsBuffer _activeSonarTapBuffer;
         private GraphicsBuffer _radarBlipBuffer;
-        private GraphicsBuffer _radarArgsBuffer;
+        private GraphicsBuffer _radarArgsBufferA;
+        private GraphicsBuffer _radarArgsBufferB;
+        private GraphicsBuffer _activeRadarArgsBuffer;
         private GraphicsBuffer _buttonMatrixBufferA;
         private GraphicsBuffer _buttonMatrixBufferB;
         private GraphicsBuffer _activeButtonMatrixBuffer;
@@ -269,6 +273,8 @@ namespace Hecton8.UI
         private Mesh _runtimeRadarQuad;
         private Mesh _runtimeDamageCube;
         private readonly MaterialPropertyBlock _screenPropertyBlock = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] - cockpit screen per-renderer properties - owner: VehicleSubOsCockpitRuntime
+        private int _sonarTapUploadBufferIndex;
+        private int _radarArgsUploadBufferIndex;
         private RenderTexture _uiRenderTexture;
         private RenderTexture _externalRenderTexture;
         private IRenderTexturePoolService _externalRenderTexturePoolOwner;
@@ -361,6 +367,8 @@ namespace Hecton8.UI
         private Vector3[] _damageProxyUploadVertices;
         private int _lastDamageArgsInstanceCount = int.MinValue;
         private float _qualityWeight01 = 1f;
+        private bool _graphicsResourceDisposalPending;
+        private bool _damageRoomWaterUploadPending;
         private float _cheapVisualWeight01;
         private float _externalFeedWeight01 = 1f;
 
@@ -392,7 +400,7 @@ namespace Hecton8.UI
             InvalidateOffscreenTextCache();
             ResolveColdAssetReferences();
             CacheRegistryServicesCold();
-            RefreshQualityPolicy();
+            RefreshQualityPolicy(allowGraphicsResourceMutation: true);
             EnsureNativeResources();
             EnsureGraphicsResources();
             EnsureRenderTargets();
@@ -403,7 +411,7 @@ namespace Hecton8.UI
             InvalidateOffscreenTextCache();
             ResolveColdAssetReferences();
             CacheRegistryServicesCold();
-            RefreshQualityPolicy();
+            RefreshQualityPolicy(allowGraphicsResourceMutation: true);
             EnsureNativeResources();
             EnsureGraphicsResources();
             EnsureRenderTargets();
@@ -464,7 +472,7 @@ namespace Hecton8.UI
         public void Tick(float deltaTime)
         {
             float safeDeltaTime = math.isfinite(deltaTime) ? math.max(0f, deltaTime) : 0f;
-            RefreshQualityPolicy();
+            RefreshQualityPolicy(allowGraphicsResourceMutation: false);
             if (!_resourcesReady)
             {
                 _resourceRefreshDirty = true;
@@ -496,6 +504,12 @@ namespace Hecton8.UI
 
             if (_resourcesReady)
             {
+                if (_graphicsResourceDisposalPending)
+                {
+                    _graphicsResourceDisposalPending = false;
+                    DisposeGraphicsResources();
+                }
+
                 if (_externalFeedStateDirty)
                 {
                     _externalFeedStateDirty = false;
@@ -504,6 +518,7 @@ namespace Hecton8.UI
 
                 if (ShouldRetryRadarGraphicsResources())
                     EnsureGraphicsResources();
+                FlushDamageRoomWaterUpload();
                 EnsureRenderTargets();
                 UploadSonarTapsAndDispatchRadar();
                 if (UpdateOffscreenText(SystemDispatcher.CurrentFrameUnscaledDeltaTime))
@@ -724,7 +739,7 @@ namespace Hecton8.UI
             _cachedPowerGrid = GlobalRegistry.PowerGrid;
         }
 
-        private void RefreshQualityPolicy()
+        private void RefreshQualityPolicy(bool allowGraphicsResourceMutation)
         {
             float quality = math.saturate(HomeostasisBrain.GlobalQualityWeight);
             int capacity = ResolveRadarCapacity(quality);
@@ -752,7 +767,10 @@ namespace Hecton8.UI
             {
                 _radarCapacity = capacity;
                 _radarResourcesReady = false;
-                DisposeGraphicsResources();
+                if (allowGraphicsResourceMutation)
+                    DisposeGraphicsResources();
+                else
+                    _graphicsResourceDisposalPending = true;
                 InvalidateRadarDispatchCache();
                 _buttonUploadDirty = true;
                 _buttonAnimationActive = true;
@@ -1271,20 +1289,37 @@ namespace Hecton8.UI
                 return;
             }
 
-            if (_sonarTapBuffer == null)
-                _sonarTapBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<SonarEchoTap>(_radarCapacity); // COLD ALLOC: GraphicsBuffer[radarCapacity] - sonar tap upload bridge - owner: VehicleSubOsCockpitRuntime
+            if (_sonarTapBufferA == null)
+                _sonarTapBufferA = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<SonarEchoTap>(_radarCapacity); // COLD ALLOC: GraphicsBuffer[radarCapacity] - sonar tap upload bridge A - owner: VehicleSubOsCockpitRuntime
+            if (_sonarTapBufferB == null)
+                _sonarTapBufferB = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<SonarEchoTap>(_radarCapacity); // COLD ALLOC: GraphicsBuffer[radarCapacity] - sonar tap upload bridge B - owner: VehicleSubOsCockpitRuntime
+            if (_activeSonarTapBuffer == null)
+                _activeSonarTapBuffer = _sonarTapBufferA;
             if (_radarBlipBuffer == null)
                 _radarBlipBuffer = GraphicsBufferUploadUtility.CreateStructuredBuffer<RadarBlipGpuData>(_radarCapacity); // COLD ALLOC: GraphicsBuffer[radarCapacity] - compute-written radar blips - owner: VehicleSubOsCockpitRuntime
             bool radarArgsBufferCreated = false;
-            if (_radarArgsBuffer == null)
+            if (_radarArgsBufferA == null)
             {
-                _radarArgsBuffer = new GraphicsBuffer(
+                _radarArgsBufferA = new GraphicsBuffer(
                     GraphicsBuffer.Target.IndirectArguments | GraphicsBuffer.Target.Raw,
                     GraphicsBuffer.UsageFlags.LockBufferForWrite,
                     1,
-                    GraphicsBuffer.IndirectDrawIndexedArgs.size); // COLD ALLOC: GraphicsBuffer[1] - radar indirect draw args - owner: VehicleSubOsCockpitRuntime
+                    GraphicsBuffer.IndirectDrawIndexedArgs.size); // COLD ALLOC: GraphicsBuffer[1] - radar indirect draw args A - owner: VehicleSubOsCockpitRuntime
                 radarArgsBufferCreated = true;
             }
+
+            if (_radarArgsBufferB == null)
+            {
+                _radarArgsBufferB = new GraphicsBuffer(
+                    GraphicsBuffer.Target.IndirectArguments | GraphicsBuffer.Target.Raw,
+                    GraphicsBuffer.UsageFlags.LockBufferForWrite,
+                    1,
+                    GraphicsBuffer.IndirectDrawIndexedArgs.size); // COLD ALLOC: GraphicsBuffer[1] - radar indirect draw args B - owner: VehicleSubOsCockpitRuntime
+                radarArgsBufferCreated = true;
+            }
+
+            if (_activeRadarArgsBuffer == null)
+                _activeRadarArgsBuffer = _radarArgsBufferA;
 
             if (_radarRuntimeMaterial == null && radarBlipMaterial != null)
                 _radarRuntimeMaterial = new Material(radarBlipMaterial); // COLD ALLOC: material instance prevents shared radar shader state bleed.
@@ -1298,18 +1333,26 @@ namespace Hecton8.UI
             if (radarCompute != null && _radarKernel < 0)
                 _radarKernel = radarCompute.FindKernel("KTranslateSonarTaps");
 
-            _radarResourcesReady = _sonarTapBuffer != null &&
+            _radarResourcesReady = _sonarTapBufferA != null &&
+                                   _sonarTapBufferB != null &&
+                                   _activeSonarTapBuffer != null &&
                                    _radarBlipBuffer != null &&
-                                   _radarArgsBuffer != null &&
+                                   _radarArgsBufferA != null &&
+                                   _radarArgsBufferB != null &&
+                                   _activeRadarArgsBuffer != null &&
                                    radarCompute != null &&
                                    _radarKernel >= 0;
         }
 
         private void DisposeGraphicsResources()
         {
-            ReleaseBuffer(ref _sonarTapBuffer);
+            ReleaseBuffer(ref _sonarTapBufferA);
+            ReleaseBuffer(ref _sonarTapBufferB);
+            _activeSonarTapBuffer = null;
             ReleaseBuffer(ref _radarBlipBuffer);
-            ReleaseBuffer(ref _radarArgsBuffer);
+            ReleaseBuffer(ref _radarArgsBufferA);
+            ReleaseBuffer(ref _radarArgsBufferB);
+            _activeRadarArgsBuffer = null;
             ReleaseBuffer(ref _buttonMatrixBufferA);
             ReleaseBuffer(ref _buttonMatrixBufferB);
             _activeButtonMatrixBuffer = null;
@@ -1322,6 +1365,8 @@ namespace Hecton8.UI
             ReleaseBuffer(ref _damageRoomWaterBufferB);
             _activeDamageRoomWaterBuffer = null;
             _buttonMatrixUploadIndex = 0;
+            _sonarTapUploadBufferIndex = 0;
+            _radarArgsUploadBufferIndex = 0;
             _damageProxyUploadIndex = 0;
             _damageRoomWaterUploadIndex = 0;
             _radarKernel = -1;
@@ -1924,12 +1969,18 @@ namespace Hecton8.UI
             if (!dispatchDirty)
                 return;
 
-            NativeArray<SonarEchoTap> mapped = _sonarTapBuffer.LockBufferForWrite<SonarEchoTap>(0, safeCount);
+            GraphicsBuffer sonarWriteBuffer = (_sonarTapUploadBufferIndex & 1) == 0 ? _sonarTapBufferA : _sonarTapBufferB;
+            if (sonarWriteBuffer == null || !sonarWriteBuffer.IsValid())
+                return;
+
+            NativeArray<SonarEchoTap> mapped = sonarWriteBuffer.LockBufferForWrite<SonarEchoTap>(0, safeCount);
             for (int i = 0; i < safeCount; i++)
                 mapped[i] = taps[i];
-            _sonarTapBuffer.UnlockBufferAfterWrite<SonarEchoTap>(safeCount);
+            sonarWriteBuffer.UnlockBufferAfterWrite<SonarEchoTap>(safeCount);
+            _activeSonarTapBuffer = sonarWriteBuffer;
+            _sonarTapUploadBufferIndex ^= 1;
 
-            radarCompute.SetBuffer(_radarKernel, SonarTapsId, _sonarTapBuffer);
+            radarCompute.SetBuffer(_radarKernel, SonarTapsId, _activeSonarTapBuffer);
             radarCompute.SetBuffer(_radarKernel, RadarBlipsId, _radarBlipBuffer);
             radarCompute.SetInt(InputTapCountId, safeCount);
             radarCompute.SetInt(OutputPointCountId, visualPointCount);
@@ -2015,7 +2066,7 @@ namespace Hecton8.UI
                     continue;
                 }
 
-                _damageLastHullSignalFrame = (int)(signal.Frame != 0u ? signal.Frame : unchecked((uint)Hecton8.Core.SystemDispatcher.CurrentFrameIndex));
+                _damageLastHullSignalFrame = (int)(signal.Frame != 0u ? signal.Frame : Hecton8.Core.SystemDispatcher.CurrentFrameId);
                 _damageKnownActiveDentCount = math.clamp(signal.ActiveDentCount, 0, 16);
                 _damageHologramHadSignal = true;
                 _screenDirty = true;
@@ -2030,7 +2081,7 @@ namespace Hecton8.UI
                 if (impactSpeed <= 0.01f && lostEnergy <= 0.01f)
                     continue;
 
-                _damageLastImpactSignalFrame = (int)(signal.Frame != 0u ? signal.Frame : unchecked((uint)Hecton8.Core.SystemDispatcher.CurrentFrameIndex));
+                _damageLastImpactSignalFrame = (int)(signal.Frame != 0u ? signal.Frame : Hecton8.Core.SystemDispatcher.CurrentFrameId);
                 _damageHologramFlickerTimer = DamageHologramFlickerSeconds;
                 _damageHologramFlickerSeed = signal.SourceHash ^ (signal.TargetHash * 747796405u) ^ signal.Frame;
                 SetDamageFlicker(math.saturate(impactSpeed * 0.025f + lostEnergy * 0.0002f));
@@ -2072,13 +2123,22 @@ namespace Hecton8.UI
 
             _damageRoomCount = safeCount;
             _damageRoomSequence = unchecked((int)sequence);
+            _damageRoomWaterUploadPending = true;
+        }
+
+        private void FlushDamageRoomWaterUpload()
+        {
+            if (!_damageRoomWaterUploadPending)
+                return;
+
             GraphicsBuffer roomWriteBuffer = ResolveDamageRoomWaterWriteBuffer();
-            if (roomWriteBuffer != null)
-            {
-                GraphicsBufferUploadUtility.UploadArray(roomWriteBuffer, _damageRoomWaterUpload, MaxDamageHologramRooms);
-                _activeDamageRoomWaterBuffer = roomWriteBuffer;
-                _damageRoomWaterUploadIndex ^= 1;
-            }
+            if (roomWriteBuffer == null)
+                return;
+
+            GraphicsBufferUploadUtility.UploadArray(roomWriteBuffer, _damageRoomWaterUpload, MaxDamageHologramRooms);
+            _activeDamageRoomWaterBuffer = roomWriteBuffer;
+            _damageRoomWaterUploadIndex ^= 1;
+            _damageRoomWaterUploadPending = false;
         }
 
         private int ResolveRadarVisualPointCount(int tapCount)
@@ -2094,15 +2154,19 @@ namespace Hecton8.UI
         private void UpdateRadarArgs(int instanceCount)
         {
             Mesh mesh = ResolveRadarMesh();
-            if (_radarArgsBuffer == null || mesh == null)
+            if (_radarArgsBufferA == null || _radarArgsBufferB == null || mesh == null)
                 return;
 
             int safeInstanceCount = math.max(0, instanceCount);
             if (safeInstanceCount == _lastRadarArgsInstanceCount && ReferenceEquals(mesh, _lastRadarArgsMesh))
                 return;
 
+            GraphicsBuffer argsWriteBuffer = (_radarArgsUploadBufferIndex & 1) == 0 ? _radarArgsBufferA : _radarArgsBufferB;
+            if (argsWriteBuffer == null || !argsWriteBuffer.IsValid())
+                return;
+
             NativeArray<GraphicsBuffer.IndirectDrawIndexedArgs> argsWrite =
-                _radarArgsBuffer.LockBufferForWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(0, 1);
+                argsWriteBuffer.LockBufferForWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(0, 1);
             argsWrite[0] = new GraphicsBuffer.IndirectDrawIndexedArgs
             {
                 indexCountPerInstance = mesh.GetIndexCount(0),
@@ -2111,7 +2175,9 @@ namespace Hecton8.UI
                 baseVertexIndex = (uint)Mathf.Max(0, mesh.GetBaseVertex(0)),
                 startInstance = 0u
             };
-            _radarArgsBuffer.UnlockBufferAfterWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(1);
+            argsWriteBuffer.UnlockBufferAfterWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(1);
+            _activeRadarArgsBuffer = argsWriteBuffer;
+            _radarArgsUploadBufferIndex ^= 1;
             _lastRadarArgsInstanceCount = safeInstanceCount;
             _lastRadarArgsMesh = mesh;
         }
@@ -2136,7 +2202,7 @@ namespace Hecton8.UI
                 !_radarResourcesReady ||
                 _radarRuntimeMaterial == null ||
                 _radarBlipBuffer == null ||
-                _radarArgsBuffer == null)
+                _activeRadarArgsBuffer == null)
             {
                 return;
             }
@@ -2197,7 +2263,7 @@ namespace Hecton8.UI
                 receiveShadows = false,
                 motionVectorMode = MotionVectorGenerationMode.ForceNoMotion
             };
-            UnityEngine.Graphics.RenderMeshIndirect(renderParams, mesh, _radarArgsBuffer, 1, 0);
+            UnityEngine.Graphics.RenderMeshIndirect(renderParams, mesh, _activeRadarArgsBuffer, 1, 0);
         }
 
         private void RenderDamageHologram()
@@ -2428,7 +2494,7 @@ namespace Hecton8.UI
                 return 0f;
 
             float normalized = math.saturate(_damageHologramFlickerTimer * DamageHologramFlickerSecondsInv);
-            return normalized * Hash01(unchecked((uint)Hecton8.Core.SystemDispatcher.CurrentFrameIndex) ^ _damageHologramFlickerSeed);
+            return normalized * Hash01(Hecton8.Core.SystemDispatcher.CurrentFrameId ^ _damageHologramFlickerSeed);
         }
 
         private static float Hash01(uint value)

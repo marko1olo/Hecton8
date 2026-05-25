@@ -52,6 +52,7 @@ namespace Hecton8.Interaction
     [AddComponentMenu("Hecton8/Interaction/Physical Hand Controller")]
     public sealed class PhysicalHandController : MonoBehaviour, IPhysicalHandIkTargetSink
     {
+        private static int s_x001PhysicalHandControllerSignalPushDropCount;
         private const int FingerCount = 5;
         private const int FingerSegmentsPerFinger = 3;
         private const int FingerSegmentCount = FingerCount * FingerSegmentsPerFinger;
@@ -1310,9 +1311,9 @@ namespace Hecton8.Interaction
             signal.Frame = frame;
             signal.SourceId = (ushort)handSide;
             signal.Channel = 1;
-            signal.Flags = CombatDamageSignal.DirectRuntimeFlag;
+            signal.Flags = CombatDamageSignal.DirectRuntimeFlag | CombatDamageSignal.VisualOnlyFlag;
             signal.IntegrityDelta = (byte)math.clamp((int)math.round(kinetic01 * 255f), 1, 255);
-            SignalBus<CombatDamageSignal>.TryPush(in signal);
+            SignalBus<CombatDamageSignal>.TryPushTracked(in signal, ref s_x001PhysicalHandControllerSignalPushDropCount);
             _lastKinematicVelocitySignalFrame = frame;
         }
 

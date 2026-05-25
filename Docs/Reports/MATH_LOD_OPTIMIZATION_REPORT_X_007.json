@@ -57,7 +57,7 @@
       "floatModeFastCount": 0,
       "ifCount": 28,
       "switchCount": 3,
-      "ternaryCount": 11
+      "ternaryCount": 8
     },
     "Assets/_Project/Scripts/Physiology/ShinobuPhysiologyJobs.cs": {
       "burstCompileCount": 9,
@@ -69,9 +69,9 @@
     "Assets/_Project/Scripts/Power/PowerGridJacobiContracts.cs": {
       "burstCompileCount": 6,
       "floatModeFastCount": 0,
-      "ifCount": 54,
+      "ifCount": 52,
       "switchCount": 0,
-      "ternaryCount": 26
+      "ternaryCount": 25
     },
     "Assets/_Project/Scripts/Power/ShinobuLogisticsRouter.cs": {
       "burstCompileCount": 8,
@@ -102,6 +102,22 @@
       "ternaryCount": 4
     }
   },
+  "burstBranchBoundaryProof": {
+    "approximationKernelTotalIfCount": 0,
+    "approximationKernelTotalTernaryCount": 0,
+    "approximationKernelUsesMathSelect": true,
+    "equipmentDrainSafetyIfCount": 7,
+    "integrateBatteryDestinationMaskBranchless": true,
+    "integrateBatterySafetyIfCount": 6,
+    "mathLodTortureSafetyIfCount": 3,
+    "mathLodTortureTernaryCount": 1,
+    "powerVoltageDestinationMaskBranchless": true,
+    "powerVoltageEdgeLoopContinueCount": 0,
+    "powerVoltageEdgeLoopIfCount": 0,
+    "powerVoltageSolverSafetyIfCount": 2,
+    "powerVoltageSolverTernaryCount": 1,
+    "truthPolicy": "approximation kernels plus the PowerVoltageSolverJob and IntegrateBatteryChargeJob destination accumulation paths are branchless; Burst jobs still contain explicit setup/topology branches for native memory validity, offline/damaged nodes, map lookup, capacity handling, and telemetry writes"
+  },
   "codeAnchorAudit": {
     "abyssalCavitationReadsMathLodConfig": true,
     "abyssalReactorDefaultsUseResolvedQuality": true,
@@ -116,6 +132,9 @@
     "approxCoreIfCount": 0,
     "approxCoreTernaryCount": 0,
     "approxCoreUsesMathSelect": true,
+    "approximationKernelTotalIfCount": 0,
+    "approximationKernelTotalTernaryCount": 0,
+    "approximationKernelUsesMathSelect": true,
     "assetLifecycleReadsMathLodConfig": true,
     "assetLoadDispatcherReadsMathLodConfig": true,
     "asyncBuoyancyReadsMathLodConfig": true,
@@ -158,6 +177,7 @@
     "distanceMathContinuousShaderWeight": true,
     "dynamicMusicInterpolationContinuous": true,
     "editorBioForgeExpLogRemoved": true,
+    "equipmentDrainSafetyIfCount": 7,
     "exosuitReadsMathLodConfig": true,
     "expPositiveInfinityClampsToMaxRange": true,
     "externalHeatRetentionQualityInvariant": true,
@@ -174,6 +194,8 @@
     "hullIntegrityReadsMathLodConfig": true,
     "hydraulicErosionExpRemoved": true,
     "hydrodynamicKccReadsMathLodConfig": true,
+    "integrateBatteryDestinationMaskBranchless": true,
+    "integrateBatterySafetyIfCount": 6,
     "interiorGICadenceContinuous": true,
     "interiorGIDirectionalWeightsContinuous": true,
     "interiorGIReadsMathLodConfig": true,
@@ -199,7 +221,9 @@
     "mathLodTortureCoversAngleKernels": true,
     "mathLodTortureCoversExtremePressureTemperature": true,
     "mathLodTortureJobPresent": true,
+    "mathLodTortureSafetyIfCount": 3,
     "mathLodTortureSanitizesEnvelope": true,
+    "mathLodTortureTernaryCount": 1,
     "memorySentinelQualityDeficitContinuous": true,
     "metabolismRuntimeReadsMathLodConfig": true,
     "metabolismThermalInterpolationContinuous": true,
@@ -227,12 +251,17 @@
     "powerJacobiTickCapPresent": true,
     "powerVoltageBrownoutUsesMathSelect": true,
     "powerVoltageConductanceMaskBranchless": true,
+    "powerVoltageDestinationMaskBranchless": true,
+    "powerVoltageEdgeLoopContinueCount": 0,
+    "powerVoltageEdgeLoopIfCount": 0,
+    "powerVoltageSolverSafetyIfCount": 2,
+    "powerVoltageSolverTernaryCount": 1,
     "proceduralBoneJawContinuous": true,
     "proceduralBoneSecondaryContinuous": true,
     "qaWatchdogQualityContinuous": true,
     "reactorFiniteOrUsesMathSelect": true,
     "reactorInjectionDiameterContinuous": true,
-    "remainingFloatModeFastCount": 700,
+    "remainingFloatModeFastCount": 699,
     "repairToolQualityFlagsContinuous": true,
     "rollbackDirectExpRemoved": true,
     "runtimeQualityStepGateSweepRemoved": true,
@@ -265,6 +294,84 @@
     "vrSomaticLowQualityContinuous": true,
     "vramEnforcerReadsMathLodConfig": true,
     "vramPressureReadsMathLodConfig": true
+  },
+  "extremeKernelFinitenessProof": {
+    "kernelCountPerSample": 10,
+    "maxAbsFiniteOutput": 54.60041427612305,
+    "nonFiniteOutputCount": 0,
+    "rows": [
+      {
+        "input": "nan",
+        "maxAbsOutput": 1.0,
+        "nonFiniteKernels": []
+      },
+      {
+        "input": "inf",
+        "maxAbsOutput": 54.60041427612305,
+        "nonFiniteKernels": []
+      },
+      {
+        "input": "-inf",
+        "maxAbsOutput": 1.0,
+        "nonFiniteKernels": []
+      },
+      {
+        "input": "-1000000.0",
+        "maxAbsOutput": 3.1415927410125732,
+        "nonFiniteKernels": []
+      },
+      {
+        "input": "1000000.0",
+        "maxAbsOutput": 54.60041427612305,
+        "nonFiniteKernels": []
+      },
+      {
+        "input": "-1000.0",
+        "maxAbsOutput": 3.1415927410125732,
+        "nonFiniteKernels": []
+      },
+      {
+        "input": "1000.0",
+        "maxAbsOutput": 54.60041427612305,
+        "nonFiniteKernels": []
+      },
+      {
+        "input": "-273.15",
+        "maxAbsOutput": 3.1415927410125732,
+        "nonFiniteKernels": []
+      },
+      {
+        "input": "37.0",
+        "maxAbsOutput": 54.60041427612305,
+        "nonFiniteKernels": []
+      },
+      {
+        "input": "0.0",
+        "maxAbsOutput": 3.1415927410125732,
+        "nonFiniteKernels": []
+      },
+      {
+        "input": "0.1",
+        "maxAbsOutput": 3.1274499893188477,
+        "nonFiniteKernels": []
+      },
+      {
+        "input": "1.0",
+        "maxAbsOutput": 3.096869945526123,
+        "nonFiniteKernels": []
+      },
+      {
+        "input": "4.0",
+        "maxAbsOutput": 54.60041427612305,
+        "nonFiniteKernels": []
+      },
+      {
+        "input": "40.0",
+        "maxAbsOutput": 54.60041427612305,
+        "nonFiniteKernels": []
+      }
+    ],
+    "sampleCount": 14
   },
   "firstOccurrences": [],
   "generatedBy": "Tools/OOP_MathLOD_Scanner.py",
@@ -332,6 +439,14 @@
     "interiorGIReadsMathLodConfig": true,
     "tetherAupCatmullContinuous": true,
     "truthPolicy": "quality scales cable/tether spline presentation and GI directional/cadence detail; tether constraints, tension events, light sources, and occlusion validity stay authoritative"
+  },
+  "powerDestinationMaskEquivalenceProof": {
+    "checkedCases": 245,
+    "maxBatteryCurrentAbsDiff": 0.0,
+    "maxConductanceSumAbsDiff": 0.0,
+    "maxWeightedPotentialAbsDiff": 0.0,
+    "mismatchCount": 0,
+    "policy": "safe-index destination masking must be numerically equivalent to the previous invalid-destination branch/continue behavior"
   },
   "powerGridManagerQualityRouteProof": {
     "cableThermalIterationBudgetUsesResolvedQuality": true,

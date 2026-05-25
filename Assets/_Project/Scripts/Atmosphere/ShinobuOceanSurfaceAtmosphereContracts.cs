@@ -117,7 +117,7 @@ namespace Hecton8.Atmosphere
         [FieldOffset(48)] public float4 Reserved1;
     }
 
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public static class HectonOceanSurfaceMath
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -148,7 +148,7 @@ namespace Hecton8.Atmosphere
             return math.saturate(ResolveDesiredWaveCount(qualityWeight, maxWaveCount) - waveIndex);
         }
 
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         public static void EvaluateWaves(
             double3 AUP,
             float time,
@@ -159,7 +159,7 @@ namespace Hecton8.Atmosphere
             EvaluateWaves(AUP, time, waves, 1f, out height, out normal);
         }
 
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         public static void EvaluateWaves(
             double3 AUP,
             float time,
@@ -180,7 +180,7 @@ namespace Hecton8.Atmosphere
                 out _);
         }
 
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         public static void EvaluateWavesDetailed(
             double3 AUP,
             float time,
@@ -598,7 +598,7 @@ namespace Hecton8.Atmosphere
         }
     }
 
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct GenerateMockStormJob : IJob
     {
         [NoAlias] public NativeArray<WaveParametersDTO> Waves;
@@ -640,7 +640,7 @@ namespace Hecton8.Atmosphere
         }
     }
 
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct CalculateWaveParametersJob : IJob
     {
         [NoAlias] public NativeArray<WaveParametersDTO> Waves;

@@ -84,19 +84,7 @@ namespace Hecton8.World
         [Tooltip("Initial eject speed applied to released scrap pieces.")]
         private float scrapEjectSpeed = 1.8f;
 
-        [Header("Snag Joints")]
-        [SerializeField]
-        [Tooltip("Layers treated as snag targets when a collapse chunk slams into the seabed or surrounding wreckage.")]
-        private LayerMask snagLayers = Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;
-
-        [SerializeField, Range(0.1f, 4f)]
-        [Tooltip("Search radius used when probing nearby rock or chunk anchors after impact.")]
-        private float snagSearchRadius = 1.2f;
-
-        [SerializeField, Range(0.1f, 12f)]
-        [Tooltip("Minimum impact speed required before the chunk attempts to snag instead of simply bouncing.")]
-        private float snagImpactSpeedThreshold = 1.6f;
-
+        [Header("Snag Constraint")]
         [SerializeField, Range(0.1f, 120f)]
         [Tooltip("Spring used by the hanging debris joint once the chunk snags into surrounding geometry.")]
         private float snagSpring = 28f;
@@ -109,10 +97,6 @@ namespace Hecton8.World
         [Tooltip("Maximum free distance preserved by the hanging spring before the chunk starts pulling taut.")]
         private float snagMaxDistance = 0.45f;
 
-        [SerializeField, Range(0.01f, 0.5f)]
-        [Tooltip("Surface-normal offset applied to snag anchors so hanging chunks pin against cave walls instead of embedding into them.")]
-        private float snagSurfaceOffset = 0.08f;
-
         private Vector3 _defaultLocalScale = Vector3.one;
         private float _defaultLinearDamping;
         private float _defaultAngularDamping;
@@ -121,7 +105,6 @@ namespace Hecton8.World
         private float _remainingLifetime;
         private bool _registeredTick;
         private bool _hasSnag;
-        private bool _cascadeImpactConsumed;
         private int _fragmentDepth;
         private Rigidbody _snagConnectedBody;
         private Vector3 _snagLocalAnchor;
@@ -135,6 +118,8 @@ namespace Hecton8.World
         private bool _disintegrating;
         private bool _registeredFixedTick;
         private bool _registeredLateFrameTick;
+        private bool _pendingPoolDespawn;
+        private bool _pendingScrapDisintegration;
         private bool _hotSwapRegistered;
         private bool _siltTrailVisualDirty;
         private bool _pendingSiltTrailPlay;
@@ -142,7 +127,6 @@ namespace Hecton8.World
         private float _pendingSiltTrailEmissionRate;
         private IObjectPoolService _objectPool;
         private SargassumGlobalDragManager _sargassumDrag;
-        private readonly SpatialQueryHit[] _snagContacts = new SpatialQueryHit[8]; // COLD ALLOC: SpatialQueryHit[8] - bounded snag-target probe buffer for collapse chunks - owner: SargassumCollapseChunk
         // COLD ALLOC: ParticleSystem.Particle[192] - reusable world-space silt particle shift buffer - owner: SargassumCollapseChunk
         private ParticleSystem.Particle[] _siltTrailShiftParticles;
 
@@ -204,7 +188,6 @@ namespace Hecton8.World
             _remainingLifetime = despawnDelay > 0f ? despawnDelay : defaultLifetime;
             _fragmentDepth = Mathf.Max(0, fragmentDepth);
             _hasSnag = false;
-            _cascadeImpactConsumed = false;
             _siltTrailSettled = false;
             _snagHangTimer = 0f;
             _remainingThermalIntegrity = Mathf.Max(0.01f, thermalIntegrity);
@@ -238,9 +221,7 @@ namespace Hecton8.World
             if (_remainingLifetime > 0f)
                 return;
 
-            IObjectPoolService poolManager = _objectPool;
-            if (poolManager != null)
-                poolManager.Despawn(gameObject);
+            _pendingPoolDespawn = true;
         }
 
         /// <summary>
@@ -258,6 +239,20 @@ namespace Hecton8.World
         public void LateFrameTick()
         {
             FlushSiltTrailVisualSync();
+            if (_pendingScrapDisintegration)
+            {
+                _pendingScrapDisintegration = false;
+                ExecuteDisintegrationPoolCommands();
+                return;
+            }
+
+            if (_pendingPoolDespawn)
+            {
+                _pendingPoolDespawn = false;
+                IObjectPoolService poolManager = _objectPool;
+                if (poolManager != null)
+                    poolManager.Despawn(gameObject);
+            }
         }
 
         /// <summary>
@@ -283,7 +278,6 @@ namespace Hecton8.World
             }
 
             _hasSnag = false;
-            _cascadeImpactConsumed = false;
             _fragmentDepth = 0;
             _siltTrailSettled = false;
             _snagHangTimer = 0f;
@@ -321,7 +315,6 @@ namespace Hecton8.World
             }
 
             _hasSnag = false;
-            _cascadeImpactConsumed = false;
             _fragmentDepth = 0;
             _siltTrailSettled = false;
             _snagHangTimer = 0f;
@@ -334,36 +327,6 @@ namespace Hecton8.World
 
             if (siltTrail != null)
                 siltTrail.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
-        }
-
-        private void LegacyPhysXSnagCallbackDisabled(Collision collision)
-        {
-            if (_hasSnag || collision == null || collision.contactCount <= 0 || chunkRigidbody == null)
-                return;
-
-            float impactSpeedSq = collision.relativeVelocity.sqrMagnitude;
-            float snagImpactSpeedThresholdSq = snagImpactSpeedThreshold * snagImpactSpeedThreshold;
-            if (impactSpeedSq < snagImpactSpeedThresholdSq)
-                return;
-
-            int collisionLayerMask = 1 << collision.collider.gameObject.layer;
-            if ((snagLayers.value & collisionLayerMask) == 0)
-                return;
-
-            ContactPoint contact = collision.GetContact(0);
-            bool useVoxelRockSpring = collision.collider.CompareTag("VoxelRock");
-            TryConfigureSnag(contact.point, contact.normal, collision.rigidbody, useVoxelRockSpring);
-            if (ShouldStopSiltTrail(contact.normal, impactSpeedSq))
-                StopSiltTrailEmission(clearParticles: false);
-
-            if (_cascadeImpactConsumed)
-                return;
-
-            SargassumGlobalDragManager dragManager = _sargassumDrag;
-            if (dragManager != null)
-                dragManager.RegisterCollapseChunkImpact(contact.point, contact.normal, impactSpeedSq, _fragmentDepth + 1);
-
-            _cascadeImpactConsumed = true;
         }
 
         private void OnDisable()
@@ -584,63 +547,6 @@ namespace Hecton8.World
             _snagUseSpringOnly = false;
         }
 
-        private void TryConfigureSnag(Vector3 contactPointWS, Vector3 contactNormalWS, Rigidbody preferredBody, bool useVoxelRockSpring)
-        {
-            Rigidbody connectedBody = preferredBody;
-            Vector3 safeNormal = ResolveSafeDirection(contactNormalWS, Vector3.up);
-            Vector3 connectedAnchorWS = contactPointWS + safeNormal * snagSurfaceOffset;
-
-            const SpatialTargetKind kindMask =
-                SpatialTargetKind.Resource |
-                SpatialTargetKind.Pickup |
-                SpatialTargetKind.Scannable |
-                SpatialTargetKind.Module;
-
-            int hitCount = WorldSpatialHashGrid.CollectContactsNonAlloc(
-                contactPointWS,
-                snagSearchRadius,
-                kindMask,
-                _snagContacts);
-
-            float nearestDistanceSq = float.PositiveInfinity;
-            for (int i = 0; i < hitCount; i++)
-            {
-                SpatialQueryHit candidate = _snagContacts[i];
-                _snagContacts[i] = default;
-                if (!LayerMatchesMask(candidate.Layer, snagLayers) || candidate.Rigidbody == chunkRigidbody)
-                    continue;
-
-                Vector3 candidatePoint = candidate.Position;
-                float distanceSq = (candidatePoint - contactPointWS).sqrMagnitude;
-                if (distanceSq >= nearestDistanceSq)
-                    continue;
-
-                nearestDistanceSq = distanceSq;
-                connectedAnchorWS = candidate.Rigidbody != null
-                    ? candidatePoint
-                    : candidatePoint + safeNormal * snagSurfaceOffset;
-                connectedBody = candidate.Rigidbody;
-            }
-
-            Vector3 localAnchor = transform.InverseTransformPoint(contactPointWS);
-            Vector3 connectedAnchor = connectedBody != null
-                ? connectedBody.transform.InverseTransformPoint(connectedAnchorWS)
-                : connectedAnchorWS;
-
-            _snagConnectedBody = connectedBody;
-            _snagLocalAnchor = localAnchor;
-            _snagConnectedAnchor = connectedAnchor;
-            _snagUseSpringOnly = useVoxelRockSpring;
-            _hasSnag = true;
-            _siltTrailSettled = true;
-            TryRegisterScavengerHost();
-        }
-
-        private static bool LayerMatchesMask(int layer, LayerMask mask)
-        {
-            return layer >= 0 && layer < 32 && (mask.value & (1 << layer)) != 0;
-        }
-
         private void ApplySnagConstraint(float fixedDeltaTime)
         {
             Vector3 connectedAnchorWS = _snagConnectedBody != null
@@ -701,17 +607,6 @@ namespace Hecton8.World
                 LerpClamped(siltTrailBaseRate, siltTrailMaxRate, speed01) * FrameTimeWatchdog.ParticleEmissionScale,
                 play: true,
                 clearParticles: false);
-        }
-
-        private bool ShouldStopSiltTrail(Vector3 contactNormalWS, float impactSpeedSq)
-        {
-            if (impactSpeedSq <= 0.00000001f)
-                return false;
-
-            if (_hasSnag)
-                return true;
-
-            return contactNormalWS.y >= 0.35f;
         }
 
         private void StopSiltTrailEmission(bool clearParticles)
@@ -911,6 +806,11 @@ namespace Hecton8.World
 
             _disintegrating = true;
             TryUnregisterScavengerHost();
+            _pendingScrapDisintegration = true;
+        }
+
+        private void ExecuteDisintegrationPoolCommands()
+        {
             IObjectPoolService poolManager = _objectPool;
             if (poolManager != null && scrapPickupPrefab != null)
             {
@@ -998,12 +898,9 @@ namespace Hecton8.World
             siltTrailMaxRate = Mathf.Clamp(siltTrailMaxRate, siltTrailBaseRate, 160f);
             siltTrailFullSpeed = Mathf.Clamp(siltTrailFullSpeed, 0.1f, 8f);
             siltTrailStopSpeed = Mathf.Clamp(siltTrailStopSpeed, 0.01f, 1f);
-            snagSearchRadius = Mathf.Clamp(snagSearchRadius, 0.1f, 4f);
-            snagImpactSpeedThreshold = Mathf.Clamp(snagImpactSpeedThreshold, 0.1f, 12f);
             snagSpring = Mathf.Clamp(snagSpring, 0.1f, 120f);
             snagDamper = Mathf.Clamp(snagDamper, 0f, 16f);
             snagMaxDistance = Mathf.Clamp(snagMaxDistance, 0f, 2f);
-            snagSurfaceOffset = Mathf.Clamp(snagSurfaceOffset, 0.01f, 0.5f);
             snagDisintegrationDelay = Mathf.Clamp(snagDisintegrationDelay, 30f, 90f);
             scrapPickupCount = Mathf.Clamp(scrapPickupCount, 1, ScrapEjectDirections.Length);
             thermalIntegrity = Mathf.Clamp(thermalIntegrity, 0f, 16f);

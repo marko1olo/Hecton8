@@ -335,6 +335,8 @@ namespace Hecton8.Lighting
             CacheDependencies();
             TryRegisterHotSwapListener();
             EnsureNativeState();
+            if (_nativeReady && enableGpuUpload)
+                EnsureGpuBuffers(MaxCellCount);
             TryRegister();
         }
 
@@ -706,9 +708,6 @@ namespace Hecton8.Lighting
                 _nativeReady = false;
                 return;
             }
-
-            if (enableGpuUpload)
-                EnsureGpuBuffers(MaxCellCount);
 
             _nativeReady = true;
             _mockSourcesSeeded = false;

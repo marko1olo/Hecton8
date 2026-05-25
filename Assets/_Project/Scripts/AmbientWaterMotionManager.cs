@@ -24,7 +24,7 @@ namespace Hecton8.Physics
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-4900)]
     [AddComponentMenu("Hecton/Physics/Ambient Water Motion Manager")]
-    public sealed class AmbientWaterMotionManager : MonoBehaviour, ITickable, IUpdatable, IBiomeMatrixEventListener, IGlobalRegistryHotSwapListener
+    public sealed class AmbientWaterMotionManager : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, IBiomeMatrixEventListener, IGlobalRegistryHotSwapListener
     {
         private const float BiomeFlowBlendInvSeconds = 0.2f;
         private const float DegreesToHalfRadians = 0.008726646259971648f;
@@ -71,6 +71,7 @@ namespace Hecton8.Physics
         private int _farFrameMask;
         private int _cullFrameMask;
         private bool _tickRegistered;
+        private bool _lateFrameRegistered;
         private bool _serviceRegistered;
         private bool _hotSwapRegistered;
         private IPlayerRuntimeContext _playerRuntimeContext;
@@ -79,6 +80,7 @@ namespace Hecton8.Physics
         private Vector3 _biomeCurrentTargetVector;
         private float _biomeCurrentBlendElapsed;
         private bool _hasBiomeCurrentTarget;
+        private float _pendingVisualDeltaTime;
 
         // Observer resolve cooldown.
         // If no observer is assigned or found, avoid hitting bootstrap every frame.
@@ -191,6 +193,18 @@ namespace Hecton8.Physics
         {
             if (HectonFloatingOrigin.IsShiftInProgress)
                 return;
+
+            _pendingVisualDeltaTime += math.max(0f, deltaTime);
+            TryRegisterLateFrame();
+        }
+
+        public void LateFrameTick()
+        {
+            if (HectonFloatingOrigin.IsShiftInProgress)
+                return;
+
+            float deltaTime = _pendingVisualDeltaTime > 0f ? _pendingVisualDeltaTime : Time.deltaTime;
+            _pendingVisualDeltaTime = 0f;
             UpdateBiomeCurrentBlend(deltaTime);
 
             if (_objects.Count == 0) return;
@@ -529,13 +543,31 @@ namespace Hecton8.Physics
         private void TryRegister()
         {
             if (_tickRegistered || !Application.isPlaying)
+            {
+                TryRegisterLateFrame();
                 return;
+            }
 
             _tickRegistered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
+            TryRegisterLateFrame();
+        }
+
+        private void TryRegisterLateFrame()
+        {
+            if (_lateFrameRegistered || !Application.isPlaying)
+                return;
+
+            _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregister()
         {
+            if (_lateFrameRegistered)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                _lateFrameRegistered = false;
+            }
+
             if (!_tickRegistered)
                 return;
 

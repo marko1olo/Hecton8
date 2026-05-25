@@ -1328,7 +1328,7 @@ namespace Hecton8.UI
         {
             uint hash = 2166136261u;
             hash = (hash ^ HectonFloatingOrigin.LastShiftEvent.Sequence) * 16777619u;
-            hash = (hash ^ unchecked((uint)Hecton8.Core.SystemDispatcher.CurrentFrameIndex)) * 16777619u;
+            hash = (hash ^ Hecton8.Core.SystemDispatcher.CurrentFrameId) * 16777619u;
             return hash ^ 0xA8F1D3C5u;
         }
 

@@ -174,8 +174,12 @@ namespace Hecton8.World
             object previousService,
             object currentService)
         {
-            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && currentService != null && isActiveAndEnabled)
-                TryRegister();
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                _registeredToTickManager = false;
+                if (currentService != null && isActiveAndEnabled)
+                    TryRegister();
+            }
         }
 
         private void TryRegister()

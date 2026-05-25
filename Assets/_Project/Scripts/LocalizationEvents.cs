@@ -490,7 +490,7 @@ namespace Hecton.Localization
 
             LocalizationEventPayload payload = new LocalizationEventPayload
             {
-                Frame = unchecked((uint)Mathf.Max(0, SystemDispatcher.CurrentFrameIndex)),
+                Frame = SystemDispatcher.CurrentFrameId,
                 EventType = (ushort)eventType,
                 Language = (ushort)language,
                 VisualBucket = visualBucket,

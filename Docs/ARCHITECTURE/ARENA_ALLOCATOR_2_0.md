@@ -60,7 +60,9 @@ basePtr
 
 ```
 
-The allocator reserves one persistent unmanaged block with `UnsafeUtility.Malloc(capacity, 64, Allocator.Persistent)`. Each frame writes into one arena while the previous frame can remain readable through the other arena.
+The allocator reserves one persistent unmanaged block with `UnsafeUtility.Malloc(capacity, 64, Allocator.Persistent)`.
+
+Each frame writes one arena; the previous frame remains readable through the other arena.
 
 ## Slab Resolution
 

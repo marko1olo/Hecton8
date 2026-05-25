@@ -14,6 +14,8 @@ namespace Hecton8.AI.Ecosystem
 {
     public sealed partial class ShinobuEcosystemBalancer
     {
+        private static int s_x001DirectSignalPushDropCount_ShinobuEcosystemBalancer_FlockingAvoidance;
+
         private const uint FlockingThreatMovementHash = 0x4D564143u; // MVAC
         private const uint FlockingThreatImpactHash = 0x48494D50u; // HIMP
         private const uint FlockingThreatDamageHash = 0x43444D47u; // CDMG
@@ -81,6 +83,9 @@ namespace Hecton8.AI.Ecosystem
             for (int i = damageSignals.Length - 1; i >= 0 && written < limit; i--)
             {
                 CombatDamageSignal signal = damageSignals[i];
+                if ((signal.Flags & CombatDamageSignal.VisualOnlyFlag) != 0)
+                    continue;
+
                 if (!CombatDamageSignalCodec.IsFiniteAup(signal.ImpactAup))
                     continue;
 
@@ -231,7 +236,7 @@ namespace Hecton8.AI.Ecosystem
                 QualityTier = (byte)math.clamp((int)math.round(quality01 * 255f), 0, 255)
             };
 
-            if (SignalBus<SwarmDispersedSignal>.TryPush(in signal))
+            if (SignalBus<SwarmDispersedSignal>.TryPushTracked(in signal, ref s_x001DirectSignalPushDropCount_ShinobuEcosystemBalancer_FlockingAvoidance))
                 _lastFlockingDispersalSignalFrame = frame;
         }
 

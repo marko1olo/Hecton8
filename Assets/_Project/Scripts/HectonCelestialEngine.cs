@@ -509,6 +509,7 @@ namespace Hecton8.Celestial
     [DefaultExecutionOrder(-3000)]  // v5.1: MUST tick AFTER UnderwaterVisuals(-4000)
     public class HectonCelestialEngine : MonoBehaviour, ISlowTickable, ILateFrameTickable, IBiomeMatrixEventListener, IWeatherEventListener, IGlobalRegistryHotSwapListener, ICelestialSkyDirectionReadModel
     {
+        private static int s_x001HectonCelestialEngineSignalPushDropCount;
         private const string MandatedSkyMaterialName = "Mat_HectonSky";
         private const float SurfaceCloudShadowCookieEpsilon = 0.0001f;
         private const float SurfaceReadableSunIntensityFloor = 0.85f;
@@ -4988,7 +4989,7 @@ namespace Hecton8.Celestial
                 Sequence = snapshot.Sequence,
                 Flags = (byte)((snapshot.Flags & (uint)CelestialRuntimeFlags.Valid) != 0u ? 1 : 0)
             };
-            SignalBus<GlobalTimeSyncSignal>.TryPush(in signal);
+            SignalBus<GlobalTimeSyncSignal>.TryPushTracked(in signal, ref s_x001HectonCelestialEngineSignalPushDropCount);
         }
 
         private void ClearCelestialRuntimeSnapshot()
@@ -6784,7 +6785,7 @@ namespace Hecton8.Celestial
 
             CelestialBlackBoxEntry entry = new CelestialBlackBoxEntry
             {
-                FrameIndex = unchecked((uint)Time.frameCount),
+                FrameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 Sequence = _celestialRuntimeSequence,
                 Flags = _celestialRuntimeSnapshot.Flags | extraFlags,
                 TimeOfDay01 = math.saturate(timeOfDay01),

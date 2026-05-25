@@ -123,7 +123,9 @@ Mutation source is module/socket discovery. Runtime traversal reads CSR only.
 
 ## SHINOBU_114 Runtime Solver Addendum (2026-05-19)
 
-`Assets/_Project/Scripts/Power/ShinobuLogisticsRouter.cs` is the active base logistics flow owner for the WFC/base mock lane. It now keeps the graph in DataVault-backed flat buffers and solves power/oxygen pressure from CSR state:
+`Assets/_Project/Scripts/Power/ShinobuLogisticsRouter.cs` owns the active WFC/base mock logistics lane.
+
+It keeps the graph in DataVault-backed flat buffers and solves power/oxygen pressure from CSR state:
 
 - `LogisticsNodeDTO` is explicit 32 bytes: `NodeHash`, `Capacity`, `CurrentLoad`, `Flags`, `EdgeStartIndex`, `EdgeCount`, and padding.
 
@@ -351,7 +353,9 @@ centroid = weighted / sum(FloodMassKg)
 
 The centroid is sent back to each unmoored module.
 
-`BaseModule.FixedTick()` blends Rigidbody `centerOfMass` toward that centroid, clamped by authored max center-of-mass shift and per-tick solver limit. Flooded wings tilt toward flooded mass instead of sinking as vertical blocks.
+`BaseModule.FixedTick()` blends Rigidbody `centerOfMass` toward that centroid.
+
+Clamp inputs: authored max center-of-mass shift and per-tick solver limit. Flooded wings tilt toward flooded mass.
 
 Hydro-shear rupture remains edge-local:
 
@@ -439,7 +443,9 @@ Reroute rule:
 
 - if no alternate path exists, the consumer becomes isolated and brownout is applied
 
-Looped networks are solved by conductance relaxation, not greedy propagation. Component demand is dispatched against component generation, then residual injection is cancelled at the component anchor so supply equals demand:
+Looped networks use conductance relaxation, not greedy propagation.
+
+Component demand is dispatched against component generation. Residual injection is cancelled at component anchor so supply equals demand:
 
 ```csharp
 

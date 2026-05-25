@@ -21,6 +21,7 @@ namespace Hecton8.Physiology
     [DisallowMultipleComponent]
     public sealed unsafe partial class ShinobuMetabolismRuntime : MonoBehaviour, ISlowTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener, IDisposable
     {
+        private static int s_x001ShinobuMetabolismRuntimeSignalPushDropCount;
         private const SystemID OwnerSystem = SystemID.GameplayPlayer;
         private const SystemID ChemicalOwnerSystem = SystemID.AISensory;
         private const int LockBufferCount = 12;
@@ -968,7 +969,7 @@ namespace Hecton8.Physiology
                 if (signal.SourceHash == 0u || signal.Frame == 0u)
                     continue;
 
-                SignalBus<PhysiologyStateSignal>.TryPush(in signal);
+                SignalBus<PhysiologyStateSignal>.TryPushTracked(in signal, ref s_x001ShinobuMetabolismRuntimeSignalPushDropCount);
             }
 
             for (int i = 0; i < exposureLimit; i++)
@@ -990,7 +991,7 @@ namespace Hecton8.Physiology
                     exposure.Flags = 1;
                     if (exposure.EntityId != 0u)
                     {
-                        SignalBus<ToxicityExposureSignal>.TryPush(in exposure);
+                        SignalBus<ToxicityExposureSignal>.TryPushTracked(in exposure, ref s_x001ShinobuMetabolismRuntimeSignalPushDropCount);
                     }
 
                     continue;

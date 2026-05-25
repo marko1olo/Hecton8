@@ -1826,3 +1826,45 @@ Done -> Routed singleton reads to `GlobalRegistry` owner routes; used byte-prese
 Cinematic Cheats -> No simulation added. Route cleanup only.
 Microseconds saved -> 1-4 us per fallback/boot burst; 0 steady-frame truth change.
 Verification -> Singleton grep returned 0; `?? GlobalRegistry|GlobalRegistry.TryGet` grep returned 0; scoped `diff --check` passed with LF normalization warnings only. Build skipped by `BUILD_GUARD cpu=100 compiler_count=2` with active `csc`/`dotnet`.
+
+## 2026-05-25 Runtime Hot-Path Cleanup 160
+Wrong -> Fifty more Dispatcher replacement callbacks could no-op because `_registered*` flags stayed true from old Dispatcher lanes. Affected owners spanned Atlas/audio/core/gameplay/interaction/lighting/world/UI/QA/tools/visor cadence paths.
+Done -> Cleared local lane flags before current Dispatcher re-register. Kept non-Dispatcher service/renderable ownership intact. Used byte-preserving ASCII replacement for one non-UTF8 file.
+Cinematic Cheats -> No simulation added. Existing visual/audio/gameplay presentation remains dispatcher-owned and polling-free.
+Microseconds saved -> 10-35 us during Dispatcher replacement bursts; 0 steady-frame truth change.
+Verification -> Source-only after loop160: targeted touched-file `diff --check` passed with LF warnings only; touched-file stale-simple Dispatcher grep returned no misses. Build skipped by `BUILD_GUARD cpu=63 compiler_count=1`; latest compile attempt remains loop158 `NETSDK1004` before C#.
+
+## 2026-05-25 Runtime Hot-Path Cleanup 161
+Wrong -> Nineteen remaining Dispatcher/TickManager replacement callbacks could still skip current-lane registration because old `_registered*` flags survived replacement.
+Done -> Reset dispatcher-owned lane flags in atmosphere/core/HUD/PDA/QA/quest/UI/visor/world owners before current Dispatcher/TickManager re-register. Left service/renderable/native ownership intact and skipped already-correct `ToolKinematicsRuntime`.
+Cinematic Cheats -> No simulation added. Existing presentation cadence remains dispatcher-owned and polling-free.
+Microseconds saved -> 4-16 us during Dispatcher/TickManager replacement bursts; 0 steady-frame truth change.
+Verification -> Source-only after loop161: touched-file `diff --check` passed with LF warnings only; touched-file stale-simple scan returned 0; broad Dispatcher and TickManager stale candidate scans returned 0. Build skipped by `BUILD_GUARD cpu=73 compiler_count=9`; latest compile attempt remains loop158 `NETSDK1004` before C#.
+
+## 2026-05-25 Runtime Hot-Path Cleanup 162
+Wrong -> Selected signal/blackbox/telemetry/event routes still stamped runtime payloads from Unity `Time.frameCount`; `HectonBiolumZone` read BiolumManager/TickDispatcher/SimulationBucketer through registry from Tick/LOD/helper paths.
+Done -> Rewrote 29 source files to route selected frame stamps through `SystemDispatcher.CurrentFrameId` / `CurrentFrameIndex`. Added cached BiolumManager/TickDispatcher/SimulationBucketer owner state with hot-swap refresh in `HectonBiolumZone`.
+Cinematic Cheats -> No simulation added. Biolum remains pooled/distance-bucketed visual fake; frame ownership cleanup only.
+Microseconds saved -> 1-6 us per signal/blackbox burst plus 1-4 us per biolum Tick/LOD burst; 0 steady-frame truth change.
+Verification -> Source-only after loop162: selected touched-file `Time.frameCount` grep returned 0; Biolum manager/tick/bucketer registry reads remain cold-cache only; scoped `diff --check` passed with LF warnings only. Build skipped by `BUILD_GUARD cpu=100 compiler_count=0`; latest compile attempt remains loop158 `NETSDK1004` before C#.
+
+## 2026-05-25 Runtime Hot-Path Cleanup 163
+Wrong -> Runtime payload code still wrapped `SystemDispatcher.CurrentFrameIndex` through unchecked `uint` casts, keeping unsigned frame DTOs on a different route than dispatcher frame identity.
+Done -> Rewrote 38 source files so signal, telemetry, blackbox, UI diagnostic, and editor debug payloads consume `SystemDispatcher.CurrentFrameId` directly. Preserved signed int cadence/comparison fields.
+Cinematic Cheats -> No simulation added. Frame ownership cleanup only.
+Microseconds saved -> 1-5 us per dense signal/telemetry burst; 0 steady-frame truth change.
+Verification -> Source-only after loop163: project-wide targeted `CurrentFrameIndex` uint-cast grep returned 0; scoped `diff --check` passed with LF warnings only. Build skipped by `BUILD_GUARD cpu=100 compiler_count=5`; latest compile attempt remains loop158 `NETSDK1004` before C#.
+
+## 2026-05-25 Runtime Hot-Path Cleanup 164
+Wrong -> Runtime source still cast Unity `Time.frameCount` into unsigned frame payloads for selected signal, telemetry, job, and debug routes.
+Done -> Rewrote 34 source files so selected unsigned payloads consume `Hecton8.Core.SystemDispatcher.CurrentFrameId`. Left signed frame timers and `SystemDispatcher` internals untouched.
+Cinematic Cheats -> No simulation added. Frame ownership cleanup only.
+Microseconds saved -> 1-5 us per dense runtime payload burst; 0 steady-frame truth change.
+Verification -> Source-only after loop164: touched-file targeted unsigned `Time.frameCount` cast grep returned 0; project-wide targeted remainder is 111 outside this pass; scoped `diff --check` passed with LF warnings only. Build skipped by `BUILD_GUARD cpu=100 compiler_count=0`; latest compile attempt remains loop158 `NETSDK1004` before C#.
+
+## 2026-05-25 Runtime Hot-Path Cleanup 165
+Wrong -> The remaining non-editor/non-QA runtime slice still cast Unity `Time.frameCount` into unsigned frame payloads.
+Done -> Rewrote 34 source files across combat, save, world, prologue, power, VFX, vegetation, replay, and runtime telemetry so selected unsigned payloads consume `Hecton8.Core.SystemDispatcher.CurrentFrameId`.
+Cinematic Cheats -> No simulation added. Frame ownership cleanup only.
+Microseconds saved -> 1-6 us per dense runtime payload burst; 0 steady-frame truth change.
+Verification -> Source-only after loop165: touched-file targeted unsigned `Time.frameCount` cast grep returned 0; project-wide targeted remainder is 21 in SystemDispatcher/GlobalRegistry/Editor/QA surfaces; scoped `diff --check` passed with LF warnings only. Build skipped by `BUILD_GUARD cpu=100 compiler_count=2`; latest compile attempt remains loop158 `NETSDK1004` before C#.

@@ -676,7 +676,7 @@ namespace Hecton8.Core
                               math.isfinite(atan2) &&
                               math.isfinite(acos) &&
                               math.isfinite(pow);
-                result.NonFiniteCount += finite ? 0u : 1u;
+                result.NonFiniteCount += math.select(1u, 0u, finite);
                 float safeBlended = MathLodApproximation.FiniteOr(blended, 0f);
                 float safeNeg = MathLodApproximation.FiniteOr(neg, 0f);
                 float safePos = MathLodApproximation.FiniteOr(pos, 0f);
@@ -728,7 +728,7 @@ namespace Hecton8.Core
                     MathLodTelemetryEntry entry = default;
                     entry.StateHash = 14695981039346656037UL ^ (uint)sample;
                     entry.Frame = Frame;
-                    entry.Flags = finite ? 0u : 1u;
+                    entry.Flags = math.select(1u, 0u, finite);
                     entry.GlobalQualityWeight = quality;
                     entry.ActiveIterations = math.lerp(2f, 50f, MathLodApproximation.SmoothStep01(quality));
                     entry.ApproxInput = input;
@@ -744,7 +744,7 @@ namespace Hecton8.Core
                 }
             }
 
-            result.Flags = result.NonFiniteCount == 0u ? 0u : 1u;
+            result.Flags = math.select(1u, 0u, result.NonFiniteCount == 0u);
             result.LastCursor = (uint)math.max(0, cursor);
             if (TelemetryCursor.IsCreated && TelemetryCursor.Length > 0)
                 TelemetryCursor[0] = cursor;

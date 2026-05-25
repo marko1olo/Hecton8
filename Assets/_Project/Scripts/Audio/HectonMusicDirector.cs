@@ -17,6 +17,7 @@ namespace Hecton8.Audio
     [DefaultExecutionOrder(-3900)] // Consumes zone/acoustic state resolved by earlier managers.
     public sealed class HectonMusicDirector : MonoBehaviour, ITickable, IUpdatable, ISlowTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
+        private static int s_x001HectonMusicDirectorSignalPushDropCount;
         private enum PlaybackState : byte
         {
             Silent = 0,
@@ -1116,7 +1117,7 @@ namespace Hecton8.Audio
 
         private void RefreshAudioServiceIfStale(int frame)
         {
-            CacheAudioService(Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance, frame);
+            CacheAudioService(GlobalRegistry.Audio, frame);
         }
 
         private void RefreshAcousticZoneIfStale(int frame)
@@ -1316,9 +1317,9 @@ namespace Hecton8.Audio
                 return;
 
             SignalBus<DynamicMusicScalarSignal>.Configure(
-                expectedCapacity: 32,
-                maxFrameSignals: 64,
-                lowTierFrameSignals: 64,
+                expectedCapacity: DynamicMusicScalarSignal.ExpectedCapacity,
+                maxFrameSignals: DynamicMusicScalarSignal.MaxFrameSignals,
+                lowTierFrameSignals: DynamicMusicScalarSignal.LowTierFrameSignals,
                 laneHash: DynamicMusicScalarSignal.LaneHash);
             SignalBus<DynamicMusicScalarSignal>.EnsureInitialized();
         }
@@ -1376,7 +1377,7 @@ namespace Hecton8.Audio
             uint flags)
         {
             DynamicMusicScalarSignal signal = default;
-            signal.Frame = (uint)math.max(0, Hecton8.Core.SystemDispatcher.CurrentFrameIndex);
+            signal.Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             signal.Flags = flags;
             signal.Tension01 = math.saturate(math.isfinite(tension01) ? tension01 : 0f);
             signal.DepthMeters = math.max(0f, math.isfinite(depthMeters) ? depthMeters : 0f);
@@ -1385,7 +1386,7 @@ namespace Hecton8.Audio
             signal.StingerImpulse01 = math.saturate(math.isfinite(stingerImpulse01) ? stingerImpulse01 : 0f);
             signal.PitchKick01 = math.saturate(math.isfinite(pitchKick01) ? pitchKick01 : 0f);
             signal.SourceHash = DynamicMusicScalarSignal.SourceMusicDirectorHash;
-            SignalBus<DynamicMusicScalarSignal>.TryPush(in signal);
+            SignalBus<DynamicMusicScalarSignal>.TryPushTracked(in signal, ref s_x001HectonMusicDirectorSignalPushDropCount);
         }
 
         private void RefreshLayerThreatSnapshot()

@@ -13,6 +13,7 @@ namespace Hecton8.World
     [DisallowMultipleComponent]
     public sealed class HectonCaveVoxelLightingVolume : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
+        private static int s_x001HectonCaveVoxelLightingVolumeSignalPushDropCount;
         private const int MaxOverlapHits = 8;
         private const int LightLevelSignalFrameStride = 6;
         private const SystemID VaultOwnerSystemId = SystemID.WorldStreaming;
@@ -353,7 +354,11 @@ namespace Hecton8.World
             }
 
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && currentService != null && isActiveAndEnabled)
+            {
+                _registered = false;
+                _registeredLateFrameTick = false;
                 TryRegister();
+            }
         }
 
         private void TryRegisterHotSwapListener()
@@ -786,7 +791,7 @@ namespace Hecton8.World
                 SampleKind = LightLevelSignalSampleKinds.CaveVoxelSdf,
                 Flags = _hasValidPublishedVolume ? LightLevelSignalFlags.ValidSample : (byte)0
             };
-            SignalBus<LightLevelSignal>.TryPush(in signal);
+            SignalBus<LightLevelSignal>.TryPushTracked(in signal, ref s_x001HectonCaveVoxelLightingVolumeSignalPushDropCount);
         }
 
         private float ResolvePlayerLightLevel01()

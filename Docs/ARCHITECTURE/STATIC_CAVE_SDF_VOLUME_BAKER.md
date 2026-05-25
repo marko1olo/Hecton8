@@ -58,7 +58,8 @@ Header layout:
 
 
 - Header endianness is explicitly little-endian because HECTON-8 targets x86 and ARM64 little-endian platforms.
-- The half-distance `ushort` payload is also written as little-endian: little-endian hosts copy chunks directly, while a big-endian host swaps each ushort pair in the cold editor writer before streaming bytes.
+- Half-distance `ushort` payload is written little-endian.
+- Little-endian hosts copy chunks directly; big-endian hosts swap each ushort pair in cold editor writer before streaming bytes.
 - A legacy or network-transcoded big-endian importer must reverse bytes before hydrating the fields.
 
 
@@ -79,7 +80,8 @@ Runtime consumers must treat these files as static environmental data. They are 
 
 
 - The binary writer never overwrites the active `.h8bin` in place.
-- It writes `GEN_*.h8bin.tmp`, flushes it, verifies `64 + voxelCount * 2` bytes, moves the previous payload to `GEN_*.h8bin.bak` when present, then renames the temp file to the final asset path.
+- It writes `GEN_*.h8bin.tmp`, flushes it, verifies `64 + voxelCount * 2` bytes.
+- Then it moves prior payload to `GEN_*.h8bin.bak` when present and renames temp to final asset path.
 - If final rename fails after a backup was created, the writer attempts to restore the backup before rethrowing.
 
 
@@ -97,7 +99,7 @@ Runtime consumers must treat these files as static environmental data. They are 
 - Bake scratch and 300-row blackbox telemetry are local `Allocator.TempJob` buffers disposed in `finally`.
 - SceneView slice overlay streams rows from the last generated `.h8bin`; no private preview array or scene component is kept.
 - The overlay draws per-sample discs through `Handles.DrawSolidDisc`; it no longer owns a private `Vector3[]` vertex buffer.
-- Preview file open/read races during a new bake or atomic rename fail closed by returning `null`/`false`, so the overlay skips the row instead of throwing Editor GUI exceptions.
+- Preview file open/read races during bake or atomic rename fail closed with `null`/`false`; overlay skips the row instead of throwing Editor GUI exceptions.
 - Invalid preview row starts and row widths fail before byte-count/offset/read math, preventing malformed editor requests from overflowing row byte counts or seeking outside the payload.
 
 
@@ -117,7 +119,9 @@ MeshData extraction -> `TriangleDTO[48]` -> Burst BVH construction -> Burst voxe
 
 
 
-Delete helper names encode mutation explicitly: stale `.bak` cleanup is `DeleteExistingBackupOrThrow`, while failed `.tmp` promotion cleanup is `DeleteStaleTempBestEffort`. There is no generic mutating `TryDelete*` helper in the SHINOBU_244 source surface.
+Delete helper names encode mutation explicitly.
+
+Stale `.bak` cleanup is `DeleteExistingBackupOrThrow`; failed `.tmp` promotion cleanup is `DeleteStaleTempBestEffort`. No generic mutating `TryDelete*` helper exists.
 
 
 
@@ -187,7 +191,8 @@ This baker adds no runtime point-to-triangle distance evaluation. Runtime SDF qu
 
 - In all-submesh mode, non-triangle topology is skipped, but a triangle submesh with a corrupt descriptor fails the bake closed instead of silently producing a partial SDF.
 
-- The all-submesh path accumulates triangle count in 64-bit space before native allocation, and mesh conversion is split into `BuildTrianglesFromMesh16Job` and `BuildTrianglesFromMesh32Job` so no scheduled job carries a default index `NativeArray`.
+- All-submesh path accumulates triangle count in 64-bit space before native allocation.
+- Mesh conversion splits into `BuildTrianglesFromMesh16Job` and `BuildTrianglesFromMesh32Job`; no scheduled job carries default index `NativeArray`.
 
 - Both variants write through a per-submesh `NativeSlice<TriangleDTO>`.
 - Local slice index validates before raw index or position reads.

@@ -982,7 +982,7 @@ namespace Hecton8.Core
                 uint fatalHash = unchecked((uint)ReadBlackboxAtomic(1));
                 TelemetryHeaderDTO header = default;
                 header.Timestamp = unchecked((ulong)Stopwatch.GetTimestamp());
-                header.FrameNumber = unchecked((uint)Time.frameCount);
+                header.FrameNumber = Hecton8.Core.SystemDispatcher.CurrentFrameId;
                 header.FatalHash = fatalHash;
                 UnsafeUtility.CopyStructureToPtr(ref header, framePtr);
                 UnsafeUtility.MemClear(framePtr + BlackboxHeaderPrefixBytes, BlackboxHeaderPadBytes);

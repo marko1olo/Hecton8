@@ -119,7 +119,7 @@ namespace Hecton8.Gameplay
         private float _runtimeActiveIntentSeconds;
         private float _toolRuntimeClockSeconds;
         private float _lastUseTime = float.NegativeInfinity;
-        private ulong _queuedRaycastRequesterId;
+        private ulong _queuedSurfaceRequesterId;
         private uint _runtimeToolId;
         private uint _runtimeToolSpecHashId;
         private uint _interactionFrameIndex;
@@ -136,7 +136,6 @@ namespace Hecton8.Gameplay
         private IInteractionSignalService _interactionSignalService;
         private IPlayerMovementForceSink _playerMovementForceSink;
         private IToolDurabilityService _toolDurabilityService;
-        private FixedCharBuffer _legacyOperationalBuffer = new FixedCharBuffer(256); // COLD ALLOC: char[256] - legacy string bridge for non-HUD callers - owner: PlayerTool
 
         // ══════════════════════════════════════════════════════════
         //  IPoolable
@@ -154,7 +153,7 @@ namespace Hecton8.Gameplay
             _lastUseTime = float.NegativeInfinity;
             _lastUseWasPrimary = false;
             _interactionFrameIndex = 0u;
-            RefreshQueuedRaycastRequesterId();
+            RefreshQueuedSurfaceRequesterId();
             RefreshOperationalToolNameCache();
             CacheRuntimeToolIdsCold();
             CacheToolItemHash();
@@ -183,7 +182,7 @@ namespace Hecton8.Gameplay
             _lastUseTime = float.NegativeInfinity;
             _lastUseWasPrimary = false;
             _cachedOperationalToolName = null;
-            _queuedRaycastRequesterId = 0UL;
+            _queuedSurfaceRequesterId = 0UL;
             _runtimeToolId = 0u;
             _runtimeToolSpecHashId = 0u;
             _interactionFrameIndex = 0u;
@@ -201,17 +200,17 @@ namespace Hecton8.Gameplay
             _toolDurabilityService = null;
         }
 
-        protected void RefreshQueuedRaycastRequesterId()
+        protected void RefreshQueuedSurfaceRequesterId()
         {
-            _queuedRaycastRequesterId = EntityId.ToULong(gameObject.GetEntityId());
+            _queuedSurfaceRequesterId = EntityId.ToULong(gameObject.GetEntityId());
         }
 
-        protected bool TryQueuePrimaryRaycast(Vector3 origin, Vector3 direction, float range, int layerMask, QueryTriggerInteraction qti, out RaycastHit hit)
+        protected bool TryResolvePrimarySurfaceHit(Vector3 origin, Vector3 direction, float range, int layerMask, QueryTriggerInteraction qti, out InteractionSurfaceHit hit)
         {
             IInteractionSignalService interactionService = _interactionSignalService;
             if (interactionService != null && interactionService.IsInitialized)
             {
-                if (_queuedRaycastRequesterId == 0UL) RefreshQueuedRaycastRequesterId();
+                if (_queuedSurfaceRequesterId == 0UL) RefreshQueuedSurfaceRequesterId();
                 float safeRange = FiniteNonNegativeOrZero(range);
                 if (!IsFiniteVector(origin) || safeRange <= 0f)
                 {
@@ -249,7 +248,7 @@ namespace Hecton8.Gameplay
                     (byte)ToolActionMode.Primary,
                     (byte)(IsEquipped ? ToolStateBits.Active : ToolStateBits.Idle),
                     NextInteractionFrameIndex());
-                return interactionService.TryRaycastPrimary(_queuedRaycastRequesterId, in packet, layerMask, qti, out hit);
+                return interactionService.TryResolvePrimarySurfaceHit(_queuedSurfaceRequesterId, in packet, layerMask, qti, out hit);
             }
             hit = default;
             return false;
@@ -319,9 +318,7 @@ namespace Hecton8.Gameplay
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public virtual string BuildLegacyOperationalSummaryString()
         {
-            _legacyOperationalBuffer.Clear();
-            WriteOperationalSummary(ref _legacyOperationalBuffer);
-            return _legacyOperationalBuffer.ToString();
+            return ReadOperationalToolNameSnapshot();
         }
 
         public virtual void WriteOperationalSummary(ref FixedCharBuffer buffer)
@@ -343,9 +340,13 @@ namespace Hecton8.Gameplay
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public virtual string BuildLegacyOperationalDirectiveString()
         {
-            _legacyOperationalBuffer.Clear();
-            WriteOperationalDirective(ref _legacyOperationalBuffer);
-            return _legacyOperationalBuffer.ToString();
+            if (IsBroken)
+                return "Repair or replace the active tool before the next field action.";
+
+            if (_toolMetadata != null && DurabilityNormalized <= 0.2f)
+                return "Durability is low. Finish the current action and service the tool.";
+
+            return "Tool is ready for the current field role.";
         }
 
         public virtual void WriteOperationalDirective(ref FixedCharBuffer buffer)
@@ -373,8 +374,8 @@ namespace Hecton8.Gameplay
         private void RefreshOperationalToolNameCache()
         {
             _cachedOperationalToolName = _toolData != null && !string.IsNullOrWhiteSpace(_toolData.itemName)
-                ? _toolData.itemName.ToUpperInvariant()
-                : GetType().Name.ToUpperInvariant();
+                ? _toolData.itemName
+                : "TOOL";
         }
 
         // ══════════════════════════════════════════════════════════
@@ -503,9 +504,10 @@ namespace Hecton8.Gameplay
                 return true;
 
             ISubmarineRuntimeContext submarine = _submarineRuntimeContext;
+            ISubmarineAtmosphereRoomReadModel atmosphere = submarine != null ? submarine.AtmosphereSystem : null;
             return HasModularUpgrade(ToolUpgradeBits.WirelessCharging) &&
-                   submarine != null &&
-                   submarine.AtmosphereSystem != null &&
+                   atmosphere != null &&
+                   atmosphere.IsAtmosphereRuntimeActive &&
                    _powerGridService != null;
         }
 

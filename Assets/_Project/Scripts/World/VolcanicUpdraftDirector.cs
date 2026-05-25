@@ -927,6 +927,7 @@ namespace Hecton8.World
 
     public sealed class VolcanicUpdraftDirector : MonoBehaviour, IDispatcherFixedSystem, ISlowTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener
     {
+        private int _signalPushDropCount;
         private const SystemID OwnerSystem = SystemID.Fluid;
         private const uint FixedSystemHash = 0x56555044u; // VUPD
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_VOLCANO_SURGEON.bin";
@@ -1787,7 +1788,7 @@ namespace Hecton8.World
                     continue;
 
                 AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromAbsolutePosition(vent.AUP);
-                SignalBus<FluidImpulseSignal>.TryPush(new FluidImpulseSignal
+                SignalBus<FluidImpulseSignal>.TryPushTracked(new FluidImpulseSignal
                 {
                     PositionAup = aup,
                     Vector = math.normalizesafe(vent.UpVector, new float3(0f, 1f, 0f)) * vent.ThrustPower,
@@ -1796,9 +1797,9 @@ namespace Hecton8.World
                     Frame = entry.Frame,
                     SourceHash = VolcanicUpdraftVault.SourceHash,
                     Flags = 1u
-                });
+                }, ref _signalPushDropCount);
 
-                SignalBus<AcousticPingSignal>.TryPush(new AcousticPingSignal
+                SignalBus<AcousticPingSignal>.TryPushTracked(new AcousticPingSignal
                 {
                     PositionAup = aup,
                     RadiusMeters = settings.AcousticRadius,
@@ -1806,13 +1807,13 @@ namespace Hecton8.World
                     SourceId = VolcanicUpdraftVault.SourceHash,
                     Channel = AcousticPingSignal.ChannelMetalStress,
                     Flags = AcousticPingSignal.FlagActiveSonar
-                });
+                }, ref _signalPushDropCount);
 
                 float debrisWeight = VolcanicUpdraftVault.ResolveDebrisLiftWeight(quality);
                 ushort quantity = (ushort)math.round(math.saturate(intensity * debrisWeight * settings.DebrisCommandIntensity) * 50f);
                 if (quantity > 0)
                 {
-                    SignalBus<DebrisSpawnSignal>.TryPush(new DebrisSpawnSignal
+                    SignalBus<DebrisSpawnSignal>.TryPushTracked(new DebrisSpawnSignal
                     {
                         PositionAup = aup,
                         SpeciesHash = VolcanicUpdraftVault.SourceHash,
@@ -1821,7 +1822,7 @@ namespace Hecton8.World
                         DebrisKind = DebrisSpawnSignal.DebrisKindRockShard,
                         Flags = DebrisSpawnSignal.FlagComputeShard,
                         Quantity = quantity
-                    });
+                    }, ref _signalPushDropCount);
                 }
 
                 Vector3 runtimePosition = HectonFloatingOrigin.ToRuntimePosition(vent.AUP);
@@ -1832,7 +1833,7 @@ namespace Hecton8.World
 
             if (entry.ActiveEruptions > 0)
             {
-                SignalBus<SeismicSignal>.TryPush(new SeismicSignal
+                SignalBus<SeismicSignal>.TryPushTracked(new SeismicSignal
                 {
                     Direction = new float3(0f, 1f, 0f),
                     Intensity01 = math.saturate(entry.ActiveEruptions / 4f),
@@ -1842,7 +1843,7 @@ namespace Hecton8.World
                     Sequence = (ushort)(entry.Frame & 0xFFFFu),
                     DepthFlags = 1,
                     Flags = 1
-                });
+                }, ref _signalPushDropCount);
             }
 
             if (playerHeat.IsCreated && playerHeat.Length > 0)
@@ -1850,7 +1851,7 @@ namespace Hecton8.World
                 VolcanicPlayerHeatSignalDTO heat = playerHeat[0];
                 if (heat.Intensity01 > 0f)
                 {
-                    SignalBus<PlayerStressSignal>.TryPush(new PlayerStressSignal
+                    SignalBus<PlayerStressSignal>.TryPushTracked(new PlayerStressSignal
                     {
                         Stress01 = heat.Blindness01,
                         OxygenDrainScale = 1f + heat.Heat01,
@@ -1858,7 +1859,7 @@ namespace Hecton8.World
                         Frame = heat.Frame,
                         Cause = 7,
                         Flags = 1
-                    });
+                    }, ref _signalPushDropCount);
                 }
             }
 
@@ -1872,7 +1873,7 @@ namespace Hecton8.World
                         continue;
 
                     AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromAbsolutePosition(signal.AUP);
-                    SignalBus<FaunaStateChangedSignal>.TryPush(new FaunaStateChangedSignal
+                    SignalBus<FaunaStateChangedSignal>.TryPushTracked(new FaunaStateChangedSignal
                     {
                         PositionAup = aup,
                         SpeciesHash = VolcanicUpdraftVault.SourceHash,
@@ -1881,7 +1882,7 @@ namespace Hecton8.World
                         Slot = signal.Slot,
                         StateKind = signal.StateKind,
                         Flags = FaunaStateChangedSignalFlags.StateActive
-                    });
+                    }, ref _signalPushDropCount);
                 }
             }
         }

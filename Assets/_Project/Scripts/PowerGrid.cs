@@ -6,7 +6,6 @@
 
 using System.Collections.Generic;
 using Hecton.Localization;
-using Hecton8.Atmosphere;
 using Hecton8.Construction;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
@@ -27,6 +26,9 @@ namespace Hecton8.Power
     /// </summary>
     public sealed class PowerGrid
     {
+        private static int s_x001DirectSignalPushDropCount_PowerGrid;
+
+        private static int s_x001PowerGridSignalPushDropCount;
         private const float MinEdgeResistance = 0.0001f;
         private const float MinEdgeResistanceSquared = MinEdgeResistance * MinEdgeResistance;
         private const float RuptureDemandFactor = 0.015f;
@@ -91,7 +93,7 @@ namespace Hecton8.Power
         private struct OverloadThermalBinding
         {
             public BaseModule BaseModule;
-            public SubmarineAtmosphereSystem Atmosphere;
+            public ISubmarineAtmosphereRoomMutationSink Atmosphere;
             public SubmarineFluidDynamics FluidDynamics;
             public IDamageReceiver DamageReceiver;
             public int RoomIndex;
@@ -775,7 +777,9 @@ namespace Hecton8.Power
 
                         if (!overloadBindingResolved && component is BaseModule baseModule)
                         {
-                            SubmarineAtmosphereSystem atmosphere = baseModule.GetComponentInParent<SubmarineAtmosphereSystem>();
+                            ISubmarineAtmosphereRoomMutationSink atmosphere = ComponentReferenceUtility.ResolveParentService<ISubmarineAtmosphereRoomMutationSink>(baseModule);
+                            if (atmosphere != null && !atmosphere.IsAtmosphereRuntimeActive)
+                                atmosphere = null;
                             overloadBinding = new OverloadThermalBinding
                             {
                                 BaseModule = baseModule,
@@ -984,14 +988,15 @@ namespace Hecton8.Power
                 DamageType = (uint)DamageTypeMask.Emp,
                 TargetHash = nodeId,
                 SourceHash = 0,
-                Frame = unchecked((uint)Time.frameCount),
+                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 SourceId = 0,
                 IntegrityDelta = 0,
                 Channel = (byte)DamageChannel.Power,
                 TargetId = nodeId > ushort.MaxValue ? ushort.MaxValue : (ushort)nodeId,
-                Flags = Hecton8.Core.Contracts.Signals.CombatDamageSignal.DirectRuntimeFlag
+                Flags = Hecton8.Core.Contracts.Signals.CombatDamageSignal.DirectRuntimeFlag |
+                        Hecton8.Core.Contracts.Signals.CombatDamageSignal.VisualOnlyFlag
             };
-            SignalBus<CombatDamageSignal>.TryPush(in signal);
+            SignalBus<CombatDamageSignal>.TryPushTracked(in signal, ref s_x001PowerGridSignalPushDropCount);
         }
 
         private void PublishNodeBrownoutSignal(uint nodeId, float supplyRatio, int priority)
@@ -1002,11 +1007,11 @@ namespace Hecton8.Power
                 NodeId = nodeId,
                 SupplyRatio = math.saturate(supplyRatio),
                 Severity01 = math.saturate(1f - supplyRatio),
-                Frame = unchecked((uint)math.max(0, Time.frameCount)),
+                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 Priority = (byte)math.clamp(priority, 0, byte.MaxValue),
                 Flags = 1
             };
-            SignalBus<BrownoutSignal>.TryPush(in signal);
+            SignalBus<BrownoutSignal>.TryPushTracked(in signal, ref s_x001PowerGridSignalPushDropCount);
         }
 
         private static void ApplySubmergedOverloadFluidHeating(in OverloadThermalBinding binding, float overloadHeatWatts)
@@ -1391,7 +1396,7 @@ namespace Hecton8.Power
                     binding.BaseModule.transform.position,
                     math.max(0.25f, stress01),
                     math.lerp(0.95f, 0.55f, stress01));
-            global::Hecton8.Core.Contracts.Signals.SignalBus<global::Hecton8.Core.Contracts.Signals.AudioEvent>.TryPush(in audioEvent);
+            global::Hecton8.Core.Contracts.Signals.SignalBus<global::Hecton8.Core.Contracts.Signals.AudioEvent>.TryPushTracked(in audioEvent, ref s_x001DirectSignalPushDropCount_PowerGrid);
         }
 
         private static float ResolveNodeCapacity(PowerNode node)

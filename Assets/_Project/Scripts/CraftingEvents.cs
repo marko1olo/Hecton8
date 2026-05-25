@@ -935,7 +935,7 @@ namespace Hecton8.Crafting
         private static void ReportQueueOverflow(ushort eventType)
         {
             _droppedEventCount++;
-            int frame = Time.frameCount;
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (_lastQueueOverflowTelemetryFrame == frame)
                 return;
 
@@ -949,7 +949,7 @@ namespace Hecton8.Crafting
         private static void ReportReferenceSlotExhausted(ushort eventType)
         {
             _droppedReferenceSlotCount++;
-            int frame = Time.frameCount;
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (_lastReferenceSlotTelemetryFrame == frame)
                 return;
 
@@ -963,7 +963,7 @@ namespace Hecton8.Crafting
         private static void ReportListenerRegistrationOverflow()
         {
             _droppedListenerRegistrationCount++;
-            int frame = Time.frameCount;
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (_lastListenerOverflowTelemetryFrame == frame)
                 return;
 
@@ -977,7 +977,7 @@ namespace Hecton8.Crafting
         private static void ReportListenerDispatchException()
         {
             _listenerExceptionCount++;
-            int frame = Time.frameCount;
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (_lastListenerExceptionTelemetryFrame == frame)
                 return;
 

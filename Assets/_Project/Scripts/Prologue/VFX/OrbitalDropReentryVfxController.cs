@@ -22,6 +22,7 @@ namespace Hecton8.Prologue.VFX
     [AddComponentMenu("Hecton/Prologue/VFX/Orbital Drop Reentry VFX Controller")]
     public sealed class OrbitalDropReentryVfxController : MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
+        private int _signalPushDropCount;
         private const int TelemetryCapacity = 300;
         private const int TelemetryEntrySizeBytes = 48;
         private const uint DumpMagic = 0x4F525646u; // ORVF
@@ -674,7 +675,7 @@ namespace Hecton8.Prologue.VFX
                 Channel = 0,
                 Flags = 0
             };
-            SignalBus<AcousticPingSignal>.TryPush(in ping);
+            SignalBus<AcousticPingSignal>.TryPushTracked(in ping, ref _signalPushDropCount);
         }
 
         private void PublishPlasmaRoar()
@@ -692,7 +693,7 @@ namespace Hecton8.Prologue.VFX
                 Channel = 0,
                 Flags = 0
             };
-            SignalBus<AcousticPingSignal>.TryPush(in ping);
+            SignalBus<AcousticPingSignal>.TryPushTracked(in ping, ref _signalPushDropCount);
         }
 
         private void PublishOceanWaves()
@@ -710,7 +711,7 @@ namespace Hecton8.Prologue.VFX
                 Channel = 0,
                 Flags = 0
             };
-            SignalBus<AcousticPingSignal>.TryPush(in ping);
+            SignalBus<AcousticPingSignal>.TryPushTracked(in ping, ref _signalPushDropCount);
         }
 
         private void PublishMassiveSplash()
@@ -729,7 +730,7 @@ namespace Hecton8.Prologue.VFX
                 Flags = 1,
                 Quantity = ResolveSplashDebrisQuantity()
             };
-            SignalBus<DebrisSpawnSignal>.TryPush(in debris);
+            SignalBus<DebrisSpawnSignal>.TryPushTracked(in debris, ref _signalPushDropCount);
 
             VisorDropletSignal droplets = new VisorDropletSignal
             {
@@ -741,7 +742,7 @@ namespace Hecton8.Prologue.VFX
                 Flags = VisorDropletSignal.FlagExternalSplash,
                 Sequence = _stateSequence
             };
-            SignalBus<VisorDropletSignal>.TryPush(in droplets);
+            SignalBus<VisorDropletSignal>.TryPushTracked(in droplets, ref _signalPushDropCount);
         }
 
         private void PublishStateSignal()
@@ -767,7 +768,7 @@ namespace Hecton8.Prologue.VFX
                 QualityTier = _qualityWeightByte,
                 Reserved = 0
             };
-            SignalBus<ReentryVfxStateSignal>.TryPush(in signal);
+            SignalBus<ReentryVfxStateSignal>.TryPushTracked(in signal, ref _signalPushDropCount);
         }
 
         private void WriteTelemetry(byte extraFlags)
@@ -795,7 +796,7 @@ namespace Hecton8.Prologue.VFX
 
             ReentryVfxTelemetryEntry entry = new ReentryVfxTelemetryEntry
             {
-                Frame = (uint)math.max(0, Time.frameCount),
+                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 Sequence = _stateSequence,
                 HydrationSequence = _hydrationSequence,
                 Heat01 = _heat01,

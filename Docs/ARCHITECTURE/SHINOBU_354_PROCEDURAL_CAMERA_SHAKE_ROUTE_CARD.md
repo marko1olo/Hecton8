@@ -42,7 +42,9 @@ Owning file/system: Assets/_Project/Scripts/VFX/CameraJuiceSystem_CameraJuiceBur
 
 Problem:
 
-  Camera shake must not use Animator, AnimationClip, coroutine jitter, UnityEngine.Random, or camera hierarchy transform mutation. Explosions and seismic events need directional, AUP-correct presentation feedback without entering gameplay rollback truth.
+Camera shake must not use Animator, AnimationClip, coroutine jitter, UnityEngine.Random, or camera hierarchy transform mutation.
+
+Explosions and seismic events need directional AUP-correct presentation without entering gameplay rollback truth.
 
 Why owner-local data is insufficient:
 

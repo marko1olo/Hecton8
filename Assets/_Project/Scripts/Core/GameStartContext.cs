@@ -167,8 +167,7 @@ namespace Hecton8.Core
 
         public override string ToString()
         {
-            return $"[GameStartContext] Mode={StartMode}, Slot={TargetSaveSlot}, " +
-                   $"Spawn={SpawnMode}, Intro={IntroSceneName}, Preset={LandingPresetName}";
+            return "[GameStartContext]";
         }
     }
 
@@ -185,6 +184,8 @@ namespace Hecton8.Core
         private const string PersistKeyIntroSceneName = "GameStartContext.IntroSceneName";
         private const string PersistKeyLandingPresetName = "GameStartContext.LandingPresetName";
         private const string PersistKeyIssuedAtUtcTicks = "GameStartContext.IssuedAtUtcTicks";
+        private const string PersistKeyIssuedAtUtcTicksHigh = "GameStartContext.IssuedAtUtcTicks.High";
+        private const string PersistKeyIssuedAtUtcTicksLow = "GameStartContext.IssuedAtUtcTicks.Low";
         private const double PersistedHandoffMaxAgeSeconds = 45d;
 
         /// <summary>Current game session context.</summary>
@@ -226,6 +227,8 @@ namespace Hecton8.Core
             PlayerPrefs.DeleteKey(PersistKeyIntroSceneName);
             PlayerPrefs.DeleteKey(PersistKeyLandingPresetName);
             PlayerPrefs.DeleteKey(PersistKeyIssuedAtUtcTicks);
+            PlayerPrefs.DeleteKey(PersistKeyIssuedAtUtcTicksHigh);
+            PlayerPrefs.DeleteKey(PersistKeyIssuedAtUtcTicksLow);
             PlayerPrefs.Save();
         }
 
@@ -244,7 +247,7 @@ namespace Hecton8.Core
         public static void LogCurrent()
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Hecton8.Dev.RuntimeDiagnosticsTrace.WriteEvent("game-start", Current.ToString());
+            Hecton8.Dev.RuntimeDiagnosticsTrace.WriteEvent("game-start", "[GameStartContext]");
 #endif
         }
 
@@ -262,7 +265,10 @@ namespace Hecton8.Core
             PlayerPrefs.SetInt(PersistKeySpawnMode, (int)Current.SpawnMode);
             PlayerPrefs.SetString(PersistKeyIntroSceneName, Current.IntroSceneName ?? string.Empty);
             PlayerPrefs.SetString(PersistKeyLandingPresetName, Current.LandingPresetName ?? string.Empty);
-            PlayerPrefs.SetString(PersistKeyIssuedAtUtcTicks, DateTime.UtcNow.Ticks.ToString());
+            long issuedAtTicks = DateTime.UtcNow.Ticks;
+            PlayerPrefs.SetInt(PersistKeyIssuedAtUtcTicksHigh, (int)(issuedAtTicks >> 32));
+            PlayerPrefs.SetInt(PersistKeyIssuedAtUtcTicksLow, unchecked((int)(issuedAtTicks & 0xFFFFFFFFL)));
+            PlayerPrefs.DeleteKey(PersistKeyIssuedAtUtcTicks);
             PlayerPrefs.Save();
         }
 
@@ -275,9 +281,7 @@ namespace Hecton8.Core
 
             int startModeValue = PlayerPrefs.GetInt(PersistKeyStartMode, -1);
             int spawnModeValue = PlayerPrefs.GetInt(PersistKeySpawnMode, -1);
-            string issuedAtUtcTicksRaw = PlayerPrefs.GetString(PersistKeyIssuedAtUtcTicks, string.Empty);
-
-            if (!TryParsePositiveInt64(issuedAtUtcTicksRaw, out long issuedAtUtcTicks))
+            if (!TryReadIssuedAtUtcTicks(out long issuedAtUtcTicks))
             {
                 ClearPersistedHandoff();
                 return false;
@@ -314,6 +318,25 @@ namespace Hecton8.Core
 
             Current = context;
             return true;
+        }
+
+        private static bool TryReadIssuedAtUtcTicks(out long issuedAtUtcTicks)
+        {
+            issuedAtUtcTicks = 0L;
+            bool hasPackedTicks =
+                PlayerPrefs.HasKey(PersistKeyIssuedAtUtcTicksHigh) ||
+                PlayerPrefs.HasKey(PersistKeyIssuedAtUtcTicksLow);
+
+            if (hasPackedTicks)
+            {
+                int high = PlayerPrefs.GetInt(PersistKeyIssuedAtUtcTicksHigh, 0);
+                int low = PlayerPrefs.GetInt(PersistKeyIssuedAtUtcTicksLow, 0);
+                issuedAtUtcTicks = ((long)high << 32) | (uint)low;
+                return issuedAtUtcTicks > 0L;
+            }
+
+            string issuedAtUtcTicksRaw = PlayerPrefs.GetString(PersistKeyIssuedAtUtcTicks, string.Empty);
+            return TryParsePositiveInt64(issuedAtUtcTicksRaw, out issuedAtUtcTicks);
         }
 
         private static bool TryParsePositiveInt64(string value, out long parsed)

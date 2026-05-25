@@ -154,6 +154,7 @@ namespace Hecton8.Optimization
         private FixedUIntList _evictionCandidates;
         private FixedUIntList _retryCandidates;
         private bool _pendingReleaseOverflowDraining;
+        private bool _pendingRetryPump;
 #if UNITY_EDITOR
         // COLD ALLOC: StringBuilder[512] - throttled diagnostics builder - owner: AssetLifecycleGovernor
 #endif
@@ -348,7 +349,7 @@ namespace Hecton8.Optimization
                 EvaluateAddressableTtlAndQueueReleases();
                 DrainPendingReleaseQueue(maxDeferredReleasesPerFrame);
                 DrainDetachedAddressableReleaseHandles();
-                PumpRetries();
+                _pendingRetryPump = true;
                 ReleaseDistantChunkAddressables(MaxColdDistantChunkReleases);
                 EvaluateHardMemoryReaper(now);
                 WriteHeapTelemetrySample();
@@ -362,6 +363,7 @@ namespace Hecton8.Optimization
 
         public void LateFrameTick()
         {
+            FlushPendingRetryPump();
             FlushPendingPresentationDisables();
         }
 
@@ -3774,7 +3776,7 @@ namespace Hecton8.Optimization
 
             AssetHeapTelemetryEntry entry = new AssetHeapTelemetryEntry
             {
-                FrameIndex = unchecked((uint)Time.frameCount),
+                FrameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 ActiveHandles = unchecked((uint)active),
                 OrphanedHandlesReleased = unchecked((uint)math.max(0, _orphanedHandlesReleased)),
                 CacheHits = unchecked((uint)math.max(0, _cacheHitCount)),
@@ -3910,6 +3912,7 @@ namespace Hecton8.Optimization
             {
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Core);
                 _registeredLateFrame = false;
+                _pendingRetryPump = false;
                 _pendingPresentationDisableCount = 0;
             }
 
@@ -4040,6 +4043,15 @@ namespace Hecton8.Optimization
 
             for (int i = 0; i < _retryCandidates.Count; i++)
                 QueueAsyncDispatch(_retryCandidates[i]);
+        }
+
+        private void FlushPendingRetryPump()
+        {
+            if (!_pendingRetryPump)
+                return;
+
+            _pendingRetryPump = false;
+            PumpRetries();
         }
 
         private void ReportColdTickBudgetIfNeeded(long startTicks)

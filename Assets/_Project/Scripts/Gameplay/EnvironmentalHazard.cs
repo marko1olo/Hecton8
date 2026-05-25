@@ -36,6 +36,7 @@ namespace Hecton8.Gameplay
     [AddComponentMenu("Hecton8/Gameplay/Environmental Hazard")]
     public sealed class EnvironmentalHazard : MonoBehaviour, ISlowTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
+        private static int s_x001EnvironmentalHazardSignalPushDropCount;
         private const float HazardSlowTickDeltaSeconds = 0.1f;
         private const float ToxicityExposureToxemiaScale = 0.08f;
         private const float ToxicityPoisonStatusDurationSeconds = 6f;
@@ -612,7 +613,7 @@ namespace Hecton8.Gameplay
             signal.ChemicalHash = EnvironmentalToxicityChemicalHash;
             signal.Frame = TimeSliceScheduler.CurrentFrameId;
             signal.Flags = 1;
-            SignalBus<ToxicityExposureSignal>.TryPush(in signal);
+            SignalBus<ToxicityExposureSignal>.TryPushTracked(in signal, ref s_x001EnvironmentalHazardSignalPushDropCount);
         }
 
         private bool TryQueueCentralHazardDamage(HectonPlayerHealth playerHealth, float damage)

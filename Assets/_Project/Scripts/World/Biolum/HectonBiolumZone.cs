@@ -112,6 +112,9 @@ namespace Hecton8.Biolum
         private double _biolumFallbackTimeSeconds;
         private float _biolumTickTime;
         private int _lastInvalidZoneInputFrame = -1;
+        private HectonBiolumManager _cachedBiolumManager;
+        private ITickDispatcher _cachedTickDispatcher;
+        private ISimulationBucketer _cachedSimulationBucketer;
 
         internal static List<HectonBiolumZone> ActiveZones => s_ActiveZones;
         protected float BiolumTickTime => _biolumTickTime;
@@ -146,8 +149,9 @@ namespace Hecton8.Biolum
         {
             RegisterActiveZone(this);
             TryRegisterHotSwapListener();
+            CacheRegistryServicesCold();
             EnsureTickRegistration();
-            HectonBiolumManager manager = GlobalRegistry.BiolumManager;
+            HectonBiolumManager manager = _cachedBiolumManager;
             if (manager != null)
                 manager.RegisterZone(this);
         }
@@ -164,10 +168,13 @@ namespace Hecton8.Biolum
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
                 _lateFrameRegistered = false;
             }
-            HectonBiolumManager manager = GlobalRegistry.BiolumManager;
+            HectonBiolumManager manager = _cachedBiolumManager;
             if (manager != null)
                 manager.UnregisterZone(this);
             TryUnregisterHotSwapListener();
+            _cachedBiolumManager = null;
+            _cachedTickDispatcher = null;
+            _cachedSimulationBucketer = null;
             UnregisterActiveZone(this);
             CleanupLights();
         }
@@ -214,7 +221,7 @@ namespace Hecton8.Biolum
             _debugTickInvocations++;
 #endif
             _biolumTickTime = ResolveBiolumTickTime(deltaTime);
-            int frame = Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             if (frame - _lastUpdateFrame < _updateInterval) return;
             _lastUpdateFrame = frame;
 
@@ -346,8 +353,33 @@ namespace Hecton8.Biolum
             object previousService,
             object currentService)
         {
-            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && currentService != null && isActiveAndEnabled)
-                EnsureTickRegistration();
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    _cachedTickDispatcher = currentService as ITickDispatcher;
+                    _isRegistered = false;
+                    _lateFrameRegistered = false;
+                    if (currentService != null && isActiveAndEnabled)
+                        EnsureTickRegistration();
+                    break;
+                case GlobalRegistryServiceSlot.BiolumManagerRuntime:
+                    if (isActiveAndEnabled && previousService is HectonBiolumManager previousManager)
+                        previousManager.UnregisterZone(this);
+                    _cachedBiolumManager = currentService as HectonBiolumManager;
+                    if (isActiveAndEnabled && _cachedBiolumManager != null)
+                        _cachedBiolumManager.RegisterZone(this);
+                    break;
+                case GlobalRegistryServiceSlot.SimulationBucketerRuntime:
+                    _cachedSimulationBucketer = currentService as ISimulationBucketer;
+                    break;
+            }
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            _cachedBiolumManager = GlobalRegistry.BiolumManager;
+            _cachedTickDispatcher = GlobalRegistry.TickDispatcher;
+            _cachedSimulationBucketer = GlobalRegistry.SimulationBucketer;
         }
 
         private void TryRegisterHotSwapListener()
@@ -454,7 +486,7 @@ namespace Hecton8.Biolum
         protected float ScaleIntensityByMood(float baseIntensity)
         {
             float mood = 0.5f + Sanitize01(_moodLevel, 0.5f);
-            HectonBiolumManager manager = GlobalRegistry.BiolumManager;
+            HectonBiolumManager manager = _cachedBiolumManager;
             float mgr = manager != null
                 ? SanitizeNonNegative(manager._globalIntensityScale, 1f)
                 : 1f;
@@ -464,7 +496,7 @@ namespace Hecton8.Biolum
         protected float ScaleRangeByHazard(float baseRange)
         {
             float hazard = 1.5f - Sanitize01(_hazardLevel, 0.1f);
-            HectonBiolumManager manager = GlobalRegistry.BiolumManager;
+            HectonBiolumManager manager = _cachedBiolumManager;
             float mgr = manager != null
                 ? SanitizeNonNegative(manager._globalRangeScale, 1f)
                 : 1f;
@@ -537,7 +569,7 @@ namespace Hecton8.Biolum
 
         private void ReportInvalidZoneInput()
         {
-            int frame = Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             if (_lastInvalidZoneInputFrame == frame)
                 return;
 
@@ -547,7 +579,7 @@ namespace Hecton8.Biolum
 
         private float ResolveBiolumTickTime(float deltaTime)
         {
-            ITickDispatcher dispatcher = GlobalRegistry.TickDispatcher;
+            ITickDispatcher dispatcher = _cachedTickDispatcher;
             if (dispatcher != null)
             {
                 H8TimeSnapshot snapshot = dispatcher.TimeSnapshot;
@@ -591,7 +623,7 @@ namespace Hecton8.Biolum
         {
             if (_lodDistanceScale >= 1.0f) return false;
 
-            HectonBiolumManager manager = GlobalRegistry.BiolumManager;
+            HectonBiolumManager manager = _cachedBiolumManager;
             AbsoluteUniversePosition cameraAup = manager != null
                 ? manager.GetCameraAup()
                 : RuntimeOriginRoute.CurrentRuntimeOriginAup();
@@ -602,10 +634,10 @@ namespace Hecton8.Biolum
             float lodThreshold = 5f + (500f - 5f) * Mathf.Clamp01(_lodDistanceScale);
             double lodThresholdSq = (double)lodThreshold * lodThreshold;
 
-            ISimulationBucketer bucketer = GlobalRegistry.SimulationBucketer;
+            ISimulationBucketer bucketer = _cachedSimulationBucketer;
             int activeFastBucket = bucketer != null && bucketer.IsInitialized
                 ? bucketer.ActiveFastBucket
-                : Time.frameCount & SimulationBucketConstants.FastBucketMask;
+                : SystemDispatcher.CurrentFrameIndex & SimulationBucketConstants.FastBucketMask;
             int zoneFastBucket = SimulationBucketMath.ResolveBucket(unchecked((uint)EntityId.ToULong(GetEntityId())), SimulationBucketConstants.FastBucketMask);
             return AbsoluteUniversePosition.DistanceSq(in zoneAup, in cameraAup) > lodThresholdSq && activeFastBucket != zoneFastBucket;
         }

@@ -56,10 +56,16 @@ TRANSCENDENTAL_PATTERNS = {
 
 AUDITED_BRANCH_FILES = [
     "Assets/_Project/Scripts/MathLodApproximation.cs",
+    "Assets/_Project/Scripts/Atmosphere/BaseAtmosphereMath.cs",
+    "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs",
+    "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereContracts.cs",
+    "Assets/_Project/Scripts/Atmosphere/SurfaceWeatherMath.cs",
+    "Assets/_Project/Scripts/Atmosphere/ToxicOutgassingChemistryRuntime.cs",
     "Assets/_Project/Scripts/Physiology/ShinobuPhysiologyJobs.cs",
     "Assets/_Project/Scripts/Power/ShinobuLogisticsRouter.cs",
     "Assets/_Project/Scripts/Power/PowerGridJacobiContracts.cs",
     "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
+    "Assets/_Project/Scripts/Power/WfcOutpostGraphTranslationJob.cs",
     "Assets/_Project/Scripts/QA/Headless/JacobiStressFuzzer/PowerGridJacobiStressFuzzer.cs",
     "Assets/_Project/Scripts/Thermodynamics/AbyssalThermodynamicsJobs.cs",
 ]
@@ -255,6 +261,86 @@ def scan_extreme_kernel_finiteness() -> dict:
         "nonFiniteOutputCount": non_finite,
         "maxAbsFiniteOutput": max_abs,
         "rows": rows,
+    }
+
+
+def scan_power_destination_mask_equivalence() -> dict:
+    max_conductance = 4096.0
+    min_conductance = 0.000001
+    potentials = [0.0, 0.25, 1.0, float("nan")]
+    destinations = [-99, -1, 0, 1, 2, 3, 99]
+    conductances = [float("nan"), float("inf"), -1.0, 0.0, 0.0000001, 0.5, 5000.0]
+    shapes = [(1, 1), (2, 1), (1, 2), (3, 4), (4, 3)]
+
+    def sanitize01(value: float) -> float:
+        raw = value if math.isfinite(value) else 0.0
+        return f32(min(max(raw, 0.0), 1.0))
+
+    def sanitize_conductance(value: float) -> float:
+        raw = value if math.isfinite(value) else 0.0
+        clamped = f32(min(max(raw, 0.0), max_conductance))
+        return f32(clamped * (0.0 if clamped <= min_conductance else 1.0))
+
+    def clamp_index(value: int, lo: int, hi: int) -> int:
+        return min(max(value, lo), hi)
+
+    mismatch_count = 0
+    max_weighted_abs_diff = 0.0
+    max_sum_abs_diff = 0.0
+    max_current_abs_diff = 0.0
+    checked = 0
+
+    for node_count, front_length in shapes:
+        potential_read_limit = min(node_count, front_length)
+        safe_potential_max = max(0, potential_read_limit - 1)
+        safe_node_max = max(0, node_count - 1)
+        front = [potentials[i % len(potentials)] for i in range(front_length)]
+        nodes = [potentials[(i + 1) % len(potentials)] for i in range(node_count)]
+        source_potential = sanitize01(nodes[0])
+        for destination in destinations:
+            for conductance_input in conductances:
+                checked += 1
+                conductance = sanitize_conductance(conductance_input)
+
+                branch_weighted = 0.0
+                branch_sum = 0.0
+                if 0 <= destination < potential_read_limit:
+                    branch_weighted = f32(conductance * sanitize01(front[destination]))
+                    branch_sum = conductance
+
+                valid_destination = 0 <= destination < potential_read_limit
+                safe_destination = clamp_index(destination, 0, safe_potential_max)
+                mask_conductance = f32(conductance * (1.0 if valid_destination else 0.0))
+                masked_weighted = f32(mask_conductance * sanitize01(front[safe_destination]))
+                masked_sum = mask_conductance
+
+                branch_current = 0.0
+                if 0 <= destination < node_count:
+                    branch_current = f32((source_potential - sanitize01(nodes[destination])) * conductance)
+                    branch_current = f32(min(max(branch_current, -max_conductance), max_conductance))
+
+                valid_battery_destination = 0 <= destination < node_count
+                safe_battery_destination = clamp_index(destination, 0, safe_node_max)
+                battery_conductance = f32(conductance * (1.0 if valid_battery_destination else 0.0))
+                masked_current = f32((source_potential - sanitize01(nodes[safe_battery_destination])) * battery_conductance)
+                masked_current = f32(min(max(masked_current, -max_conductance), max_conductance))
+
+                weighted_diff = abs(float(branch_weighted) - float(masked_weighted))
+                sum_diff = abs(float(branch_sum) - float(masked_sum))
+                current_diff = abs(float(branch_current) - float(masked_current))
+                max_weighted_abs_diff = max(max_weighted_abs_diff, weighted_diff)
+                max_sum_abs_diff = max(max_sum_abs_diff, sum_diff)
+                max_current_abs_diff = max(max_current_abs_diff, current_diff)
+                if weighted_diff != 0.0 or sum_diff != 0.0 or current_diff != 0.0:
+                    mismatch_count += 1
+
+    return {
+        "checkedCases": checked,
+        "mismatchCount": mismatch_count,
+        "maxWeightedPotentialAbsDiff": max_weighted_abs_diff,
+        "maxConductanceSumAbsDiff": max_sum_abs_diff,
+        "maxBatteryCurrentAbsDiff": max_current_abs_diff,
+        "policy": "safe-index destination masking must be numerically equivalent to the previous invalid-destination branch/continue behavior",
     }
 
 
@@ -839,6 +925,9 @@ def code_anchor_audit() -> dict:
     power_voltage_execute_body = extract_function_body(power_voltage_solver_body, "public void Execute(int index)")
     power_voltage_loop_match = re.search(r"for\s*\(int\s+edgeCursor\s*=.*?conductanceSum\s*\+=\s*conductance;\s*}", power_voltage_execute_body, re.DOTALL)
     power_voltage_edge_loop = power_voltage_loop_match.group(0) if power_voltage_loop_match else ""
+    integrate_battery_execute_body = extract_function_body(integrate_battery_body, "public void Execute(int index)")
+    integrate_battery_loop_match = re.search(r"for\s*\(int\s+edgeCursor\s*=.*?netCurrentOut\s*=\s*math\.clamp\(netCurrentOut\s*\+\s*current.*?}", integrate_battery_execute_body, re.DOTALL)
+    integrate_battery_edge_loop = integrate_battery_loop_match.group(0) if integrate_battery_loop_match else ""
     math_lod_read_body = extract_function_body(core_text, "TryReadLatestConfig(out MathLodConfigDTO config)")
     anxiety_approx_body = extract_function_body(anxiety_text, "ApproxExpNegPade33Reduced(float value)")
     battery_cadence_body = extract_function_body(battery_charger_text, "ResolveCadenceHzStatic(float quality)")
@@ -1020,10 +1109,12 @@ def code_anchor_audit() -> dict:
         "powerVoltageEdgeLoopIfCount": len(re.findall(r"\bif\s*\(", power_voltage_edge_loop)),
         "powerVoltageEdgeLoopContinueCount": len(re.findall(r"\bcontinue\s*;", power_voltage_edge_loop)),
         "integrateBatterySafetyIfCount": len(re.findall(r"\bif\s*\(", integrate_battery_body)),
+        "integrateBatteryDestinationMaskBranchless": "bool validDestination = (uint)destination < (uint)NodeCount;" in integrate_battery_edge_loop and "int safeDestination = math.clamp(destination, 0, safeDestinationMaxIndex);" in integrate_battery_edge_loop and "NodesPtr + safeDestination" in integrate_battery_edge_loop and "conductance *= math.select(0f, 1f, validDestination);" in integrate_battery_edge_loop and re.search(r"\bif\s*\(\s*\(uint\)destination", integrate_battery_edge_loop) is None,
         "equipmentDrainSafetyIfCount": len(re.findall(r"\bif\s*\(", equipment_drain_body)),
         "jacobiContinuousIterationsPresent": "MinPropagationIterations = 2" in power_text and "MaxPropagationIterations = 50" in power_text,
         "jacobiRuntimeUsesGlobalQualityParameter": "float qualityWeight = MathLodApproximation.SaturateFinite(globalQualityWeight" in power_text,
         "powerVoltageConductanceMaskBranchless": "conductance *= math.select(1f, 0f, conductance <= PowerGridJacobiConstants.MinimumConductance);" in power_jacobi_text and re.search(r"\bif\s*\(\s*conductance\s*<=\s*PowerGridJacobiConstants\.MinimumConductance", power_jacobi_text) is None,
+        "powerVoltageDestinationMaskBranchless": "bool validDestination = (uint)destination < (uint)potentialReadLimit;" in power_voltage_edge_loop and "int safeDestination = math.clamp(destination, 0, safePotentialMaxIndex);" in power_voltage_edge_loop and "conductance *= math.select(0f, 1f, validDestination);" in power_voltage_edge_loop and "FrontPotential[safeDestination]" in power_voltage_edge_loop and len(re.findall(r"\bif\s*\(", power_voltage_edge_loop)) == 0 and len(re.findall(r"\bcontinue\s*;", power_voltage_edge_loop)) == 0,
         "powerVoltageBrownoutUsesMathSelect": "node.Flags = math.select(flags & ~PowerGridJacobiConstants.NodeFlagBrownout, flags | PowerGridJacobiConstants.NodeFlagBrownout" in power_jacobi_text,
         "powerHotFiniteGuardsUseMathSelect": "math.isfinite(EdgeConductance[edgeCursor]) ? EdgeConductance[edgeCursor] : 0f" not in power_jacobi_text and "math.isfinite(DeltaTimeSeconds) ? DeltaTimeSeconds : 0f" not in power_jacobi_text and "math.isfinite(value) ? value : 0f" not in power_jacobi_text,
         "auditedFiniteGuardTernariesRemoved": sum(len(re.findall(r"math\.isfinite\([^\n]*\?", text)) for text in [physiology_text, power_text, power_jacobi_text, abyssal_thermo_jobs_text]) == 0,
@@ -1122,7 +1213,7 @@ def code_anchor_audit() -> dict:
         "macroEcosystemQualityCurveContinuous": "float polynomial = thermalBand * thermalBand * (3f - 2f * thermalBand);" in macro_quality_body and "math.step(0.0001f" not in macro_quality_body,
         "memorySentinelQualityDeficitContinuous": "qualityDeficit = qualityDeficit * qualityDeficit * (3f - 2f * qualityDeficit);" in memory_sentinel_text and "math.round(math.lerp(1f, 64f, qualityDeficit))" in memory_sentinel_text and "math.step" not in strip_csharp_non_code(memory_sentinel_text),
         "fabricationUploadContinuous": "float curved = q * q * (3f - (2f * q));" in fabrication_text and "ResolveVisualUploadStride(_lastQualityWeight)" in fabrication_text and "activeQualityGate" not in fabrication_text,
-        "topographicalSonarSamplingContinuous": "return math.lerp(nearest, trilinear, ResolveWorkCurve(QualityWeight));" in topographical_sonar_text and "return Smooth01(math.saturate((math.saturate(quality) - 0.1f) * math.rcp(0.9f)));" in sonar_work_curve_body and "math.step(0.3f" not in strip_csharp_non_code(topographical_sonar_text),
+        "topographicalSonarSamplingContinuous": "return math.lerp(nearest, trilinear, ResolveWorkCurve(QualityWeight));" in topographical_sonar_text and ("return Smooth01(math.saturate((math.saturate(quality) - 0.1f) * math.rcp(0.9f)));" in topographical_sonar_text or "return t * t * (3f - 2f * t);" in sonar_work_curve_body) and "math.step(0.3f" not in strip_csharp_non_code(topographical_sonar_text),
         "utilityAiQualityContinuous": "return math.smoothstep(0f, 1f, q);" in utility_quality_body and "math.step(Epsilon" not in utility_quality_body,
         "saveMerkleSurvivalPullContinuous": "float survivalPull = SmoothUnit((0.3f - quality) * 3.3333333f);" in save_merkle_text and "1f - math.step(0.3f" not in strip_csharp_non_code(save_merkle_text),
         "playerKinematicsNearZeroCompatibility": "SmoothQuality01(qualityWeight01) <= 0.0001f" in player_kinematics_text and "math.step(SmoothQuality01(qualityWeight01), 0.25f)" not in strip_csharp_non_code(player_kinematics_text),
@@ -1164,6 +1255,7 @@ def main() -> int:
     domain_atan = scan_signed_residual_with(approx_atan_fast_f32, math.atan, 16.0, 0.0001)
     domain_acos = scan_signed_residual_with(approx_acos_fast_f32, math.acos, 1.0, 0.0001)
     extreme_kernel_finiteness = scan_extreme_kernel_finiteness()
+    power_destination_mask_equivalence = scan_power_destination_mask_equivalence()
     phys_x = math.log(2.0) / 300.0 * 256.0 * 0.25
     phys_exact = math.exp(-phys_x)
     phys_approx = float(approx_exp_neg_pade33_reduced_f32(phys_x))
@@ -1230,6 +1322,7 @@ def main() -> int:
             "extremePressureAtmSamples": [0.0, 1.0, 1000.0, 1000000.0],
         },
         "extremeKernelFinitenessProof": extreme_kernel_finiteness,
+        "powerDestinationMaskEquivalenceProof": power_destination_mask_equivalence,
         "jacobiProof": {
             "samples": [jacobi_sample(q) for q in [0.0, 0.1, 0.5, 1.0]],
             "safetyInvariant": "bounded relaxation: capped non-negative conductance, guarded denominator, saturated [0,1] potential, finite current caps, divergence flags",
@@ -1407,9 +1500,11 @@ def main() -> int:
             "powerVoltageSolverTernaryCount": anchors["powerVoltageSolverTernaryCount"],
             "powerVoltageEdgeLoopIfCount": anchors["powerVoltageEdgeLoopIfCount"],
             "powerVoltageEdgeLoopContinueCount": anchors["powerVoltageEdgeLoopContinueCount"],
+            "powerVoltageDestinationMaskBranchless": anchors["powerVoltageDestinationMaskBranchless"],
             "integrateBatterySafetyIfCount": anchors["integrateBatterySafetyIfCount"],
+            "integrateBatteryDestinationMaskBranchless": anchors["integrateBatteryDestinationMaskBranchless"],
             "equipmentDrainSafetyIfCount": anchors["equipmentDrainSafetyIfCount"],
-            "truthPolicy": "approximation kernels are branchless; Burst jobs still contain explicit safety/topology branches for native memory validity, offline/damaged nodes, map lookup, and telemetry writes",
+            "truthPolicy": "approximation kernels plus the PowerVoltageSolverJob and IntegrateBatteryChargeJob destination accumulation paths are branchless; Burst jobs still contain explicit setup/topology branches for native memory validity, offline/damaged nodes, map lookup, capacity handling, and telemetry writes",
         },
         "asmdefDependencyAudit": asmdef_audit,
         "codeAnchorAudit": anchors,
@@ -1455,10 +1550,16 @@ def main() -> int:
         report["hardFailures"].append("power jacobi runtime still ignores input globalQualityWeight")
     if not report["codeAnchorAudit"]["powerVoltageConductanceMaskBranchless"]:
         report["hardFailures"].append("power voltage solver conductance cutoff still branches inside edge loop")
+    if not report["codeAnchorAudit"]["powerVoltageDestinationMaskBranchless"]:
+        report["hardFailures"].append("power voltage solver destination bounds still branch inside edge loop")
     if not report["codeAnchorAudit"]["powerVoltageBrownoutUsesMathSelect"]:
         report["hardFailures"].append("power voltage solver brownout flag still uses branch-style write")
     if not report["codeAnchorAudit"]["powerHotFiniteGuardsUseMathSelect"]:
         report["hardFailures"].append("power jacobi hot finite guards still use branch-style ternaries")
+    if not report["codeAnchorAudit"]["integrateBatteryDestinationMaskBranchless"]:
+        report["hardFailures"].append("battery charge integration destination bounds still branch inside edge loop")
+    if report["powerDestinationMaskEquivalenceProof"]["mismatchCount"] != 0:
+        report["hardFailures"].append("safe-index destination masks are not numerically equivalent to the previous branch/continue behavior")
     if not report["codeAnchorAudit"]["auditedFiniteGuardTernariesRemoved"]:
         report["hardFailures"].append("audited physiology/power/thermal finite guards still use branch-style ternaries")
     if not report["codeAnchorAudit"]["externalThermalInjectionQualityInvariantHeatShape"]:

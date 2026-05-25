@@ -192,7 +192,7 @@ namespace Hecton8.Physics
         /// <summary>
         /// Cached ground hit for editor gizmos. Written from terrain/SDF providers, not PhysX.
         /// </summary>
-        private RaycastHit _groundHit;
+        private KinematicSurfaceHit _groundHit;
         private bool _registeredToFixedTick;
 
         // ------------------------------------------------------------
@@ -608,7 +608,7 @@ namespace Hecton8.Physics
             return mask;
         }
 
-        private bool TryResolveCachedGroundHit(Vector3 origin, float range, int layerMask, out RaycastHit hit)
+        private bool TryResolveCachedGroundHit(Vector3 origin, float range, int layerMask, out KinematicSurfaceHit hit)
         {
             hit = default;
             if (!IsFinite(origin) || !math.isfinite(range) || range <= 0f)
@@ -618,7 +618,7 @@ namespace Hecton8.Physics
                    TryResolveVoxelGroundHit(origin, range, layerMask, out hit);
         }
 
-        private bool TryResolveTerrainGroundHit(Vector3 origin, float range, int layerMask, out RaycastHit hit)
+        private bool TryResolveTerrainGroundHit(Vector3 origin, float range, int layerMask, out KinematicSurfaceHit hit)
         {
             hit = default;
             if (!IncludesAnyLayer(layerMask, HectonLayerMasks.TerrainLayerMask))
@@ -648,7 +648,7 @@ namespace Hecton8.Physics
             return true;
         }
 
-        private bool TryResolveVoxelGroundHit(Vector3 origin, float range, int layerMask, out RaycastHit hit)
+        private bool TryResolveVoxelGroundHit(Vector3 origin, float range, int layerMask, out KinematicSurfaceHit hit)
         {
             hit = default;
             if (!IncludesAnyLayer(layerMask, HectonLayerMasks.VoxelCaveLayerMask | HectonLayerMasks.VoxelProxyLayerMask))

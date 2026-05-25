@@ -1,18 +1,18 @@
 ﻿{
-    "schema":  "hecton8.vault_mono_native_field_audit.v7",
+    "schema":  "hecton8.vault_mono_native_field_audit.v8",
     "agentId":  "X_000",
-    "generatedAtLocal":  "2026-05-24T10:29:37.8352387+04:00",
+    "generatedAtLocal":  "2026-05-25T05:03:50.3762043+04:00",
     "sourceLedger":  "Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_X_000.json",
     "summary":  {
-                    "scannedFiles":  2398,
+                    "scannedFiles":  2406,
                     "parseFailures":  0,
-                    "totalNativeFieldDeclarations":  7736,
-                    "fullForbiddenPersistentCandidates":  2224,
-                    "monoBehaviourForbiddenPersistentCandidates":  661,
-                    "monoBehaviourFiles":  60,
+                    "totalNativeFieldDeclarations":  7710,
+                    "fullForbiddenPersistentCandidates":  2138,
+                    "monoBehaviourForbiddenPersistentCandidates":  581,
+                    "monoBehaviourFiles":  33,
                     "rawPointerFieldsInFullLedger":  894,
-                    "jobTransientFields":  5467,
-                    "coreMemoryAllowedFields":  45,
+                    "jobTransientFields":  5526,
+                    "coreMemoryAllowedFields":  46,
                     "scopedMigratedMonoBehaviourFilesWithZeroForbiddenPersistentFindings":  [
                                                                                                 "Assets/_Project/Scripts/AudioLog/AudioLogSystem.cs",
                                                                                                 "Assets/_Project/Scripts/Narrative/Prologue/AwaitableDropSequenceDirector.cs",
@@ -33,16 +33,19 @@
                                                                                                 "Assets/_Project/Scripts/UI/DiegeticHudManualLayout.cs",
                                                                                                 "Assets/_Project/Scripts/UI/FontStreamingManager.cs",
                                                                                                 "Assets/_Project/Scripts/UI/VehicleSubOsCockpitRuntime.cs",
-                                                                                                "Assets/_Project/Scripts/UI/FakeRadarBlipController.cs"
+                                                                                                "Assets/_Project/Scripts/UI/FakeRadarBlipController.cs",
+                                                                                                "Assets/_Project/Scripts/WorldProceduralFieldSampler.cs",
+                                                                                                "Assets/_Project/Scripts/WorldProceduralScatterDirectorMigratorySargassum.cs",
+                                                                                                "Assets/_Project/Scripts/World/Outposts/MarauderOutpostGenerationService.cs"
                                                                                             ],
-                    "latestClearedMonoBehaviourField":  "Assets/_Project/Scripts/UI/FakeRadarBlipController.cs: NativeArray\u003cRadarCullCandidate\u003e _radarCullCandidates; NativeArray\u003cRadarCullResult\u003e _radarCullResults; NativeList\u003cMatrix4x4\u003e _visibleBlipMatrices",
-                    "previousClearedMonoBehaviourField":  "Assets/_Project/Scripts/UI/VehicleSubOsCockpitRuntime.cs: seven cockpit button/telemetry NativeArray fields moved to DataVault handles",
+                    "latestClearedMonoBehaviourField":  "Assets/_Project/Scripts/World/Outposts/MarauderOutpostGenerationService.cs: seven WFC/shell/interactable/counter/telemetry NativeArray fields moved to DataVault handles",
+                    "previousClearedMonoBehaviourField":  "Assets/_Project/Scripts/WorldProceduralScatterDirectorMigratorySargassum.cs: six migratory sargassum NativeArray fields moved to DataVault descriptor wrappers",
                     "verdict":  "PROJECT_WIDE_MONOBEHAVIOUR_PURGE_INCOMPLETE"
                 },
     "byCollection":  [
                          {
                              "collection":  "NativeArray",
-                             "count":  546
+                             "count":  478
                          },
                          {
                              "collection":  "NativeList",
@@ -50,7 +53,7 @@
                          },
                          {
                              "collection":  "NativeHashMap",
-                             "count":  30
+                             "count":  29
                          },
                          {
                              "collection":  "Pointer",
@@ -58,11 +61,11 @@
                          },
                          {
                              "collection":  "NativeQueue",
-                             "count":  18
+                             "count":  12
                          },
                          {
                              "collection":  "NativeParallelHashMap",
-                             "count":  9
+                             "count":  4
                          }
                      ],
     "filesByDescendingCount":  [
@@ -84,7 +87,7 @@
                                    },
                                    {
                                        "path":  "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs",
-                                       "count":  34
+                                       "count":  33
                                    },
                                    {
                                        "path":  "Assets/_Project/Scripts/SpatialAudioManager.cs",
@@ -100,7 +103,7 @@
                                    },
                                    {
                                        "path":  "Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs",
-                                       "count":  24
+                                       "count":  25
                                    },
                                    {
                                        "path":  "Assets/_Project/Scripts/World/TerrainChunkPagerRuntime.cs",
@@ -108,7 +111,7 @@
                                    },
                                    {
                                        "path":  "Assets/_Project/Scripts/Construction/FluidPipeGraphRuntime.cs",
-                                       "count":  18
+                                       "count":  19
                                    },
                                    {
                                        "path":  "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
@@ -127,16 +130,12 @@
                                        "count":  13
                                    },
                                    {
-                                       "path":  "Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRig.cs",
-                                       "count":  13
-                                   },
-                                   {
                                        "path":  "Assets/_Project/Scripts/SaveManager.cs",
                                        "count":  13
                                    },
                                    {
-                                       "path":  "Assets/_Project/Scripts/Gameplay/RadiationHazardGrid.cs",
-                                       "count":  12
+                                       "path":  "Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRig.cs",
+                                       "count":  13
                                    },
                                    {
                                        "path":  "Assets/_Project/Scripts/World/FloraRegrowthDirector.cs",
@@ -147,11 +146,15 @@
                                        "count":  12
                                    },
                                    {
-                                       "path":  "Assets/_Project/Scripts/Graphics/Culling/TBDRPipelineSurgeonRuntime.cs",
-                                       "count":  11
+                                       "path":  "Assets/_Project/Scripts/Gameplay/RadiationHazardGrid.cs",
+                                       "count":  12
                                    },
                                    {
                                        "path":  "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+                                       "count":  11
+                                   },
+                                   {
+                                       "path":  "Assets/_Project/Scripts/Graphics/Culling/TBDRPipelineSurgeonRuntime.cs",
                                        "count":  11
                                    },
                                    {
@@ -159,11 +162,11 @@
                                        "count":  10
                                    },
                                    {
-                                       "path":  "Assets/_Project/Scripts/ConstructionManager.cs",
+                                       "path":  "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
                                        "count":  9
                                    },
                                    {
-                                       "path":  "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+                                       "path":  "Assets/_Project/Scripts/ConstructionManager.cs",
                                        "count":  9
                                    },
                                    {
@@ -183,43 +186,11 @@
                                        "count":  7
                                    },
                                    {
-                                       "path":  "Assets/_Project/Scripts/World/Outposts/MarauderOutpostGenerationService.cs",
-                                       "count":  7
-                                   },
-                                   {
-                                       "path":  "Assets/_Project/Scripts/Construction/AutonomousExtractorSystem.cs",
-                                       "count":  6
-                                   },
-                                   {
-                                       "path":  "Assets/_Project/Scripts/QA/Headless/HeadlessSimulationRunner.cs",
-                                       "count":  6
-                                   },
-                                   {
                                        "path":  "Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs",
                                        "count":  6
                                    },
                                    {
-                                       "path":  "Assets/_Project/Scripts/WorldProceduralFieldSampler.cs",
-                                       "count":  6
-                                   },
-                                   {
-                                       "path":  "Assets/_Project/Scripts/Narrative/Campaign/MetaCampaignService.cs",
-                                       "count":  5
-                                   },
-                                   {
-                                       "path":  "Assets/_Project/Scripts/UI/VR/OpenXRManualOverrideLever.cs",
-                                       "count":  5
-                                   },
-                                   {
-                                       "path":  "Assets/_Project/Scripts/Ecosystem/MigrationDirector.cs",
-                                       "count":  4
-                                   },
-                                   {
                                        "path":  "Assets/_Project/Scripts/HectonVoxelVolume.cs",
-                                       "count":  4
-                                   },
-                                   {
-                                       "path":  "Assets/_Project/Scripts/World/Biomes/BiomeBoundarySdfRuntime.cs",
                                        "count":  4
                                    },
                                    {
@@ -227,87 +198,8 @@
                                        "count":  3
                                    },
                                    {
-                                       "path":  "Assets/_Project/Scripts/FlowFieldVisualizer.cs",
-                                       "count":  3
-                                   },
-                                   {
-                                       "path":  "Assets/_Project/Scripts/Gameplay/SubmarineCoreDirector.cs",
-                                       "count":  3
-                                   },
-                                   {
                                        "path":  "Assets/_Project/Scripts/HectonWorldGenerator.cs",
                                        "count":  3
-                                   },
-                                   {
-                                       "path":  "Assets/_Project/Scripts/Interaction/PhysicalHandController.cs",
-                                       "count":  3
-                                   },
-                                   {
-                                       "path":  "Assets/_Project/Scripts/ProximityColliderSystem.cs",
-                                       "count":  3
-                                   },
-                                   {
-                                       "path":  "Assets/_Project/Scripts/World/GPUScatterDirector.cs",
-                                       "count":  3
-                                   },
-                                   {
-                                       "path":  "Assets/_Project/Scripts/World/HectonDistantLandmarkRenderer.cs",
-                                       "count":  3
-                                   },
-                                   {
-                                       "path":  "Assets/_Project/Scripts/World/HectonHLODRenderer.cs",
-                                       "count":  3
-                                   },
-                                   {
-                                       "path":  "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
-                                       "count":  2
-                                   },
-                                   {
-                                       "path":  "Assets/_Project/Scripts/Gameplay/DataArchaeologyRuntime.cs",
-                                       "count":  2
-                                   },
-                                   {
-                                       "path":  "Assets/_Project/Scripts/UI/WristHologramHudRuntime.cs",
-                                       "count":  2
-                                   },
-                                   {
-                                       "path":  "Assets/_Project/Scripts/World/HectonCaveVoxelLightingVolume.cs",
-                                       "count":  2
-                                   },
-                                   {
-                                       "path":  "Assets/_Project/Scripts/World/ResourceDistributionDirector.cs",
-                                       "count":  2
-                                   },
-                                   {
-                                       "path":  "Assets/_Project/Scripts/Construction/CultivationManager.cs",
-                                       "count":  1
-                                   },
-                                   {
-                                       "path":  "Assets/_Project/Scripts/Networking/HectonRollbackNetcodeRuntime.cs",
-                                       "count":  1
-                                   },
-                                   {
-                                       "path":  "Assets/_Project/Scripts/PrefabRegistry.cs",
-                                       "count":  1
-                                   },
-                                   {
-                                       "path":  "Assets/_Project/Scripts/SeamRegistry.cs",
-                                       "count":  1
-                                   },
-                                   {
-                                       "path":  "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
-                                       "count":  1
-                                   },
-                                   {
-                                       "path":  "Assets/_Project/Scripts/World/WreckMaterialRegistry.cs",
-                                       "count":  1
-                                   },
-                                   {
-                                       "path":  "Assets/_Project/Scripts/WorldGenerativeGeologyTerrainSeamApplier.cs",
-                                       "count":  1
                                    }
-                               ],
-    "vehicleSubOsCockpitScopedForbiddenPersistentFindings":  0,
-    "fakeRadarBlipControllerScopedForbiddenPersistentFindings":  0,
-    "auditHashSha256":  "aeca727724ffa3d082660c7c28726bd038689766a6e25f42ab9fc5e9d335638e"
+                               ]
 }

@@ -45,7 +45,8 @@ Status: STATIC SOURCE VERIFIED, UNITY IMPORT/PLAYMODE PENDING
 - No `Pack=1`. No managed fields in respawn DTOs.
 
 ## Buffers
-- `71604` respawn state, `71605` medbays, `71606` Dear Lie fade, `71607` telemetry ring, `71608` telemetry cursor, `71609` tuning, `71610` penalty rules, `71611` penalty rule count, `71612` CSV scratch, `71613` request.
+- Respawn buffers: `71604` state, `71605` medbays, `71606` Dear Lie fade, `71607` telemetry ring, `71608` telemetry cursor.
+- Rule/request buffers: `71609` tuning, `71610` penalty rules, `71611` penalty rule count, `71612` CSV scratch, `71613` request.
 - Borrowed owner rows: physiology vitals, decompression, tissue compartments, physiology scalars, metabolism, gas physiology, player kinematics.
 
 ## Scanner Proof

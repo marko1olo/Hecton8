@@ -9,7 +9,7 @@ namespace Hecton8.Logistics.Grid
     /// <summary>
     /// Converts a packed WFC outpost grid into SOA power nodes and logical adjacency edges.
     /// </summary>
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct WfcOutpostGraphTranslationJob : IJob
     {
         [ReadOnly]

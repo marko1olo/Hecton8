@@ -1173,8 +1173,13 @@ namespace NASAPunk.Visor
             object previousService,
             object currentService)
         {
-            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && currentService != null && isActiveAndEnabled)
-                EvaluateTickRegistration();
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                _tickRegistered = false;
+                _lateFrameRegistered = false;
+                if (currentService != null && isActiveAndEnabled)
+                    EvaluateTickRegistration();
+            }
         }
 
         private void TryRegisterHotSwapListener()

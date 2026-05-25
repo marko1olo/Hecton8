@@ -330,7 +330,7 @@ namespace Hecton8.Core
 
                 uint qualityByte = EncodeQualityWeightByte(quality01);
                 UberNoirShaderTelemetryEntry entry = default;
-                entry.Frame = (uint)math.max(0, Time.frameCount);
+                entry.Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
                 entry.FeatureMask = featureMask;
                 entry.SystemStress01 = stress01;
                 entry.HighCostAllowed01 = highCostAllowed01;

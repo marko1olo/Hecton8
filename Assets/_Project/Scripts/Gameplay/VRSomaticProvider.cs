@@ -386,7 +386,7 @@ namespace Hecton8.Gameplay
         [SerializeField, Range(200f, 22000f)] private float breathingLowPassOpenHz = 18000f;
         [SerializeField, Range(200f, 22000f)] private float breathingLowPassClosedHz = 680f;
 
-        private VaultNativeArray<RaycastHit> _headCollisionHits;
+        private VaultNativeArray<KinematicSurfaceHit> _headCollisionHits;
         private VaultNativeArray<HeadCastSample> _headCollisionSamples;
         private VaultNativeArray<VRSomaticRootSyncInput> _rootSyncInput;
         private VaultNativeArray<VRSomaticRootSyncOutput> _rootSyncOutput;
@@ -3214,7 +3214,7 @@ namespace Hecton8.Gameplay
 
             if (!_headCollisionHits.IsCreated)
             {
-                _headCollisionHits = VaultNativeArray<RaycastHit>.Create(
+                _headCollisionHits = VaultNativeArray<KinematicSurfaceHit>.Create(
                     vault,
                     BufferID.ShinobuVRSomaticHeadCollisionHits,
                     HeadCollisionCommandCount * HeadCollisionMaxHitsPerCommand,
@@ -3460,12 +3460,12 @@ namespace Hecton8.Gameplay
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct ProcessHeadCapsulecastHitsJob : IJobParallelFor
         {
-            [ReadOnly, NoAlias] public NativeArray<RaycastHit> Hits;
+            [ReadOnly, NoAlias] public NativeArray<KinematicSurfaceHit> Hits;
             [WriteOnly, NoAlias] public NativeArray<HeadCastSample> Samples;
 
             public void Execute(int index)
             {
-                RaycastHit hit = Hits[index * HeadCollisionMaxHitsPerCommand];
+                KinematicSurfaceHit hit = Hits[index * HeadCollisionMaxHitsPerCommand];
                 float3 point = hit.point;
                 float3 normal = hit.normal;
                 float normalSq = math.lengthsq(normal);

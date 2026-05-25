@@ -181,7 +181,7 @@ Parser isolation evidence:
   - preserved runtime `thermodynamic_constants.h8bin` binary lane;
   - Core compile proof PASS with `0` errors and 5 generated duplicate-source warnings.
 - `Docs/Reports/DATA_MONOLITH_CORE_BUILD_ATTEMPT_S_X_002.json`: legal Core build attempt failed on a stale `ConstructionRuntimeProxyFactory.cs` `Hecton8.Graphics` import that is absent from the current source snapshot. No compile pass claimed; retry required.
-- `Docs/Reports/DATA_MONOLITH_CORE_BUILD_ATTEMPT_T_X_002.json`: second legal Core build attempt failed on stale current-source mismatches in `FaunaBrain`, `HectonPlayerMotor`, and `SubmarineAtmosphereSystem`. Current files already contain the implied fixes; no compile pass claimed; retry required.
+- `Docs/Reports/DATA_MONOLITH_CORE_BUILD_ATTEMPT_T_X_002.json`: second legal Core build failed on stale mismatches in `FaunaBrain`, `HectonPlayerMotor`, and `SubmarineAtmosphereSystem`. Retry required.
 - `DATA_MONOLITH_CORE_BUILD_ATTEMPT_U_X_002.json`: third legal Core build attempt ran after `dotnet build-server shutdown`.
 - It used `/p:UseSharedCompilation=false`.
 - Result: failed on current-source mismatches.
@@ -232,7 +232,7 @@ Latest completed project compile pass:
   - Previous N/O/P/Q/R: green, `0` errors, `5` duplicate-source warnings, `00:01:24.55`.
   - Previous I-M: green, `0` warnings, `0` errors, `58.77s`.
   - Previous A-H: green, `0` warnings, `0` errors, `108.34s`.
-- Warning status: generated `Hecton8.Core.csproj` duplicate-source warnings for Input, UniversalInputStateSignal, and Audio files remain project hygiene debt. They are not Data Monolith parser/layout/runtime defects and were not introduced by N/O/P/Q/R.
+- Warning status: generated `Hecton8.Core.csproj` duplicate-source warnings for Input, UniversalInputStateSignal, and Audio remain project hygiene debt, not Data Monolith defects.
 - Narrow DataMonolith Release CLI build: green with `0` errors and `38` warnings in editor JSON DTO/stub fields.
 - DataMonolith CLI pipeline execution: `DataMonolithBakeCli.exe C:\hades\Hecton8` PASS, exit `0`, after bake, corruption fuzzer, load stress, fail-closed runtime simulation, and player parser-absence scan.
 - Missing proof: Unity import, player build, profiler.

@@ -51,7 +51,8 @@ Owner: ECHELON 4 / Hydrodynamic Drag & Buoyancy.
 - The solver records the last 300 high-level frames to `WaveMathTelemetryEntry`.
 - `PostFixedTick` locks `Shinobu263WaveTelemetryRing` and `Shinobu263WaveTelemetryCursor` before writing the ring/cursor and before dump readback.
 - `TelemetryCursor[0]` is a monotonic write count, not a wrapped slot, so early dumps and wrapped dumps can both be decoded.
-- If elapsed solver time exceeds the tuning threshold or nonfinite output is detected, it dumps `Docs/AgentLogs/Dump_SHINOBU_263.bin` as a 32-byte little-endian header followed by 64-byte telemetry rows in oldest-to-newest ring order.
+- On elapsed-time breach or nonfinite output, dump target is `Docs/AgentLogs/Dump_SHINOBU_263.bin`.
+- Format: 32-byte little-endian header, then 64-byte telemetry rows in oldest-to-newest ring order.
 
 Dump header:
 

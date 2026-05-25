@@ -22,6 +22,7 @@ namespace Hecton8.UI
     [AddComponentMenu("Hecton8/UI/PDA Decryption Spectrogram Panel")]
     public sealed class PDADecryptionSpectrogramPanel : MonoBehaviour, IUpdatable, ILateFrameTickable, IDisposable, IGlobalRegistryHotSwapListener
     {
+        private static int s_x001PDADecryptionSpectrogramPanelSignalPushDropCount;
         internal const string WaveShaderPath = "Assets/_Project/Art/Shaders/Hecton_PDA_FrequencyTuningWave.shader";
         private const int HighPointCount = 128;
         private const int LowPointCount = 32;
@@ -190,7 +191,7 @@ namespace Hecton8.UI
             float safeDeltaTime = SanitizePositive(deltaTime, 0f);
             _lastTickDeltaTime = safeDeltaTime;
             _lastTickUnscaledTime = Time.unscaledTime;
-            _lastTickFrame = unchecked((uint)Hecton8.Core.SystemDispatcher.CurrentFrameIndex);
+            _lastTickFrame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             SampleInputState(safeDeltaTime);
             ResolveTargetForCurrentStage(out _targetFrequency, out _targetAmplitude);
             QueueWaveResult(EvaluateScalarWaveError());
@@ -528,7 +529,7 @@ namespace Hecton8.UI
                 return;
 
             _unlocked = true;
-            SignalBus<BlueprintUnlockedSignal>.TryPush(new BlueprintUnlockedSignal
+            SignalBus<BlueprintUnlockedSignal>.TryPushTracked(new BlueprintUnlockedSignal
             {
                 EntityHash = _artifactHash,
                 BlueprintHash = _blueprintHash != 0u ? _blueprintHash : DefaultBlueprintHash,
@@ -536,7 +537,7 @@ namespace Hecton8.UI
                 Frame = _lastTickFrame,
                 Category = 1,
                 Flags = 1
-            });
+            }, ref s_x001PDADecryptionSpectrogramPanelSignalPushDropCount);
         }
 
         private void RenderWaveMesh()
@@ -617,7 +618,7 @@ namespace Hecton8.UI
                 return;
 
             float match01 = math.saturate(1f - safeError);
-            SignalBus<ToolAcousticSignal>.TryPush(new ToolAcousticSignal
+            SignalBus<ToolAcousticSignal>.TryPushTracked(new ToolAcousticSignal
             {
                 ToolHash = ToolHash,
                 TargetHash = _artifactHash,
@@ -627,7 +628,7 @@ namespace Hecton8.UI
                 Frame = _lastTickFrame,
                 State = 2,
                 Flags = 0
-            });
+            }, ref s_x001PDADecryptionSpectrogramPanelSignalPushDropCount);
             PlayerSignalEvents.TryRaiseInteractionSignal(new PlayerInteractionStressSignal(
                 safeError * 0.15f,
                 math.saturate(0.25f + safeError * 0.65f),

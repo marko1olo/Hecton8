@@ -309,7 +309,7 @@ namespace Hecton8.Narrative
         private void OnValidate()
         {
             if (string.IsNullOrEmpty(logId))
-                logId = name.ToLowerInvariant().Replace(" ", "_");
+                logId = CreateEditorDefaultLogId(name);
 
             if (string.IsNullOrWhiteSpace(displayTitle))
                 displayTitle = name;
@@ -319,6 +319,26 @@ namespace Hecton8.Narrative
 
             if (durationOverride < 0f)
                 durationOverride = 0f;
+        }
+
+        private static string CreateEditorDefaultLogId(string source)
+        {
+            if (string.IsNullOrEmpty(source))
+                return "audio_log";
+
+            return string.Create(source.Length, source, static (buffer, value) =>
+            {
+                for (int i = 0; i < value.Length; i++)
+                {
+                    char c = value[i];
+                    if (c == ' ')
+                        c = '_';
+                    else if (c >= 'A' && c <= 'Z')
+                        c = (char)(c + ('a' - 'A'));
+
+                    buffer[i] = c;
+                }
+            });
         }
 #endif
     }

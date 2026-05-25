@@ -4450,9 +4450,9 @@ namespace Hecton8.Bootstrap
             if (worldStateManager != null)
                 worldStateManager.ClearAll();
 
-            ConstructionManager constructionManager = GlobalRegistry.ConstructionRuntime;
-            if (constructionManager != null)
-                constructionManager.ClearAllModules();
+            ILogisticsService logistics = GlobalRegistry.Logistics;
+            if (logistics != null)
+                logistics.ClearAllModules();
         }
 
         private async Awaitable WaitForWorldReadyAsync(CancellationToken ct)

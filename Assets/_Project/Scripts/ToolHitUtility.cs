@@ -13,6 +13,7 @@ namespace Hecton8.Gameplay
 {
     internal static class ToolHitUtility
     {
+        private static int s_x001ToolHitUtilitySignalPushDropCount;
         private const int MaxParentResolveDepth = 32;
         private static HUDNotification s_notification;
         private static PlayerToolManager s_playerToolManager;
@@ -455,7 +456,7 @@ namespace Hecton8.Gameplay
             signal.PrimaryBodyId = ResolveImpactBodyId(hitCollider, body);
             signal.WeightClass = ResolveImpactWeightClass(body);
             signal.Flags = normalizedDirection.y > 0.35f ? (byte)1 : (byte)0;
-            SignalBus<ImpactSignal>.TryPush(in signal);
+            SignalBus<ImpactSignal>.TryPushTracked(in signal, ref s_x001ToolHitUtilitySignalPushDropCount);
         }
 
         private static bool TryResolveImpactPointAup(Vector3 hitPoint, out AbsoluteUniversePosition pointAup)

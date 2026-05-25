@@ -40,6 +40,7 @@ namespace Hecton8.SaveSystem
     [DefaultExecutionOrder(-8000)]
     public sealed class SaveManager : MonoBehaviour, IAsyncPersistenceService, IUpdatable, ISlowTickable, IFrostTickable, ILateFrameTickable, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener
     {
+        private static int _signalPushDropCount;
         private const long MainThreadSnapshotBudgetMs = 5L;
         private static readonly long PreCompressionYieldBudgetTicks = Math.Max(1L, Stopwatch.Frequency / 500L);
         private static readonly long LoadApplyFrameBudgetTicks = HydrationScheduler.FrameBudgetTicks;
@@ -877,7 +878,7 @@ namespace Hecton8.SaveSystem
             uint requestId,
             out H8WorldPageReadTicket ticket)
         {
-            uint frame = unchecked((uint)Time.frameCount);
+            uint frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             ticket = new H8WorldPageReadTicket
             {
                 SectorHash = sectorHash,
@@ -973,7 +974,7 @@ namespace Hecton8.SaveSystem
         private void NotifyMacroDatabasePersistenceGate(bool blocked)
         {
             if (TryResolveWfcOutpostMacroDatabase(out IMacroDatabaseService macroDatabase))
-                macroDatabase.NotifyPersistenceGate(blocked, unchecked((uint)Time.frameCount));
+                macroDatabase.NotifyPersistenceGate(blocked, Hecton8.Core.SystemDispatcher.CurrentFrameId);
         }
 
         private H8BinaryWorldPager EnsureWorldPager()
@@ -1226,7 +1227,7 @@ namespace Hecton8.SaveSystem
             {
                 SourceHash = sourceHash != 0u ? sourceHash : AsyncPersistenceSourceHash,
                 OperationId = ResolveOperationId(operationId),
-                Frame = unchecked((uint)Time.frameCount),
+                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 SlotIndex = slotIndex,
                 Flags = SaveRequestSignal.ManualSlotFlag
             };
@@ -1754,7 +1755,7 @@ namespace Hecton8.SaveSystem
 
         private static uint ResolveWfcOutpostSnapshotCacheFrame(uint cacheFlags)
         {
-            return cacheFlags != 0u ? unchecked((uint)Time.frameCount) : 0u;
+            return cacheFlags != 0u ? Hecton8.Core.SystemDispatcher.CurrentFrameId : 0u;
         }
 
         private void RememberWfcOutpostSnapshotHash(
@@ -1920,7 +1921,7 @@ namespace Hecton8.SaveSystem
                 return;
 
             int retries = 0;
-            uint frame = unchecked((uint)Time.frameCount);
+            uint frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             int start = math.clamp(_wfcOutpostSnapshotCacheRetryIndex, 0, count - 1);
             int nextRetryIndex = start;
             for (int probe = 0; probe < count && retries < MaxWfcDirtyAppendRetriesPerSlowTick; probe++)
@@ -2163,11 +2164,11 @@ namespace Hecton8.SaveSystem
                     MessageHash = WorldPagerSavingMessageHash,
                     ContextHash = WorldPagerSavingContextHash,
                     SourceId = WorldPagerSourceHash,
-                    Frame = unchecked((uint)Time.frameCount),
+                    Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                     Severity = 0,
                     Flags = 0
                 };
-                SignalBus<HUDNotificationSignal>.TryPush(in notification);
+                SignalBus<HUDNotificationSignal>.TryPushTracked(in notification, ref _signalPushDropCount);
                 return;
             }
 
@@ -2249,11 +2250,11 @@ namespace Hecton8.SaveSystem
                 SlotHash = slotHash,
                 OperationId = operationId,
                 Progress01 = clampedProgress,
-                Frame = unchecked((uint)Time.frameCount),
+                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 State = state,
                 Flags = clampedFlags
             };
-            SignalBus<SaveStatusSignal>.TryPush(in status);
+            SignalBus<SaveStatusSignal>.TryPushTracked(in status, ref _signalPushDropCount);
 
             SaveLifecycleSignal lifecycle = new SaveLifecycleSignal
             {
@@ -2264,7 +2265,7 @@ namespace Hecton8.SaveSystem
                 State = state,
                 Flags = clampedFlags
             };
-            SignalBus<SaveLifecycleSignal>.TryPush(in lifecycle);
+            SignalBus<SaveLifecycleSignal>.TryPushTracked(in lifecycle, ref _signalPushDropCount);
         }
 
         private static void PublishSaveCompleted(byte slotIndex, uint operationId, long durationMs, long compressedSizeBytes, bool succeeded)
@@ -2275,11 +2276,11 @@ namespace Hecton8.SaveSystem
                 OperationId = operationId,
                 DurationMilliseconds = SaturateToUInt(durationMs),
                 CompressedSizeBytes = SaturateToUInt(compressedSizeBytes),
-                Frame = unchecked((uint)Time.frameCount),
+                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 Result = succeeded ? (byte)1 : (byte)0,
                 Flags = succeeded ? (byte)0 : (byte)1
             };
-            SignalBus<SaveCompletedSignal>.TryPush(in completed);
+            SignalBus<SaveCompletedSignal>.TryPushTracked(in completed, ref _signalPushDropCount);
         }
 
         private static void RequestSnapshotPause(uint operationId)
@@ -2287,7 +2288,7 @@ namespace Hecton8.SaveSystem
             SimulationPauseSignal pause = new SimulationPauseSignal
             {
                 SourceHash = AsyncPersistenceSourceHash,
-                Frame = unchecked((uint)Time.frameCount),
+                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 Sequence = operationId,
                 Paused = 1,
                 Flags = 0,
@@ -2301,7 +2302,7 @@ namespace Hecton8.SaveSystem
             SimulationPauseSignal resume = new SimulationPauseSignal
             {
                 SourceHash = AsyncPersistenceSourceHash,
-                Frame = unchecked((uint)Time.frameCount),
+                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 Sequence = operationId,
                 Paused = 0,
                 Flags = 0,
@@ -2330,7 +2331,7 @@ namespace Hecton8.SaveSystem
                 EcosystemRecordCount = ecosystemSectorStates.IsCreated ? (uint)math.max(0, ecosystemSectorStates.Length) : 0u,
                 QuestWordCount = packedQuestStateWords.IsCreated ? (uint)math.max(0, packedQuestStateWords.Length) : 0u,
                 VoxelDeltaBytes = voxelDeltaSnapshot.IsCreated ? (uint)math.max(0, voxelDeltaSnapshot.Length) : 0u,
-                Frame = unchecked((uint)Time.frameCount)
+                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId
             };
 
             void* stagingPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(_saveStagingBuffer);
@@ -2354,7 +2355,7 @@ namespace Hecton8.SaveSystem
             int index = _saveTelemetryWriteIndex;
             _saveTelemetryRing[index] = new AsyncPersistenceTelemetryEntry
             {
-                Frame = unchecked((uint)Time.frameCount),
+                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 OperationId = operationId,
                 SaveDurationMs = SaturateToUInt(durationMs),
                 CompressedSizeBytes = SaturateToUInt(compressedSizeBytes),
@@ -2490,7 +2491,7 @@ namespace Hecton8.SaveSystem
             uint flags,
             uint frame)
         {
-            uint resolvedFrame = frame != 0u ? frame : unchecked((uint)Time.frameCount);
+            uint resolvedFrame = frame != 0u ? frame : Hecton8.Core.SystemDispatcher.CurrentFrameId;
             return new WfcOutpostTelemetryEntry
             {
                 Frame = resolvedFrame,
@@ -2622,11 +2623,11 @@ namespace Hecton8.SaveSystem
                 MessageHash = SaveRecoveredMessageHash,
                 ContextHash = ComputeSlotHash(slotName) ^ SaveRecoveredContextHash,
                 SourceId = AsyncPersistenceSourceHash,
-                Frame = unchecked((uint)Time.frameCount),
+                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 Severity = 1,
                 Flags = 0
             };
-            SignalBus<HUDNotificationSignal>.TryPush(in notification);
+            SignalBus<HUDNotificationSignal>.TryPushTracked(in notification, ref _signalPushDropCount);
         }
 
         private static void PublishSaveSynchronizedNotification(string slotName)
@@ -2636,11 +2637,11 @@ namespace Hecton8.SaveSystem
                 MessageHash = SaveSynchronizedMessageHash,
                 ContextHash = ComputeSlotHash(slotName),
                 SourceId = AsyncPersistenceSourceHash,
-                Frame = unchecked((uint)Time.frameCount),
+                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 Severity = 0,
                 Flags = 0
             };
-            SignalBus<HUDNotificationSignal>.TryPush(in notification);
+            SignalBus<HUDNotificationSignal>.TryPushTracked(in notification, ref _signalPushDropCount);
         }
 
         private void RequestVramAbortGcIfNeeded()

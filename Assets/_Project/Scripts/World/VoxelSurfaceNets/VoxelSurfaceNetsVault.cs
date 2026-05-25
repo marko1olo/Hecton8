@@ -105,7 +105,7 @@ namespace Hecton8.World.VoxelSurfaceNets
     {
         private const int DumpVersion = 1;
         private const string DumpFileName = "Dump_MESH_SURGEON.bin";
-        private const string AgentDumpFileName = "Dump_SHINOBU_61.bin";
+        private const string AgentDumpFileName = "Dump_SHINOBU_308_Voxel.bin";
         private const string CsvFileName = "meshing_profiles.csv";
         private static readonly uint _globalQualityHash = HashAsciiLiteral("global_quality_weight");
         private static readonly uint _isoSurfaceHash = HashAsciiLiteral("iso_surface_threshold");

@@ -17,6 +17,7 @@ namespace Hecton8.Construction
 {
     internal static partial class DroneFleetManager
     {
+        private static int s_x001DroneFleetManagerTransactionsSignalPushDropCount;
         private const int DroneTransactionTelemetryCapacity = 300;
         private const int DroneTransactionMilliScale = 1000;
         private const float DroneTransactionMilliToUnits = 1f / DroneTransactionMilliScale;
@@ -209,7 +210,7 @@ namespace Hecton8.Construction
             s_DroneTransactionConsumedMaskCurrent = true;
             s_DroneTransactionScheduledCommandCount = safeCount;
             s_DroneTransactionScheduledTransactionCount = transactionCount;
-            s_DroneTransactionScheduledFrame = (uint)Mathf.Max(0, Time.frameCount);
+            s_DroneTransactionScheduledFrame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
         }
 
         private static bool CompleteScheduledDroneServiceTransactionBatch(bool force)
@@ -244,7 +245,7 @@ namespace Hecton8.Construction
                 return;
             }
 
-            uint frame = (uint)Mathf.Max(0, Time.frameCount);
+            uint frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             if (s_DroneTransactionLastTelemetryFrame == frame)
                 return;
 
@@ -320,7 +321,7 @@ namespace Hecton8.Construction
                     TaskTypeHash = s_DroneTransactionTasks[commandIndex].TaskTypeHash,
                     TargetEntityHash = s_DroneTransactionTasks[commandIndex].TargetEntityHash,
                     Flags = DroneTransactionCommandDTO.FlagValid,
-                    Frame = (uint)Mathf.Max(0, Time.frameCount),
+                    Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                     Position = command.Position,
                     TargetPosition = command.TargetPosition,
                     StateHash = math.hash(new uint4(
@@ -684,7 +685,7 @@ namespace Hecton8.Construction
                 Flags = 2u,
                 Reserved0 = result.ActiveInventorySlots
             };
-            SignalBus<DroneFleetInventoryTransactionSignal>.TryPush(in transactionSignal);
+            SignalBus<DroneFleetInventoryTransactionSignal>.TryPushTracked(in transactionSignal, ref s_x001DroneFleetManagerTransactionsSignalPushDropCount);
             drone.RepairAccumulator = 0f;
             drone.TransactionProgress = 1f;
             ReturnDroneToHub(ref drone);
@@ -710,9 +711,9 @@ namespace Hecton8.Construction
                 Quantity = (ushort)Mathf.Clamp(quantity, 1, ushort.MaxValue),
                 SourceKind = ItemAcquiredSignalSourceKinds.DroneMining,
                 Flags = 0,
-                Frame = (uint)Mathf.Max(0, Time.frameCount)
+                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId
             };
-            SignalBus<ItemAcquiredSignal>.TryPush(in signal);
+            SignalBus<ItemAcquiredSignal>.TryPushTracked(in signal, ref s_x001DroneFleetManagerTransactionsSignalPushDropCount);
         }
 
         private static int ResolveInventoryActiveSlotCount(NativeArray<int> activeSlotCount)
@@ -832,7 +833,7 @@ namespace Hecton8.Construction
             float quality = ResolveGlobalQualityWeight();
             uint telemetryFrame = s_DroneTransactionScheduledFrame != 0u
                 ? s_DroneTransactionScheduledFrame
-                : (uint)Mathf.Max(0, Time.frameCount);
+                : Hecton8.Core.SystemDispatcher.CurrentFrameId;
             s_DroneTransactionTelemetry[index] = new DroneTransactionTelemetryEntry
             {
                 Frame = telemetryFrame,

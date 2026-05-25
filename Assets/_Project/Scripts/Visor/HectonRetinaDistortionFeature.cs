@@ -92,7 +92,10 @@ namespace Hecton8.Visor
             private Material _material;
             private RuntimeState _runtimeState;
             private GraphicsBuffer _retinaGlobalsBuffer;
+            private GraphicsBuffer _retinaGlobalsBufferA;
+            private GraphicsBuffer _retinaGlobalsBufferB;
             private RetinaGlobalsDTO _lastRetinaGlobals;
+            private int _retinaGlobalsWriteIndex;
             private bool _hasRetinaGlobals;
             private bool _lastMx350Tier;
             private bool _keywordStateInitialized;
@@ -163,8 +166,12 @@ namespace Hecton8.Visor
 
             public void Dispose()
             {
-                _retinaGlobalsBuffer?.Release();
+                _retinaGlobalsBufferA?.Release();
+                _retinaGlobalsBufferB?.Release();
+                _retinaGlobalsBufferA = null;
+                _retinaGlobalsBufferB = null;
                 _retinaGlobalsBuffer = null;
+                _retinaGlobalsWriteIndex = 0;
                 _hasRetinaGlobals = false;
                 _keywordStateInitialized = false;
             }
@@ -177,17 +184,30 @@ namespace Hecton8.Visor
                     return false;
                 }
 
-                if (_retinaGlobalsBuffer != null && _retinaGlobalsBuffer.IsValid())
+                if (_retinaGlobalsBufferA != null && _retinaGlobalsBufferA.IsValid() &&
+                    _retinaGlobalsBufferB != null && _retinaGlobalsBufferB.IsValid())
+                {
+                    if (_retinaGlobalsBuffer == null)
+                        _retinaGlobalsBuffer = _retinaGlobalsBufferA;
                     return true;
+                }
 
-                _retinaGlobalsBuffer?.Release();
-                _retinaGlobalsBuffer = new GraphicsBuffer(
+                _retinaGlobalsBufferA?.Release();
+                _retinaGlobalsBufferB?.Release();
+                _retinaGlobalsBufferA = new GraphicsBuffer(
                     GraphicsBuffer.Target.Constant,
                     GraphicsBuffer.UsageFlags.LockBufferForWrite,
                     1,
                     RetinaGlobalsStrideBytes);
+                _retinaGlobalsBufferB = new GraphicsBuffer(
+                    GraphicsBuffer.Target.Constant,
+                    GraphicsBuffer.UsageFlags.LockBufferForWrite,
+                    1,
+                    RetinaGlobalsStrideBytes);
+                _retinaGlobalsBuffer = _retinaGlobalsBufferA;
+                _retinaGlobalsWriteIndex = 1;
                 _hasRetinaGlobals = false;
-                return _retinaGlobalsBuffer.IsValid();
+                return _retinaGlobalsBufferA.IsValid() && _retinaGlobalsBufferB.IsValid();
             }
 
             private bool UpdateRetinaGlobals(FeatureSettings settings, RuntimeState runtimeState)
@@ -219,9 +239,15 @@ namespace Hecton8.Visor
                     return true;
                 }
 
-                NativeArray<RetinaGlobalsDTO> mapped = _retinaGlobalsBuffer.LockBufferForWrite<RetinaGlobalsDTO>(0, 1);
+                GraphicsBuffer writeBuffer = (_retinaGlobalsWriteIndex & 1) == 0 ? _retinaGlobalsBufferA : _retinaGlobalsBufferB;
+                if (writeBuffer == null || !writeBuffer.IsValid())
+                    return false;
+
+                NativeArray<RetinaGlobalsDTO> mapped = writeBuffer.LockBufferForWrite<RetinaGlobalsDTO>(0, 1);
                 mapped[0] = globals;
-                _retinaGlobalsBuffer.UnlockBufferAfterWrite<RetinaGlobalsDTO>(1);
+                writeBuffer.UnlockBufferAfterWrite<RetinaGlobalsDTO>(1);
+                _retinaGlobalsBuffer = writeBuffer;
+                _retinaGlobalsWriteIndex ^= 1;
                 _lastRetinaGlobals = globals;
                 _hasRetinaGlobals = true;
                 Shader.SetGlobalConstantBuffer(ShaderConstants.RetinaGlobalsBufferId, _retinaGlobalsBuffer, 0, RetinaGlobalsStrideBytes);

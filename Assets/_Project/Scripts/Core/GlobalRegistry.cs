@@ -72,6 +72,7 @@ namespace Hecton8.Core
     [Preserve]
     public static partial class GlobalRegistry
     {
+        private static int s_x001GlobalRegistrySignalPushDropCount;
         /// <summary>
         /// BIOS lifecycle phase for the registry mutation gate.
         /// </summary>
@@ -852,7 +853,7 @@ namespace Hecton8.Core
             signal.Flags = SystemKillSwitchBitsSignal.FlagRegistryOwner;
             if (enabled)
                 signal.Flags |= SystemKillSwitchBitsSignal.FlagEnabled;
-            SignalBus<SystemKillSwitchBitsSignal>.TryPush(in signal);
+            SignalBus<SystemKillSwitchBitsSignal>.TryPushTracked(in signal, ref s_x001GlobalRegistrySignalPushDropCount);
         }
 
         /// <summary>
@@ -1305,6 +1306,11 @@ namespace Hecton8.Core
         /// Registered habitat graph flood read model slot.
         /// </summary>
         public static IHabitatGraphService HabitatGraph => _habitatGraph;
+
+        /// <summary>
+        /// Registered construction-owned parasite graph route.
+        /// </summary>
+        public static IConstructionParasiteGraphService ConstructionParasiteGraph => _logistics as IConstructionParasiteGraphService;
 
         /// <summary>
         /// Registered habitat deconstruction validation and rollback service slot.
@@ -1785,6 +1791,11 @@ namespace Hecton8.Core
         public static BeaconNetworkSystem BeaconNetwork => _beaconNetworkRuntime;
 
         /// <summary>
+        /// Contract-only beacon-network route for tools and VFX formation consumers.
+        /// </summary>
+        public static IBeaconNetworkService BeaconNetworkService => _beaconNetworkRuntime;
+
+        /// <summary>
         /// Registered scan-log runtime owner.
         /// </summary>
         public static ScanLogSystem ScanLog => _scanLogRuntime;
@@ -2213,6 +2224,11 @@ namespace Hecton8.Core
         /// Registered global physics-state manager owner.
         /// </summary>
         public static GlobalPhysicsStateManager PhysicsStateManager => _physicsStateManager;
+
+        /// <summary>
+        /// Registered physics-state event route for impacts and temporary connection tracking.
+        /// </summary>
+        public static IPhysicsStateEventService PhysicsStateEvents => _physicsStateManager;
 
         /// <summary>
         /// Registered centralized physics culling overseer.
@@ -7828,6 +7844,7 @@ namespace Hecton8.Core
             if (serviceType == typeof(IFluidSim)) return GlobalRegistryServiceSlot.FluidSimulation;
             if (serviceType == typeof(ILogisticsService)) return GlobalRegistryServiceSlot.Logistics;
             if (serviceType == typeof(IHabitatGraphService)) return GlobalRegistryServiceSlot.Logistics;
+            if (serviceType == typeof(IConstructionParasiteGraphService)) return GlobalRegistryServiceSlot.Logistics;
             if (serviceType == typeof(IHabitatDeconstructionSystem)) return GlobalRegistryServiceSlot.HabitatDeconstructionRuntime;
             if (serviceType == typeof(IFluidPipeGraphService)) return GlobalRegistryServiceSlot.FluidPipeGraph;
             if (serviceType == typeof(IGasDynamicsSolver)) return GlobalRegistryServiceSlot.GasDynamicsRuntime;
@@ -7945,7 +7962,8 @@ namespace Hecton8.Core
             if (serviceType == typeof(BasePollutionManager)) return GlobalRegistryServiceSlot.BasePollutionRuntime;
             if (serviceType == typeof(EntityChangeManager)) return GlobalRegistryServiceSlot.EntityChangeManagerRuntime;
             if (serviceType == typeof(PerformanceMonitor)) return GlobalRegistryServiceSlot.PerformanceMonitorRuntime;
-            if (serviceType == typeof(BeaconNetworkSystem)) return GlobalRegistryServiceSlot.BeaconNetworkRuntime;
+            if (serviceType == typeof(IBeaconNetworkService) ||
+                serviceType == typeof(BeaconNetworkSystem)) return GlobalRegistryServiceSlot.BeaconNetworkRuntime;
             if (serviceType == typeof(IScanLogService) ||
                 serviceType == typeof(ScanLogSystem)) return GlobalRegistryServiceSlot.ScanLogRuntime;
             if (serviceType == typeof(IToolDurabilityService) ||
@@ -8040,6 +8058,7 @@ namespace Hecton8.Core
             if (serviceType == typeof(SystemDispatcher)) return GlobalRegistryServiceSlot.Dispatcher;
             if (serviceType == typeof(RenderDispatcher)) return GlobalRegistryServiceSlot.RenderDispatcher;
             if (serviceType == typeof(GlobalPhysicsStateManager) ||
+                serviceType == typeof(IPhysicsStateEventService) ||
                 serviceType == typeof(IPhysicsCullingOverseer))
             {
                 return GlobalRegistryServiceSlot.PhysicsStateManager;

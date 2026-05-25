@@ -30,6 +30,7 @@ namespace Hecton8.World
     [DefaultExecutionOrder(-101)]
     public sealed class SargassumMicroFaunaBoids : MonoBehaviour, ITickable, IFixedTickable, ISlowTickable, ILateFrameTickable, IOriginShiftListener, Hecton8.Gameplay.IFlashlightEventListener, ISargassumGlobalDragEventListener, ISonarPingEventListener, IMicroFaunaPresentationPulseSink, IGlobalRegistryHotSwapListener
     {
+        private static int s_x001SargassumMicroFaunaBoidsSignalPushDropCount;
         private const int MaxLeviathanNodePathIterations = 4096;
         private const int WhileLoopWatchdogLimit = 10000;
         private const float FullSimulationDistanceMeters = 50f;
@@ -1623,7 +1624,7 @@ namespace Hecton8.World
 
         private HectonBiolumZone[] _deepBiolumZones;
         private float[] _deepBiolumZoneScores;
-        private BeaconNetworkSystem.BeaconSnapshot[] _formationBeaconSnapshots;
+        private BeaconNetworkSnapshot[] _formationBeaconSnapshots;
         private Collider[] _formationObstacleColliders;
         private VaultGenerationHandle<GrazingAnchorData> _grazingAnchorsHandle;
         private VaultGenerationHandle<MassiveThreatData> _massiveThreatsHandle;
@@ -1785,7 +1786,7 @@ namespace Hecton8.World
         private ISubmarineRuntimeContext _submarineRuntime;
         private IEncounterDirectorService _encounterDirector;
         private IEcosystemDirectorService _ecosystemDirector;
-        private BeaconNetworkSystem _beaconNetworkRuntime;
+        private IBeaconNetworkService _beaconNetworkRuntime;
         private AbyssalFluidDecalManager _abyssalFluidDecals;
         private bool _flashlightOn;
         private bool _parasiteModeActive;
@@ -2329,7 +2330,7 @@ namespace Hecton8.World
                     _ecosystemDirector = currentService as IEcosystemDirectorService;
                     break;
                 case GlobalRegistryServiceSlot.BeaconNetworkRuntime:
-                    _beaconNetworkRuntime = currentService as BeaconNetworkSystem;
+                    _beaconNetworkRuntime = currentService as IBeaconNetworkService;
                     break;
                 case GlobalRegistryServiceSlot.AbyssalFluidDecalRuntime:
                     _abyssalFluidDecals = currentService as AbyssalFluidDecalManager;
@@ -2371,7 +2372,7 @@ namespace Hecton8.World
                 _ecosystemDirector = GlobalRegistry.EcosystemDirector;
 
             if (_beaconNetworkRuntime == null)
-                _beaconNetworkRuntime = GlobalRegistry.BeaconNetwork;
+                _beaconNetworkRuntime = GlobalRegistry.BeaconNetworkService;
 
             if (_abyssalFluidDecals == null)
                 _abyssalFluidDecals = GlobalRegistry.AbyssalFluidDecals;
@@ -2620,7 +2621,7 @@ namespace Hecton8.World
             if (_formationBeaconSnapshots == null || _formationBeaconSnapshots.Length != 24)
             {
                 // COLD ALLOC: BeaconSnapshot[24] - nearby abyss beacon copy buffer for hive-mind formation - owner: SargassumMicroFaunaBoids
-                _formationBeaconSnapshots = new BeaconNetworkSystem.BeaconSnapshot[24];
+                _formationBeaconSnapshots = new BeaconNetworkSnapshot[24];
             }
 
             if (_formationObstacleColliders == null || _formationObstacleColliders.Length != formationObstacleCapacity * 2)
@@ -3665,7 +3666,7 @@ namespace Hecton8.World
             if (!_deepModeActive)
                 return;
 
-            BeaconNetworkSystem beaconNetwork = _beaconNetworkRuntime;
+            IBeaconNetworkService beaconNetwork = _beaconNetworkRuntime;
             if (beaconNetwork == null || _formationBeaconSnapshots == null)
                 return;
 
@@ -3684,7 +3685,7 @@ namespace Hecton8.World
             int formationCount = 0;
             for (int i = 0; i < snapshotCount && formationCount < formationBeaconLimit; i++)
             {
-                BeaconNetworkSystem.BeaconSnapshot snapshot = _formationBeaconSnapshots[i];
+                BeaconNetworkSnapshot snapshot = _formationBeaconSnapshots[i];
                 Vector3 beaconPosition = snapshot.Position;
                 if (!TryResolveAupFromRuntimeOrigin(beaconPosition, out AbsoluteUniversePosition beaconAup))
                     continue;
@@ -5699,7 +5700,7 @@ namespace Hecton8.World
                     DebrisKind = PredatorKillBloodDebrisKind,
                     Flags = PredatorKillDebrisFlags
                 };
-                SignalBus<DebrisSpawnSignal>.TryPush(in debrisSignal);
+                SignalBus<DebrisSpawnSignal>.TryPushTracked(in debrisSignal, ref s_x001SargassumMicroFaunaBoidsSignalPushDropCount);
             }
 
             AbyssalFluidDecalManager fluidDecals = _abyssalFluidDecals;
@@ -5733,7 +5734,7 @@ namespace Hecton8.World
                 Channel = FeedingFrenzyAcousticChannel,
                 Flags = FeedingFrenzyAcousticFlags
             };
-            SignalBus<AcousticPingSignal>.TryPush(in acousticPingSignal);
+            SignalBus<AcousticPingSignal>.TryPushTracked(in acousticPingSignal, ref s_x001SargassumMicroFaunaBoidsSignalPushDropCount);
             _feedingFrenzyKillCount = 0;
             _feedingFrenzyWindowStartTime = safeTime;
         }
@@ -5856,7 +5857,7 @@ namespace Hecton8.World
 
             foodChainTelemetryRing[writeIndex] = new FoodChainTelemetryEntry
             {
-                FrameIndex = unchecked((uint)Time.frameCount),
+                FrameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 StateHash = math.hash(new uint4(
                     unchecked((uint)math.max(0, _activeBoidCount)),
                     unchecked((uint)math.max(0, _debugConsumedBoidCount)),
@@ -6033,7 +6034,7 @@ namespace Hecton8.World
 
             boidSensoryBlackBox[writeIndex] = new BoidSensoryBlackBoxEntry
             {
-                FrameIndex = unchecked((uint)Time.frameCount),
+                FrameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 StateHash = math.hash(new uint4(
                     HashThreatFloat4(submarineThreat),
                     HashThreatFloat4(flashlightThreat),
@@ -6484,7 +6485,7 @@ namespace Hecton8.World
                 QualityTier = (byte)_lastSimulationLodTier
             };
 
-            SignalBus<SwarmDispersedSignal>.TryPush(in signal);
+            SignalBus<SwarmDispersedSignal>.TryPushTracked(in signal, ref s_x001SargassumMicroFaunaBoidsSignalPushDropCount);
             RecordFoodChainTelemetry(FoodChainTelemetryFlagBoidsScattered, originWS, resolvedSourceId, 0u);
         }
 

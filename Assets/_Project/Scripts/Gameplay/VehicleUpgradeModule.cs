@@ -33,6 +33,7 @@ namespace Hecton8.Gameplay
     [AddComponentMenu("Hecton8/Gameplay/Transport/Vehicle Upgrade Module")]
     public sealed class VehicleUpgradeModule : MonoBehaviour
     {
+        private static int s_x001VehicleUpgradeModuleSignalPushDropCount;
         private const ulong VisualFlagMask = 0xFFFF000000000000UL;
         private static readonly int _PressureCompensatorHashId = LocHash.Compute("Comp_PressureCompensator");
         private static readonly int _SonarAmplifierHashId = LocHash.Compute("Comp_SonarAmplifier");
@@ -194,7 +195,7 @@ namespace Hecton8.Gameplay
                 Flags = 0
             };
 
-            SignalBus<VehicleUpgradesChangedSignal>.TryPush(in signal);
+            SignalBus<VehicleUpgradesChangedSignal>.TryPushTracked(in signal, ref s_x001VehicleUpgradeModuleSignalPushDropCount);
         }
 
         private ulong ComposeAuthoredBitmask64()

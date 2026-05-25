@@ -25,6 +25,7 @@ namespace Hecton8.Core.Data
     /// </summary>
     public sealed unsafe class BabelDictionaryStore : IDisposable
     {
+        private static int s_x001BabelDictionaryStoreSignalPushDropCount;
         private const uint StateOpenHash = 0x42424F50u;
         private const uint StateMissHash = 0x42424D49u;
         private const uint StateErrorHash = 0x42424552u;
@@ -848,10 +849,10 @@ namespace Hecton8.Core.Data
             {
                 TextHash = textHash,
                 VoiceHash = voiceHash,
-                FrameIndex = (uint)Mathf.Max(0, SystemDispatcher.CurrentFrameIndex),
+                FrameIndex = SystemDispatcher.CurrentFrameId,
                 Flags = 1u
             };
-            SignalBus<PlayVoiceOverSignal>.TryPush(in signal);
+            SignalBus<PlayVoiceOverSignal>.TryPushTracked(in signal, ref s_x001BabelDictionaryStoreSignalPushDropCount);
         }
 
         private static void ReverseHeaderInPlace(ref H8BabelDictionaryHeader header)
@@ -1226,7 +1227,7 @@ namespace Hecton8.Core.Data
 
             ring[index] = new H8StaticDataTelemetryEntry
             {
-                FrameIndex = (uint)Mathf.Max(0, SystemDispatcher.CurrentFrameIndex),
+                FrameIndex = SystemDispatcher.CurrentFrameId,
                 StateHash = stateHash,
                 LastRequestedHash = requestedHash,
                 LookupCount = _frameLookupCount,
@@ -1258,7 +1259,7 @@ namespace Hecton8.Core.Data
             }
 
             uint safeOffset = offset >= 0L && offset <= uint.MaxValue ? (uint)offset : H8CacheBTree.NotFound;
-            uint frameIndex = (uint)Mathf.Max(0, SystemDispatcher.CurrentFrameIndex);
+            uint frameIndex = SystemDispatcher.CurrentFrameId;
             BTreeTelemetryAccumulatorDTO accumulator = accumulatorBuffer[0];
             H8CacheBTree.AccumulateTelemetry(
                 ref accumulator,

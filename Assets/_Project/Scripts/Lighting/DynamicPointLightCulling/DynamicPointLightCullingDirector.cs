@@ -172,6 +172,8 @@ namespace Hecton8.Lighting
             CacheDependencies();
             TryRegisterHotSwapListener();
             EnsureNativeStorage();
+            if (_nativeStorageReady)
+                EnsureGpuBuffers(DynamicPointLightCullingMath.MaximumActiveLights);
             TryRegisterDispatch();
         }
 
@@ -677,7 +679,6 @@ namespace Hecton8.Lighting
             if (!_nativeStorageReady)
                 return false;
 
-            EnsureGpuBuffers(gpuCapacity);
             WriteSelfAudit();
             int committedSourceCount = ReadCommittedSourceCount();
             if (allowMockGeneration && generateMockDataOnEnable && committedSourceCount <= 0)

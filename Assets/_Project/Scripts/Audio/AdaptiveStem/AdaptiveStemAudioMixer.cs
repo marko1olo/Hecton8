@@ -156,6 +156,7 @@ namespace Hecton8.Audio
     [AddComponentMenu("Hecton8/Audio/Adaptive Stem Audio Mixer")]
     public sealed unsafe class AdaptiveStemAudioMixer : MonoBehaviour, IUpdatable, ILateFrameTickable, ISlowTickable, IGlobalRegistryHotSwapListener
     {
+        private static int s_x001AdaptiveStemAudioMixerSignalPushDropCount;
         private const int TelemetryCapacity = 300;
 #if UNITY_EDITOR
         private const int CsvScratchBytes = 4096;
@@ -1137,9 +1138,9 @@ namespace Hecton8.Audio
         private static void EnsureDynamicMusicSignalLaneCold()
         {
             SignalBus<DynamicMusicScalarSignal>.Configure(
-                expectedCapacity: 32,
-                maxFrameSignals: 64,
-                lowTierFrameSignals: 64,
+                expectedCapacity: DynamicMusicScalarSignal.ExpectedCapacity,
+                maxFrameSignals: DynamicMusicScalarSignal.MaxFrameSignals,
+                lowTierFrameSignals: DynamicMusicScalarSignal.LowTierFrameSignals,
                 laneHash: DynamicMusicScalarSignal.LaneHash);
             SignalBus<DynamicMusicScalarSignal>.EnsureInitialized();
         }
@@ -1155,7 +1156,7 @@ namespace Hecton8.Audio
             signal.GlobalQualityWeight = math.saturate(FiniteOrFallback(quality01, 1f));
             signal.DamageImpulse01 = math.saturate(FiniteOrFallback(damageImpulse01, 0f));
             signal.SourceHash = DynamicMusicScalarSignal.SourceAdaptiveStemHash;
-            SignalBus<DynamicMusicScalarSignal>.TryPush(in signal);
+            SignalBus<DynamicMusicScalarSignal>.TryPushTracked(in signal, ref s_x001AdaptiveStemAudioMixerSignalPushDropCount);
         }
 
         private static void ApplyVolume(AudioSource source, float volume)

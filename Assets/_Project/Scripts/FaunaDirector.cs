@@ -454,6 +454,13 @@ namespace Hecton8.AI
         private bool _saveRegistered;
         private ISaveService _saveService;
         private float _slowTickAccumulator;
+        private bool _pendingResidentCreatureHydration;
+        private AbsoluteUniversePosition _pendingResidentCreatureHydrationAup;
+        private bool _pendingCreatureSpawnFlush;
+        private FaunaBiomeData _pendingCreatureSpawnBiome;
+        private ITerrainProvider _pendingCreatureSpawnBridge;
+        private Vector3 _pendingCreatureSpawnPlayerPos;
+        private AbsoluteUniversePosition _pendingCreatureSpawnPlayerAup;
         // COLD ALLOC: AcousticPanicCommand[8] - active sonar panic bridge to GPU boids - owner: FaunaDirector
         private readonly AcousticPanicCommand[] _acousticPanicCommands = new AcousticPanicCommand[AcousticPanicCommandCapacity];
         private int _acousticPanicReadIndex;
@@ -787,7 +794,7 @@ namespace Hecton8.AI
             if (_vegetationThreatBridge == null)
                 _vegetationThreatBridge = GlobalRegistry.VegetationThreat;
             if (_saveService == null)
-                _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+                _saveService = GlobalRegistry.Save;
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -852,7 +859,7 @@ namespace Hecton8.AI
                 return;
 
             if (_saveService == null)
-                _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+                _saveService = GlobalRegistry.Save;
             if (_saveService == null)
                 return;
 
@@ -955,6 +962,8 @@ namespace Hecton8.AI
         {
             CompleteResidentDataOnlySimulation(forceComplete: false);
             FlushPendingPresentationDeactivations();
+            FlushPendingResidentCreatureHydration();
+            FlushPendingCreatureSpawns();
         }
 
         private void SubscribeAcousticPingEvents()
@@ -1132,7 +1141,7 @@ namespace Hecton8.AI
             // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
             int cullCount = CullOrDehydrateDistantCreatures(in playerAup);
-            HydrateResidentCreatures(in playerAup);
+            QueueResidentCreatureHydration(in playerAup);
             OffloadPersistedTier2Fauna(in playerAup);
             ApplyThermalApexMigrationToPersistedTier2Fauna();
 
@@ -1190,15 +1199,7 @@ namespace Hecton8.AI
                 if (_biomeLookup.TryGetValue(currentBiome, out FaunaBiomeData biomeData))
                 {
                     _currentEffectiveBiomeMaxCount = ResolveEffectiveBiomeMaxCount(biomeData, _currentMatrixFaunaMood, _currentDepthZone);
-                    spawnAttempts = TrySpawnCreatures(
-                        biomeData,
-                        playerPos,
-                        in playerAup,
-                        bridge,
-                        ref spawnValidationAttempts,
-                        ref spawnValidationSuccesses,
-                        ref anchorBasedSpawns,
-                        ref fallbackRingSpawns);
+                    QueueCreatureSpawns(biomeData, playerPos, in playerAup, bridge);
                 }
             }
 
@@ -1253,10 +1254,7 @@ namespace Hecton8.AI
                     continue;
 
                 UpdateResidencyStateFromActiveCreature(in creature, in creatureAup, markDehydrated: true);
-                if (pool != null)
-                    pool.Despawn(creature.gameObject);
-                else
-                    QueuePresentationDeactivation(creature.gameObject);
+                QueuePresentationDeactivation(creature.gameObject);
 
                 AddActiveDehydrationSlot(creature.dehydrationSlotIndex);
                 SwapRemoveAt(i);
@@ -1276,11 +1274,17 @@ namespace Hecton8.AI
 
         private void FlushPendingPresentationDeactivations()
         {
+            IObjectPoolService pool = _objectPool;
             for (int i = 0; i < _pendingPresentationDeactivationCount; i++)
             {
                 GameObject target = _pendingPresentationDeactivations[i];
                 _pendingPresentationDeactivations[i] = null;
-                if (target != null && target.activeSelf)
+                if (target == null)
+                    continue;
+
+                if (pool != null)
+                    pool.Despawn(target);
+                else if (target.activeSelf)
                     target.SetActive(false);
             }
 
@@ -1557,6 +1561,51 @@ namespace Hecton8.AI
             }
 
             return spawned;
+        }
+
+        private void QueueCreatureSpawns(
+            FaunaBiomeData biomeData,
+            Vector3 playerPos,
+            in AbsoluteUniversePosition playerAup,
+            ITerrainProvider bridge)
+        {
+            _pendingCreatureSpawnBiome = biomeData;
+            _pendingCreatureSpawnPlayerPos = playerPos;
+            _pendingCreatureSpawnPlayerAup = playerAup;
+            _pendingCreatureSpawnBridge = bridge;
+            _pendingCreatureSpawnFlush = true;
+        }
+
+        private void FlushPendingCreatureSpawns()
+        {
+            if (!_pendingCreatureSpawnFlush)
+                return;
+
+            FaunaBiomeData biomeData = _pendingCreatureSpawnBiome;
+            ITerrainProvider bridge = _pendingCreatureSpawnBridge;
+            Vector3 playerPos = _pendingCreatureSpawnPlayerPos;
+            AbsoluteUniversePosition playerAup = _pendingCreatureSpawnPlayerAup;
+            _pendingCreatureSpawnFlush = false;
+            _pendingCreatureSpawnBiome = null;
+            _pendingCreatureSpawnBridge = null;
+
+            if (biomeData == null || bridge == null)
+                return;
+
+            int spawnValidationAttempts = 0;
+            int spawnValidationSuccesses = 0;
+            int anchorBasedSpawns = 0;
+            int fallbackRingSpawns = 0;
+            int spawnAttempts = TrySpawnCreatures(
+                biomeData,
+                playerPos,
+                in playerAup,
+                bridge,
+                ref spawnValidationAttempts,
+                ref spawnValidationSuccesses,
+                ref anchorBasedSpawns,
+                ref fallbackRingSpawns);
+            UpdateDiagnostics(0, spawnAttempts, spawnValidationAttempts, spawnValidationSuccesses, anchorBasedSpawns, fallbackRingSpawns);
         }
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -2899,6 +2948,21 @@ namespace Hecton8.AI
             }
 
             return hydrated;
+        }
+
+        private void QueueResidentCreatureHydration(in AbsoluteUniversePosition playerAup)
+        {
+            _pendingResidentCreatureHydrationAup = playerAup;
+            _pendingResidentCreatureHydration = true;
+        }
+
+        private void FlushPendingResidentCreatureHydration()
+        {
+            if (!_pendingResidentCreatureHydration)
+                return;
+
+            _pendingResidentCreatureHydration = false;
+            HydrateResidentCreatures(in _pendingResidentCreatureHydrationAup);
         }
 
         private void OffloadPersistedTier2Fauna(in AbsoluteUniversePosition playerAup)

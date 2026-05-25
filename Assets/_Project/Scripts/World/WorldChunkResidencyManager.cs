@@ -583,6 +583,7 @@ namespace Hecton8.World
     [DefaultExecutionOrder(-4140)] // Streaming must register after dispatcher bootstrap and before world content lanes.
     public sealed class WorldChunkResidencyManager : MonoBehaviour, ITickable, ISlowTickable, ILateFrameTickable, IBaseAirlockEventListener, IStreamingBackpressureService, IGlobalRegistryHotSwapListener, IDisposable
     {
+        private int _signalPushDropCount;
         private const int DefaultMaxChunkCount = 512;
         private const int DefaultLoadQueueCapacity = 256;
         private const int TelemetryCapacity = 300;
@@ -905,6 +906,7 @@ namespace Hecton8.World
         private bool _streamingVaultBacked;
         private bool _healthRadiusSqueezeActive;
         private bool _teleportResetPending;
+        private bool _adrenalinePoolTrimPending;
         private float _adrenalinePurgeUntilTime;
         private float _systemHealthPressure01;
         private float _lastHydrationApplyMs;
@@ -1285,18 +1287,9 @@ namespace Hecton8.World
                 AdvanceChunkResidencyRuntimeClock(deltaTime);
                 TickPredictiveSuspension();
                 ApplyAsyncUploadBudgetForQuality();
-                DrainMetabolismSignals();
                 DetectAndHandleTeleport();
                 CompleteResidencyJobIfFinished();
-                TryApplyPendingTeleportReset();
                 ProcessResidencyResults();
-                if (!_residencyJobScheduled)
-                {
-                    ProcessDeferredEvictions();
-                    ProcessLoadDispatchBudget();
-                }
-
-                TryActivateReadySubScenes();
                 UpdateChunkFade(deltaTime);
                 UpdateStreamerStressMetric();
                 WriteTelemetrySample(0L, 0u);
@@ -1314,8 +1307,6 @@ namespace Hecton8.World
             if (_residencyJobScheduled)
                 return;
 
-            PollAddressableLoads();
-            PollAddressableCacheClears();
             EvaluateAndPublishStorageBackpressure();
             EvictDistantMacroDatabaseBreadcrumbs();
             ScheduleResidencyJob();
@@ -1328,6 +1319,17 @@ namespace Hecton8.World
             RetireAsyncPagerReadTickets(ResolvePagerReadRetireBudget());
             DrainAupShiftSignals();
             DrainHlodSwapSignals();
+            PollAddressableLoads();
+            PollAddressableCacheClears();
+            DrainMetabolismSignals();
+            TryApplyPendingTeleportReset();
+            if (!_residencyJobScheduled)
+            {
+                ProcessDeferredEvictions();
+                ProcessLoadDispatchBudget();
+            }
+            TryActivateReadySubScenes();
+            FlushAdrenalinePoolTrim();
             CullExpiredHlodFadeouts();
             FlushQueuedChunkFadeMask();
             PublishLod2ImpostorResidency();
@@ -1411,7 +1413,7 @@ namespace Hecton8.World
                 Priority = priority,
                 Flags = flags,
                 Padding0 = 0,
-                Frame = unchecked((uint)Time.frameCount),
+                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 Padding1 = 0UL
             });
             if (_loadRequestQueuedByChunk != null)
@@ -1511,14 +1513,8 @@ namespace Hecton8.World
             if (!_chunkIndexById.TryGetValue(chunkId, out int index))
                 return;
 
-            if (_residencyJobScheduled)
-            {
-                QueueDeferredEviction(index, chunkId);
-                _forceResidencyEvaluation = true;
-                return;
-            }
-
-            EvictChunkNow(index, chunkId, clearAddressableCache);
+            QueueDeferredEviction(index, chunkId);
+            _forceResidencyEvaluation = true;
         }
 
         private void EvictChunkNow(int index, long chunkId, bool clearAddressableCache)
@@ -2009,7 +2005,7 @@ namespace Hecton8.World
 
             IAsyncPersistenceService persistence = GlobalRegistry.AsyncPersistence;
             if (persistence == null)
-                persistence = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance as IAsyncPersistenceService;
+                persistence = GlobalRegistry.Save as IAsyncPersistenceService;
 
             if (persistence != null)
                 _asyncPersistenceService = persistence;
@@ -2182,15 +2178,9 @@ namespace Hecton8.World
 
         private void HandleTeleport(in AbsoluteUniversePosition playerAup)
         {
-            if (_residencyJobScheduled)
-            {
-                _pendingTeleportAup = AbsoluteUniversePositionBlit.FromAup(in playerAup);
-                _teleportResetPending = true;
-                _forceResidencyEvaluation = true;
-                return;
-            }
-
-            ApplyTeleportResetNow(in playerAup);
+            _pendingTeleportAup = AbsoluteUniversePositionBlit.FromAup(in playerAup);
+            _teleportResetPending = true;
+            _forceResidencyEvaluation = true;
         }
 
         private void TryApplyPendingTeleportReset()
@@ -3057,11 +3047,11 @@ namespace Hecton8.World
             signal.LatencyEwmaMs = (float)math.max(0d, _latencyEwmaMs);
             signal.OldestPendingMs = (float)math.max(0d, oldestPendingMs);
             signal.CriticalHoleDebtMs = (float)math.max(0d, _criticalHoleDebtMs);
-            signal.Frame = unchecked((uint)Time.frameCount);
+            signal.Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             signal.Sequence = _storageDebtSequence;
             signal.PendingLoads = (ushort)math.min(ushort.MaxValue, math.max(0, pendingLoads));
             signal.Flags = flags;
-            SignalBus<StorageDebtSignal>.TryPush(in signal);
+            SignalBus<StorageDebtSignal>.TryPushTracked(in signal, ref _signalPushDropCount);
             SystemDispatcher.PublishStreamingStorageDebt(_smoothedStorageDebt01);
             CrashTelemetryBuffer.ReportStreamingBackpressureFrame(_smoothedStorageDebt01, _latencyEwmaMs, oldestPendingMs, pendingLoads);
 
@@ -3074,7 +3064,7 @@ namespace Hecton8.World
                 turbulence.Frame = signal.Frame;
                 turbulence.SourceHash = 0x5354494Fu; // "STIO"
                 turbulence.Sequence = _storageDebtSequence;
-                SignalBus<StreamingTurbulenceSignal>.TryPush(in turbulence);
+                SignalBus<StreamingTurbulenceSignal>.TryPushTracked(in turbulence, ref _signalPushDropCount);
             }
 
             PublishPdaDataLinkState(signal.Frame);
@@ -3170,7 +3160,7 @@ namespace Hecton8.World
                 notification.Frame = frame;
                 notification.Severity = 1;
                 notification.Flags = StorageDebtSignal.DataLinkDegradedFlag;
-                SignalBus<HUDNotificationSignal>.TryPush(in notification);
+                SignalBus<HUDNotificationSignal>.TryPushTracked(in notification, ref _signalPushDropCount);
                 _dataLinkDegradedNotificationPublished = true;
             }
         }
@@ -4258,11 +4248,20 @@ namespace Hecton8.World
             if (until > _adrenalinePurgeUntilTime)
                 _adrenalinePurgeUntilTime = until;
 
+            _adrenalinePoolTrimPending = true;
+
+            _forceResidencyEvaluation = true;
+        }
+
+        private void FlushAdrenalinePoolTrim()
+        {
+            if (!_adrenalinePoolTrimPending)
+                return;
+
+            _adrenalinePoolTrimPending = false;
             IObjectPoolService pool = _objectPoolManager;
             if (pool != null)
                 pool.TrimInactivePoolsForMemoryPressure(0.5f);
-
-            _forceResidencyEvaluation = true;
         }
 
         private void ForcePurgeDehydratedSector(in ResidencySectorDehydratedSignal signal)
@@ -4356,7 +4355,7 @@ namespace Hecton8.World
                 return false;
 
             WriteInt64LE(_dehydrationMetadataPayload, 0, chunkId);
-            WriteUInt32LE(_dehydrationMetadataPayload, 8, unchecked((uint)Time.frameCount));
+            WriteUInt32LE(_dehydrationMetadataPayload, 8, Hecton8.Core.SystemDispatcher.CurrentFrameId);
             WriteUInt32LE(_dehydrationMetadataPayload, 12, unchecked((uint)(byte)state));
             return persistence.TryEnqueueChunkPageWrite(
                 chunkId,
@@ -4364,7 +4363,7 @@ namespace Hecton8.World
                 _dehydrationMetadataPayload,
                 DehydrationMetadataPayloadBytes,
                 StreamingDirectorSourceHash,
-                unchecked((uint)Time.frameCount));
+                Hecton8.Core.SystemDispatcher.CurrentFrameId);
         }
 
         private static void WriteInt64LE(NativeArray<byte> payload, int offset, long value)
@@ -4387,7 +4386,7 @@ namespace Hecton8.World
                 return;
 
             uint hash = StableHash(address, chunkId);
-            MockAssetHandle mock = MockAddressables.LoadAsync(hash, index, unchecked((uint)Time.frameCount), 1);
+            MockAssetHandle mock = MockAddressables.LoadAsync(hash, index, Hecton8.Core.SystemDispatcher.CurrentFrameId, 1);
             requests[index] = new AddressablesRequestDTO
             {
                 AssetHash = mock.AssetHash,
@@ -4521,7 +4520,7 @@ namespace Hecton8.World
                 ChunkIndex = chunkIndex,
                 PrefabIndex = prefabIndex,
                 EstimatedBytes = estimatedBytes,
-                Frame = unchecked((uint)Time.frameCount),
+                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 Flags = (byte)(prefab != null ? 1 : 0),
                 _pad0 = 0,
                 _pad1 = 0,
@@ -4778,15 +4777,15 @@ namespace Hecton8.World
             if (!TryResolveChunkSignalPayload(index, state, out AbsoluteUniversePosition centerAup, out ushort radiusQ, out byte flags))
                 return;
 
-            SignalBus<ResidencySectorHydratedSignal>.TryPush(new ResidencySectorHydratedSignal
+            SignalBus<ResidencySectorHydratedSignal>.TryPushTracked(new ResidencySectorHydratedSignal
             {
                 CenterAup = centerAup,
                 ChunkId = chunkId,
-                Frame = unchecked((uint)Time.frameCount),
+                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 RadiusMetersQ = radiusQ,
                 Flags = flags,
                 ResidencyState = unchecked((byte)state)
-            });
+            }, ref _signalPushDropCount);
         }
 
         private void PublishSectorDehydratedSignal(int index, long chunkId, ChunkState state)
@@ -4794,25 +4793,25 @@ namespace Hecton8.World
             if (!TryResolveChunkSignalPayload(index, state, out AbsoluteUniversePosition centerAup, out ushort radiusQ, out byte flags))
                 return;
 
-            SignalBus<ResidencySectorDehydratedSignal>.TryPush(new ResidencySectorDehydratedSignal
+            SignalBus<ResidencySectorDehydratedSignal>.TryPushTracked(new ResidencySectorDehydratedSignal
             {
                 CenterAup = centerAup,
                 ChunkId = chunkId,
-                Frame = unchecked((uint)Time.frameCount),
+                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 RadiusMetersQ = radiusQ,
                 Flags = flags,
                 ResidencyState = unchecked((byte)state)
-            });
+            }, ref _signalPushDropCount);
 
-            SignalBus<ChunkDehydratedSignal>.TryPush(new ChunkDehydratedSignal
+            SignalBus<ChunkDehydratedSignal>.TryPushTracked(new ChunkDehydratedSignal
             {
                 CenterAup = centerAup,
                 SectorHash = chunkId,
-                Frame = unchecked((uint)Time.frameCount),
+                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 RadiusMetersQ = radiusQ,
                 Flags = flags,
                 ResidencyState = unchecked((byte)state)
-            });
+            }, ref _signalPushDropCount);
         }
 
         private bool TryResolveChunkSignalPayload(
@@ -5188,7 +5187,7 @@ namespace Hecton8.World
 
             _telemetryRing[_telemetryCursor] = new ChunkResidencyTelemetryEntry
             {
-                Frame = unchecked((uint)Time.frameCount),
+                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 Flags = flags,
                 FocusChunkId = focusChunkId,
                 PlayerGridX = playerAup.GridX,

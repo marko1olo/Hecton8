@@ -454,6 +454,12 @@ namespace Hecton8.UI
         private Quaternion _pendingCursorWorldRotation = Quaternion.identity;
         private bool _pendingPanelCameraEnabledDirty;
         private bool _pendingPanelCameraEnabled;
+        private bool _pendingQualityPresentationRefresh;
+        private bool _pendingDistanceRenderTextureRefresh;
+        private float _pendingDistanceRefreshDeltaTime;
+        private bool _pendingMaterialRefresh;
+        private bool _pendingMaterialTextureRefresh;
+        private bool _pendingMaterialDepthRefresh;
         private bool _applyingLateFramePresentation;
         private bool _matrixStateInitialized;
         private bool _canvasSettingsApplied;
@@ -563,8 +569,8 @@ namespace Hecton8.UI
             float frameDeltaTime = ResolveFrameDeltaTime(deltaTime);
             _tickUnscaledTime = ResolveFrameTimestamp(SystemDispatcher.CurrentUnscaledTimeSeconds, _tickUnscaledTime);
             RefreshPanelData(forceRefresh: false);
-            RefreshQualityPresentationIfNeeded();
-            RefreshDistanceAndRenderTexture(frameDeltaTime);
+            QueueQualityPresentationRefresh();
+            QueueDistanceRenderTextureRefresh(frameDeltaTime);
             ApplyPowerLevel();
             UpdateProxyLightRegistration();
             UpdateTerminalEffectState(frameDeltaTime);
@@ -652,17 +658,33 @@ namespace Hecton8.UI
                 ApplyCursorVisible(_pendingCursorVisible);
             }
 
-            _applyingLateFramePresentation = false;
-
             if (_presentationPausedByOwner)
             {
+                _applyingLateFramePresentation = false;
                 RefreshLateFrameRegistration();
                 return;
             }
 
+            if (_pendingQualityPresentationRefresh)
+            {
+                _pendingQualityPresentationRefresh = false;
+                RefreshQualityPresentationIfNeeded();
+            }
+
+            if (_pendingDistanceRenderTextureRefresh)
+            {
+                float pendingDeltaTime = _pendingDistanceRefreshDeltaTime;
+                _pendingDistanceRenderTextureRefresh = false;
+                _pendingDistanceRefreshDeltaTime = 0f;
+                RefreshDistanceAndRenderTexture(pendingDeltaTime);
+            }
+
+            FlushQueuedMaterialState();
+
             if (ShouldUsePhosphorDecay() && _panelRenderTexture != null)
                 ApplyMaterialState(forceTextureRefresh: true, forceDepthRefresh: false);
 
+            _applyingLateFramePresentation = false;
             RefreshLateFrameRegistration();
         }
 
@@ -1572,7 +1594,7 @@ namespace Hecton8.UI
                 return;
 
             _appliedPowerLevel = powerLevel;
-            ApplyMaterialState(forceTextureRefresh: materialChanged, forceDepthRefresh: materialChanged);
+            QueueMaterialState(forceTextureRefresh: materialChanged, forceDepthRefresh: materialChanged);
         }
 
         private void RefreshPanelOutputMaterialPropertyCache()
@@ -1673,7 +1695,41 @@ namespace Hecton8.UI
             }
 
             if (math.abs(previousGlitch - _terminalDamageGlitch) > 0.0001f)
-                ApplyMaterialState(forceTextureRefresh: false, forceDepthRefresh: false);
+                QueueMaterialState(forceTextureRefresh: false, forceDepthRefresh: false);
+        }
+
+        private void QueueQualityPresentationRefresh()
+        {
+            _pendingQualityPresentationRefresh = true;
+            RefreshLateFrameRegistration();
+        }
+
+        private void QueueDistanceRenderTextureRefresh(float deltaTime)
+        {
+            _pendingDistanceRenderTextureRefresh = true;
+            _pendingDistanceRefreshDeltaTime = math.max(_pendingDistanceRefreshDeltaTime, math.max(0f, deltaTime));
+            RefreshLateFrameRegistration();
+        }
+
+        private void QueueMaterialState(bool forceTextureRefresh, bool forceDepthRefresh)
+        {
+            _pendingMaterialRefresh = true;
+            _pendingMaterialTextureRefresh |= forceTextureRefresh;
+            _pendingMaterialDepthRefresh |= forceDepthRefresh;
+            RefreshLateFrameRegistration();
+        }
+
+        private void FlushQueuedMaterialState()
+        {
+            if (!_pendingMaterialRefresh)
+                return;
+
+            bool forceTextureRefresh = _pendingMaterialTextureRefresh;
+            bool forceDepthRefresh = _pendingMaterialDepthRefresh;
+            _pendingMaterialRefresh = false;
+            _pendingMaterialTextureRefresh = false;
+            _pendingMaterialDepthRefresh = false;
+            ApplyMaterialState(forceTextureRefresh, forceDepthRefresh);
         }
 
         private void UpdateProxyLightRegistration()
@@ -2397,6 +2453,12 @@ namespace Hecton8.UI
             _pendingCursorVisibilityDirty = false;
             _pendingCursorPoseDirty = false;
             _pendingPanelCameraEnabledDirty = false;
+            _pendingQualityPresentationRefresh = false;
+            _pendingDistanceRenderTextureRefresh = false;
+            _pendingDistanceRefreshDeltaTime = 0f;
+            _pendingMaterialRefresh = false;
+            _pendingMaterialTextureRefresh = false;
+            _pendingMaterialDepthRefresh = false;
         }
 
         private void TryRegisterTick()
@@ -2419,7 +2481,10 @@ namespace Hecton8.UI
             bool hasPendingLateFrameWork =
                 _pendingCursorVisibilityDirty ||
                 _pendingCursorPoseDirty ||
-                _pendingPanelCameraEnabledDirty;
+                _pendingPanelCameraEnabledDirty ||
+                _pendingQualityPresentationRefresh ||
+                _pendingDistanceRenderTextureRefresh ||
+                _pendingMaterialRefresh;
             bool shouldRegisterLateFrame =
                 isActiveAndEnabled &&
                 Application.isPlaying &&

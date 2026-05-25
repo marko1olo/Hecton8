@@ -18,6 +18,7 @@ namespace Hecton8.Tools
     /// </summary>
     internal static class WfcLaserCutRuntime
     {
+        private static int s_x001WfcLaserCutRuntimeSignalPushDropCount;
         private const int BlackBoxFrameCount = 300;
         private const uint BlackBoxDumpMagic = 0x5746434Cu; // WFCL
         private const uint BlackBoxDumpVersion = 1u;
@@ -451,7 +452,7 @@ namespace Hecton8.Tools
                 Flags = DebrisSpawnSignal.FlagToolSparks,
                 Quantity = sparkQuantity
             };
-            SignalBus<DebrisSpawnSignal>.TryPush(in debris);
+            SignalBus<DebrisSpawnSignal>.TryPushTracked(in debris, ref s_x001WfcLaserCutRuntimeSignalPushDropCount);
 
             ToolAcousticSignal acoustic = new ToolAcousticSignal
             {
@@ -464,7 +465,7 @@ namespace Hecton8.Tools
                 State = ToolAcousticSignal.StateLaserLoop,
                 Flags = ToolAcousticSignal.FlagLooping
             };
-            SignalBus<ToolAcousticSignal>.TryPush(in acoustic);
+            SignalBus<ToolAcousticSignal>.TryPushTracked(in acoustic, ref s_x001WfcLaserCutRuntimeSignalPushDropCount);
 
             HapticRequest haptic = new HapticRequest
             {
@@ -476,7 +477,7 @@ namespace Hecton8.Tools
                 Channel = HapticRequest.ChannelMicroVibration,
                 Flags = HapticRequest.FlagMicroVibration
             };
-            SignalBus<HapticRequest>.TryPush(in haptic);
+            SignalBus<HapticRequest>.TryPushTracked(in haptic, ref s_x001WfcLaserCutRuntimeSignalPushDropCount);
         }
 
         private static uint ComposeDoorTargetHash(ulong sectorHash, ushort cellIndex)

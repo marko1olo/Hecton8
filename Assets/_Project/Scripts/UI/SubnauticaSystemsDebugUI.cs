@@ -282,7 +282,12 @@ namespace Hecton8.UI
             object currentService)
         {
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && isActiveAndEnabled)
+            {
+                _registered = false;
+                _slowTickRegistered = false;
+                _lateFrameRegistered = false;
                 TryRegister();
+            }
         }
 
         private void TryRegister()

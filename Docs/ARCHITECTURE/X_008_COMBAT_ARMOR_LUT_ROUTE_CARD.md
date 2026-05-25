@@ -78,7 +78,9 @@ For 100 pellets, lookup work is 100 independent dot/abs/saturate/floor/clamp/ind
 
 Covered surfaces: `EvaluateArmorPenetrationJob.Execute`, `EvaluateArmorPenetrationCore`, `ResolveArmorAngleStep`, `BuildArmorPenetrationResolvedHit`, `NormalizeArmorLookup`, `ResolveArmorSurfaceNormal`, `CombatDamageRuntime.ResolveExactDirection`.
 
-Current source proof: zero explicit `if/switch/?`, loops, forbidden trig, or angle APIs in checked blocks. Hidden-helper gate: `armorRuntimeResolveExactDirectionCallCount=0`, `surfaceNormalUsesNormalizeArmorLookup=true`, `deflectFeedbackUsesNormalizeArmorLookup=true`. Target-machine proof still requires Burst disassembly.
+Current source proof: zero explicit `if/switch/?`, loops, forbidden trig, or angle APIs in checked blocks.
+
+Hidden-helper gate: `armorRuntimeResolveExactDirectionCallCount=0`, `surfaceNormalUsesNormalizeArmorLookup=true`, `deflectFeedbackUsesNormalizeArmorLookup=true`. Target-machine proof still requires Burst disassembly.
 
 Batch evaluator proof:
 

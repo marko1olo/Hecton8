@@ -8,7 +8,8 @@ Compile wall:
 
 - `Hecton8.World.VoxelTerrainSeamBinder.asmdef` owns only raw DTOs/math and references `Unity.Mathematics`.
 
-- `Hecton8.World.VoxelTerrainSeamBinder.Editor.asmdef` owns the Forge window, Burst jobs, scanner, preview, and AssetDatabase writer. It references the owned seam assembly plus Unity Burst/Collections/Jobs/Mathematics and explicit Roslyn precompiled DLLs for AST scanning only.
+- `Hecton8.World.VoxelTerrainSeamBinder.Editor.asmdef` owns Forge window, Burst jobs, scanner, preview, and AssetDatabase writer.
+- It references owned seam assembly, Unity Burst/Collections/Jobs/Mathematics, and explicit Roslyn DLLs for AST scanning only.
 
 - No sibling runtime domain reference is introduced. Terrain, voxel cave, streaming, rendering, and rollback domains are touched only through offline mesh assets and reports.
 
@@ -70,7 +71,8 @@ Verification boundary:
   - Rollback fence bytes `16..31`: magic/version/endian/reserved proof fields.
   - Removed state: inert padding in that byte range.
 
-- Brace/preprocessor balance scan over 7 owned code files passed. Three `.Complete()` calls remain only at offline editor boundaries where MeshData lifetime, AssetDatabase/report readback, or mock benchmark handoff requires completed buffers.
+- Brace/preprocessor balance scan over 7 owned code files passed.
+- Three `.Complete()` calls remain only at offline editor boundaries: MeshData lifetime, AssetDatabase/report readback, mock benchmark handoff.
 
 - Pending proof: Unity import, C# compile, Burst Inspector, mock benchmark execution.
 - Also pending: generated mesh diff, SceneView preview capture, profiler, GCMonitor.

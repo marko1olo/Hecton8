@@ -238,7 +238,10 @@ namespace Hecton8.World
             object currentService)
         {
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && currentService != null && isActiveAndEnabled)
+            {
+                _isRegistered = false;
                 RegisterTick();
+            }
         }
 
         private void TryRegisterHotSwapListener()

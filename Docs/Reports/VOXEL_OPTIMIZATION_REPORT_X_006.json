@@ -76,6 +76,8 @@
     "queued_carve_event_capacity": 64,
     "queued_carve_event_payload_bytes": 8192,
     "queued_drain_continuous_quality_scaled": true,
+    "scheduled_carve_candidate_overflow_guard_present": true,
+    "scheduled_carve_schedule_exception_blackbox_present": true,
     "scheduled_carve_write_bytes": 32,
     "scheduled_carve_write_capacity": 131072,
     "scheduled_carve_write_hot_growth_absent": true,
@@ -138,7 +140,7 @@
     "deferred_or_direct_shared_mesh_assignments": [
       {
         "file": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
-        "line": 9606,
+        "line": 9727,
         "text": "mf.sharedMesh = mesh;"
       }
     ],
@@ -146,38 +148,38 @@
     "main_thread_mesh_upload_sites": [
       {
         "file": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
-        "line": 9356,
-        "text": "static void UploadSurfaceMesh("
+        "line": 9440,
+        "text": "static bool UploadSurfaceMesh("
       },
       {
         "file": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
-        "line": 9449,
+        "line": 9542,
         "text": "Mesh.ApplyAndDisposeWritableMeshData(meshDataArray, mesh, MeshUpdateFlags.DontRecalculateBounds | MeshUpdateFlags.DontValidateIndices | MeshUpdateFlags.DontNotifyMeshUsers);"
       },
       {
         "file": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
-        "line": 9460,
-        "text": "static void UploadColliderMesh("
+        "line": 9556,
+        "text": "static bool UploadColliderMesh("
       },
       {
         "file": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
-        "line": 9510,
+        "line": 9615,
         "text": "Mesh.ApplyAndDisposeWritableMeshData(meshDataArray, mesh, MeshUpdateFlags.DontRecalculateBounds | MeshUpdateFlags.DontValidateIndices | MeshUpdateFlags.DontNotifyMeshUsers);"
       },
       {
         "file": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
-        "line": 9604,
-        "text": "UploadSurfaceMesh(mesh, positions, normals, colors, ambientOcclusionValues, curvatureValues, skirtAlphaValues, dirtyBlendValues, triangleIndices, vertCount, triIndexCount, absolutePositionOffset);"
+        "line": 9723,
+        "text": "if (!UploadSurfaceMesh(mesh, positions, normals, colors, ambientOcclusionValues, curvatureValues, skirtAlphaValues, dirtyBlendValues, triangleIndices, vertCount, triIndexCount, absolutePositionOffset))"
       },
       {
         "file": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
-        "line": 9856,
-        "text": "UploadColliderMesh(chunkMesh, colliderPositions, colliderIndices, vertexCount, indexCount);"
+        "line": 9987,
+        "text": "if (!UploadColliderMesh(chunkMesh, colliderPositions, colliderIndices, vertexCount, indexCount))"
       },
       {
         "file": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
-        "line": 10278,
-        "text": "UploadColliderMesh(chunkMesh, localPositions, localIndices, localVertexCount, chunkIndexCount);"
+        "line": 10414,
+        "text": "if (!UploadColliderMesh(chunkMesh, localPositions, localIndices, localVertexCount, chunkIndexCount))"
       }
     ],
     "managed_chunk_tracking": [],
@@ -189,6 +191,7 @@
       "continuous_quality_budget_present": true,
       "direct_upload_call_count": 3,
       "low_tier_burst_bias_present": true,
+      "mesh_data_upload_guard_present": true,
       "policy": "Unity mesh upload remains main-thread API; budget gate uses a continuous GlobalQualityWeight token bucket from 1 to 3 uploads per frame and delays later uploads behind Dear Lie visual clipping."
     },
     "native_allocations_classified": {
@@ -205,62 +208,62 @@
         },
         {
           "file": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
-          "line": 8838,
+          "line": 8922,
           "text": "array = new NativeArray<T>(requiredLength, DataVaultExemptVoxelPipelineScratchAllocator, options);"
         },
         {
           "file": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
-          "line": 939,
+          "line": 940,
           "text": "_queuedCarveEvents = new NativeQueue<VoxelCarveEvent>(DataVaultExemptVoxelCarveSignalLaneAllocator); // COLD ALLOC: NativeQueue<VoxelCarveEvent>[64] - bounded async voxel carve ingress lane - owner: VoxelDeltaProcessor"
         },
         {
           "file": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
-          "line": 4690,
+          "line": 4710,
           "text": "_compactionSourceSdfScratch = new NativeArray<byte>(CompactionSourceSdfCapacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);"
         },
         {
           "file": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
-          "line": 4691,
+          "line": 4711,
           "text": "_compactionDirtyMaskScratch = new NativeArray<uint>(ChunkDirtyMaskWordCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);"
         },
         {
           "file": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
-          "line": 4692,
+          "line": 4712,
           "text": "_compactionDeltaSdfScratch = new NativeArray<ushort>(ChunkCellCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);"
         },
         {
           "file": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
-          "line": 4693,
+          "line": 4713,
           "text": "_compactionMaterialScratch = new NativeArray<byte>(ChunkCellCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);"
         },
         {
           "file": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
-          "line": 4694,
+          "line": 4714,
           "text": "_compactionFlagsScratch = new NativeArray<byte>(ChunkCellCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);"
         },
         {
           "file": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
-          "line": 4695,
+          "line": 4715,
           "text": "_compactionOutputSdfScratch = new NativeArray<ushort>(ChunkCellCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);"
         },
         {
           "file": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
-          "line": 4696,
+          "line": 4716,
           "text": "_compactionOutputMaterialsScratch = new NativeArray<byte>(ChunkCellCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);"
         },
         {
           "file": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
-          "line": 4697,
+          "line": 4717,
           "text": "_compactionOutputFlagsScratch = new NativeArray<byte>(ChunkCellCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);"
         },
         {
           "file": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
-          "line": 4698,
+          "line": 4718,
           "text": "_compactionUniformFlagScratch = new NativeArray<byte>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);"
         },
         {
           "file": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
-          "line": 4798,
+          "line": 4818,
           "text": "_nativeSnapshotScratch = new NativeArray<byte>("
         }
       ],
@@ -270,12 +273,12 @@
       "pooled_growth": [
         {
           "file": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
-          "line": 8713,
+          "line": 8797,
           "text": "slot.SpawnPointListScratch = new NativeList<CaveSpawnData>("
         },
         {
           "file": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
-          "line": 8742,
+          "line": 8826,
           "text": "slot.ModifiedCellsScratch = new NativeParallelHashMap<int3, VoxelModifiedCell>("
         }
       ]
@@ -293,72 +296,72 @@
       },
       {
         "file": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
-        "line": 8713,
+        "line": 8797,
         "text": "slot.SpawnPointListScratch = new NativeList<CaveSpawnData>("
       },
       {
         "file": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
-        "line": 8742,
+        "line": 8826,
         "text": "slot.ModifiedCellsScratch = new NativeParallelHashMap<int3, VoxelModifiedCell>("
       },
       {
         "file": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
-        "line": 8838,
+        "line": 8922,
         "text": "array = new NativeArray<T>(requiredLength, DataVaultExemptVoxelPipelineScratchAllocator, options);"
       },
       {
         "file": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
-        "line": 939,
+        "line": 940,
         "text": "_queuedCarveEvents = new NativeQueue<VoxelCarveEvent>(DataVaultExemptVoxelCarveSignalLaneAllocator); // COLD ALLOC: NativeQueue<VoxelCarveEvent>[64] - bounded async voxel carve ingress lane - owner: VoxelDeltaProcessor"
       },
       {
         "file": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
-        "line": 4690,
+        "line": 4710,
         "text": "_compactionSourceSdfScratch = new NativeArray<byte>(CompactionSourceSdfCapacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);"
       },
       {
         "file": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
-        "line": 4691,
+        "line": 4711,
         "text": "_compactionDirtyMaskScratch = new NativeArray<uint>(ChunkDirtyMaskWordCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);"
       },
       {
         "file": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
-        "line": 4692,
+        "line": 4712,
         "text": "_compactionDeltaSdfScratch = new NativeArray<ushort>(ChunkCellCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);"
       },
       {
         "file": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
-        "line": 4693,
+        "line": 4713,
         "text": "_compactionMaterialScratch = new NativeArray<byte>(ChunkCellCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);"
       },
       {
         "file": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
-        "line": 4694,
+        "line": 4714,
         "text": "_compactionFlagsScratch = new NativeArray<byte>(ChunkCellCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);"
       },
       {
         "file": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
-        "line": 4695,
+        "line": 4715,
         "text": "_compactionOutputSdfScratch = new NativeArray<ushort>(ChunkCellCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);"
       },
       {
         "file": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
-        "line": 4696,
+        "line": 4716,
         "text": "_compactionOutputMaterialsScratch = new NativeArray<byte>(ChunkCellCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);"
       },
       {
         "file": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
-        "line": 4697,
+        "line": 4717,
         "text": "_compactionOutputFlagsScratch = new NativeArray<byte>(ChunkCellCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);"
       },
       {
         "file": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
-        "line": 4698,
+        "line": 4718,
         "text": "_compactionUniformFlagScratch = new NativeArray<byte>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);"
       },
       {
         "file": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
-        "line": 4798,
+        "line": 4818,
         "text": "_nativeSnapshotScratch = new NativeArray<byte>("
       }
     ],
@@ -366,7 +369,7 @@
     "physics_bake_calls": [
       {
         "file": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
-        "line": 3800,
+        "line": 3808,
         "text": "UnityEngine.Physics.BakeMesh(MeshId, false);"
       }
     ],
@@ -395,12 +398,15 @@
     "compaction_source_main_thread_copy_absent": true,
     "compaction_source_version_guard_present": true,
     "cut_mask_gpu_upload_fail_closed": true,
+    "cut_mask_shader_stamp_count_clamped": true,
     "damage_stamp_overflow_coalescing_present": true,
     "damage_volume_binary_quality_route_absent": true,
     "damage_volume_energy_gated": true,
     "damage_volume_gpu_upload_fail_closed": true,
     "damage_volume_quality_resize_inactive_gate_present": true,
     "damage_volume_quality_scaled": true,
+    "damage_volume_shader_active_energy_gated": true,
+    "damage_volume_shader_stamp_count_clamped": true,
     "datavault_rebind_waits_for_snapshot_lease": true,
     "dear_lie_shader_clip_present": true,
     "deferred_bake_presentation_null_mesh_mutation_absent": true,
@@ -427,11 +433,14 @@
     "pager_direct_read_staging_prewarmed": true,
     "pager_write_queue_bounded": true,
     "paging_cleanup_getcomponent_hotpath_absent": true,
+    "physics_bake_deferred_teardown_keeps_chunk_visuals": true,
     "physics_bake_force_complete_shutdown_only": true,
+    "physics_bake_job_not_burst_compiled": true,
     "physics_bake_live_job_cancellable_wait_absent": true,
     "physics_bake_overflow_teardown_nonblocking": true,
     "physics_bake_registration_failure_nonblocking": true,
     "physics_bake_schedule_backpressure_guard_present": true,
+    "physics_bake_teardown_budget_continuous_quality_scaled": true,
     "physics_bake_teardown_driver_registered_before_schedule": true,
     "published_sdf_read_accessors_pure": true,
     "published_sonar_active_staging_buffers_present": true,
@@ -472,8 +481,11 @@
     "save_voxel_snapshot_per_save_nativearray_absent": true,
     "scheduled_carve_write_buffer_fixed_capacity_present": true,
     "stamp_graphics_buffer_invalid_fail_closed": true,
+    "stamp_graphics_buffers_recreated_when_invalid": true,
     "streaming_scratch_post_lease_growth_absent": true,
+    "surface_nets_blackbox_dump_path_x006": true,
     "surface_nets_gpu_initialize_respects_inflight_release": true,
+    "surface_nets_gpu_invalid_buffer_fail_closed": true,
     "surface_nets_gpu_partial_lock_failure_unlocks": true,
     "surface_nets_gpu_release_completed_upload_nonblocking": true,
     "surface_nets_gpu_upload_capacity_fail_closed": true,
@@ -540,9 +552,12 @@
   "mesh_publication_component_cache": {
     "apply_volume_uses_source_volume": true,
     "build_welded_uses_cached_components": true,
+    "cinematic_fake_proxy_search_editor_only": true,
     "generated_volume_bound_before_mesh_publication": true,
+    "mesh_pipeline_blackbox_agent_dump_aligned": true,
     "mesh_publication_getcomponent_absent": true,
-    "policy": "Surface mesh publication and collider setup use HectonVoxelVolume cached MeshFilter/MeshRenderer/MeshCollider from VoxelPipelineData.SourceVolume. Fresh generation binds the prewarmed HectonVoxelVolume before mesh publication, so runtime generation does not fall into legacy AddComponent branches. TryGetComponent/AddComponent remain only as cold fallback for legacy/null-volume objects; malformed volumes fail closed or use cinematic fake.",
+    "policy": "Surface mesh publication and collider setup use HectonVoxelVolume cached MeshFilter/MeshRenderer/MeshCollider from VoxelPipelineData.SourceVolume. Fresh generation binds the prewarmed HectonVoxelVolume before mesh publication, so runtime generation does not fall into legacy AddComponent branches. Runtime null-volume collider fallback fails closed to visual-only publication and records a mesh-pipeline black-box flag before any component search, MeshCollider creation, or bake-proxy allocation. Cinematic fake proxy searches run only outside play mode. Mesh-pipeline black-box faults write the primary mesh-pipeline dump and the X_006 mandated agent dump. TryGetComponent/AddComponent remain only as cold editor fallback for legacy/null-volume objects; malformed volumes fail closed or use cinematic fake.",
+    "runtime_null_volume_collider_fails_closed": true,
     "volume_missing_collider_uses_fake": true,
     "volume_missing_component_fails_closed": true
   },
@@ -572,16 +587,19 @@
     "force_complete_sites": [
       {
         "file": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
-        "line": 5655,
+        "line": 5663,
         "text": "DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);"
       }
     ],
     "live_job_cancellable_frame_wait_absent": true,
     "normal_teardown_capacity": 2048,
-    "policy": "New PhysX bake jobs are refused while the deferred teardown lane cannot register or total normal+emergency teardown count is at backpressure threshold; live bake waits do not use cancellable frame awaits. If teardown driver registration fails after a bake is already scheduled, the teardown remains queued for a later lane registration. Capacity overflow uses a fixed emergency teardown lane and records blackbox state instead of force-completing on the deformation path; force-release is limited to dispatcherless shutdown/reset.",
+    "physics_bake_job_not_burst_compiled": true,
+    "policy": "New PhysX bake jobs are refused while the deferred teardown lane cannot register or total normal+emergency teardown count is at backpressure threshold; live bake waits do not use cancellable frame awaits. If teardown driver registration fails after a bake is already scheduled, the teardown remains queued for a later lane registration. Capacity overflow uses a fixed emergency teardown lane and records blackbox state instead of force-completing on the deformation path; force-release is limited to dispatcherless shutdown/reset. Teardown drain cadence is a continuous GlobalQualityWeight token bucket from 8 to 32 drains/frame, with backpressure lifting low-quality devices to the emergency drain ceiling without changing capacity.",
     "registration_failure_keeps_deferred_teardown": true,
     "schedule_precheck_present": true,
+    "teardown_budget_continuous_quality_scaled": true,
     "teardown_driver_registered_before_bake_schedule": true,
+    "teardown_renderer_lookup_destroy_owner_only": true,
     "total_tracked_teardown_capacity": 2560
   },
   "published_sonar_snapshot": {
@@ -640,8 +658,10 @@
     "architecture_overflow_policy": "VoxelDeltaCompressionArchitecture WAL packing and enqueue reject payloads over MaxVoxelDeltaWalPayloadBytes before they reach the pager write queue.",
     "architecture_queue_growth_unbounded": false,
     "architecture_wal_payload_guard_present": true,
-    "architecture_worst_case_exceeds_sector_payload_by_bytes": 96,
+    "architecture_worst_case_exceeds_sector_payload_by_bytes": 0,
     "chunk_cell_count": 32768,
+    "compression_telemetry_dump_path_aligned": true,
+    "max_voxel_delta_rle_runs_per_wal_payload": 32756,
     "native_effective_worst_case_exceeds_sector_payload_by_bytes": 0,
     "native_snapshot_chunk_header_delta_rle": {
       "bytes": 40,
@@ -688,10 +708,11 @@
     },
     "sector_payload_bytes": 262080,
     "vault_buffer_cell_capacity_fixed_to_chunk": true,
-    "vault_buffer_run_capacity_clamped_to_chunk": true,
+    "vault_buffer_run_capacity_clamped_to_wal_payload": true,
     "vault_buffer_sector_stats_capacity_clamped": true,
     "vault_buffer_staging_capacity_clamped_to_wal_payload": true,
-    "voxel_delta_architecture_worst_case_payload_bytes": 262176,
+    "voxel_delta_architecture_full_chunk_theoretical_payload_bytes": 262176,
+    "voxel_delta_architecture_worst_case_payload_bytes": 262080,
     "voxel_delta_header_dto": {
       "bytes": 32,
       "offsets": {
@@ -755,9 +776,11 @@
     "carve_queue_growth_unbounded": false,
     "carve_queue_overflow_policy": "Ingress, pending, and scheduled write buffers are fixed-size. Under saturation, compatible newest laser cuts coalesce into a capsule/radius-expanded command; incompatible overload is shed through the black-box overflow flag instead of growing memory. Queue drain and scheduled carve commit use continuous GlobalQualityWeight token buckets; backlog raises commit cadence without changing memory capacity.",
     "damage_volume_pressure": {
+      "active_stamp_buffers_validated_before_dispatch": true,
       "aup_precision_note": "Current visual route uploads float4 world position/radius into a damage-volume stamp buffer; it is bounded but not a double3 AUP parameter buffer.",
       "binary_qualitysettings_route_absent": true,
       "cut_mask_overflow_coalescing_present": true,
+      "cut_mask_shader_stamp_count_clamped": true,
       "cut_mask_stamp_capacity_per_frame": 16,
       "cut_mask_stamp_command_bytes": 16,
       "cut_mask_stamp_command_offsets": {
@@ -773,6 +796,7 @@
       },
       "damage_stamp_graphics_buffer_bytes": 512,
       "damage_volume_overflow_coalescing_present": true,
+      "damage_volume_shader_stamp_count_clamped": true,
       "damage_volume_upload_fail_closed_present": true,
       "default_damage_volume_resolution_xzy": [
         64,
@@ -801,7 +825,9 @@
       "overflow_policy": "Same-frame stamp queues are bounded; when capacity is saturated, the newest visual stamp expands the final command slot coverage radius instead of overwriting its center, growing the GraphicsBuffer, or allocating.",
       "quality_resize_inactive_gate_present": true,
       "quality_scaled_runtime_dimensions_present": true,
-      "stamp_graphics_buffer_invalid_fail_closed": true
+      "shader_active_energy_gated_present": true,
+      "stamp_graphics_buffer_invalid_fail_closed": true,
+      "stamp_graphics_buffers_recreated_when_invalid": true
     },
     "duration_seconds": 120,
     "frames": 7200,
@@ -822,6 +848,12 @@
     "scheduled_carve_write_payload_bytes": 4194304,
     "single_laser_stamps_per_frame": 1,
     "single_laser_total_stamps": 7200
+  },
+  "surface_nets_blackbox_dump": {
+    "agent_dump_path_aligned": true,
+    "old_agent_dump_path_absent": true,
+    "policy": "Surface Nets black-box dump keeps the legacy mesh surgeon file and writes the X_006 voxel forensic dump required by the batch prompt.",
+    "writes_primary_and_agent_dump": true
   },
   "surface_nets_datavault_pool": {
     "constants": {
@@ -966,11 +998,16 @@
     "begin_upload_rejects_pending_release": true,
     "dispatcher_present": true,
     "finalize_completes_completed_job_before_unlock": true,
+    "finalize_invalid_upload_resource_fails_closed": true,
     "finalize_no_precomplete_wait": true,
+    "graphics_buffer_validity_guard_present": true,
     "initialize_respects_inflight_release": true,
+    "invalid_release_skips_dead_graphics_buffers": true,
+    "invalid_unlock_skips_dead_graphics_buffers": true,
+    "invalid_upload_resource_releases_for_cold_recreate": true,
     "lock_buffer_route_present": true,
     "partial_lock_failure_unlocks_buffers": true,
-    "policy": "GPU upload finalization calls JobHandle.Complete only after IsCompleted is already true, then unlocks GraphicsBuffer write ranges. Upload begin fails closed on vertex/index/indirect-args capacity defects instead of silently truncating mesh payloads, marks Uploading only after buffers are locked and the copy job is scheduled, and unlocks partial LockBufferForWrite acquisitions on exception. Initialize and release defer buffer destruction while an unfinished upload prevents TryRelease; a pending release rejects new uploads and drains after natural job completion.",
+    "policy": "GPU upload finalization calls JobHandle.Complete only after IsCompleted is already true, then unlocks GraphicsBuffer write ranges. Upload begin fails closed on vertex/index/indirect-args capacity defects instead of silently truncating mesh payloads, rejects invalid GraphicsBuffer resources before LockBufferForWrite, marks Uploading only after buffers are locked and the copy job is scheduled, and unlocks partial LockBufferForWrite acquisitions only when their buffers remain valid. Finalize rejects invalidated pending upload resources before publishing Uploaded state. Initialize and release defer buffer destruction while an unfinished upload prevents TryRelease; a pending release rejects new uploads and drains after natural job completion. Cold release skips Release() on already-invalid GraphicsBuffer handles and nulls the managed wrapper for recreation.",
     "release_completed_upload_without_wait": true,
     "release_request_deferred_nonblocking": true,
     "upload_capacity_fail_closed": true,
@@ -991,12 +1028,12 @@
     "force_complete_hits": [
       {
         "file": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
-        "line": 4574,
+        "line": 4594,
         "text": "DispatcherJobFence.TryComplete(ref _scheduledCarveHandle, forceComplete: true);"
       },
       {
         "file": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
-        "line": 4677,
+        "line": 4697,
         "text": "DispatcherJobFence.TryComplete(ref _scheduledCompactionHandle, forceComplete: true);"
       }
     ],
@@ -1008,12 +1045,12 @@
     "shutdown_only_force_complete_hits": [
       {
         "file": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
-        "line": 4574,
+        "line": 4594,
         "text": "DispatcherJobFence.TryComplete(ref _scheduledCarveHandle, forceComplete: true);"
       },
       {
         "file": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
-        "line": 4677,
+        "line": 4697,
         "text": "DispatcherJobFence.TryComplete(ref _scheduledCompactionHandle, forceComplete: true);"
       }
     ],

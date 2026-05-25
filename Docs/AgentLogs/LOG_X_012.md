@@ -1098,3 +1098,81 @@ Proof:
 - `git diff --check` on touched docs/tooling/proof artifacts: exit `0`; LF/CRLF warnings only.
 - Source constants preserved: save version `0x000B`, save header `56`, SignalBus lane capacity `512`, H8DM header `64`, payload `1,064,384` bytes.
 - C# runtime source untouched by X_012 Loop 20. No `dotnet build` launched.
+## 2026-05-25 - Loop 21 APEX 31-Word Density Pass
+
+What was wrong:
+- Active `Docs/ARCHITECTURE` still held `96` prose/list/table blocks at `>=31` scanner words.
+- Prompt example `SignalBus 256` remained stale against source; source still defines lane capacity `512`.
+
+What was done:
+- Manually split residual `>=31` word architecture blocks with `apply_patch`; no script-driven prose rewrite.
+- Hardened `Tools/OOP_Doc_Scanner.py` so architecture paragraphs, sentences, and structured lines fail at `>30` words.
+- Added `Docs/Reports/ARCHITECTURE_31WORD_DENSITY_AUDIT_X_012.json`.
+- Indexed the artifact in `Docs/README.md`, `Docs/Reports/README.md`, and `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`.
+- Normalized two parallel-agent report markdown files to UTF-8 BOM after structure validation flagged encoding drift.
+
+Cinematic Cheats used:
+- Documentation-only cycle. No runtime simulation, renderer, physics, AI, save, or DTO code changed.
+
+Exact Microseconds saved:
+- Runtime: `0 us`.
+- Documentation proof: active text reduction `54.87674634739819%`; active architecture blocks at `>=31` words `0`.
+
+Validation:
+- `python Tools\OOP_Doc_Scanner.py`: `finalPass=true`, active files `592`, active words `540383`, architecture words `164368`, stale parameter files `0`, source sync `true`.
+- `python Tools\VerifyDocStructure.py`: `pass=true`, root text docs `3`, broken links `0`, duplicate headers `0`, fence issues `0`, stale parameter files `0`, non-BOM active files `0`.
+- Source constants: save version `0x000B`; save header `56`; legacy header `44`; SignalBus lane capacity `512`; H8DM header `64`; payload `1,064,384` bytes.
+- C# source untouched; no `dotnet build` launched.
+
+## 2026-05-25 - Loop 23 APEX 29-Word Density Pass
+
+What was wrong:
+- Active `Docs/ARCHITECTURE` still held `122` prose/list/table blocks at `>=29` scanner words.
+- The active scanner still allowed exactly 29-word architecture blocks because the hard gate failed only at `>29`.
+
+What was done:
+- Manually split residual `>=29` word architecture blocks with `apply_patch`; no script-driven prose rewrite.
+- Hardened `Tools/OOP_Doc_Scanner.py` so architecture paragraphs, sentences, and structured lines fail at `>28` words.
+- Added `Docs/Reports/ARCHITECTURE_29WORD_DENSITY_AUDIT_X_012.json`.
+- Indexed the artifact in `Docs/README.md`, `Docs/Reports/README.md`, and `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`.
+- Normalized `Docs/Reports/SIGNAL_DTO_CONTRACT_AND_DIRECT_TRYPUSH_CLOSURE_X_001.md` to UTF-8 BOM after structure validation flagged external encoding drift.
+
+Cinematic Cheats used:
+- Documentation-only cycle. No runtime simulation, renderer, physics, AI, save, or DTO code changed.
+
+Exact Microseconds saved:
+- Runtime: `0 us`.
+- Documentation proof: final active text reduction `54.71277175135032%`; active architecture blocks at `>=29` words `0`.
+
+Validation:
+- `python Tools\OOP_Doc_Scanner.py`: `finalPass=true`, active files `596`, active words `543819`, architecture words `163717`, stale parameter files `0`, source sync `true`.
+- `python Tools\VerifyDocStructure.py`: `pass=true`, active docs `596`, root text docs `3`, broken links `0`, duplicate headers `0`, fence issues `0`, stale parameter files `0`, non-BOM active files `0`.
+- Source constants: save version `0x000B`; save header `56`; legacy header `44`; SignalBus lane capacity `512`; H8DM header `64`; payload `1,064,384` bytes.
+- C# source untouched; no `dotnet build` launched.
+
+## 2026-05-25 - Loop 22 APEX 30-Word Density Pass
+
+What was wrong:
+- Active `Docs/ARCHITECTURE` still held `107` prose/list/table blocks at `>=30` scanner words.
+- Parallel-agent docs added new active ledger rows above the tightened `>29` gate during indexing.
+
+What was done:
+- Manually split residual `>=30` word architecture blocks with `apply_patch`; no script-driven prose rewrite.
+- Hardened `Tools/OOP_Doc_Scanner.py` so architecture paragraphs, sentences, and structured lines fail at `>29` words.
+- Added `Docs/Reports/ARCHITECTURE_30WORD_DENSITY_AUDIT_X_012.json`.
+- Indexed the artifact in `Docs/README.md`, `Docs/Reports/README.md`, and `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`.
+- Manually split new active ledger rows in `GLOBAL_AUTHORITY_MIGRATION_LEDGER.md` and `HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`.
+- Normalized current report markdown files to UTF-8 BOM after structure validation flagged encoding drift.
+
+Cinematic Cheats used:
+- Documentation-only cycle. No runtime simulation, renderer, physics, AI, save, or DTO code changed.
+
+Exact Microseconds saved:
+- Runtime: `0 us`.
+- Documentation proof: final active text reduction `54.727998480643194%`; active architecture blocks at `>=30` words `0`.
+
+Validation:
+- `python Tools\OOP_Doc_Scanner.py`: `finalPass=true`, active files `595`, active words `543494`, architecture words `164257`, stale parameter files `0`, source sync `true`.
+- `python Tools\VerifyDocStructure.py`: `pass=true`, active docs `595`, root text docs `3`, broken links `0`, duplicate headers `0`, fence issues `0`, stale parameter files `0`, non-BOM active files `0`.
+- Source constants: save version `0x000B`; save header `56`; legacy header `44`; SignalBus lane capacity `512`; H8DM header `64`; payload `1,064,384` bytes.
+- C# source untouched; no `dotnet build` launched.

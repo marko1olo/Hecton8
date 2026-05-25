@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -371,6 +371,7 @@ namespace Hecton8.Gameplay
     [DisallowMultipleComponent]
     public sealed class ScannerDataMiningRouter : MonoBehaviour, IFastTickable, ISlowTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
+        private int _signalPushDropCount;
         public const uint MetadataToolLevelMask = 0x000000FFu;
         public const uint MetadataFlagDepletable = 1u << 8;
         public const uint MetadataFlagFlora = 1u << 9;
@@ -986,7 +987,7 @@ namespace Hecton8.Gameplay
                 State = ToolAcousticStateScanner,
                 Flags = 0
             };
-            SignalBus<ToolAcousticSignal>.TryPush(in acousticSignal);
+            SignalBus<ToolAcousticSignal>.TryPushTracked(in acousticSignal, ref _signalPushDropCount);
         }
 
         private void RouteCompletionIfNeeded(
@@ -1000,7 +1001,7 @@ namespace Hecton8.Gameplay
 
             AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromAbsolutePosition(result.AUP);
             uint frame = ResolveSimulationFrame();
-            SignalBus<EncyclopediaUnlockSignal>.TryPush(new EncyclopediaUnlockSignal
+            SignalBus<EncyclopediaUnlockSignal>.TryPushTracked(new EncyclopediaUnlockSignal
             {
                 EntityHash = result.EntityHash,
                 SourceHash = ScannerToolHash,
@@ -1011,7 +1012,7 @@ namespace Hecton8.Gameplay
                 RequiredToolLevel = (ushort)math.min(ushort.MaxValue, toolLevel),
                 Reserved0 = 0u,
                 Reserved1 = 0UL
-            });
+            }, ref _signalPushDropCount);
             ScanCompleteSignal scanComplete = new ScanCompleteSignal
             {
                 PositionAup = aup,
@@ -1021,12 +1022,12 @@ namespace Hecton8.Gameplay
                 ReconKind = (byte)ScanEntryKind.Scannable,
                 Flags = 0
             };
-            SignalBus<ScanCompleteSignal>.TryPush(in scanComplete);
+            SignalBus<ScanCompleteSignal>.TryPushTracked(in scanComplete, ref _signalPushDropCount);
             ScanEvents.TryRaiseEntryDiscovered(result.EntityHash, result.EntityHash, 0u, 0u, ScanEntryKind.Scannable);
 
             if ((state.MetadataFlags & MetadataFlagDepletable) != 0u)
             {
-                SignalBus<EntityDepletedSignal>.TryPush(new EntityDepletedSignal
+                SignalBus<EntityDepletedSignal>.TryPushTracked(new EntityDepletedSignal
                 {
                     EntityHash = result.EntityHash,
                     SourceHash = ScannerToolHash,
@@ -1036,7 +1037,7 @@ namespace Hecton8.Gameplay
                     Flags = 0,
                     SectorHash = state.SectorHash,
                     DepletionMask = state.DepletionMask
-                });
+                }, ref _signalPushDropCount);
                 ResourceDepletionDeltaSignal depletionDelta = new ResourceDepletionDeltaSignal
                 {
                     SectorHash = state.SectorHash,
@@ -1047,10 +1048,10 @@ namespace Hecton8.Gameplay
                     Operation = 1,
                     Flags = 0
                 };
-                SignalBus<ResourceDepletionDeltaSignal>.TryPush(in depletionDelta);
+                SignalBus<ResourceDepletionDeltaSignal>.TryPushTracked(in depletionDelta, ref _signalPushDropCount);
             }
 
-            SignalBus<AcousticPingSignal>.TryPush(new AcousticPingSignal
+            SignalBus<AcousticPingSignal>.TryPushTracked(new AcousticPingSignal
             {
                 PositionAup = aup,
                 RadiusMeters = math.max(1f, result.Distance * 0.25f),
@@ -1058,7 +1059,7 @@ namespace Hecton8.Gameplay
                 SourceId = ScannerToolHash,
                 Channel = AcousticPingSignal.ChannelActiveSonar,
                 Flags = AcousticPingSignal.FlagActiveSonar
-            });
+            }, ref _signalPushDropCount);
 
             TryEvaluateCompletionScalar(in result, in state, views);
             _completionCount++;
@@ -1191,7 +1192,7 @@ namespace Hecton8.Gameplay
 
         private void PublishDumpAnomaly(uint scalar)
         {
-            SignalBus<AnomalySignal>.TryPush(new AnomalySignal
+            SignalBus<AnomalySignal>.TryPushTracked(new AnomalySignal
             {
                 SystemHash = ScannerToolHash,
                 AnomalyHash = ScannerDumpReasonHash,
@@ -1199,9 +1200,9 @@ namespace Hecton8.Gameplay
                 Frame = ResolveSimulationFrame(),
                 Severity = 2,
                 Flags = 0
-            });
+            }, ref _signalPushDropCount);
 
-            SignalBus<CrashTelemetrySignal>.TryPush(new CrashTelemetrySignal
+            SignalBus<CrashTelemetrySignal>.TryPushTracked(new CrashTelemetrySignal
             {
                 SystemHash = ScannerToolHash,
                 ReasonHash = ScannerAnomalyHash,
@@ -1211,7 +1212,7 @@ namespace Hecton8.Gameplay
                 NativeTrackedBytesMb = 0f,
                 Severity = 1,
                 Flags = 0
-            });
+            }, ref _signalPushDropCount);
         }
 
         private bool EnsureVaultState()

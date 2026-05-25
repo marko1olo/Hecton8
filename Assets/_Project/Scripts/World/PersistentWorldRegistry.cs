@@ -940,6 +940,7 @@ namespace Hecton8.World
         private bool _serviceRegistered;
         private bool _hotSwapRegistered;
         private bool _hydrationSessionRunning;
+        private bool _hydrationSessionStartPending;
         private bool _playerChunkValid;
         private bool _hasLastHydrationScanAup;
         private ushort _hydrationFrameCounter;
@@ -947,9 +948,11 @@ namespace Hecton8.World
         private int _hydrationSessionVersion;
         private int3 _currentPlayerChunk;
         private int2 _currentPlayerSector;
+        private int2 _pendingIndexedSectorPagingCenter;
         private AbsoluteUniversePosition _lastHydrationScanAup;
         private bool _indexedSectorPagingEnabled;
         private bool _indexedSectorPagingInFlight;
+        private bool _indexedSectorPagingStartPending;
         private bool _playerSectorValid;
         private bool _sectorOverrideCommitInFlight;
         private float _nextSectorOverrideCommitTime;
@@ -1470,8 +1473,6 @@ namespace Hecton8.World
         public void Tick(float dt)
         {
             AdvanceWorldClock(dt);
-            _resolvedItemCatalog?.DrainDeferredWorldPrefabReleases(4);
-            DrainDehydrateQueue(MaxDehydrationsPerTick);
         }
 
         private void AdvanceWorldClock(float deltaTime)
@@ -1489,6 +1490,10 @@ namespace Hecton8.World
 
         public void LateFrameTick()
         {
+            _resolvedItemCatalog?.DrainDeferredWorldPrefabReleases(4);
+            DrainDehydrateQueue(MaxDehydrationsPerTick);
+            TryStartPendingIndexedSectorPaging();
+            TryRunPendingHydrationSessionLateFrame();
             DrainPendingEntityStateTempWrites(MaxEntityStateTempWriteCompletionsPerTick);
             TryFinalizeTombstoneDecaySweepNoWait(MaxTombstoneDecayAppliesPerLateFrame);
             if (_tombstoneDecayApplyPending)
@@ -2606,6 +2611,7 @@ namespace Hecton8.World
 
             _indexedSectorPagingEnabled = false;
             _indexedSectorPagingInFlight = false;
+            _indexedSectorPagingStartPending = false;
             _playerSectorValid = false;
             _indexedSectorSavePath = string.Empty;
             _indexedSectorOverrideDirectory = string.Empty;
@@ -2619,8 +2625,23 @@ namespace Hecton8.World
             if (!_indexedSectorPagingEnabled || _indexedSectorPagingInFlight || string.IsNullOrEmpty(_indexedSectorSavePath))
                 return;
 
+            _pendingIndexedSectorPagingCenter = centerSector;
+            _indexedSectorPagingStartPending = true;
+        }
+
+        private void TryStartPendingIndexedSectorPaging()
+        {
+            if (!_indexedSectorPagingStartPending ||
+                !_indexedSectorPagingEnabled ||
+                _indexedSectorPagingInFlight ||
+                string.IsNullOrEmpty(_indexedSectorSavePath))
+            {
+                return;
+            }
+
+            _indexedSectorPagingStartPending = false;
             _indexedSectorPagingInFlight = true;
-            _ = RunIndexedSectorPagingAsync(centerSector);
+            _ = RunIndexedSectorPagingAsync(_pendingIndexedSectorPagingCenter);
         }
 
         private async Awaitable RunIndexedSectorPagingAsync(int2 centerSector)
@@ -2889,7 +2910,7 @@ namespace Hecton8.World
 
         private void CacheRegistryServicesCold()
         {
-            _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+            _saveService = GlobalRegistry.Save;
             _playerRuntimeContext = GlobalRegistry.Player;
             _playerInventoryService = GlobalRegistry.PlayerInventory;
         }
@@ -5595,9 +5616,38 @@ namespace Hecton8.World
             if (_pendingHydrationReadIndex >= _pendingHydrationRecords.Length)
                 return;
 
-            _hydrationSessionRunning = true;
-            int sessionVersion = ++_hydrationSessionVersion;
-            _ = RunHydrationSessionAsync(sessionVersion);
+            _hydrationSessionStartPending = true;
+        }
+
+        private void TryRunPendingHydrationSessionLateFrame()
+        {
+            if (!_pendingHydrationRecords.IsCreated)
+                return;
+
+            if (!_hydrationSessionRunning && _hydrationSessionStartPending)
+            {
+                CompactPendingHydrationQueueIfDrained();
+                if (_pendingHydrationReadIndex >= _pendingHydrationRecords.Length)
+                {
+                    _hydrationSessionStartPending = false;
+                    return;
+                }
+
+                _hydrationSessionStartPending = false;
+                _hydrationSessionRunning = true;
+                _hydrationSessionVersion++;
+            }
+
+            if (!_hydrationSessionRunning)
+                return;
+
+            if (TryProcessHydrationBurst())
+                return;
+
+            _hydrationSessionRunning = false;
+            CompactPendingHydrationQueueIfDrained();
+            if (_pendingHydrationRecords.IsCreated && _pendingHydrationReadIndex < _pendingHydrationRecords.Length)
+                _hydrationSessionStartPending = true;
         }
 
         private async Awaitable RunHydrationSessionAsync(int sessionVersion)
@@ -5698,6 +5748,7 @@ namespace Hecton8.World
         {
             _hydrationSessionVersion++;
             _hydrationSessionRunning = false;
+            _hydrationSessionStartPending = false;
             _pendingHydrationReadIndex = 0;
 
             if (clearQueue && _pendingHydrationRecords.IsCreated)

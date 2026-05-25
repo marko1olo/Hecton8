@@ -431,8 +431,9 @@ namespace Hecton8.Physics
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-8995)]
-    public sealed partial class GlobalPhysicsStateManager : MonoBehaviour, IFixedTickable, ILateFrameTickable, IPostFixedTickable, IOriginShiftListener, IAcousticPingEventListener, IPhysicsAcousticImpulseEventListener, IPhysicsImpactEventListener, IPhysicsCullingOverseer, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener
+    public sealed partial class GlobalPhysicsStateManager : MonoBehaviour, IFixedTickable, ILateFrameTickable, IPostFixedTickable, IOriginShiftListener, IAcousticPingEventListener, IPhysicsAcousticImpulseEventListener, IPhysicsImpactEventListener, IPhysicsCullingOverseer, IPhysicsStateEventService, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener
     {
+        private static int s_x001GlobalPhysicsStateManagerSignalPushDropCount;
         private struct VaultBufferBinding<T>
             where T : struct
         {
@@ -904,6 +905,41 @@ namespace Hecton8.Physics
         public bool IsServiceReady => _isInitialized;
 
         /// <inheritdoc />
+        public bool IsInitialized => _isInitialized;
+
+        /// <inheritdoc />
+        public void QueueKinematicImpactEvent(
+            Rigidbody primaryBody,
+            Rigidbody secondaryBody,
+            Vector3 point,
+            Vector3 normal,
+            float impactSpeedMetersPerSecond)
+        {
+            if (primaryBody == null)
+                return;
+
+            QueueKinematicImpactInternal(primaryBody, secondaryBody, point, normal, impactSpeedMetersPerSecond);
+        }
+
+        /// <inheritdoc />
+        public void RegisterDockConnectionOwner(UnityEngine.Object owner, Rigidbody dockedBody)
+        {
+            if (owner == null || dockedBody == null)
+                return;
+
+            RegisterOrUpdateConnection(owner, dockedBody, null, PhysicsConnectionKind.Dock);
+        }
+
+        /// <inheritdoc />
+        public void UnregisterDockConnectionOwner(UnityEngine.Object owner)
+        {
+            if (owner == null)
+                return;
+
+            UnregisterConnection(owner, PhysicsConnectionKind.Dock);
+        }
+
+        /// <inheritdoc />
         public int TrackedBodyCount => _trackedBodyCount;
 
         /// <inheritdoc />
@@ -1080,14 +1116,6 @@ namespace Hecton8.Physics
                 return;
 
             manager.SetHydrodynamicSubmersionInternal(body, submersionFactor);
-        }
-
-        internal static void QueueImpact(Rigidbody primaryBody, Rigidbody secondaryBody, Collision collision)
-        {
-            if (primaryBody == null || collision == null || !TryGetRuntimeManager(out GlobalPhysicsStateManager manager))
-                return;
-
-            manager.QueueImpactInternal(primaryBody, secondaryBody, collision);
         }
 
         internal static void QueueKinematicImpact(
@@ -2227,63 +2255,6 @@ namespace Hecton8.Physics
             _bodyStates[bodyIndex] = bodyState;
         }
 
-        private void QueueImpactInternal(Rigidbody primaryBody, Rigidbody secondaryBody, Collision collision)
-        {
-            if (primaryBody == null ||
-                HectonFloatingOrigin.IsShiftInProgress ||
-                !_impactEvents.IsCreated ||
-                _queuedImpactCount >= MaxQueuedImpactEvents)
-            {
-                return;
-            }
-
-            float fixedDelta = ResolveImpactFixedDeltaTime();
-            float minImpactImpulse = MinImpactForce * fixedDelta;
-            float impulseSq = collision.impulse.sqrMagnitude;
-            if (!(impulseSq > minImpactImpulse * minImpactImpulse))
-                return;
-
-            float impactForce = EstimateMagnitudeNoSqrt(impulseSq) / fixedDelta;
-            float massVelocity = ResolveImpactMassVelocity(primaryBody, EstimateMagnitudeNoSqrt(collision.relativeVelocity.sqrMagnitude));
-            float impactIntensity = ResolveImpactIntensityFromForce(impactForce);
-            if (!(impactIntensity > 0f))
-                return;
-
-            bool hasContact = collision.contactCount > 0;
-            ContactPoint contact = hasContact ? collision.GetContact(0) : default;
-            Vector3 fallbackPoint = primaryBody.worldCenterOfMass;
-            Vector3 point = hasContact ? contact.point : fallbackPoint;
-            Vector3 normal = hasContact && contact.normal.sqrMagnitude > 0.000001f ? contact.normal : Vector3.up;
-            float3 point3 = new float3(point.x, point.y, point.z);
-            float3 normal3 = new float3(normal.x, normal.y, normal.z);
-            if (!math.all(math.isfinite(point3)))
-                point3 = new float3(fallbackPoint.x, fallbackPoint.y, fallbackPoint.z);
-            float normalSq = math.lengthsq(normal3);
-            if (!math.all(math.isfinite(normal3)) || normalSq <= 0.000001f)
-                normal3 = new float3(0f, 1f, 0f);
-            else
-                normal3 *= math.rsqrt(math.max(normalSq, 0.000001f));
-            if (!TryResolveAupFromRuntimeOrigin(new Vector3(point3.x, point3.y, point3.z), out AbsoluteUniversePosition pointAup))
-                return;
-
-            PhysicsImpactWeightClass weightClass = ResolveImpactWeightClass(impactIntensity);
-
-            EnqueueImpactEvent(new PhysicsImpactEventData
-            {
-                PrimaryBodyId = EntityId.ToULong(primaryBody.GetEntityId()),
-                SecondaryBodyId = secondaryBody != null ? EntityId.ToULong(secondaryBody.GetEntityId()) : 0ul,
-                Force = impactForce,
-                Intensity = impactIntensity,
-                MassVelocity = massVelocity,
-                Point = point3,
-                PointAup = pointAup,
-                Normal = normal3,
-                WeightClass = weightClass,
-                PrimaryAudioMaterialId = ResolveImpactAudioMaterialId(primaryBody),
-                SecondaryAudioMaterialId = ResolveImpactAudioMaterialId(secondaryBody)
-            });
-        }
-
         private void QueueKinematicImpactInternal(
             Rigidbody primaryBody,
             Rigidbody secondaryBody,
@@ -2395,7 +2366,7 @@ namespace Hecton8.Physics
                     SecondaryMaterialId = impactEvent.SecondaryAudioMaterialId,
                     Flags = 0
                 };
-                SignalBus<ImpactSignal>.TryPush(in corridorSignal);
+                SignalBus<ImpactSignal>.TryPushTracked(in corridorSignal, ref s_x001GlobalPhysicsStateManagerSignalPushDropCount);
                 PhysicsEvents.TryNotifyImpact(new PhysicsImpactSignal(
                     impactEvent.PrimaryBodyId,
                     impactEvent.SecondaryBodyId,
@@ -3679,7 +3650,7 @@ namespace Hecton8.Physics
                 SleepState = sleepState,
                 Flags = bodyState.DistanceKinematicSleepActive != 0 ? (byte)1 : (byte)0
             };
-            SignalBus<RigidbodySleepSignal>.TryPush(in signal);
+            SignalBus<RigidbodySleepSignal>.TryPushTracked(in signal, ref s_x001GlobalPhysicsStateManagerSignalPushDropCount);
         }
 
         private static void PublishRigidbodySleepSignal(
@@ -4326,16 +4297,5 @@ namespace Hecton8.Physics
                 GlobalPhysicsStateManager.UnregisterTrackedBody(_body);
         }
 
-        private void LegacyPhysXImpactCallbackDisabled(Collision collision)
-        {
-            if (_body == null || collision == null)
-                return;
-
-            Rigidbody otherBody = collision.rigidbody;
-            if (otherBody != null && _entityId > EntityId.ToULong(otherBody.GetEntityId()))
-                return;
-
-            GlobalPhysicsStateManager.QueueImpact(_body, otherBody, collision);
-        }
     }
 }

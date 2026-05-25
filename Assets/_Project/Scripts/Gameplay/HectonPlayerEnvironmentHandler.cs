@@ -1,3 +1,4 @@
+using Hecton8.Core;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -15,12 +16,12 @@ namespace Hecton8.Gameplay
         private Vector3 _bufferedExternalAcceleration;
         private Vector3 _bufferedVelocityChange;
         private float _bufferedHullStress;
-        private readonly RaycastHit[] _environmentHitBuffer = new RaycastHit[32]; // COLD ALLOC: RaycastHit[32] — reserved environment query buffer for external-force subsystem ownership isolation — owner: HectonPlayerEnvironmentHandler
+        private readonly KinematicSurfaceHit[] _environmentHitBuffer = new KinematicSurfaceHit[32]; // COLD ALLOC: KinematicSurfaceHit[32] — reserved environment query buffer for external-force subsystem ownership isolation — owner: HectonPlayerEnvironmentHandler
 
         /// <summary>
         /// Dedicated environment query buffer. Environment-owned only.
         /// </summary>
-        public RaycastHit[] EnvironmentHitBuffer => _environmentHitBuffer;
+        public KinematicSurfaceHit[] EnvironmentHitBuffer => _environmentHitBuffer;
 
         /// <summary>Binds authoritative owner references.</summary>
         public void Bind(HectonPlayerMovement owner, IMotorForces motorForces)

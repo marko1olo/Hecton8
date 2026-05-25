@@ -176,6 +176,9 @@ namespace Hecton8.Physics
 
     public unsafe static class HarpoonTensionSolver328
     {
+
+        private static int s_x001DirectSignalPushDropCount_HarpoonTensionSolver328;
+
         public static bool ValidateLayout()
         {
             return TryValidateLayout(out _);
@@ -768,7 +771,7 @@ namespace Hecton8.Physics
                     if (mirror.StatusBits == 0u)
                         continue;
                     PhysicsEventPayload payload = BuildPhysicsEventPayload(in mirror);
-                    if (SignalBus<PhysicsEventPayload>.TryPush(in payload))
+                    if (SignalBus<PhysicsEventPayload>.TryPushTracked(in payload, ref s_x001DirectSignalPushDropCount_HarpoonTensionSolver328))
                         pushed++;
                 }
             }
@@ -802,7 +805,7 @@ namespace Hecton8.Physics
                 if ((state.Flags & TetherStateFlags328.Active) != 0u && tension > HarpoonTensionSolver328Constants.Epsilon)
                 {
                     TetherTensionSignal signal = BuildManagedTensionSignal(i, in state, direction, tension, snapThreshold, safeNodesPerTether, frameIndex, q, 0);
-                    if (SignalBus<TetherTensionSignal>.TryPush(in signal))
+                    if (SignalBus<TetherTensionSignal>.TryPushTracked(in signal, ref s_x001DirectSignalPushDropCount_HarpoonTensionSolver328))
                         pushed++;
                 }
                 else if ((state.Flags & TetherStateFlags328.Snapped) != 0u &&
@@ -822,11 +825,11 @@ namespace Hecton8.Physics
                         Reason = 1,
                         Flags = 1
                     };
-                    if (SignalBus<TetherSnappedSignal>.TryPush(in snap))
+                    if (SignalBus<TetherSnappedSignal>.TryPushTracked(in snap, ref s_x001DirectSignalPushDropCount_HarpoonTensionSolver328))
                         pushed++;
 
                     TetherTensionSignal signal = BuildManagedTensionSignal(i, in state, direction, tension, snapThreshold, safeNodesPerTether, frameIndex, q, 1);
-                    if (SignalBus<TetherTensionSignal>.TryPush(in signal))
+                    if (SignalBus<TetherTensionSignal>.TryPushTracked(in signal, ref s_x001DirectSignalPushDropCount_HarpoonTensionSolver328))
                         pushed++;
                 }
             }

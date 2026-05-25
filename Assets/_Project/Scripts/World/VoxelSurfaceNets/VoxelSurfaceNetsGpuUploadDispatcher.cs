@@ -48,7 +48,7 @@ namespace Hecton8.World.VoxelSurfaceNets
         {
             int vertexCapacity = math.clamp(maxVertices, 1, VoxelSurfaceNetsConstants.MaxVertices);
             int indexCapacity = math.clamp(maxIndices, 1, VoxelSurfaceNetsConstants.MaxIndices);
-            if (_vertexFront != null && _maxVertices == vertexCapacity && _maxIndices == indexCapacity)
+            if (IsInitialized() && _maxVertices == vertexCapacity && _maxIndices == indexCapacity)
                 return true;
 
             if (_releaseRequested && !TryRelease())
@@ -77,13 +77,18 @@ namespace Hecton8.World.VoxelSurfaceNets
                 stride);
         }
 
+        private static bool IsGraphicsBufferReady(GraphicsBuffer buffer)
+        {
+            return buffer != null && buffer.IsValid();
+        }
+
         public bool IsInitialized()
         {
-            return _vertexFront != null &&
-                   _vertexBack != null &&
-                   _indexFront != null &&
-                   _indexBack != null &&
-                   _indirectArgs != null;
+            return IsGraphicsBufferReady(_vertexFront) &&
+                   IsGraphicsBufferReady(_vertexBack) &&
+                   IsGraphicsBufferReady(_indexFront) &&
+                   IsGraphicsBufferReady(_indexBack) &&
+                   IsGraphicsBufferReady(_indirectArgs);
         }
 
         public bool TryUpload(
@@ -110,8 +115,13 @@ namespace Hecton8.World.VoxelSurfaceNets
                 return false;
             }
 
-            if (!IsInitialized() ||
-                _uploadInFlight ||
+            if (!IsInitialized())
+            {
+                TryRelease();
+                return false;
+            }
+
+            if (_uploadInFlight ||
                 !buffers.Vertices.IsCreated ||
                 !buffers.Indices.IsCreated ||
                 !buffers.IndirectArgs.IsCreated ||
@@ -148,6 +158,17 @@ namespace Hecton8.World.VoxelSurfaceNets
             GraphicsBuffer vertexBuffer = _activeSet == 0 ? _vertexBack : _vertexFront;
             GraphicsBuffer indexBuffer = _activeSet == 0 ? _indexBack : _indexFront;
             int uploadSet = 1 - _activeSet;
+            if (!IsGraphicsBufferReady(vertexBuffer) ||
+                !IsGraphicsBufferReady(indexBuffer) ||
+                !IsGraphicsBufferReady(_indirectArgs))
+            {
+                state.Stage = (byte)VoxelMeshingStage.Fault;
+                state.Flags = (byte)(state.Flags | VoxelMeshingFlags.GpuResourceInvalid);
+                buffers.States[chunkIndex] = state;
+                _releaseRequested = true;
+                TryRelease();
+                return false;
+            }
 
             bool vertexLocked = false;
             bool indexLocked = false;
@@ -175,13 +196,13 @@ namespace Hecton8.World.VoxelSurfaceNets
             }
             catch
             {
-                if (indirectArgsLocked && _indirectArgs != null)
+                if (indirectArgsLocked && IsGraphicsBufferReady(_indirectArgs))
                     _indirectArgs.UnlockBufferAfterWrite<VoxelSurfaceIndirectArgsDTO>(1);
 
-                if (indexLocked && indexBuffer != null)
+                if (indexLocked && IsGraphicsBufferReady(indexBuffer))
                     indexBuffer.UnlockBufferAfterWrite<uint>(indexCount);
 
-                if (vertexLocked && vertexBuffer != null)
+                if (vertexLocked && IsGraphicsBufferReady(vertexBuffer))
                     vertexBuffer.UnlockBufferAfterWrite<VoxelVertexDTO>(vertexCount);
 
                 _lockedVertices = default;
@@ -231,8 +252,17 @@ namespace Hecton8.World.VoxelSurfaceNets
             }
 
             _pendingUploadDependency.Complete();
+            bool pendingUploadResourcesReady = ArePendingUploadBuffersReady();
 
             UnlockPendingUploadBuffers();
+            if (!pendingUploadResourcesReady)
+            {
+                MarkPendingChunkFault(buffers, VoxelMeshingFlags.GpuResourceInvalid);
+                _releaseRequested = true;
+                ClearPendingUploadState();
+                TryRelease();
+                return false;
+            }
 
             _activeSet = _pendingUploadSet;
             if (buffers.States.IsCreated && (uint)_pendingChunkIndex < (uint)buffers.States.Length)
@@ -286,35 +316,11 @@ namespace Hecton8.World.VoxelSurfaceNets
                 ClearPendingUploadState();
             }
 
-            if (_vertexFront != null)
-            {
-                _vertexFront.Release();
-                _vertexFront = null;
-            }
-
-            if (_vertexBack != null)
-            {
-                _vertexBack.Release();
-                _vertexBack = null;
-            }
-
-            if (_indexFront != null)
-            {
-                _indexFront.Release();
-                _indexFront = null;
-            }
-
-            if (_indexBack != null)
-            {
-                _indexBack.Release();
-                _indexBack = null;
-            }
-
-            if (_indirectArgs != null)
-            {
-                _indirectArgs.Release();
-                _indirectArgs = null;
-            }
+            ReleaseGraphicsBuffer(ref _vertexFront);
+            ReleaseGraphicsBuffer(ref _vertexBack);
+            ReleaseGraphicsBuffer(ref _indexFront);
+            ReleaseGraphicsBuffer(ref _indexBack);
+            ReleaseGraphicsBuffer(ref _indirectArgs);
 
             _activeSet = 0;
             _maxVertices = 0;
@@ -346,15 +352,47 @@ namespace Hecton8.World.VoxelSurfaceNets
             _uploadInFlight = false;
         }
 
+        private static void ReleaseGraphicsBuffer(ref GraphicsBuffer buffer)
+        {
+            if (buffer == null)
+                return;
+
+            if (buffer.IsValid())
+                buffer.Release();
+
+            buffer = null;
+        }
+
+        private bool ArePendingUploadBuffersReady()
+        {
+            return IsGraphicsBufferReady(_pendingVertexBuffer) &&
+                   IsGraphicsBufferReady(_pendingIndexBuffer) &&
+                   IsGraphicsBufferReady(_indirectArgs);
+        }
+
+        private void MarkPendingChunkFault(VoxelSurfaceNetsVaultBuffers buffers, byte flags)
+        {
+            if (!buffers.States.IsCreated || (uint)_pendingChunkIndex >= (uint)buffers.States.Length)
+                return;
+
+            ChunkMeshingStateDTO state = buffers.States[_pendingChunkIndex];
+            if (state.ChunkHash != _pendingChunkHash || state.Version != _pendingVersion)
+                return;
+
+            state.Stage = (byte)VoxelMeshingStage.Fault;
+            state.Flags = (byte)(state.Flags | flags);
+            buffers.States[_pendingChunkIndex] = state;
+        }
+
         private void UnlockPendingUploadBuffers()
         {
-            if (_pendingVertexBuffer != null && _pendingVertexCount > 0)
+            if (IsGraphicsBufferReady(_pendingVertexBuffer) && _pendingVertexCount > 0)
                 _pendingVertexBuffer.UnlockBufferAfterWrite<VoxelVertexDTO>(_pendingVertexCount);
 
-            if (_pendingIndexBuffer != null && _pendingIndexCount > 0)
+            if (IsGraphicsBufferReady(_pendingIndexBuffer) && _pendingIndexCount > 0)
                 _pendingIndexBuffer.UnlockBufferAfterWrite<uint>(_pendingIndexCount);
 
-            if (_indirectArgs != null)
+            if (IsGraphicsBufferReady(_indirectArgs))
                 _indirectArgs.UnlockBufferAfterWrite<VoxelSurfaceIndirectArgsDTO>(1);
         }
     }

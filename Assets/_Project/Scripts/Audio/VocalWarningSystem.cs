@@ -21,6 +21,8 @@ namespace Hecton8.Audio
     [AddComponentMenu("Hecton8/Audio/Vocal Warning System")]
     public sealed class VocalWarningSystem : MonoBehaviour, IVocalWarningSystem, IUpdatable, ISlowTickable, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener
     {
+        private static int s_x001DirectSignalPushDropCount_VocalWarningSystem;
+
         [StructLayout(LayoutKind.Explicit, Size = 16)]
         internal struct VocalWarningDTO
         {
@@ -938,7 +940,7 @@ namespace Hecton8.Audio
             cue.SourceAupLocalY = dispatch.SourceAupLocalY;
             cue.SourceAupLocalZ = dispatch.SourceAupLocalZ;
             cue.Flags = dispatch.Flags;
-            bool cueAccepted = SignalBus<VocalCueSignal>.TryPush(in cue);
+            bool cueAccepted = SignalBus<VocalCueSignal>.TryPushTracked(in cue, ref s_x001DirectSignalPushDropCount_VocalWarningSystem);
             uint publishFaults = cueAccepted ? 0u : FaultFlagVocalCueRejected;
 
             if (cueAccepted)
@@ -950,7 +952,7 @@ namespace Hecton8.Audio
                 subtitle.Priority = dispatch.SubtitlePriority;
                 subtitle.Flags = ResolveSubtitleCueFlags(dispatch.Flags);
                 subtitle.SourceHash = VaultOwnerSignalHash;
-                if (!SignalBus<SubtitleCueSignal>.TryPush(in subtitle))
+                if (!SignalBus<SubtitleCueSignal>.TryPushTracked(in subtitle, ref s_x001DirectSignalPushDropCount_VocalWarningSystem))
                     publishFaults |= FaultFlagSubtitleRejected;
             }
 

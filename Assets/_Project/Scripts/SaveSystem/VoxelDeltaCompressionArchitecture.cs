@@ -193,6 +193,9 @@ namespace Hecton8.SaveSystem
         public const int DefaultBlockCells = 128;
         public const int DefaultSchemaBytes = 256;
         internal const int MaxVoxelDeltaWalPayloadBytes = (256 * 1024) - 64;
+        internal const int VoxelDeltaHeaderBytes = 32;
+        internal const int VoxelDeltaRleRunBytes = 8;
+        internal const int MaxVoxelDeltaRleRunsPerWalPayload = (MaxVoxelDeltaWalPayloadBytes - VoxelDeltaHeaderBytes) / VoxelDeltaRleRunBytes;
         public const int HashTableSlots = 4096;
         public const int CounterCapacity = 24;
         internal const int CounterRleRunCount = 0;
@@ -219,6 +222,7 @@ namespace Hecton8.SaveSystem
         internal const uint TelemetryFlagDiskLatencySpike = 1u << 9;
         internal const uint TelemetryDumpMagic = 0x56445741u; // AWDV little-endian marker.
         internal const uint TelemetryDumpVersion = 1u;
+        private const string VoxelDeltaTelemetryDumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_308_Voxel.bin";
         internal const int Lz4LastLiterals = 5;
         internal const int Lz4MfLimit = 12;
 
@@ -248,7 +252,10 @@ namespace Hecton8.SaveSystem
                 return false;
 
             int safeCells = ChunkCellCount;
-            int safeRuns = math.clamp(rleRunCapacity <= 0 ? ChunkCellCount : rleRunCapacity, 1, ChunkCellCount);
+            int safeRuns = math.clamp(
+                rleRunCapacity <= 0 ? MaxVoxelDeltaRleRunsPerWalPayload : rleRunCapacity,
+                1,
+                math.min(ChunkCellCount, MaxVoxelDeltaRleRunsPerWalPayload));
             int safeBytes = Align16(math.clamp(
                 stagingCapacityBytes <= 0 ? MaxVoxelDeltaWalPayloadBytes : stagingCapacityBytes,
                 1024,
@@ -565,8 +572,9 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
-            int byteCount = math.clamp(counters[CounterWalPayloadBytes], 0, walPayloadBytes.Length);
+            int byteCount = counters[CounterWalPayloadBytes];
             if (byteCount <= UnsafeUtility.SizeOf<VoxelDeltaHeaderDTO>() ||
+                byteCount > walPayloadBytes.Length ||
                 byteCount > MaxVoxelDeltaWalPayloadBytes ||
                 counters[CounterFailure] != 0)
             {
@@ -804,7 +812,7 @@ namespace Hecton8.SaveSystem
 
         public static bool TryDumpTelemetryRing(
             NativeArray<VoxelDeltaCompressionTelemetryEntry> telemetryRing,
-            string path = "Docs/AgentLogs/Dump_VOXEL_IO_SURGEON.bin")
+            string path = VoxelDeltaTelemetryDumpRelativePath)
         {
             return TryDumpTelemetryRing(telemetryRing, default, 0u, path);
         }
@@ -813,7 +821,7 @@ namespace Hecton8.SaveSystem
             NativeArray<VoxelDeltaCompressionTelemetryEntry> telemetryRing,
             NativeArray<int> telemetryCursor,
             uint reasonFlags = 0u,
-            string path = "Docs/AgentLogs/Dump_VOXEL_IO_SURGEON.bin")
+            string path = VoxelDeltaTelemetryDumpRelativePath)
         {
             if (!telemetryRing.IsCreated || telemetryRing.Length <= 0 || string.IsNullOrEmpty(path))
                 return false;
@@ -896,7 +904,7 @@ namespace Hecton8.SaveSystem
             NativeArray<VoxelDeltaCompressionTelemetryEntry> telemetryRing,
             float diskWriteLatencyMs,
             float thresholdMs = 50f,
-            string path = "Docs/AgentLogs/Dump_VOXEL_IO_SURGEON.bin")
+            string path = VoxelDeltaTelemetryDumpRelativePath)
         {
             float latency = math.isfinite(diskWriteLatencyMs) ? diskWriteLatencyMs : 0f;
             float threshold = math.max(0f, math.isfinite(thresholdMs) ? thresholdMs : 50f);
@@ -908,7 +916,7 @@ namespace Hecton8.SaveSystem
             NativeArray<int> telemetryCursor,
             float diskWriteLatencyMs,
             float thresholdMs = 50f,
-            string path = "Docs/AgentLogs/Dump_VOXEL_IO_SURGEON.bin")
+            string path = VoxelDeltaTelemetryDumpRelativePath)
         {
             float latency = math.isfinite(diskWriteLatencyMs) ? diskWriteLatencyMs : 0f;
             float threshold = math.max(0f, math.isfinite(thresholdMs) ? thresholdMs : 50f);
@@ -918,7 +926,7 @@ namespace Hecton8.SaveSystem
         public static bool TryDumpTelemetryRingOnSpikeFlag(
             NativeArray<VoxelDeltaCompressionTelemetryEntry> telemetryRing,
             NativeArray<int> telemetryCursor,
-            string path = "Docs/AgentLogs/Dump_VOXEL_IO_SURGEON.bin")
+            string path = VoxelDeltaTelemetryDumpRelativePath)
         {
             if (!telemetryRing.IsCreated || telemetryRing.Length <= 0)
                 return false;
@@ -1667,7 +1675,16 @@ namespace Hecton8.SaveSystem
                     return;
 
                 VoxelDeltaHeaderDTO header = Headers[0];
-                int count = math.clamp(Counters[CounterCompressedBytes], 0, CompressedBytes.Length);
+                int count = Counters[CounterCompressedBytes];
+                if (count < 0 || count > CompressedBytes.Length || count > MaxVoxelDeltaWalPayloadBytes)
+                {
+                    Counters[CounterFailure] = 1;
+                    Counters[CounterCompressionFlags] |= unchecked((int)HeaderFlagFatal);
+                    header.XXHash3Checksum = 0UL;
+                    Headers[0] = header;
+                    return;
+                }
+
                 if (count <= 0)
                 {
                     header.XXHash3Checksum = 0UL;
@@ -1710,7 +1727,16 @@ namespace Hecton8.SaveSystem
                 }
 
                 int headerBytes = UnsafeUtility.SizeOf<VoxelDeltaHeaderDTO>();
-                int compressedBytes = math.clamp(Counters[CounterCompressedBytes], 0, CompressedBytes.Length);
+                int compressedBytes = Counters[CounterCompressedBytes];
+                if (compressedBytes < 0 ||
+                    compressedBytes > CompressedBytes.Length ||
+                    compressedBytes > MaxVoxelDeltaWalPayloadBytes - headerBytes)
+                {
+                    Counters[CounterFailure] = 1;
+                    Counters[CounterWalPayloadBytes] = 0;
+                    return;
+                }
+
                 int required = headerBytes + compressedBytes;
                 if (Counters[CounterFailure] != 0 ||
                     required > WalPayloadBytes.Length ||

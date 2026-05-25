@@ -16,6 +16,7 @@ namespace Hecton8.Core
         private bool _registeredContext;
         private bool _hotSwapRegistered;
         private ConstructionManager _constructionManager;
+        private ILogisticsService _logisticsService;
         private ModuleCatalog _moduleCatalog;
         private HazardZoneManager _hazardZoneManager;
 
@@ -30,6 +31,9 @@ namespace Hecton8.Core
 
         /// <inheritdoc />
         public ConstructionManager ConstructionManager => _constructionManager;
+
+        /// <inheritdoc />
+        public ILogisticsService Logistics => _logisticsService ?? _constructionManager;
 
         /// <inheritdoc />
         public ModuleCatalog ModuleCatalog => _moduleCatalog;
@@ -153,7 +157,8 @@ namespace Hecton8.Core
 
                 case GlobalRegistryServiceSlot.Logistics:
                     _constructionManager = currentService as ConstructionManager;
-                    _moduleCatalog = _constructionManager != null ? _constructionManager.Catalog : null;
+                    _logisticsService = currentService as ILogisticsService;
+                    _moduleCatalog = _logisticsService != null ? _logisticsService.Catalog : null;
                     break;
 
                 case GlobalRegistryServiceSlot.HazardZoneRuntime:
@@ -194,9 +199,15 @@ namespace Hecton8.Core
         private void SyncEnvironmentContext()
         {
             if (_constructionManager != null && !_constructionManager.isActiveAndEnabled)
+            {
                 _constructionManager = null;
+                _logisticsService = null;
+            }
 
-            _moduleCatalog = _constructionManager != null ? _constructionManager.Catalog : null;
+            if (_logisticsService == null && _constructionManager != null)
+                _logisticsService = _constructionManager;
+
+            _moduleCatalog = _logisticsService != null ? _logisticsService.Catalog : null;
 
             if (_hazardZoneManager != null && !_hazardZoneManager.isActiveAndEnabled)
                 _hazardZoneManager = null;
@@ -206,6 +217,8 @@ namespace Hecton8.Core
         {
             if (_constructionManager == null || !_constructionManager.isActiveAndEnabled)
                 _constructionManager = GlobalRegistry.ConstructionRuntime;
+
+            _logisticsService = GlobalRegistry.Logistics ?? _constructionManager;
 
             if (_hazardZoneManager == null || !_hazardZoneManager.isActiveAndEnabled)
                 _hazardZoneManager = GlobalRegistry.HazardZones;

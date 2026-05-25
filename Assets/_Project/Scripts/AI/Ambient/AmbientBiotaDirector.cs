@@ -20,6 +20,7 @@ namespace Hecton8.AI.Ambient
     [DisallowMultipleComponent]
     public sealed class AmbientBiotaDirector : MonoBehaviour, ITickable, ISlowTickable, ILateFrameTickable, IAmbientBiotaService, IGlobalRegistryHotSwapListener
     {
+        private static int s_x001AmbientBiotaDirectorSignalPushDropCount;
         private const float AupCellSizeMeters = HectonPhysicsContract.AupSectorSizeMetersFloat;
         private const double AupCellSizeMetersDouble = HectonPhysicsContract.AupSectorSizeMetersDouble;
         private const float TwoPi = 6.28318530718f;
@@ -397,7 +398,7 @@ namespace Hecton8.AI.Ambient
                                (macroQualityWeight01 >= 0.95f ? EntitySpawnVisualOverkillFlag : 0)),
                 Frame = _frameIndex
             };
-            SignalBus<EntitySpawnSignal>.TryPush(in spawnSignal);
+            SignalBus<EntitySpawnSignal>.TryPushTracked(in spawnSignal, ref s_x001AmbientBiotaDirectorSignalPushDropCount);
             return true;
         }
 
@@ -1366,7 +1367,7 @@ namespace Hecton8.AI.Ambient
                     Flags = DebrisSpawnSignal.FlagComputeShard,
                     Quantity = (ushort)math.clamp((int)math.round(math.lerp(2f, 6f, _visualOverkillWeight01)), 1, ushort.MaxValue)
                 };
-                SignalBus<DebrisSpawnSignal>.TryPush(in debrisSignal);
+                SignalBus<DebrisSpawnSignal>.TryPushTracked(in debrisSignal, ref s_x001AmbientBiotaDirectorSignalPushDropCount);
 
                 states[i] = default;
                 aups[i] = default;

@@ -1629,7 +1629,7 @@ namespace Hecton8.Biolum
             {
                 telemetryRing[_telemetryWriteIndex] = new BiolumTelemetryEntry
                 {
-                    Frame = (uint)Time.frameCount,
+                    Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                     CameraPositionX = cameraPosition3.x,
                     CameraPositionY = cameraPosition3.y,
                     CameraPositionZ = cameraPosition3.z,

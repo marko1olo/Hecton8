@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -705,6 +705,7 @@ namespace Hecton8.Gameplay
     [AddComponentMenu("Hecton8/Gameplay/Player/Player Kinematics Runtime")]
     public sealed partial class PlayerKinematicsRuntime : MonoBehaviour, IFixedTickable, IPostFixedTickable, IFastTickable, ILateFrameTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener
     {
+        private int _signalPushDropCount;
         private struct VaultBufferBinding<T>
             where T : struct
         {
@@ -1154,14 +1155,14 @@ namespace Hecton8.Gameplay
             float3 sdfOrigin = float3.zero;
             float3 sdfCellSize = float3.zero;
             float sdfRange = 0.0f;
-            byte sdfSampleMode = ResolveSdfSampleMode(qualityWeight01, unchecked((uint)Time.frameCount));
+            byte sdfSampleMode = ResolveSdfSampleMode(qualityWeight01, Hecton8.Core.SystemDispatcher.CurrentFrameId);
             float3 rawBodyPosition = ToFloat3(ResolveBodyRuntimePosition());
             float3 rawBodyVelocity = ReadVelocitySnapshot(float3.zero);
             float3 bodyPosition = SanitizeFloat3(rawBodyPosition, ReadLastValidPosition());
             float3 bodyVelocity = SanitizeFloat3(rawBodyVelocity, float3.zero);
             bool rawBodyStateInvalid = !math.all(math.isfinite(rawBodyPosition)) || !math.all(math.isfinite(rawBodyVelocity));
             Vector3 safeBodyPosition = ToVector3(bodyPosition);
-            uint frameId = unchecked((uint)Time.frameCount);
+            uint frameId = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             bool needsSdfPayload =
                 inSolid != 0 ||
                 sdfGradientProbeRequested != 0 ||
@@ -1248,7 +1249,7 @@ namespace Hecton8.Gameplay
                 LowMaelstromTier = IsReducedSdfSampleMode(sdfSampleMode) ? (byte)1 : (byte)0,
                 SdfSampleMode = sdfSampleMode,
                 SdfGradientProbeRequested = sdfGradientProbeRequested,
-                Frame = (uint)Time.frameCount,
+                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 RuntimeFlags = ResolveBodyFlags(ladderActive, inSolid) |
                                math.select(0u, BodyFlagMaelstromActive, activeMaelstromCount > 0) |
                               math.select(0u, BodyFlagSdfSqueezeIntervention, SdfSqueezeResult.IsResultActive(in sdfSqueezeResult))
@@ -1978,7 +1979,7 @@ namespace Hecton8.Gameplay
             volumeOrigin = float3.zero;
             voxelCellSize = float3.zero;
             sdfRange = 0.0f;
-            sampleMode = ResolveSdfSampleMode(ReadCachedGlobalQualityWeight01(), unchecked((uint)Time.frameCount));
+            sampleMode = ResolveSdfSampleMode(ReadCachedGlobalQualityWeight01(), Hecton8.Core.SystemDispatcher.CurrentFrameId);
 
             if (_voxelEngine == null)
                 return;
@@ -2111,7 +2112,7 @@ namespace Hecton8.Gameplay
                 QualityWeight = qualityWeight01,
                 SampleMode = IsReducedSdfSampleMode(sdfSampleMode) ? (byte)SdfSqueezeSampleMode.Tetra4 : (byte)SdfSqueezeSampleMode.Axis6,
                 SlowCadence = slowCadence ? (byte)1 : (byte)0,
-                Frame = unchecked((uint)Time.frameCount)
+                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId
             };
             // HOT SCALAR CONTROL KERNEL: squeeze intervention is same-tick KCC safety truth.
             // Direct Execute removes IJob.Run scheduler sync; async staging belongs to the KCC owner rewrite.
@@ -2169,7 +2170,7 @@ namespace Hecton8.Gameplay
             result.Velocity = velocity;
             result.PushMeters = pushMeters;
             result.PushSpeed = pushSpeed;
-            result.Frame = unchecked((uint)Time.frameCount);
+            result.Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             result.Flags |= SdfSqueezeResult.FlagSlowCadence;
             if (IsReducedSdfSampleMode(sdfSampleMode))
                 result.Flags |= SdfSqueezeResult.FlagReducedGradientSamples;
@@ -2220,7 +2221,7 @@ namespace Hecton8.Gameplay
                 return false;
 
             LockstepPlayerKinematicState state = stateBuffer[0];
-            uint frame = unchecked((uint)Time.frameCount);
+            uint frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             if (state.Frame == 0u ||
                 state.Frame > frame ||
                 frame - state.Frame > 1u ||
@@ -2256,7 +2257,7 @@ namespace Hecton8.Gameplay
                 Forward = _cachedTransform != null
                     ? SafeNormalize(ToFloat3(_cachedTransform.forward), new float3(0.0f, 0.0f, 1.0f))
                     : new float3(0.0f, 0.0f, 1.0f),
-                Frame = unchecked((uint)Time.frameCount),
+                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 Flags = BodyFlagSdfSqueezeIntervention,
                 StableId = _sourceId
             };
@@ -2390,7 +2391,7 @@ namespace Hecton8.Gameplay
 
         private static byte ResolveSdfGradientProbeRequest()
         {
-            uint frame = unchecked((uint)Time.frameCount);
+            uint frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             ReadOnlySpan<PlayerStateSignal> playerStates = SignalBus<PlayerStateSignal>.GetFrameSnapshot();
             int signalCount = math.min(playerStates.Length, IkSignalScanLimit);
             for (int i = 0; i < signalCount; i++)
@@ -2587,7 +2588,7 @@ namespace Hecton8.Gameplay
             signal.LocomotionMode = ResolveLocomotionModeCode();
             signal.SurfaceMode = (byte)(_movement != null && _movement.IsPlayerSubmerged ? 1 : 0);
             signal.Flags = 0;
-            SignalBus<MovementAcousticSignal>.TryPush(in signal);
+            SignalBus<MovementAcousticSignal>.TryPushTracked(in signal, ref _signalPushDropCount);
         }
 
         private void PublishKccVelocitySignal(float3 position, float3 velocity, byte flags)
@@ -2603,7 +2604,7 @@ namespace Hecton8.Gameplay
             PhysicsDeterminismSignals.TryPublishKccVelocity(
                 in bodyAup,
                 snappedVelocity,
-                unchecked((uint)Time.frameCount),
+                Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 _sourceId,
                 flags);
         }
@@ -2629,10 +2630,10 @@ namespace Hecton8.Gameplay
             playerState.PositionAup = positionAup;
             playerState.Intensity01 = stress01;
             playerState.SourceHash = _sourceId;
-            playerState.Frame = result.Frame != 0u ? result.Frame : unchecked((uint)Time.frameCount);
+            playerState.Frame = result.Frame != 0u ? result.Frame : Hecton8.Core.SystemDispatcher.CurrentFrameId;
             playerState.State = PlayerStateSignal.StateSqueezing;
             playerState.Flags = stateFlags;
-            SignalBus<PlayerStateSignal>.TryPush(in playerState);
+            SignalBus<PlayerStateSignal>.TryPushTracked(in playerState, ref _signalPushDropCount);
             _lastConsumedSqueezeSignalFrame = playerState.Frame;
             _lastConsumedSqueezeSignalSourceHash = playerState.SourceHash;
 
@@ -2658,7 +2659,7 @@ namespace Hecton8.Gameplay
             stress.Frame = frame;
             stress.Cause = PlayerStateSignal.StateSqueezing;
             stress.Flags = PlayerStateSignal.FlagSqueezing;
-            SignalBus<PlayerStressSignal>.TryPush(in stress);
+            SignalBus<PlayerStressSignal>.TryPushTracked(in stress, ref _signalPushDropCount);
         }
 
         private void PublishSdfSqueezeGasLoad(float stress01)
@@ -2689,7 +2690,7 @@ namespace Hecton8.Gameplay
             haptic.Frame = frame;
             haptic.Channel = HapticRequest.ChannelGearScrape;
             haptic.Flags = 0;
-            SignalBus<HapticRequest>.TryPush(in haptic);
+            SignalBus<HapticRequest>.TryPushTracked(in haptic, ref _signalPushDropCount);
 
             AcousticPingSignal acoustic = default;
             acoustic.PositionAup = positionAup;
@@ -2698,7 +2699,7 @@ namespace Hecton8.Gameplay
             acoustic.SourceId = _sourceId;
             acoustic.Channel = AcousticPingSignal.ChannelFabricScrape;
             acoustic.Flags = AcousticPingSignal.FlagFabricScrape;
-            SignalBus<AcousticPingSignal>.TryPush(in acoustic);
+            SignalBus<AcousticPingSignal>.TryPushTracked(in acoustic, ref _signalPushDropCount);
 
             _sdfSqueezeFeedbackCooldown = SdfSqueezeFeedbackCooldownSeconds;
         }
@@ -2733,7 +2734,7 @@ namespace Hecton8.Gameplay
             impulse.Frame = frame;
             impulse.SourceHash = _sourceId;
             impulse.Flags = (uint)(PlayerStateSignal.FlagSqueezing | PlayerStateSignal.FlagSdfGradientValid);
-            SignalBus<FluidImpulseSignal>.TryPush(in impulse);
+            SignalBus<FluidImpulseSignal>.TryPushTracked(in impulse, ref _signalPushDropCount);
         }
 
         private void WriteSdfSqueezeTelemetry(in SdfSqueezeResult result, float3 position, float3 velocity)
@@ -2763,7 +2764,7 @@ namespace Hecton8.Gameplay
                 DragCoefficient = SanitizeNonNegative(dragCoefficient),
                 WaterDensity = ResolveRuntimeWaterDensityScale(),
                 SolidDensity = math.select(result.CenterDensity, 0.0f, !math.isfinite(result.CenterDensity)),
-                Frame = result.Frame != 0u ? result.Frame : unchecked((uint)Time.frameCount),
+                Frame = result.Frame != 0u ? result.Frame : Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 Flags = 0u,
                 SyncFenceHash = _accumulatorState.LastSyncFenceHash,
                 AuxFlags = auxFlags,
@@ -2825,7 +2826,7 @@ namespace Hecton8.Gameplay
                 DragCoefficient = SanitizeNonNegative(dragCoefficient),
                 WaterDensity = ResolveRuntimeWaterDensityScale(),
                 SolidDensity = 0.0f,
-                Frame = unchecked((uint)Time.frameCount),
+                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 Flags = 0u,
                 SyncFenceHash = _accumulatorState.LastSyncFenceHash,
                 AuxFlags = AupPreShiftHaltTelemetryFlag | (_accumulatorState.LastConsumedPreShiftFrameId & 0xFFFFu),
@@ -2835,7 +2836,7 @@ namespace Hecton8.Gameplay
 
         private void ConsumeEnvironmentIkSignals()
         {
-            uint frame = unchecked((uint)Time.frameCount);
+            uint frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             ReadOnlySpan<HighSpeedImpactSignal> impactSignals = SignalBus<HighSpeedImpactSignal>.GetFrameSnapshot();
             int impactCount = math.min(impactSignals.Length, IkSignalScanLimit);
             for (int i = 0; i < impactCount; i++)
@@ -2931,7 +2932,7 @@ namespace Hecton8.Gameplay
 
         private void ConsumeSystemStressSignals()
         {
-            uint frame = unchecked((uint)Time.frameCount);
+            uint frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             ReadOnlySpan<SystemHealthIndexSignal> signals = SignalBus<SystemHealthIndexSignal>.GetFrameSnapshot();
             int signalCount = math.min(signals.Length, IkSignalScanLimit);
             bool hasStressSignal = false;
@@ -2961,7 +2962,7 @@ namespace Hecton8.Gameplay
 
         private void ConsumeSqueezeTelemetrySignal()
         {
-            uint frame = unchecked((uint)Time.frameCount);
+            uint frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             ReadOnlySpan<PlayerStateSignal> playerStates = SignalBus<PlayerStateSignal>.GetFrameSnapshot();
             int signalCount = math.min(playerStates.Length, IkSignalScanLimit);
             bool hasSqueezeSignal = false;
@@ -3035,7 +3036,7 @@ namespace Hecton8.Gameplay
                 DragCoefficient = SanitizeNonNegative(dragCoefficient),
                 WaterDensity = ResolveRuntimeWaterDensityScale(),
                 SolidDensity = SanitizeUnit(signal.Intensity01),
-                Frame = signal.Frame != 0u ? signal.Frame : unchecked((uint)Time.frameCount),
+                Frame = signal.Frame != 0u ? signal.Frame : Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 Flags = 0u,
                 SyncFenceHash = 0u,
                 AuxFlags = auxFlags
@@ -3281,10 +3282,10 @@ namespace Hecton8.Gameplay
             signal.DurationSeconds = 0.045f + safeBlend * 0.035f;
             signal.Frequency01 = SanitizeUnit(0.35f + safeBlend * 0.35f);
             signal.SourceHash = _sourceId;
-            signal.Frame = unchecked((uint)Time.frameCount);
+            signal.Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             signal.Channel = HapticRequest.ChannelLightThud;
             signal.Flags = HapticRequest.FlagLightThud;
-            SignalBus<HapticRequest>.TryPush(in signal);
+            SignalBus<HapticRequest>.TryPushTracked(in signal, ref _signalPushDropCount);
             _braceHapticCooldown = BraceHapticCooldownSeconds;
         }
 
@@ -3324,7 +3325,7 @@ namespace Hecton8.Gameplay
             signal.SourceId = _sourceId;
             signal.Channel = AcousticPingSignal.ChannelGloveScrape;
             signal.Flags = AcousticPingSignal.FlagGloveScrape;
-            SignalBus<AcousticPingSignal>.TryPush(in signal);
+            SignalBus<AcousticPingSignal>.TryPushTracked(in signal, ref _signalPushDropCount);
             _scrapeAcousticCooldown = GloveScrapeCooldownSeconds;
             return true;
         }
@@ -3364,7 +3365,7 @@ namespace Hecton8.Gameplay
                 DragCoefficient = SanitizeNonNegative(dragCoefficient),
                 WaterDensity = ResolveRuntimeWaterDensityScale(),
                 SolidDensity = safeActiveBlend,
-                Frame = unchecked((uint)Time.frameCount),
+                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 Flags = 0u,
                 SyncFenceHash = 0u,
                 AuxFlags = auxFlags
@@ -3706,7 +3707,7 @@ namespace Hecton8.Gameplay
                 Position = snappedPosition,
                 Velocity = snappedVelocity,
                 Rotation = rotation,
-                Frame = (uint)Time.frameCount,
+                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 Flags = safeFlags,
                 StateHash = hash
             };
@@ -3810,7 +3811,7 @@ namespace Hecton8.Gameplay
             uint hash = BuildSyncFenceHash(in aup, velocity, rotation);
             float maxDriftErrorMeters = ResolveAupMaxDriftErrorMeters(in aup, position);
             _accumulatorState.LastSyncFenceHash = hash;
-            _accumulatorState.LastSyncFenceFrame = (uint)Time.frameCount;
+            _accumulatorState.LastSyncFenceFrame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
 
             SyncFenceSignal signal = default;
             signal.PositionAup = aup;
@@ -3864,7 +3865,7 @@ namespace Hecton8.Gameplay
             DesyncDetectedSignal signal = default;
             signal.LocalHash = localHash;
             signal.AuthoritativeHash = authoritativeHash;
-            signal.Frame = frame != 0u ? frame : (uint)Time.frameCount;
+            signal.Frame = frame != 0u ? frame : Hecton8.Core.SystemDispatcher.CurrentFrameId;
             signal.SourceId = _sourceId;
             signal.LastFenceFrame = _accumulatorState.LastSyncFenceFrame;
             signal.Flags = flags;

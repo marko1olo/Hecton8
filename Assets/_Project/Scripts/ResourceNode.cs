@@ -20,6 +20,7 @@ namespace Hecton8.Scavenging
     [DisallowMultipleComponent]
     public sealed class ResourceNode : MonoBehaviour, IPoolable, ICuttable, IInteractionSignalConsumer
     {
+        private static int s_x001ResourceNodeSignalPushDropCount;
         private static readonly int _MeltCenterId = Shader.PropertyToID("_MeltCenter");
         private static readonly int _MeltRadiusId = Shader.PropertyToID("_MeltRadius");
         private const uint ImpactDebrisRockSpeciesHash = 0x524E4442u; // RNDB
@@ -1017,7 +1018,7 @@ namespace Hecton8.Scavenging
             signal.DebrisKind = DebrisSpawnSignal.DebrisKindRockShard;
             signal.Flags = DebrisSpawnSignal.FlagComputeShard;
             signal.Quantity = (ushort)math.clamp(requestedParticles, 1, 96);
-            SignalBus<DebrisSpawnSignal>.TryPush(in signal);
+            SignalBus<DebrisSpawnSignal>.TryPushTracked(in signal, ref s_x001ResourceNodeSignalPushDropCount);
         }
 
         private ResourceNodeTemplate.DebrisPhysicalProfile ResolveDebrisPhysicalProfile()

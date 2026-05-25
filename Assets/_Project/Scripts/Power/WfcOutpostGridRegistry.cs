@@ -63,6 +63,15 @@ namespace Hecton8.Power
         public static bool RegisterGrid(in WfcOutpostGridDescriptor descriptor, NativeArray<byte> cells, out uint handle)
         {
             handle = 0u;
+            if (!cells.IsCreated)
+                return false;
+
+            return RegisterGrid(in descriptor, cells.AsReadOnly(), out handle);
+        }
+
+        public static bool RegisterGrid(in WfcOutpostGridDescriptor descriptor, NativeArray<byte>.ReadOnly cells, out uint handle)
+        {
+            handle = 0u;
             if (!cells.IsCreated || !IsValidDescriptor(in descriptor))
                 return false;
 

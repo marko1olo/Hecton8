@@ -847,7 +847,7 @@ namespace Hecton8.Construction
             ModuleCatalogTelemetryEntry entry = default;
             entry.QueryTicks = queryTicks;
             entry.BurstTicks = burstTicks;
-            entry.Frame = unchecked((uint)Time.frameCount);
+            entry.Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             entry.QueryCount = queryCount;
             entry.SuccessfulAdjacencyCount = successCount;
             entry.FailedAdjacencyCount = failedCount;

@@ -70,7 +70,9 @@ Fabrication assembly progress now has a Vault-backed visual truth surface:
 
 - AUP rule: GPU payload stores local `targetAUP - fabricatorAUP` as `float3`, never absolute float coordinates.
 
-- Signals: fabrication/deconstruction/tick routes use unmanaged typed lanes; `FabricationCompletedSignal` carries TargetAUP because the existing `CraftingCompletedSignal` layout cannot be expanded during the batch. Delivered-item `CraftingCompletedSignal` remains owned by `Fabricator.CompleteCraft()` after inventory/world commit.
+- Signals: fabrication/deconstruction/tick routes use unmanaged typed lanes.
+- `FabricationCompletedSignal` carries TargetAUP because existing `CraftingCompletedSignal` layout cannot expand during batch.
+- Delivered-item `CraftingCompletedSignal` remains owned by `Fabricator.CompleteCraft()` after inventory/world commit.
 
 - Human control: `FabricationAssemblerTunerWindow` is editor-only UI Toolkit.
 - Backing data: Vault tuning/timing DTOs.
@@ -88,7 +90,9 @@ Verification boundary: static scans only. No Unity import, Play Mode, profiler, 
 
 R48 boundary: each `Fabricator` must not own new persistent private native scratch for cross-domain or rollback-visible craftability truth.
 
-Scratch capacity belongs in `GlobalDataVault` or an explicit owner-local route card with shutdown/proof fields. The `Fabricator` should hold handles/views only. The legacy path below is historical/static residue until migrated.
+Scratch capacity belongs in `GlobalDataVault` or an owner-local route card with shutdown/proof fields.
+
+The `Fabricator` should hold handles/views only. The legacy path below is historical/static residue until migrated.
 
 Legacy residue:
 
@@ -276,7 +280,8 @@ Runtime order:
 Delivered-item `CraftingCompletedSignal` remains owned by `Fabricator.CompleteCraft()` after inventory/world output is committed. Fabrication visual completion is not allowed to masquerade as delivered item ownership.
 
 - Legacy local craft timer progression is removed from the active route.
-- `Fabricator` keeps only a seconds mirror for UI/audio compatibility, while smoke testing now injects SHINOBU mock records into `ShinobuFabricationJobs` and reads Vault snapshots instead of advancing a C# timer helper.
+- `Fabricator` keeps only seconds mirror for UI/audio compatibility.
+- Smoke testing injects SHINOBU mock records into `ShinobuFabricationJobs` and reads Vault snapshots instead of advancing C# timer helper.
 - Batchmode smoke may create bounded 16MB fallback `GlobalDataVault` only without bootstrap Vault; graphics buffers defer because smoke validates data, not render-device availability.
 
 The per-fabricator `NativeQueue<CraftingTask>` lane was removed. Delivery metadata is one unmanaged `CraftingTask` slot plus bool; progress, flags, duration, hashes, GPU payload, and telemetry remain Vault-owned.

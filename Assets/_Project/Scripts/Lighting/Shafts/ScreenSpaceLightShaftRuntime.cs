@@ -53,6 +53,7 @@ namespace Hecton8.Lighting.Shafts
     [AddComponentMenu("Hecton8/Lighting/Screen Space Light Shaft Runtime")]
     public sealed class ScreenSpaceLightShaftRuntime : MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener, IDisposable
     {
+        private static int s_x001ScreenSpaceLightShaftRuntimeSignalPushDropCount;
         private const int MaxTrackedSources = 3;
         private const int TelemetryCapacity = 300;
         private const float FpsDisableThreshold = 40f;
@@ -705,7 +706,7 @@ namespace Hecton8.Lighting.Shafts
                     Frame = unchecked((uint)frame),
                     Flags = 1
                 };
-                SignalBus<VisualFlareSignal>.TryPush(in signal);
+                SignalBus<VisualFlareSignal>.TryPushTracked(in signal, ref s_x001ScreenSpaceLightShaftRuntimeSignalPushDropCount);
             }
         }
 
@@ -737,7 +738,7 @@ namespace Hecton8.Lighting.Shafts
             LightShaftContribution primary = activeCount > 0 ? topContributions[0] : default;
             telemetry[_telemetryWriteIndex] = new LightShaftTelemetryEntry
             {
-                Frame = unchecked((uint)Time.frameCount),
+                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 PrimarySourceId = primary.SourceId,
                 PrimaryUv = primary.ScreenUv,
                 ActiveLightShafts = activeCount,

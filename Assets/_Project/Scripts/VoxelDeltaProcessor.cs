@@ -59,6 +59,7 @@ namespace Hecton8.Caves
     [RequireComponent(typeof(HectonVoxelEngine))]
     public sealed class VoxelDeltaProcessor : MonoBehaviour, ISaveable, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
+        private static int s_x001VoxelDeltaProcessorSignalPushDropCount;
         private const int ChunkResolution = 32;
         private const int ChunkCellCount = VoxelDeltaChunkDTO.CellCount;
         private const int ChunkDirtyMaskWordCount = VoxelDeltaChunkDTO.DirtyMaskWordCount;
@@ -261,7 +262,7 @@ namespace Hecton8.Caves
             TryGetComponent(out _engine);
             _dataVault = GlobalRegistry.DataVault;
             _simulationBucketer = GlobalRegistry.SimulationBucketer;
-            _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+            _saveService = GlobalRegistry.Save;
             _fluidDecals = GlobalRegistry.AbyssalFluidDecals;
             TryRegisterHotSwapListener();
             EnsureCarveEventQueue();
@@ -1631,7 +1632,7 @@ namespace Hecton8.Caves
 
             _queuedCarveEvents.Enqueue(queuedEvent);
             _queuedCarveEventCount++;
-            SignalBus<VoxelCarveEvent>.TryPush(in queuedEvent);
+            SignalBus<VoxelCarveEvent>.TryPushTracked(in queuedEvent, ref s_x001VoxelDeltaProcessorSignalPushDropCount);
             return true;
         }
 
@@ -3406,9 +3407,11 @@ namespace Hecton8.Caves
                 ClampLocalizedLaserCarveBounds(ref minCell, ref maxCell, volumeMinCell, volumeMaxCell, segmentStart, voxelSize);
 
             int3 span = (maxCell - minCell) + 1;
-            int candidateCount = math.max(0, span.x) * math.max(0, span.y) * math.max(0, span.z);
-            if (candidateCount <= 0)
+            if (!TryResolveScheduledCarveCandidateCount(span, out int candidateCount))
+            {
+                WriteBlackBoxSample(EntityId.ToULong(volume.GetEntityId()), VoxelBlackBoxQueueOverflowFlag);
                 return;
+            }
 
             bool scheduled = false;
             try
@@ -3451,7 +3454,9 @@ namespace Hecton8.Caves
             }
             catch (Exception exception)
             {
+                WriteBlackBoxSample(EntityId.ToULong(volume.GetEntityId()), VoxelBlackBoxInvalidPendingCarveFlag);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
+                DumpBlackBoxOnce(VoxelBlackBoxInvalidPendingCarveFlag);
                 Debug.LogError("[VoxelDeltaProcessor] Failed to schedule voxel CSG carve: " + exception.Message, this);
 #endif
             }
@@ -3469,6 +3474,21 @@ namespace Hecton8.Caves
                     UnlockScheduledCarveWrites();
                 }
             }
+        }
+
+        private static bool TryResolveScheduledCarveCandidateCount(int3 span, out int candidateCount)
+        {
+            candidateCount = 0;
+            if (span.x <= 0 || span.y <= 0 || span.z <= 0)
+                return false;
+
+            long xy = (long)span.x * span.y;
+            long total = xy * span.z;
+            if (total <= 0L || total > ScheduledCarveWriteCapacity)
+                return false;
+
+            candidateCount = (int)total;
+            return true;
         }
 
         private void TryCommitScheduledCarve()
@@ -4399,7 +4419,7 @@ namespace Hecton8.Caves
                     : DebrisSpawnSignal.DebrisKindRockShard,
                 Flags = (byte)(request.SourceFlags | DebrisSpawnSignal.FlagComputeShard)
             };
-            SignalBus<DebrisSpawnSignal>.TryPush(in signal);
+            SignalBus<DebrisSpawnSignal>.TryPushTracked(in signal, ref s_x001VoxelDeltaProcessorSignalPushDropCount);
         }
 
         private void PublishMaterialYieldIfNeeded()
@@ -4416,9 +4436,9 @@ namespace Hecton8.Caves
                 Quantity = (ushort)quantity,
                 SourceKind = ItemSourceVoxelCarve,
                 Flags = _scheduledCarveRequest.SourceFlags,
-                Frame = unchecked((uint)Time.frameCount)
+                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId
             };
-            SignalBus<ItemAcquiredSignal>.TryPush(in signal);
+            SignalBus<ItemAcquiredSignal>.TryPushTracked(in signal, ref s_x001VoxelDeltaProcessorSignalPushDropCount);
         }
 
         private void PublishCarveMassTelemetryIfNeeded()
@@ -4455,7 +4475,7 @@ namespace Hecton8.Caves
                 MinAbsoluteCell = _scheduledCarveTouchedMinCell,
                 MaxAbsoluteCell = _scheduledCarveTouchedMaxCell,
                 VoxelSize = voxelSize,
-                Frame = (uint)Time.frameCount,
+                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 Operation = ResolveVoxelChunkModifiedOperation(_scheduledCarveRequest.DeltaFlags),
                 Shape = _scheduledCarveRequest.Shape,
                 Flags = _scheduledCarveRequest.SourceFlags,
@@ -5114,7 +5134,7 @@ namespace Hecton8.Caves
 
             blackBox[_blackBoxCursor] = new VoxelCarveTelemetryEntry
             {
-                Frame = unchecked((uint)Time.frameCount),
+                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 Flags = flags,
                 FocusVolumeId = focusVolumeId,
                 LastHitAup = lastHitAup,

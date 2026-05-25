@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Threading;
 using Hecton8.Audio;
 using Hecton.Localization;
@@ -28,6 +28,7 @@ namespace Hecton8.World
     [DefaultExecutionOrder(-102)]
     public sealed class AbyssalThermalManager : MonoBehaviour, ITickable, ISlowTickable, IFixedTickable, ILateFrameTickable, IOriginShiftListener, IThermodynamicsService, IRandomEventListener, global::Hecton8.Gameplay.ILaserCutterEventListener, IGlobalRegistryHotSwapListener
     {
+        private static int s_x001AbyssalThermalManagerSignalPushDropCount;
         public struct ThermalFlowSample
         {
             public byte HasFlow;
@@ -1701,9 +1702,9 @@ namespace Hecton8.World
             signal.TemperatureCelsius = temperatureCelsius;
             signal.DeltaCelsius = math.isfinite(deltaCelsius) ? deltaCelsius : 0f;
             signal.SourceId = sourceId <= 0 ? (ushort)0 : (ushort)math.min(sourceId, ushort.MaxValue);
-            signal.Frame = unchecked((uint)Time.frameCount);
+            signal.Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             signal.Flags = flags;
-            SignalBus<TemperatureChangedSignal>.TryPush(in signal);
+            SignalBus<TemperatureChangedSignal>.TryPushTracked(in signal, ref s_x001AbyssalThermalManagerSignalPushDropCount);
         }
 
         private void EmitThermalShock(Vector3 positionWS, float deltaCelsius, int sourceId, GameObject targetObject, byte temperatureFlags)
@@ -1754,7 +1755,7 @@ namespace Hecton8.World
                 acoustic.SourceId = unchecked((uint)(sourceId <= 0 ? _instanceId : sourceId));
                 acoustic.Channel = ThermalShockAcousticChannel;
                 acoustic.Flags = 1;
-                SignalBus<AcousticPingSignal>.TryPush(in acoustic);
+                SignalBus<AcousticPingSignal>.TryPushTracked(in acoustic, ref s_x001AbyssalThermalManagerSignalPushDropCount);
             }
 
             PublishTemperatureChangedSignal(
@@ -1955,7 +1956,7 @@ namespace Hecton8.World
             signal.Intensity = intensity;
             signal.PrimaryBodyId = (uint)_instanceId;
             signal.WeightClass = 2;
-            SignalBus<ImpactSignal>.TryPush(in signal);
+            SignalBus<ImpactSignal>.TryPushTracked(in signal, ref s_x001AbyssalThermalManagerSignalPushDropCount);
             _thermalRoarCooldown = thermalRoarCooldownSeconds;
         }
 
@@ -2942,7 +2943,12 @@ namespace Hecton8.World
                     _simulationBucketer = currentService as ISimulationBucketer;
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    TryRegister();
+                    _registeredTick = false;
+                    _registeredSlowTick = false;
+                    _registeredFixedTick = false;
+                    _registeredLateFrameTick = false;
+                    if (currentService != null)
+                        TryRegister();
                     break;
             }
         }
@@ -3540,7 +3546,7 @@ namespace Hecton8.World
             signal.IntensityCelsiusPerSecond = math.max(0f, heatIntensity);
             signal.SourceId = sourceId != 0u ? sourceId : BuildTransientThermalSourceId(positionWS, radiusWS);
             signal.Frame = unchecked((uint)math.max(0, HectonArenaAllocator.CurrentFrameSequence));
-            SignalBus<ThermalSourceSignal>.TryPush(in signal);
+            SignalBus<ThermalSourceSignal>.TryPushTracked(in signal, ref s_x001AbyssalThermalManagerSignalPushDropCount);
         }
 
         private static uint BuildTransientThermalSourceId(Vector3 positionWS, float radiusWS)

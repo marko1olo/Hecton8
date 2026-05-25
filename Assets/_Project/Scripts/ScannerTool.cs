@@ -26,6 +26,7 @@ namespace Hecton8.Gameplay
     [RequireComponent(typeof(DataArchaeologyRuntime))]
     public sealed class ScannerTool : PlayerTool, IBatteryTool, IFastTickable, ISlowTickable, ILateFrameTickable, ILocalizationLanguageChangedListener, IGlobalRegistryHotSwapListener
     {
+        private static int s_x001ScannerToolSignalPushDropCount;
         internal const string ScannerMarkerShaderPath = "Assets/_Project/Art/Shaders/Hecton_ScannerMarkerInstanced.shader";
         private const int AtlasDetectionRevealStage = 2;
         private const int AtlasNavigationRevealStage = 3;
@@ -248,9 +249,9 @@ namespace Hecton8.Gameplay
                 {
                     return AppendText(ref buffer, mode switch
                     {
-                        ScanMode.Resource => ResolveLocalized(H8ToolLocHashes.SCANNER_HUD_NO_RESOURCE, "SCANNER - NO RESOURCE SIGNATURES | Sweep another extraction lane."),
-                        ScanMode.Structure => ResolveLocalized(H8ToolLocHashes.SCANNER_HUD_NO_STRUCTURE, "SCANNER - NO STRUCTURAL CONTACTS | No buildable or databank return in this sector."),
-                        _ => ResolveLocalized(H8ToolLocHashes.SCANNER_HUD_CLEAR, "SCANNER - CLEAR | No meaningful contacts in the active sweep.")
+                        ScanMode.Resource => StableText(H8ToolLocHashes.SCANNER_HUD_NO_RESOURCE, "SCANNER - NO RESOURCE SIGNATURES | Sweep another extraction lane."),
+                        ScanMode.Structure => StableText(H8ToolLocHashes.SCANNER_HUD_NO_STRUCTURE, "SCANNER - NO STRUCTURAL CONTACTS | No buildable or databank return in this sector."),
+                        _ => StableText(H8ToolLocHashes.SCANNER_HUD_CLEAR, "SCANNER - CLEAR | No meaningful contacts in the active sweep.")
                     });
                 }
 
@@ -260,7 +261,7 @@ namespace Hecton8.Gameplay
                     case ScanMode.Resource:
                         return TryAppendScanHudTemplate(
                             ref buffer,
-                            ResolveLocalized(H8ToolLocHashes.SCANNER_HUD_RESOURCE_CONTACTS, "SCANNER - RESOURCES {0} // PICKUPS {1} | {2}"),
+                            StableText(H8ToolLocHashes.SCANNER_HUD_RESOURCE_CONTACTS, "SCANNER - RESOURCES {0} // PICKUPS {1} | {2}"),
                             resourceContacts,
                             pickupContacts,
                             0,
@@ -269,7 +270,7 @@ namespace Hecton8.Gameplay
                     case ScanMode.Structure:
                         return TryAppendScanHudTemplate(
                             ref buffer,
-                            ResolveLocalized(H8ToolLocHashes.SCANNER_HUD_STRUCTURE_CONTACTS, "SCANNER - STRUCTURES {0} // ROUTE {1} | {2}"),
+                            StableText(H8ToolLocHashes.SCANNER_HUD_STRUCTURE_CONTACTS, "SCANNER - STRUCTURES {0} // ROUTE {1} | {2}"),
                             structureContacts,
                             routeContacts,
                             0,
@@ -280,7 +281,7 @@ namespace Hecton8.Gameplay
                         {
                             return TryAppendScanHudTemplate(
                                 ref buffer,
-                                ResolveLocalized(H8ToolLocHashes.SCANNER_HUD_CONTACTS_WITH_FLORA, "SCANNER - CONTACTS {0} // BIO {1} // FLORA {2} | {3}"),
+                                StableText(H8ToolLocHashes.SCANNER_HUD_CONTACTS_WITH_FLORA, "SCANNER - CONTACTS {0} // BIO {1} // FLORA {2} | {3}"),
                                 totalContacts,
                                 bioformContacts,
                                 floraContacts,
@@ -290,7 +291,7 @@ namespace Hecton8.Gameplay
 
                         return TryAppendScanHudTemplate(
                             ref buffer,
-                            ResolveLocalized(H8ToolLocHashes.SCANNER_HUD_CONTACTS, "SCANNER - CONTACTS {0} // BIO {1} | {2}"),
+                            StableText(H8ToolLocHashes.SCANNER_HUD_CONTACTS, "SCANNER - CONTACTS {0} // BIO {1} | {2}"),
                             totalContacts,
                             bioformContacts,
                             0,
@@ -303,9 +304,9 @@ namespace Hecton8.Gameplay
             {
                 return mode switch
                 {
-                    ScanMode.Resource => ResolveLocalized(H8ToolLocHashes.SCANNER_LOG_RESOURCE_SWEEP_COMPLETE, "RESOURCE SWEEP COMPLETE"),
-                    ScanMode.Structure => ResolveLocalized(H8ToolLocHashes.SCANNER_LOG_STRUCTURE_SWEEP_COMPLETE, "STRUCTURE SWEEP COMPLETE"),
-                    _ => ResolveLocalized(H8ToolLocHashes.SCANNER_LOG_EXPEDITION_SWEEP_COMPLETE, "HYDROACOUSTIC CONTACTS ARCHIVED")
+                    ScanMode.Resource => StableText(H8ToolLocHashes.SCANNER_LOG_RESOURCE_SWEEP_COMPLETE, "RESOURCE SWEEP COMPLETE"),
+                    ScanMode.Structure => StableText(H8ToolLocHashes.SCANNER_LOG_STRUCTURE_SWEEP_COMPLETE, "STRUCTURE SWEEP COMPLETE"),
+                    _ => StableText(H8ToolLocHashes.SCANNER_LOG_EXPEDITION_SWEEP_COMPLETE, "HYDROACOUSTIC CONTACTS ARCHIVED")
                 };
             }
 
@@ -323,7 +324,7 @@ namespace Hecton8.Gameplay
                     {
                         ScanMode.Resource => TryAppendScanTemplate(
                             ref buffer,
-                            ResolveLocalized(H8ToolLocHashes.SCANNER_SUMMARY_NO_RESOURCE, "No harvestable or cached resource signatures were resolved inside the {0:0}m sweep. Recommendation: Shift to another extraction lane."),
+                            StableText(H8ToolLocHashes.SCANNER_SUMMARY_NO_RESOURCE, "No harvestable or cached resource signatures were resolved inside the {0:0}m sweep. Recommendation: Shift to another extraction lane."),
                             radiusMeters,
                             0,
                             0,
@@ -332,7 +333,7 @@ namespace Hecton8.Gameplay
                             '\0'),
                         ScanMode.Structure => TryAppendScanTemplate(
                             ref buffer,
-                            ResolveLocalized(H8ToolLocHashes.SCANNER_SUMMARY_NO_STRUCTURE, "No modules, markers, or authored intel contacts were resolved inside the {0:0}m sweep. Recommendation: Continue transit or widen the structural search area."),
+                            StableText(H8ToolLocHashes.SCANNER_SUMMARY_NO_STRUCTURE, "No modules, markers, or authored intel contacts were resolved inside the {0:0}m sweep. Recommendation: Continue transit or widen the structural search area."),
                             radiusMeters,
                             0,
                             0,
@@ -341,7 +342,7 @@ namespace Hecton8.Gameplay
                             '\0'),
                         _ => TryAppendScanTemplate(
                             ref buffer,
-                            ResolveLocalized(H8ToolLocHashes.SCANNER_SUMMARY_NO_CONTACTS, "No meaningful contacts were resolved in the last {0:0}m hydroacoustic sweep. Recommendation: Advance to the next scouting point."),
+                            StableText(H8ToolLocHashes.SCANNER_SUMMARY_NO_CONTACTS, "No meaningful contacts were resolved in the last {0:0}m hydroacoustic sweep. Recommendation: Advance to the next scouting point."),
                             radiusMeters,
                             0,
                             0,
@@ -356,7 +357,7 @@ namespace Hecton8.Gameplay
                 {
                     ScanMode.Resource => TryAppendScanTemplate(
                         ref buffer,
-                        ResolveLocalized(H8ToolLocHashes.SCANNER_SUMMARY_RESOURCE_CONTACTS, "{0} resource signatures and {1} cached pickups resolved inside {2:0}m. Recommendation: {3}"),
+                        StableText(H8ToolLocHashes.SCANNER_SUMMARY_RESOURCE_CONTACTS, "{0} resource signatures and {1} cached pickups resolved inside {2:0}m. Recommendation: {3}"),
                         resourceContacts,
                         pickupContacts,
                         radiusMeters,
@@ -365,7 +366,7 @@ namespace Hecton8.Gameplay
                         '3'),
                     ScanMode.Structure => TryAppendScanTemplate(
                         ref buffer,
-                        ResolveLocalized(H8ToolLocHashes.SCANNER_SUMMARY_STRUCTURE_CONTACTS, "{0} structural contacts, {1} route markers, and {2} databank contacts resolved inside {3:0}m. Recommendation: {4}"),
+                        StableText(H8ToolLocHashes.SCANNER_SUMMARY_STRUCTURE_CONTACTS, "{0} structural contacts, {1} route markers, and {2} databank contacts resolved inside {3:0}m. Recommendation: {4}"),
                         structureContacts,
                         routeContacts,
                         scannableContacts,
@@ -375,7 +376,7 @@ namespace Hecton8.Gameplay
                     _ => floraContacts > 0
                         ? TryAppendScanTemplate(
                             ref buffer,
-                            ResolveLocalized(H8ToolLocHashes.SCANNER_SUMMARY_CONTACTS_WITH_FLORA, "{0} contact signatures resolved inside {1:0}m pulse envelope, including {2} bioform-coded contacts and {3} flora signatures. Recommendation: {4}"),
+                            StableText(H8ToolLocHashes.SCANNER_SUMMARY_CONTACTS_WITH_FLORA, "{0} contact signatures resolved inside {1:0}m pulse envelope, including {2} bioform-coded contacts and {3} flora signatures. Recommendation: {4}"),
                             totalContacts,
                             radiusMeters,
                             bioformContacts,
@@ -384,7 +385,7 @@ namespace Hecton8.Gameplay
                             '4')
                         : TryAppendScanTemplate(
                             ref buffer,
-                            ResolveLocalized(H8ToolLocHashes.SCANNER_SUMMARY_CONTACTS, "{0} contact signatures resolved inside {1:0}m pulse envelope, including {2} bioform-coded contacts. Recommendation: {3}"),
+                            StableText(H8ToolLocHashes.SCANNER_SUMMARY_CONTACTS, "{0} contact signatures resolved inside {1:0}m pulse envelope, including {2} bioform-coded contacts. Recommendation: {3}"),
                             totalContacts,
                             radiusMeters,
                             bioformContacts,
@@ -400,39 +401,39 @@ namespace Hecton8.Gameplay
                 {
                     return mode switch
                     {
-                        ScanMode.Resource => ResolveLocalized(H8ToolLocHashes.SCANNER_RECOMMEND_SHIFT_LANE, "Shift to another extraction lane."),
-                        ScanMode.Structure => ResolveLocalized(H8ToolLocHashes.SCANNER_RECOMMEND_WIDEN_SEARCH, "Widen the search or continue transit."),
-                        _ => ResolveLocalized(H8ToolLocHashes.SCANNER_RECOMMEND_ADVANCE_SCOUT, "Advance to the next scouting point.")
+                        ScanMode.Resource => StableText(H8ToolLocHashes.SCANNER_RECOMMEND_SHIFT_LANE, "Shift to another extraction lane."),
+                        ScanMode.Structure => StableText(H8ToolLocHashes.SCANNER_RECOMMEND_WIDEN_SEARCH, "Widen the search or continue transit."),
+                        _ => StableText(H8ToolLocHashes.SCANNER_RECOMMEND_ADVANCE_SCOUT, "Advance to the next scouting point.")
                     };
                 }
 
                 return mode switch
                 {
                     ScanMode.Resource => resourcePoiContacts > 0
-                        ? ResolveLocalized(H8ToolLocHashes.SCANNER_RECOMMEND_RESOURCE_POCKET, "A resource pocket is authored in this lane. Sweep it, then recover in sequence.")
+                        ? StableText(H8ToolLocHashes.SCANNER_RECOMMEND_RESOURCE_POCKET, "A resource pocket is authored in this lane. Sweep it, then recover in sequence.")
                         : resourceContacts > 0
-                            ? ResolveLocalized(H8ToolLocHashes.SCANNER_RECOMMEND_MARK_RICHEST_LANE, "Mark the richest lane and recover in sequence.")
-                            : ResolveLocalized(H8ToolLocHashes.SCANNER_RECOMMEND_CACHED_PICKUPS_ONLY, "Cached pickups exist, but no live resource node is leading this lane."),
+                            ? StableText(H8ToolLocHashes.SCANNER_RECOMMEND_MARK_RICHEST_LANE, "Mark the richest lane and recover in sequence.")
+                            : StableText(H8ToolLocHashes.SCANNER_RECOMMEND_CACHED_PICKUPS_ONLY, "Cached pickups exist, but no live resource node is leading this lane."),
                     ScanMode.Structure => hazardContacts > 0
-                        ? ResolveLocalized(H8ToolLocHashes.SCANNER_RECOMMEND_HAZARD_PROBE, "Hazard probe resolved. Switch to cautious approach and inspect with focus tools.")
+                        ? StableText(H8ToolLocHashes.SCANNER_RECOMMEND_HAZARD_PROBE, "Hazard probe resolved. Switch to cautious approach and inspect with focus tools.")
                         : routeContacts > 0
-                            ? ResolveLocalized(H8ToolLocHashes.SCANNER_RECOMMEND_ROUTE_MARKERS, "Route markers are live in this sector. Hold the lane readable and stage beacon relays.")
+                            ? StableText(H8ToolLocHashes.SCANNER_RECOMMEND_ROUTE_MARKERS, "Route markers are live in this sector. Hold the lane readable and stage beacon relays.")
                         : structurePoiContacts > 0
-                                ? ResolveLocalized(H8ToolLocHashes.SCANNER_RECOMMEND_STRUCTURAL_WAYPOINT, "Structural waypoint resolved. Hold this route for navigation or service work.")
+                                ? StableText(H8ToolLocHashes.SCANNER_RECOMMEND_STRUCTURAL_WAYPOINT, "Structural waypoint resolved. Hold this route for navigation or service work.")
                                 : structureContacts > 0
-                                    ? ResolveLocalized(H8ToolLocHashes.SCANNER_RECOMMEND_HOLD_ROUTE, "Hold this route for construction, salvage, or return navigation.")
-                                    : ResolveLocalized(H8ToolLocHashes.SCANNER_RECOMMEND_DATABANK_ONLY, "Databank signal only. Sweep closer before committing tools."),
+                                    ? StableText(H8ToolLocHashes.SCANNER_RECOMMEND_HOLD_ROUTE, "Hold this route for construction, salvage, or return navigation.")
+                                    : StableText(H8ToolLocHashes.SCANNER_RECOMMEND_DATABANK_ONLY, "Databank signal only. Sweep closer before committing tools."),
                     _ => totalContacts >= 4
-                        ? ResolveLocalized(H8ToolLocHashes.SCANNER_RECOMMEND_DENSE_SECTOR, "Sector is dense with contacts. Slow down and classify before pushing deeper.")
+                        ? StableText(H8ToolLocHashes.SCANNER_RECOMMEND_DENSE_SECTOR, "Sector is dense with contacts. Slow down and classify before pushing deeper.")
                         : floraContacts > 0
-                            ? ResolveLocalized(H8ToolLocHashes.SCANNER_RECOMMEND_FLORA_PRESENT, "Flora signatures are present. Log the contact and inspect shelter, cover, or harvest value before moving on.")
+                            ? StableText(H8ToolLocHashes.SCANNER_RECOMMEND_FLORA_PRESENT, "Flora signatures are present. Log the contact and inspect shelter, cover, or harvest value before moving on.")
                         : bioformContacts > 0
-                            ? ResolveLocalized(H8ToolLocHashes.SCANNER_RECOMMEND_BIOFORM_PRESENT, "Bioform signatures are present. Confirm posture before closing distance.")
+                            ? StableText(H8ToolLocHashes.SCANNER_RECOMMEND_BIOFORM_PRESENT, "Bioform signatures are present. Confirm posture before closing distance.")
                         : cargoContacts > 0
-                            ? ResolveLocalized(H8ToolLocHashes.SCANNER_RECOMMEND_CARGO_PRESENT, "Cargo signatures are present. Prepare propulsion or harpoon handling before transit.")
+                            ? StableText(H8ToolLocHashes.SCANNER_RECOMMEND_CARGO_PRESENT, "Cargo signatures are present. Prepare propulsion or harpoon handling before transit.")
                         : expeditionContacts > 0
-                            ? ResolveLocalized(H8ToolLocHashes.SCANNER_RECOMMEND_EXPEDITION_WAYPOINT, "Expedition waypoint resolved. Use it as a checkpoint before pushing deeper.")
-                            : ResolveLocalized(H8ToolLocHashes.SCANNER_RECOMMEND_SPARSE_FIELD, "Sparse contact field. Safe to keep moving with periodic sweeps.")
+                            ? StableText(H8ToolLocHashes.SCANNER_RECOMMEND_EXPEDITION_WAYPOINT, "Expedition waypoint resolved. Use it as a checkpoint before pushing deeper.")
+                            : StableText(H8ToolLocHashes.SCANNER_RECOMMEND_SPARSE_FIELD, "Sparse contact field. Safe to keep moving with periodic sweeps.")
                 };
             }
         }
@@ -552,9 +553,9 @@ namespace Hecton8.Gameplay
         [SerializeField, Min(1f)] private float bloodWaypointWarningRadius = 100f;
         [SerializeField] private Shader scannerMarkerShader;
 
-        // COLD ALLOC: SpatialQueryHit[64] — scanner spatial contact cap — owner: ScannerTool
+        // COLD ALLOC: SpatialQueryHit[64] ï¿½ scanner spatial contact cap ï¿½ owner: ScannerTool
         private static readonly SpatialQueryHit[] s_SpatialHitBuffer = new SpatialQueryHit[64];
-        // COLD ALLOC: ScanAggregate[64] — scanner transform aggregate cap — owner: ScannerTool
+        // COLD ALLOC: ScanAggregate[64] ï¿½ scanner transform aggregate cap ï¿½ owner: ScannerTool
         private static readonly ScanAggregate[] s_ScanAggregateBuffer = new ScanAggregate[64];
         private static readonly SpatialTargetKind s_ScannerSpatialKinds =
             SpatialTargetKind.Resource |
@@ -573,9 +574,9 @@ namespace Hecton8.Gameplay
         private ScanResultSummary _lastResult;
         private float _lastResultTime = -999f;
         private bool _hasLastResult;
-        private FixedCharBuffer _scanHudBuffer = new FixedCharBuffer(512); // COLD ALLOC: char[512] — scanner result HUD staging buffer — owner: ScannerTool
-        private FixedCharBuffer _scanLogTitleBuffer = new FixedCharBuffer(128); // COLD ALLOC: char[128] — scanner operation log title staging buffer — owner: ScannerTool
-        private FixedCharBuffer _scanLogSummaryBuffer = new FixedCharBuffer(512); // COLD ALLOC: char[512] — scanner operation log summary staging buffer — owner: ScannerTool
+        private FixedCharBuffer _scanHudBuffer = new FixedCharBuffer(512); // COLD ALLOC: char[512] ï¿½ scanner result HUD staging buffer ï¿½ owner: ScannerTool
+        private FixedCharBuffer _scanLogTitleBuffer = new FixedCharBuffer(128); // COLD ALLOC: char[128] ï¿½ scanner operation log title staging buffer ï¿½ owner: ScannerTool
+        private FixedCharBuffer _scanLogSummaryBuffer = new FixedCharBuffer(512); // COLD ALLOC: char[512] ï¿½ scanner operation log summary staging buffer ï¿½ owner: ScannerTool
         private const float DegreesToRadians = 0.01745329252f;
         private string _cachedOperationalSummaryString = string.Empty;
         private string _cachedOperationalDirectiveString = string.Empty;
@@ -651,7 +652,7 @@ namespace Hecton8.Gameplay
         private float _batteryCharge;
 
         // MaterialPropertyBlock for power indicator
-        private MaterialPropertyBlock _mpb; // COLD ALLOC: MaterialPropertyBlock[1] — power indicator emission — owner: ScannerTool
+        private MaterialPropertyBlock _mpb; // COLD ALLOC: MaterialPropertyBlock[1] ï¿½ power indicator emission ï¿½ owner: ScannerTool
         private static readonly int _EmissionColorID = Shader.PropertyToID("_EmissionColor");
         private bool _powerIndicatorDirty;
 
@@ -748,7 +749,7 @@ namespace Hecton8.Gameplay
 
         private void Awake()
         {
-            _mpb = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] — power indicator emission — owner: ScannerTool
+            _mpb = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] ï¿½ power indicator emission ï¿½ owner: ScannerTool
             EnsureScientificNativeState();
             InitializeScannerQualityWeightCold();
             BindCachedRuntimeServicesCold();
@@ -762,7 +763,7 @@ namespace Hecton8.Gameplay
 
             HectonScanMarkerSystem markerSystem = GetComponent<HectonScanMarkerSystem>();
             if (markerSystem == null)
-                markerSystem = gameObject.AddComponent<HectonScanMarkerSystem>(); // COLD ALLOC: HectonScanMarkerSystem[1] — scanner marker owner — owner: ScannerTool
+                markerSystem = gameObject.AddComponent<HectonScanMarkerSystem>(); // COLD ALLOC: HectonScanMarkerSystem[1] ï¿½ scanner marker owner ï¿½ owner: ScannerTool
 
             if (markerSystem != null)
                 markerSystem.Initialize(scannerMarkerShader);
@@ -809,7 +810,7 @@ namespace Hecton8.Gameplay
             {
                 if (now >= _nextCooldownFeedbackAt)
                 {
-                    PublishScanWarning(ResolveLocalized(H8ToolLocHashes.SCANNER_HUD_RECHARGING, "SCANNER - RECHARGING"));
+                    PublishScanWarning(StableText(H8ToolLocHashes.SCANNER_HUD_RECHARGING, "SCANNER - RECHARGING"));
                     _nextCooldownFeedbackAt = now + cooldownFeedbackInterval;
                 }
                 return;
@@ -844,7 +845,7 @@ namespace Hecton8.Gameplay
                 result.TryWriteOperationSummary(_scanMode, effectiveScanRadius, ref _scanLogSummaryBuffer))
             {
                 FieldOperationLogSystem.RecordOperation(
-                    ResolveLocalized(H8ToolLocHashes.SCANNER_CATEGORY, "SCAN"),
+                    StableText(H8ToolLocHashes.SCANNER_CATEGORY, "SCAN"),
                     in _scanLogTitleBuffer,
                     in _scanLogSummaryBuffer,
                     "INFO");
@@ -856,7 +857,7 @@ namespace Hecton8.Gameplay
                 AppendText(ref _scanLogTitleBuffer, "SCAN SWEEP ARCHIVED");
                 AppendText(ref _scanLogSummaryBuffer, "Scanner operation-log buffer overflowed; fixed-buffer HUD payload was not serialized.");
                 FieldOperationLogSystem.RecordOperation(
-                    ResolveLocalized(H8ToolLocHashes.SCANNER_CATEGORY, "SCAN"),
+                    StableText(H8ToolLocHashes.SCANNER_CATEGORY, "SCAN"),
                     in _scanLogTitleBuffer,
                     in _scanLogSummaryBuffer,
                     "WARN");
@@ -887,7 +888,7 @@ namespace Hecton8.Gameplay
             signal.SourceId = ScannerToolTuningHash;
             signal.Channel = AcousticPingSignal.ChannelActiveSonar;
             signal.Flags = AcousticPingSignal.FlagActiveSonar;
-            SignalBus<AcousticPingSignal>.TryPush(in signal);
+            SignalBus<AcousticPingSignal>.TryPushTracked(in signal, ref s_x001ScannerToolSignalPushDropCount);
         }
 
         private static bool TryResolveRuntimeAup(
@@ -930,7 +931,7 @@ namespace Hecton8.Gameplay
 
             PublishScanInfo(_currentModeHudMessage);
             FieldOperationLogSystem.RecordOperation(
-                ResolveLocalized(H8ToolLocHashes.SCANNER_CATEGORY, "SCAN"),
+                StableText(H8ToolLocHashes.SCANNER_CATEGORY, "SCAN"),
                 _currentModeOperationTitle,
                 _currentModeSummary,
                 "INFO");
@@ -1067,7 +1068,7 @@ namespace Hecton8.Gameplay
             signal.Stage = 0;
             signal.Flags = _activeScientificFragment != null ? (byte)1 : (byte)0;
             signal.QualityTier = signalQualityByte;
-            SignalBus<ScannerToolActiveSignal>.TryPush(in signal);
+            SignalBus<ScannerToolActiveSignal>.TryPushTracked(in signal, ref s_x001ScannerToolSignalPushDropCount);
         }
 
         private void PublishInactiveScannerTuningSignal()
@@ -1456,37 +1457,12 @@ namespace Hecton8.Gameplay
 
         public override string BuildLegacyOperationalSummaryString()
         {
-            float now = ResolveScannerTimeSeconds();
-            int cacheBucket = ResolveOperationalStringCacheBucket(now);
-            if (_summaryStringCacheBucket == cacheBucket)
-                return _cachedOperationalSummaryString;
-
-            int frame = ResolveScannerFrameInt();
-            _scanHudBuffer.Clear();
-            WriteOperationalSummaryInternal(ref _scanHudBuffer, now, frame);
-            return BuildCachedOperationalString(
-                ref _summaryStringCacheBucket,
-                ref _summaryStringCacheLength,
-                ref _summaryStringCacheHash,
-                ref _cachedOperationalSummaryString,
-                cacheBucket);
+            return "SCAN";
         }
 
         public override string BuildLegacyOperationalDirectiveString()
         {
-            float now = ResolveScannerTimeSeconds();
-            int cacheBucket = ResolveOperationalStringCacheBucket(now);
-            if (_directiveStringCacheBucket == cacheBucket)
-                return _cachedOperationalDirectiveString;
-
-            _scanHudBuffer.Clear();
-            WriteOperationalDirectiveInternal(ref _scanHudBuffer, now);
-            return BuildCachedOperationalString(
-                ref _directiveStringCacheBucket,
-                ref _directiveStringCacheLength,
-                ref _directiveStringCacheHash,
-                ref _cachedOperationalDirectiveString,
-                cacheBucket);
+            return "Hold the scanner lane until the sweep resolves.";
         }
 
         public override void WriteOperationalDirective(ref FixedCharBuffer buffer)
@@ -1508,10 +1484,10 @@ namespace Hecton8.Gameplay
                 AppendText(
                     ref buffer,
                     bearing > 0
-                        ? ResolveLocalized(H8ToolLocHashes.SCANNER_BEARING_RIGHT, "RIGHT")
+                        ? StableText(H8ToolLocHashes.SCANNER_BEARING_RIGHT, "RIGHT")
                         : bearing < 0
-                            ? ResolveLocalized(H8ToolLocHashes.SCANNER_BEARING_LEFT, "LEFT")
-                            : ResolveLocalized(H8ToolLocHashes.SCANNER_BEARING_DOWN, "DIRECTLY BELOW"));
+                            ? StableText(H8ToolLocHashes.SCANNER_BEARING_LEFT, "LEFT")
+                            : StableText(H8ToolLocHashes.SCANNER_BEARING_DOWN, "DIRECTLY BELOW"));
                 buffer.Append(" (");
                 buffer.AppendInt(approximateDegrees);
                 buffer.Append(" DEG). STRONGER RETURN BELOW.");
@@ -1537,7 +1513,7 @@ namespace Hecton8.Gameplay
             {
                 AppendText(
                     ref buffer,
-                    ResolveLocalized(
+                    StableText(
                         H8ToolLocHashes.SCANNER_DIRECTIVE_RECHARGING,
                         "Scanner lattice is drifting under corrosion. Expect shorter returns and slower recycle."));
                 return;
@@ -1827,66 +1803,6 @@ namespace Hecton8.Gameplay
         {
             _summaryStringCacheBucket = int.MinValue;
             _directiveStringCacheBucket = int.MinValue;
-        }
-
-        private string BuildCachedOperationalString(
-            ref int cacheBucket,
-            ref int cachedLength,
-            ref uint cachedHash,
-            ref string cachedValue,
-            int nextBucket)
-        {
-            int length = _scanHudBuffer.Length;
-            if (length <= 0)
-            {
-                cachedValue = string.Empty;
-                cachedLength = 0;
-                cachedHash = 0u;
-                cacheBucket = nextBucket;
-                return cachedValue;
-            }
-
-            uint hash = ComputeCharBufferHash(_scanHudBuffer.Buffer, length);
-            if (cachedValue != null &&
-                cachedLength == length &&
-                cachedHash == hash &&
-                BufferMatchesString(_scanHudBuffer.Buffer, length, cachedValue))
-            {
-                cacheBucket = nextBucket;
-                return cachedValue;
-            }
-
-            cachedValue = new string(_scanHudBuffer.Buffer, 0, length);
-            cachedLength = length;
-            cachedHash = hash;
-            cacheBucket = nextBucket;
-            return cachedValue;
-        }
-
-        private static uint ComputeCharBufferHash(char[] buffer, int length)
-        {
-            uint hash = 2166136261u;
-            for (int i = 0; i < length; i++)
-            {
-                hash ^= buffer[i];
-                hash *= 16777619u;
-            }
-
-            return hash != 0u ? hash : 1u;
-        }
-
-        private static bool BufferMatchesString(char[] buffer, int length, string value)
-        {
-            if (value == null || value.Length != length)
-                return false;
-
-            for (int i = 0; i < length; i++)
-            {
-                if (buffer[i] != value[i])
-                    return false;
-            }
-
-            return true;
         }
 
         private void PublishScanInfo(string message)
@@ -2295,9 +2211,9 @@ namespace Hecton8.Gameplay
         {
             return mode switch
             {
-                ScanMode.Resource => ResolveLocalized(H8ToolLocHashes.SCANNER_MODE_RESOURCE, "RESOURCE"),
-                ScanMode.Structure => ResolveLocalized(H8ToolLocHashes.SCANNER_MODE_STRUCTURE, "STRUCTURE"),
-                _ => ResolveLocalized(H8ToolLocHashes.SCANNER_MODE_EXPEDITION, "EXPEDITION")
+                ScanMode.Resource => StableText(H8ToolLocHashes.SCANNER_MODE_RESOURCE, "RESOURCE"),
+                ScanMode.Structure => StableText(H8ToolLocHashes.SCANNER_MODE_STRUCTURE, "STRUCTURE"),
+                _ => StableText(H8ToolLocHashes.SCANNER_MODE_EXPEDITION, "EXPEDITION")
             };
         }
 
@@ -2313,9 +2229,9 @@ namespace Hecton8.Gameplay
         {
             return mode switch
             {
-                ScanMode.Resource => ResolveLocalized(H8ToolLocHashes.SCANNER_MODE_HUD_RESOURCE, "SCANNER MODE - RESOURCE"),
-                ScanMode.Structure => ResolveLocalized(H8ToolLocHashes.SCANNER_MODE_HUD_STRUCTURE, "SCANNER MODE - STRUCTURE"),
-                _ => ResolveLocalized(H8ToolLocHashes.SCANNER_MODE_HUD_EXPEDITION, "SCANNER MODE - EXPEDITION")
+                ScanMode.Resource => StableText(H8ToolLocHashes.SCANNER_MODE_HUD_RESOURCE, "SCANNER MODE - RESOURCE"),
+                ScanMode.Structure => StableText(H8ToolLocHashes.SCANNER_MODE_HUD_STRUCTURE, "SCANNER MODE - STRUCTURE"),
+                _ => StableText(H8ToolLocHashes.SCANNER_MODE_HUD_EXPEDITION, "SCANNER MODE - EXPEDITION")
             };
         }
 
@@ -2323,9 +2239,9 @@ namespace Hecton8.Gameplay
         {
             return mode switch
             {
-                ScanMode.Resource => ResolveLocalized(H8ToolLocHashes.SCANNER_MODE_LOG_RESOURCE, "SCAN MODE - RESOURCE"),
-                ScanMode.Structure => ResolveLocalized(H8ToolLocHashes.SCANNER_MODE_LOG_STRUCTURE, "SCAN MODE - STRUCTURE"),
-                _ => ResolveLocalized(H8ToolLocHashes.SCANNER_MODE_LOG_EXPEDITION, "SCAN MODE - EXPEDITION")
+                ScanMode.Resource => StableText(H8ToolLocHashes.SCANNER_MODE_LOG_RESOURCE, "SCAN MODE - RESOURCE"),
+                ScanMode.Structure => StableText(H8ToolLocHashes.SCANNER_MODE_LOG_STRUCTURE, "SCAN MODE - STRUCTURE"),
+                _ => StableText(H8ToolLocHashes.SCANNER_MODE_LOG_EXPEDITION, "SCAN MODE - EXPEDITION")
             };
         }
 
@@ -2333,9 +2249,9 @@ namespace Hecton8.Gameplay
         {
             return mode switch
             {
-                ScanMode.Resource => ResolveLocalized(H8ToolLocHashes.SCANNER_MODE_SUMMARY_RESOURCE, "Scanner now prioritizes mineral, salvage, and cached pickup signatures."),
-                ScanMode.Structure => ResolveLocalized(H8ToolLocHashes.SCANNER_MODE_SUMMARY_STRUCTURE, "Scanner now prioritizes authored intel contacts, module markers, and structural returns."),
-                _ => ResolveLocalized(H8ToolLocHashes.SCANNER_MODE_SUMMARY_EXPEDITION, "Scanner now runs full-spectrum expedition sweeps across all supported contact classes.")
+                ScanMode.Resource => StableText(H8ToolLocHashes.SCANNER_MODE_SUMMARY_RESOURCE, "Scanner now prioritizes mineral, salvage, and cached pickup signatures."),
+                ScanMode.Structure => StableText(H8ToolLocHashes.SCANNER_MODE_SUMMARY_STRUCTURE, "Scanner now prioritizes authored intel contacts, module markers, and structural returns."),
+                _ => StableText(H8ToolLocHashes.SCANNER_MODE_SUMMARY_EXPEDITION, "Scanner now runs full-spectrum expedition sweeps across all supported contact classes.")
             };
         }
 
@@ -2381,7 +2297,7 @@ namespace Hecton8.Gameplay
             return 90;
         }
 
-        private static string ResolveLocalized(uint keyHash, string fallback)
+        private static string StableText(uint keyHash, string fallback)
         {
             string cached = keyHash switch
             {
@@ -3514,7 +3430,7 @@ namespace Hecton8.Gameplay
         private static void AppendScientificSignedComponent(ref FixedCharBuffer buffer, int value)
         {
             if (value >= 0)
-                buffer.Append("+");
+                buffer.Append('+');
 
             buffer.AppendInt(value);
         }
@@ -3613,12 +3529,7 @@ namespace Hecton8.Gameplay
 
         private static string ResolveBabelString(IBabelLocalization localization, uint keyHash, string fallback)
         {
-            return localization != null &&
-                   localization.TryGetLocalizedBuffer(keyHash, out char[] buffer, out int length) &&
-                   buffer != null &&
-                   length > 0
-                ? new string(buffer, 0, length)
-                : (fallback ?? string.Empty);
+            return fallback ?? string.Empty;
         }
 
         private void ClearCachedRuntimeServicesCold()

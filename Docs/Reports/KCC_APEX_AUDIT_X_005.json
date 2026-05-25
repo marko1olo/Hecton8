@@ -245,8 +245,18 @@
     }
   },
   "legacy_bridge": {
+    "interaction_surface_legacy_method_count": 0,
+    "interaction_surface_unity_raycast_hit_count": 0,
+    "interaction_surface_uses_typed_hit": true,
+    "interaction_surface_vault_uses_typed_hit_dto": true,
+    "interaction_target_legacy_raycast_api_count": 0,
+    "interaction_target_uses_spatial_target_contract": true,
+    "kinematic_surface_hit_layout_64": true,
+    "kinematic_surface_unity_raycast_hit_count": 0,
+    "kinematic_surface_uses_typed_hit": true,
     "legacy_batch_physx_calls": 0,
     "legacy_batch_query_result_arrays": 0,
+    "legacy_batch_unity_raycast_hit_count": 0,
     "player_footstep_audio_raycast_hit_count": 0,
     "player_footstep_audio_uses_surface_hit": true,
     "player_hand_probe_raycast_hit_lane_count": 0,
@@ -275,6 +285,7 @@
     "player_movement_unity_collision_dto_count": 0,
     "player_spawner_raycast_hit_count": 0,
     "player_spawner_try_raycast_ground_count": 0,
+    "player_spawner_uses_ground_probe_origin": true,
     "player_spawner_uses_spawn_ground_hit": true,
     "vehicle_motor_capsule_sweep_bridge_removed": true,
     "vehicle_motor_capsule_sweep_bridge_symbol_count": 0,
@@ -312,11 +323,11 @@
     "movement_rb_pose_read_count": 2,
     "movement_rb_pose_reads": [
       {
-        "line": 4147,
+        "line": 4148,
         "text": "_playerState.SyncKinematic(_rb.position, ResolveAuthoritativeLinearVelocity(Vector3.zero));"
       },
       {
-        "line": 8653,
+        "line": 8654,
         "text": "return _rb != null ? HectonPlayerMotor.SafeVelocity(_rb.position) : Vector3.zero;"
       }
     ],
@@ -326,11 +337,11 @@
     "player_kinematics_body_pose_read_count": 2,
     "player_kinematics_body_pose_reads": [
       {
-        "line": 1019,
+        "line": 1020,
         "text": "return _body.position;"
       },
       {
-        "line": 3607,
+        "line": 3608,
         "text": "return CanonicalizeRotation(ToQuaternion(_body.rotation));"
       }
     ],
@@ -357,17 +368,17 @@
         "text": "Hecton8.Physics.PhysicsForceRouter.QueueAngularVelocitySet(playerRigidbody, targetAngularVelocity);"
       },
       {
-        "line": 3016,
+        "line": 3019,
         "path": "Assets/_Project/Scripts/HectonSurvivalSystem.cs",
         "text": "Hecton8.Physics.PhysicsForceRouter.QueueAngularVelocitySet(_playerRigidbody, Vector3.zero, wake: false);"
       },
       {
-        "line": 2785,
+        "line": 2789,
         "path": "Assets/_Project/Scripts/PhysicsApplySystem.cs",
         "text": "PhysicsForceRouter.QueueForce(playerBody, acceleration, ForceMode.Acceleration);"
       },
       {
-        "line": 2889,
+        "line": 2893,
         "path": "Assets/_Project/Scripts/PhysicsApplySystem.cs",
         "text": "QueueForce(playerBody, impulse, ForceMode.Impulse);"
       }
@@ -434,25 +445,25 @@
     "force_calls": [
       {
         "classification": "central_physics_apply_owner",
-        "line": 2464,
+        "line": 2468,
         "path": "Assets/_Project/Scripts/PhysicsApplySystem.cs",
         "text": "body.AddForceAtPosition(sanitizedForce, impulsePosition, packet.Mode);"
       },
       {
         "classification": "central_physics_apply_owner",
-        "line": 2471,
+        "line": 2475,
         "path": "Assets/_Project/Scripts/PhysicsApplySystem.cs",
         "text": "body.AddForce(sanitizedForce, packet.Mode);"
       },
       {
         "classification": "central_physics_apply_owner",
-        "line": 2482,
+        "line": 2486,
         "path": "Assets/_Project/Scripts/PhysicsApplySystem.cs",
         "text": "body.AddTorque(sanitizedTorque, packet.Mode);"
       },
       {
         "classification": "central_physics_apply_owner",
-        "line": 3930,
+        "line": 3934,
         "path": "Assets/_Project/Scripts/PhysicsApplySystem.cs",
         "text": "body.AddForce(correction / FixedStepSeconds, ForceMode.VelocityChange);"
       }
@@ -461,55 +472,55 @@
     "velocity_assignments": [
       {
         "classification": "dto_state_assignment",
-        "line": 2452,
+        "line": 2501,
         "path": "Assets/_Project/Scripts/FaunaDirector.cs",
         "text": "state.linearVelocity = new Vector3(velocity.x, velocity.y, velocity.z);"
       },
       {
         "classification": "dto_state_assignment",
-        "line": 3262,
+        "line": 3326,
         "path": "Assets/_Project/Scripts/FaunaDirector.cs",
         "text": "restoredState.linearVelocity = new Vector3(savedState.linearVelocityX, savedState.linearVelocityY, savedState.linearVelocityZ);"
       },
       {
         "classification": "dto_state_assignment",
-        "line": 3263,
+        "line": 3327,
         "path": "Assets/_Project/Scripts/FaunaDirector.cs",
         "text": "restoredState.angularVelocity = new Vector3(savedState.angularVelocityX, savedState.angularVelocityY, savedState.angularVelocityZ);"
       },
       {
         "classification": "central_physics_apply_owner",
-        "line": 2435,
+        "line": 2439,
         "path": "Assets/_Project/Scripts/PhysicsApplySystem.cs",
         "text": "body.linearVelocity = sanitizedLinearVelocity;"
       },
       {
         "classification": "central_physics_apply_owner",
-        "line": 2443,
+        "line": 2447,
         "path": "Assets/_Project/Scripts/PhysicsApplySystem.cs",
         "text": "body.angularVelocity = sanitizedAngularVelocity;"
       },
       {
         "classification": "central_physics_apply_owner",
-        "line": 3636,
+        "line": 3640,
         "path": "Assets/_Project/Scripts/PhysicsApplySystem.cs",
         "text": "body.linearVelocity = zeroVelocity;"
       },
       {
         "classification": "central_physics_apply_owner",
-        "line": 3637,
+        "line": 3641,
         "path": "Assets/_Project/Scripts/PhysicsApplySystem.cs",
         "text": "body.angularVelocity = zeroVelocity;"
       },
       {
         "classification": "central_physics_apply_owner",
-        "line": 3937,
+        "line": 3941,
         "path": "Assets/_Project/Scripts/PhysicsApplySystem.cs",
         "text": "body.linearVelocity = zeroVelocity;"
       },
       {
         "classification": "central_physics_apply_owner",
-        "line": 3938,
+        "line": 3942,
         "path": "Assets/_Project/Scripts/PhysicsApplySystem.cs",
         "text": "body.angularVelocity = zeroVelocity;"
       }
@@ -539,5 +550,10 @@
     "smoke_max_sweep_iterations": 8,
     "strong_penetration_threshold_m": -0.1,
     "three_plane_corner_bound": "At most 8 unique contact planes are collected and at most 8 Gauss-Seidel passes are executed. A 3-plane corner consumes no recursion and no stack growth: each bounded projection computes v' = v - n * min(dot(v,n),0), then the next fixed-index contact is evaluated. Nearly duplicate same-direction planes above the dot threshold are discarded before they spend projection budget; opposing corridor walls remain independent constraints. The two loop counters are monotonic and capped, so degenerate coplanar/orthogonal contacts terminate after <=64 projections even when velocity becomes zero."
+  },
+  "unity_collision_dto": {
+    "unity_collision_dto_count": 0,
+    "unity_collision_dto_route_removed": true,
+    "unity_collision_dtos": []
   }
 }

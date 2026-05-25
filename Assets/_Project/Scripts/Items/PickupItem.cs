@@ -22,6 +22,7 @@ namespace Hecton8.Interaction
     [RequireComponent(typeof(Collider))]
     public class PickupItem : MonoBehaviour, IInteractable, IInteractableTextProvider, ISlowTickable, IFixedTickable, IInventoryPickupSource, IInventoryPickupPreviewSource, IInteractionVulnerabilitySource, IFaunaBaitSource, Hecton8.Physics.IPhysicsImpactMaterialProvider
     {
+        private static int s_x001PickupItemSignalPushDropCount;
         private const int WorldStateRegistryCapacity = 8192;
 
         // COLD ALLOC: RegistryBucket<PickupItem>[8192] - authored/persistent pickup registry for world-state scans and loot magnet hard-cap parity - owner: PickupItem
@@ -567,7 +568,7 @@ namespace Hecton8.Interaction
                 Flags = InventoryPickupSignalConstants.SignalFlagManualPickup,
                 Frame = ResolveCurrentFrameId()
             };
-            SignalBus<ItemAcquiredSignal>.TryPush(in signal);
+            SignalBus<ItemAcquiredSignal>.TryPushTracked(in signal, ref s_x001PickupItemSignalPushDropCount);
         }
 
         private static uint ResolveCurrentFrameId()

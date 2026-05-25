@@ -32,6 +32,7 @@ namespace Hecton8.AI
     [RequireComponent(typeof(Rigidbody))]
     public partial class FaunaBrain : MonoBehaviour, IUpdatable, ITickable, IFixedTickable, ISlowTickable, IBucketedSlowTickable, ILateFrameTickable, IPoolable, ISerializationCallbackReceiver, ICuttable, IOriginShiftListener, ICombatMobilityModifierReceiver, IScannerFaunaScientificContact, IGlobalRegistryHotSwapListener, IFaunaSpatialContact, IFaunaPredationTarget, IFaunaNoiseSignalReceiver
     {
+        private static int _signalPushDropCount;
         /// <summary>
         /// Global state definition for all fauna.
         /// [REQ] Restored as nested enum for legacy tool compatibility.
@@ -1961,12 +1962,12 @@ namespace Hecton8.AI
             empSignal.Magnitude = math.max(0f, radiusMeters) * math.max(0.1f, _faunaDataTemplate.EmpClaritySuppression01);
             empSignal.DamageType = (uint)DamageTypeMask.Emp;
             empSignal.SourceHash = ResolveStableFaunaHash(FaunaLeviathanBiteHashSalt, DamageSourceIds.FaunaEmp);
-            empSignal.Frame = unchecked((uint)Time.frameCount);
+            empSignal.Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             empSignal.SourceId = DamageSourceIds.FaunaEmp;
             empSignal.Channel = 0;
             empSignal.Flags = 0;
             empSignal.IntegrityDelta = 1;
-            SignalBus<CombatDamageSignal>.TryPush(in empSignal);
+            SignalBus<CombatDamageSignal>.TryPushTracked(in empSignal, ref _signalPushDropCount);
         }
 
         private void UpdateEcholocationMimicry()
@@ -2096,7 +2097,7 @@ namespace Hecton8.AI
             signal.SourceId = unchecked((uint)ComputeStableSpeciesId());
             signal.Channel = 0;
             signal.Flags = 0;
-            SignalBus<AcousticPingSignal>.TryPush(in signal);
+            SignalBus<AcousticPingSignal>.TryPushTracked(in signal, ref _signalPushDropCount);
         }
 
         private bool TryResolveMimicPingTransmission(Vector3 selfPosition, Vector3 playerPosition, out float acousticTransmission01)
@@ -3771,14 +3772,14 @@ namespace Hecton8.AI
             signal.ImpactSpeed = impactSpeed;
             signal.SourceHash = ResolveStableFaunaHash(FaunaLeviathanBiteHashSalt, 0u);
             signal.TargetHash = targetHash;
-            signal.Frame = unchecked((uint)Time.frameCount);
+            signal.Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             signal.SourceKind = HighSpeedImpactSignal.SourceLeviathan;
             signal.Flags = flags;
             signal.PrimaryMaterialId = targetMaterialId;
             signal.SecondaryMaterialId = sourceMaterialId;
             signal.EffectiveMass = _rb != null ? math.max(0f, _rb.mass) : 0f;
             signal.MaterialHash = HighSpeedImpactSignal.ComposeMaterialHash(signal.TargetHash, targetMaterialId, sourceMaterialId);
-            SignalBus<HighSpeedImpactSignal>.TryPush(in signal);
+            SignalBus<HighSpeedImpactSignal>.TryPushTracked(in signal, ref _signalPushDropCount);
 
             ImpactSignal impact = default;
             impact.PointAup = pointAup;
@@ -3787,7 +3788,7 @@ namespace Hecton8.AI
             impact.PrimaryBodyId = signal.SourceHash;
             impact.WeightClass = 3;
             impact.Flags = flags;
-            SignalBus<ImpactSignal>.TryPush(in impact);
+            SignalBus<ImpactSignal>.TryPushTracked(in impact, ref _signalPushDropCount);
             CameraJuiceSignals.TryPublishImpact(in impact, signal.Normal);
 
             DebrisSpawnSignal debris = default;
@@ -3796,7 +3797,7 @@ namespace Hecton8.AI
             debris.Intensity01 = impact.Intensity;
             debris.DebrisKind = DebrisSpawnSignal.DebrisKindSparks;
             debris.Flags = flags;
-            SignalBus<DebrisSpawnSignal>.TryPush(in debris);
+            SignalBus<DebrisSpawnSignal>.TryPushTracked(in debris, ref _signalPushDropCount);
 
             HapticRequest haptic = default;
             haptic.Intensity01 = math.saturate(lostKineticEnergy * 0.00005f);
@@ -3806,7 +3807,7 @@ namespace Hecton8.AI
             haptic.Frame = signal.Frame;
             haptic.Channel = HapticRequest.ChannelCollision;
             haptic.Flags = flags;
-            SignalBus<HapticRequest>.TryPush(in haptic);
+            SignalBus<HapticRequest>.TryPushTracked(in haptic, ref _signalPushDropCount);
 
             if (signal.TargetHash != 0u && lostKineticEnergy >= KinematicCcdContractMath.MassiveLostKineticEnergyJoules)
             {
@@ -3823,7 +3824,7 @@ namespace Hecton8.AI
                 damage.Channel = 0;
                 damage.Flags = 0;
                 damage.IntegrityDelta = 1;
-                SignalBus<CombatDamageSignal>.TryPush(in damage);
+                SignalBus<CombatDamageSignal>.TryPushTracked(in damage, ref _signalPushDropCount);
             }
 
         }
@@ -5057,11 +5058,11 @@ namespace Hecton8.AI
 
             signal.SpeciesHash = unchecked((uint)ComputeStableSpeciesId());
             signal.StateFlags = strikeActive ? FaunaStateChangedSignalFlags.StateActive : 0u;
-            signal.Frame = unchecked((uint)Time.frameCount);
+            signal.Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             signal.Slot = _simulationBucketId > ushort.MaxValue ? ushort.MaxValue : (ushort)math.max(0, _simulationBucketId);
             signal.StateKind = FaunaStateChangedSignalKinds.Strike;
             signal.Flags = strikeActive ? FaunaStateChangedSignalFlags.StateActive : (byte)0;
-            SignalBus<FaunaStateChangedSignal>.TryPush(in signal);
+            SignalBus<FaunaStateChangedSignal>.TryPushTracked(in signal, ref _signalPushDropCount);
         }
 
         private void UpdateProceduralHeadLookIntent()
@@ -5122,7 +5123,7 @@ namespace Hecton8.AI
                 : unchecked((uint)ComputeStableSpeciesId());
             roarSignal.Channel = AcousticPingSignal.ChannelLeviathanRoar;
             roarSignal.Flags = AcousticPingSignal.FlagLeviathanRoar;
-            SignalBus<AcousticPingSignal>.TryPush(in roarSignal);
+            SignalBus<AcousticPingSignal>.TryPushTracked(in roarSignal, ref _signalPushDropCount);
             PublishAlphaLeviathanStressSpike();
         }
 
@@ -5133,11 +5134,11 @@ namespace Hecton8.AI
                 Stress01 = AlphaLeviathanFalseChargeStress01,
                 OxygenDrainScale = AlphaLeviathanFalseChargeOxygenDrainScale,
                 AggressionScale = AlphaLeviathanFalseChargeAggressionScale,
-                Frame = unchecked((uint)Time.frameCount),
+                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 Cause = PlayerStressCauseApexPredator,
                 Flags = PlayerStressFlagApexPredator | PlayerStressFlagAcoustic
             };
-            SignalBus<PlayerStressSignal>.TryPush(in stressSignal);
+            SignalBus<PlayerStressSignal>.TryPushTracked(in stressSignal, ref _signalPushDropCount);
         }
 
         private void PublishLeviathanScatterPulse(Vector3 position, Vector3 direction, float radiusMeters, float durationSeconds)
@@ -5712,7 +5713,7 @@ namespace Hecton8.AI
             velocity = Vector3.zero;
             if (!CoreDeterminismSignals.TryGetLatestKccVelocity(out KccVelocitySignal signal) ||
                 signal.Sequence == 0u ||
-                !IsKccVelocityFresh(in signal, unchecked((uint)SystemDispatcher.CurrentFrameIndex), maxFrameAge) ||
+                !IsKccVelocityFresh(in signal, SystemDispatcher.CurrentFrameId, maxFrameAge) ||
                 !math.all(math.isfinite(signal.Velocity)))
             {
                 return false;
@@ -6111,7 +6112,7 @@ namespace Hecton8.AI
                 lowPassCutoffHz,
                 kind);
             SignalAudioEvent audioEvent = SignalAudioEvent.FromAudioPing(in payload);
-            return SignalBus<SignalAudioEvent>.TryPush(in audioEvent);
+            return SignalBus<SignalAudioEvent>.TryPushTracked(in audioEvent, ref _signalPushDropCount);
         }
 
         private bool TryQueuePhysicsForce(Rigidbody body, Vector3 force, ForceMode mode)
@@ -6199,7 +6200,7 @@ namespace Hecton8.AI
             signal.PrimaryMaterialId = 0;
             signal.SecondaryMaterialId = 0;
             signal.Flags = 0;
-            SignalBus<ImpactSignal>.TryPush(in signal);
+            SignalBus<ImpactSignal>.TryPushTracked(in signal, ref _signalPushDropCount);
         }
 
         private void ApplyCinematicPlayerImpact(Transform target, Vector3 impactDir, float force)
@@ -6473,14 +6474,14 @@ namespace Hecton8.AI
             uint speciesHash = unchecked((uint)ComputeStableSpeciesId());
             uint entityHash = ResolveStableFaunaHash(FaunaCarrionDeathHashSalt, 0u);
 
-            SignalBus<EntityDeathSignal>.TryPush(new EntityDeathSignal
+            SignalBus<EntityDeathSignal>.TryPushTracked(new EntityDeathSignal
             {
                 PositionAup = corpseAup,
                 EntityHash = entityHash,
                 SourceHash = speciesHash,
                 Intensity01 = math.saturate(_maxHealth * math.rcp(math.max(1f, LargeCorpseResourceMinHealth))),
                 Flags = EntityDeathSignal.FlagFaunaBrainCarrion
-            });
+            }, ref _signalPushDropCount);
         }
 
         private void BeginDeathSpiralPresentation()

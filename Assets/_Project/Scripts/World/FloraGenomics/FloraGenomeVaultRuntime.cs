@@ -88,6 +88,7 @@ namespace Hecton8.World
     /// </summary>
     public sealed unsafe class FloraGenomeVaultRuntime
     {
+        private static int s_x001FloraGenomeVaultRuntimeSignalPushDropCount;
         private const SystemID OwnerSystem = SystemID.FloraGenomics;
         public const int DefaultRawBytesCapacity = 5 * 1024 * 1024;
         public const int DefaultCsvScratchCapacity = 256 * 1024;
@@ -481,7 +482,7 @@ namespace Hecton8.World
                 MatrixCount = (uint)math.max(0, stats.MatrixCount),
                 Reserved0 = 0u
             };
-            SignalBus<FloraSpawnedSignal>.TryPush(in signal);
+            SignalBus<FloraSpawnedSignal>.TryPushTracked(in signal, ref s_x001FloraGenomeVaultRuntimeSignalPushDropCount);
         }
 
         private static void PublishOverloadWarningIfNeeded(uint frameIndex, in FloraGenomeJobStats stats)
@@ -506,7 +507,7 @@ namespace Hecton8.World
                 RebalanceSequence = 0u,
                 Severity = 2
             };
-            SignalBus<FramePacingWarningSignal>.TryPush(in warning);
+            SignalBus<FramePacingWarningSignal>.TryPushTracked(in warning, ref s_x001FloraGenomeVaultRuntimeSignalPushDropCount);
         }
 
         private void DumpBlackBoxIfFatal(in FloraGenomeJobStats stats)

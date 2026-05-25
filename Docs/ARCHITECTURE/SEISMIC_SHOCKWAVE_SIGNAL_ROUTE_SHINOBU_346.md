@@ -14,7 +14,8 @@ Runtime truth:
 - The owner schedules deterministic Burst `EvaluateSeismicPropagationJob` from vault-owned arrays.
 - The job advances P and S radii from `H8TimeSeconds
 - BirthTimeSeconds`.
-- The job finite-gates producer payloads with `TryFinalizeSeismicSignal` and `TryFinalizeShockwaveSignal` before `ParallelWriter.Enqueue`; this clamps scalar fields, normalizes direction, sanitizes raw frequency bits in `Reserved0`, enforces `FlagRadialWave`, and drops invalid epicenter/magnitude packets.
+- Job finite-gates payloads with `TryFinalizeSeismicSignal` and `TryFinalizeShockwaveSignal` before `ParallelWriter.Enqueue`.
+- It clamps scalars, normalizes direction, sanitizes `Reserved0`, enforces `FlagRadialWave`, and drops invalid epicenter/magnitude packets.
 - The job emits unmanaged `SeismicSignal` and legacy `SeismicShockwaveSignal` lanes only after that producer-side vaccine.
 - Core `SignalPayloadFiniteGuards` also owns fixed `SeismicSignal` and `SeismicShockwaveSignal` cases, so `TryPush` and frame flush no longer fall through to `GuardNone` for seismic payloads.
 - Legacy `GlobalSignals.Publish(in SeismicSignal)` sanitizes before updating `_latestSeismicSignal`; `TryGetLatestSeismicSignal` can no longer expose a malformed legacy publish before SignalBus flush.

@@ -1,4 +1,4 @@
-﻿// ============================================================================
+// ============================================================================
 // HECTON-8 â€” MantaScooter.cs
 // Handheld propulsion vehicle (Seaglide equivalent).
 //
@@ -36,6 +36,8 @@ namespace Hecton8.Gameplay
     [AddComponentMenu("Hecton8/Gameplay/Tools/Manta Scooter")]
     public sealed class MantaScooter : PlayerTool, IBatteryTool, ITickable, IUpdatable, ILateFrameTickable, IPlayerTransportSource, IPlayerTransportLifecycleOwner, IDamageSignalEmitter, ILocalizationLanguageChangedListener, IGlobalRegistryHotSwapListener
     {
+        private static int s_x001DirectSignalPushDropCount_MantaScooter;
+
         private const float DefaultTransportPropulsionReference = 800f;
         private const float ThrottleBlendSpeedFloor = 0.01f;
         private const float ThrottleBlendDenominatorFloor = 0.0001f;
@@ -805,7 +807,7 @@ namespace Hecton8.Gameplay
             signal.FrameIndex = request.FrameIndex;
             signal.Flags = request.Flags;
 
-            bool submitted = SignalBus<SeaglidePropulsionRequestSignal>.TryPush(in signal);
+            bool submitted = SignalBus<SeaglidePropulsionRequestSignal>.TryPushTracked(in signal, ref s_x001DirectSignalPushDropCount_MantaScooter);
             if (submitted)
             {
                 _lastSeaglideAup = currentAup;
@@ -2097,7 +2099,7 @@ namespace Hecton8.Gameplay
                 signal.Operation = SubmarineLightsChangedSignalOperations.Upsert;
                 signal.Flags = SubmarineLightsChangedSignalFlags.Powered;
                 signal.SpotOuterCos = math.clamp(cone.x, -1f, 1f);
-                if (SignalBus<SubmarineLightsChangedSignal>.TryPush(in signal))
+                if (SignalBus<SubmarineLightsChangedSignal>.TryPushTracked(in signal, ref s_x001DirectSignalPushDropCount_MantaScooter))
                 {
                     activeMask |= payloadBit;
                 }
@@ -2195,7 +2197,7 @@ namespace Hecton8.Gameplay
             signal.Slot = (ushort)math.clamp(payloadIndex, 0, MaxHeadlights - 1);
             signal.Operation = SubmarineLightsChangedSignalOperations.Remove;
             signal.Flags = flags;
-            return SignalBus<SubmarineLightsChangedSignal>.TryPush(in signal);
+            return SignalBus<SubmarineLightsChangedSignal>.TryPushTracked(in signal, ref s_x001DirectSignalPushDropCount_MantaScooter);
         }
 
         private void RecordHeadlightSignalDrop(int payloadIndex, byte operation)
@@ -2208,10 +2210,10 @@ namespace Hecton8.Gameplay
         private static void ConfigureMantaSignalLanesCold()
         {
             SignalBus<SeaglidePropulsionRequestSignal>.Configure(
-                8,
-                maxFrameSignals: 16,
-                lowTierFrameSignals: 4,
-                laneHash: ComputeStableSignalLaneHash(nameof(SeaglidePropulsionRequestSignal)));
+                SeaglidePropulsionRequestSignal.ExpectedCapacity,
+                maxFrameSignals: SeaglidePropulsionRequestSignal.MaxFrameSignals,
+                lowTierFrameSignals: SeaglidePropulsionRequestSignal.LowTierFrameSignals,
+                laneHash: SeaglidePropulsionRequestSignal.LaneHash);
             SignalBus<SeaglidePropulsionRequestSignal>.EnsureInitialized();
             SignalBus<SubmarineLightsChangedSignal>.Configure(
                 SubmarineLightsChangedSignal.ExpectedCapacity,

@@ -15,6 +15,7 @@ using Hecton8.Quest;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 
 namespace Hecton8.UI
@@ -38,7 +39,7 @@ namespace Hecton8.UI
 
         [Header("References")]
         [SerializeField] private PlayerBuilder playerBuilder;
-        [SerializeField] private ConstructionManager constructionManager;
+        [SerializeField, FormerlySerializedAs("constructionManager")] private MonoBehaviour constructionLogisticsProvider;
         [SerializeField] private PlayerInventory playerInventory;
         [SerializeField] private Hecton8.Gameplay.PlayerToolManager toolManager;
         [SerializeField] private PlayerPDA playerPDA;
@@ -128,6 +129,7 @@ namespace Hecton8.UI
         private bool _hotSwapListenerRegistered;
         private IPlayerRuntimeContext _cachedPlayerContext;
         private IEnvironmentRuntimeContext _cachedEnvironmentContext;
+        private ILogisticsService _constructionLogistics;
         private IQuestSystem _cachedQuestSystem;
 
         private bool IsTabActive =>
@@ -192,7 +194,7 @@ namespace Hecton8.UI
                 playerInventory == null ||
                 toolManager == null ||
                 playerPDA == null ||
-                constructionManager == null ||
+                _constructionLogistics == null ||
                 hudNotification == null;
 
             bool shouldResolveRuntime = missingRuntimeReference && (force || !Application.isPlaying || _autoResolveRetryTimer <= 0f);
@@ -352,17 +354,25 @@ namespace Hecton8.UI
 
         private void ApplyCachedEnvironmentContext(bool forceAssign)
         {
+            ILogisticsService providerService = constructionLogisticsProvider as ILogisticsService;
+            if (providerService != null)
+            {
+                _constructionLogistics = providerService;
+                return;
+            }
+
             IEnvironmentRuntimeContext environmentContext = _cachedEnvironmentContext;
             if (environmentContext == null)
             {
-                if (forceAssign)
-                    constructionManager = null;
+                _constructionLogistics = GlobalRegistry.Logistics;
 
                 return;
             }
 
-            if (forceAssign || constructionManager == null)
-                constructionManager = environmentContext.ConstructionManager;
+            if (forceAssign || _constructionLogistics == null)
+            {
+                _constructionLogistics = environmentContext.Logistics ?? GlobalRegistry.Logistics;
+            }
         }
 
         private void TryRegisterPDAEvents()
@@ -821,7 +831,8 @@ namespace Hecton8.UI
 
         private void UpdateCatalogTracking()
         {
-            ModuleCatalog catalog = constructionManager != null ? constructionManager.Catalog : null;
+            ILogisticsService logistics = _constructionLogistics;
+            ModuleCatalog catalog = logistics != null ? logistics.Catalog : null;
             BuildableData active = playerBuilder != null ? playerBuilder.ActiveBuildable : null;
             int rawCount = catalog != null ? catalog.Count : 0;
             int visibleCount = Mathf.Min(rawCount, maxVisibleCards);
@@ -846,7 +857,8 @@ namespace Hecton8.UI
 
             UpdateCatalogTracking();
 
-            ModuleCatalog catalog = constructionManager != null ? constructionManager.Catalog : null;
+            ILogisticsService logistics = _constructionLogistics;
+            ModuleCatalog catalog = logistics != null ? logistics.Catalog : null;
             BuildableData active = playerBuilder != null ? playerBuilder.ActiveBuildable : null;
             int visibleCount = _cachedCatalogCount > 0 ? Mathf.Min(_cachedCatalogCount, maxVisibleCards) : 0;
 
@@ -914,9 +926,10 @@ namespace Hecton8.UI
             if (_summaryText == null || _statusText == null)
                 return;
 
-            ModuleCatalog catalog = constructionManager != null ? constructionManager.Catalog : null;
+            ILogisticsService logistics = _constructionLogistics;
+            ModuleCatalog catalog = logistics != null ? logistics.Catalog : null;
             BuildableData active = playerBuilder != null ? playerBuilder.ActiveBuildable : null;
-            int builtCount = constructionManager != null ? constructionManager.ModuleCount : 0;
+            int builtCount = logistics != null ? logistics.ModuleCount : 0;
             bool hasResources = playerBuilder != null && playerBuilder.HasResourcesForActiveBuildable;
             bool canPlace = playerBuilder != null && playerBuilder.CanPlaceActiveBuildable;
             bool snapped = playerBuilder != null && playerBuilder.IsSnapped;
@@ -1078,10 +1091,11 @@ namespace Hecton8.UI
 
         internal void SelectBuildable(int index)
         {
-            if (constructionManager == null || playerBuilder == null)
+            ILogisticsService logistics = _constructionLogistics;
+            if (logistics == null || playerBuilder == null)
                 return;
 
-            ModuleCatalog catalog = constructionManager.Catalog;
+            ModuleCatalog catalog = logistics.Catalog;
             BuildableData data = catalog != null ? catalog.GetViewableAt(index, _cachedQuestSystem) : null;
             if (data == null)
                 return;

@@ -10,6 +10,8 @@ namespace Hecton8.Gameplay
     /// </summary>
     internal static class PlayerDeathReconciliationBridge
     {
+        private static int s_x001DirectSignalPushDropCount_PlayerDeathReconciliationBridge;
+
         private const uint DefaultPlayerHash = 0x504C5952u; // PLYR
         private static uint s_sequence;
         private static bool s_lanesConfigured;
@@ -56,11 +58,11 @@ namespace Hecton8.Gameplay
             signal.Phase = PlayerRespawnSignalPhase.Request;
             signal.SuspendCollisionFrames = 1;
 
-            if (SignalBus<PlayerRespawnSignal>.TryPush(in signal))
+            if (SignalBus<PlayerRespawnSignal>.TryPushTracked(in signal, ref s_x001DirectSignalPushDropCount_PlayerDeathReconciliationBridge))
                 return true;
 
             ConfigureSignalLanes();
-            return SignalBus<PlayerRespawnSignal>.TryPush(in signal);
+            return SignalBus<PlayerRespawnSignal>.TryPushTracked(in signal, ref s_x001DirectSignalPushDropCount_PlayerDeathReconciliationBridge);
         }
 
         private static void ConfigureSignalLanes()

@@ -723,25 +723,58 @@ namespace Hecton8.Physics.Vehicles
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool TryMulInverse3x3(in float4x4 matrix, float3 vector, out float3 result)
+        {
+            float a00 = matrix.c0.x;
+            float a01 = matrix.c1.x;
+            float a02 = matrix.c2.x;
+            float a10 = matrix.c0.y;
+            float a11 = matrix.c1.y;
+            float a12 = matrix.c2.y;
+            float a20 = matrix.c0.z;
+            float a21 = matrix.c1.z;
+            float a22 = matrix.c2.z;
+
+            float c00 = (a11 * a22) - (a12 * a21);
+            float c01 = (a12 * a20) - (a10 * a22);
+            float c02 = (a10 * a21) - (a11 * a20);
+            float c10 = (a02 * a21) - (a01 * a22);
+            float c11 = (a00 * a22) - (a02 * a20);
+            float c12 = (a01 * a20) - (a00 * a21);
+            float c20 = (a01 * a12) - (a02 * a11);
+            float c21 = (a02 * a10) - (a00 * a12);
+            float c22 = (a00 * a11) - (a01 * a10);
+
+            float determinant = (a00 * c00) + (a01 * c01) + (a02 * c02);
+            bool determinantValid = math.isfinite(determinant) && math.abs(determinant) > 0.0001f;
+            float invDeterminant = math.rcp(math.select(1f, determinant, determinantValid));
+
+            result = new float3(
+                ((c00 * vector.x) + (c10 * vector.y) + (c20 * vector.z)) * invDeterminant,
+                ((c01 * vector.x) + (c11 * vector.y) + (c21 * vector.z)) * invDeterminant,
+                ((c02 * vector.x) + (c12 * vector.y) + (c22 * vector.z)) * invDeterminant);
+
+            return determinantValid && math.all(math.isfinite(result));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float3 ResolveLinearAcceleration(float3 forceWorld, float baseMassKg, in AddedMassProfileDTO profile, float matrixBlend01)
         {
-            float3 diagonal = ExtractDiagonal(in profile.LinearAddedMass) + new float3(SafePositive(baseMassKg, 1f));
+            float safeBaseMass = SafePositive(baseMassKg, 1f);
+            float3 diagonal = ExtractDiagonal(in profile.LinearAddedMass) + new float3(safeBaseMass);
             float3 diagonalAcceleration = forceWorld / math.max(diagonal, new float3(1f));
             if (matrixBlend01 <= 0.001f)
                 return diagonalAcceleration;
 
             float4x4 matrix = profile.LinearAddedMass;
-            matrix.c0.x += SafePositive(baseMassKg, 1f);
-            matrix.c1.y += SafePositive(baseMassKg, 1f);
-            matrix.c2.z += SafePositive(baseMassKg, 1f);
+            matrix.c0.x += safeBaseMass;
+            matrix.c1.y += safeBaseMass;
+            matrix.c2.z += safeBaseMass;
             matrix.c3 = new float4(0f, 0f, 0f, 1f);
-            float determinant = math.determinant(matrix);
-            if (!math.isfinite(determinant) || math.abs(determinant) <= 0.0001f)
-                return diagonalAcceleration;
 
-            float3 tensorAcceleration = math.mul(math.inverse(matrix), new float4(forceWorld, 0f)).xyz;
-            bool valid = math.all(math.isfinite(tensorAcceleration));
-            tensorAcceleration = math.select(diagonalAcceleration, tensorAcceleration, valid);
+            if (!TryMulInverse3x3(in matrix, forceWorld, out float3 tensorAcceleration))
+                tensorAcceleration = diagonalAcceleration;
+
             return math.lerp(diagonalAcceleration, tensorAcceleration, math.saturate(matrixBlend01));
         }
 
@@ -764,13 +797,10 @@ namespace Hecton8.Physics.Vehicles
             matrix.c1.y += math.max(1f, baseInertia.y);
             matrix.c2.z += math.max(1f, baseInertia.z);
             matrix.c3 = new float4(0f, 0f, 0f, 1f);
-            float determinant = math.determinant(matrix);
-            if (!math.isfinite(determinant) || math.abs(determinant) <= 0.0001f)
-                return diagonalAcceleration;
 
-            float3 tensorAcceleration = math.mul(math.inverse(matrix), new float4(torqueWorld, 0f)).xyz;
-            bool valid = math.all(math.isfinite(tensorAcceleration));
-            tensorAcceleration = math.select(diagonalAcceleration, tensorAcceleration, valid);
+            if (!TryMulInverse3x3(in matrix, torqueWorld, out float3 tensorAcceleration))
+                tensorAcceleration = diagonalAcceleration;
+
             return math.lerp(diagonalAcceleration, tensorAcceleration, math.saturate(matrixBlend01));
         }
 

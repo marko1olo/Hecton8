@@ -99,6 +99,11 @@ namespace Hecton8.Core.Contracts.Signals
     [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct FrameTimeSignal : ISignal
     {
+        public const int ExpectedCapacity = 32;
+        public const int MaxFrameSignals = 64;
+        public const int LowTierFrameSignals = 16;
+        public const uint LaneHash = 0x46544D53u; // FTMS
+
         [FieldOffset(0)] public uint Frame;
         [FieldOffset(4)] public float CurrentFrameTimeMs;
         [FieldOffset(8)] public float FrameTimeEwmaMs;
@@ -114,6 +119,11 @@ namespace Hecton8.Core.Contracts.Signals
     [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct KillSwitchSignal : ISignal
     {
+        public const int ExpectedCapacity = 8;
+        public const int MaxFrameSignals = 32;
+        public const int LowTierFrameSignals = 8;
+        public const uint LaneHash = 0x4B534857u; // KSHW
+
         [FieldOffset(0)] public uint Frame;
         [FieldOffset(4)] private uint _pad0;
         [FieldOffset(8)] public ulong PreviousMask;
@@ -128,6 +138,10 @@ namespace Hecton8.Core.Contracts.Signals
     [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct SystemKillSwitchBitsSignal : ISignal
     {
+        public const int ExpectedCapacity = 8;
+        public const int MaxFrameSignals = 32;
+        public const int LowTierFrameSignals = 8;
+        public const uint LaneHash = HectonSignalLaneContract.SystemKillSwitchBitsSignalStableHash;
         public const byte FlagEnabled = 1 << 0;
         public const byte FlagRegistryOwner = 1 << 1;
 

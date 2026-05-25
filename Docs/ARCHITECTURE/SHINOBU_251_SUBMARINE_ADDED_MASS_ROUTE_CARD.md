@@ -105,7 +105,9 @@ Scanner sidecar:
 
 ## Layout Proof
 
-`AddedMassProfileDTO` is explicit 128 bytes: `LinearAddedMass` at offset `0`, `AngularAddedMass` at offset `64`. Each field is a `float4x4` occupying one 64-byte cache line. No properties or managed references are present.
+`AddedMassProfileDTO` is explicit `128` bytes: `LinearAddedMass` offset `0`, `AngularAddedMass` offset `64`.
+
+Each field is one `float4x4` cache line. No properties or managed references are present.
 
 `SubmarineHydrodynamicsTelemetry` is explicit 128 bytes. It holds AUP, depth, mass, traces, quality, damping, frame, flags, hashes, `BurstElapsedUs@88`, density scalar `@92`, and padding.
 

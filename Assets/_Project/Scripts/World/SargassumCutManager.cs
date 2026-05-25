@@ -519,8 +519,6 @@ namespace Hecton8.World
         public void Tick(float deltaTime)
         {
             ResolveDependencies();
-            if (_maskRead == null || _maskWrite == null || _stampCompute == null || _activeStampCommandBuffer == null)
-                return;
 
             DecayRecentCutStamps(deltaTime);
 
@@ -704,7 +702,7 @@ namespace Hecton8.World
 
             EnsureVaultBuffer(ref _queuedStampCommandsHandle, StampCommandsBufferId, StampCommandCapacity);
 
-            if (_stampCommandBufferA == null || _stampCommandBufferB == null)
+            if (!IsGraphicsBufferReady(_stampCommandBufferA) || !IsGraphicsBufferReady(_stampCommandBufferB))
             {
                 ReleaseGraphicsBuffer(ref _stampCommandBufferA);
                 ReleaseGraphicsBuffer(ref _stampCommandBufferB);
@@ -716,7 +714,7 @@ namespace Hecton8.World
 
             EnsureVaultBuffer(ref _queuedDamageVolumeStampCommandsHandle, DamageVolumeStampCommandsBufferId, DamageVolumeStampCapacity);
 
-            if (_damageVolumeStampCommandBufferA == null || _damageVolumeStampCommandBufferB == null)
+            if (!IsGraphicsBufferReady(_damageVolumeStampCommandBufferA) || !IsGraphicsBufferReady(_damageVolumeStampCommandBufferB))
             {
                 ReleaseGraphicsBuffer(ref _damageVolumeStampCommandBufferA);
                 ReleaseGraphicsBuffer(ref _damageVolumeStampCommandBufferB);
@@ -996,6 +994,11 @@ namespace Hecton8.World
 
             buffer.Release();
             buffer = null;
+        }
+
+        private static bool IsGraphicsBufferReady(GraphicsBuffer buffer)
+        {
+            return buffer != null && buffer.IsValid();
         }
 
         private GraphicsBuffer ResolveStampCommandWriteBuffer()
@@ -1285,7 +1288,7 @@ namespace Hecton8.World
 
         private void QueueDebrisBurst(Vector3 positionWS, Vector3 directionWS, float cutStrength, float bubbleWeight)
         {
-            if (debrisParticleSystem == null || _pendingDebrisBurstCount >= _pendingDebrisBursts.Length)
+            if (_pendingDebrisBurstCount >= _pendingDebrisBursts.Length)
                 return;
 
             _pendingDebrisBursts[_pendingDebrisBurstCount++] = new PendingDebrisBurst
@@ -1503,7 +1506,7 @@ namespace Hecton8.World
                 _maskWrite == null ||
                 _stampCompute == null ||
                 _stampKernel < 0 ||
-                _activeStampCommandBuffer == null ||
+                !EnsureActiveStampCommandBufferReady() ||
                 !HasPendingMaskUpdate() ||
                 _lastMaskDispatchFrame == Time.frameCount)
             {
@@ -1520,7 +1523,10 @@ namespace Hecton8.World
                 {
                     GraphicsBuffer stampWriteBuffer = ResolveStampCommandWriteBuffer();
                     if (stampWriteBuffer == null)
+                    {
+                        RequestStampGraphicsBufferRefresh();
                         return;
+                    }
 
                     int safeQueuedStampCount = math.min(_queuedStampCount, math.min(queuedStampCommands.Length, StampCommandCapacity));
                     if (safeQueuedStampCount <= 0)
@@ -1675,7 +1681,7 @@ namespace Hecton8.World
                 _damageVolumeWrite == null ||
                 _damageVolumeCompute == null ||
                 _damageVolumeKernel < 0 ||
-                _activeDamageVolumeStampCommandBuffer == null ||
+                !EnsureActiveDamageVolumeStampCommandBufferReady() ||
                 (_queuedDamageVolumeStampCount <= 0 && deltaTime <= 0f) ||
                 _lastDamageVolumeDispatchFrame == Time.frameCount)
             {
@@ -1697,7 +1703,10 @@ namespace Hecton8.World
                 {
                     GraphicsBuffer damageWriteBuffer = ResolveDamageVolumeStampCommandWriteBuffer();
                     if (damageWriteBuffer == null)
+                    {
+                        RequestStampGraphicsBufferRefresh();
                         return;
+                    }
 
                     int safeQueuedDamageVolumeStampCount = math.min(
                         _queuedDamageVolumeStampCount,
@@ -1754,6 +1763,29 @@ namespace Hecton8.World
             _damageVolumeStampOverflowCoalesceCount = 0;
         }
 
+        private bool EnsureActiveStampCommandBufferReady()
+        {
+            if (IsGraphicsBufferReady(_activeStampCommandBuffer))
+                return true;
+
+            RequestStampGraphicsBufferRefresh();
+            return false;
+        }
+
+        private bool EnsureActiveDamageVolumeStampCommandBufferReady()
+        {
+            if (IsGraphicsBufferReady(_activeDamageVolumeStampCommandBuffer))
+                return true;
+
+            RequestStampGraphicsBufferRefresh();
+            return false;
+        }
+
+        private void RequestStampGraphicsBufferRefresh()
+        {
+            _qualityResourceRefreshRequested = true;
+        }
+
         private void QueueGlobalPublish(bool forceHeatRefresh = false)
         {
             _globalsDirty = true;
@@ -1773,7 +1805,13 @@ namespace Hecton8.World
             Shader.SetGlobalTexture(_CutMaskTextureId, _maskRead);
             Shader.SetGlobalVector(_CutMaskWorldRectId, _maskWorldRect);
             Shader.SetGlobalFloat(_CutMaskActiveId, _maskWorldSize > 0f ? 1f : 0f);
-            if (_damageVolumeRead != null)
+            bool damageVolumeActive =
+                _damageVolumeRead != null &&
+                (_damageVolumeEnergy > DamageVolumeEnergyEpsilon ||
+                 _queuedDamageVolumeStampCount > 0 ||
+                 _pendingDamageVolumeDeltaTime > 0f);
+
+            if (damageVolumeActive)
             {
                 Shader.SetGlobalTexture(_DamageVolumeTextureId, _damageVolumeRead);
                 Shader.SetGlobalFloat(_DamageVolumeActiveId, 1f);

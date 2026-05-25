@@ -11390,6 +11390,9 @@ namespace Hecton8.World
                 case GlobalRegistryServiceSlot.ObjectPool:
                     _cachedObjectPool = currentService as IObjectPoolService;
                     break;
+                case GlobalRegistryServiceSlot.DataVault:
+                    OnMigratorySargassumDataVaultReplaced(currentService as Hecton8.Core.Memory.IDataVault);
+                    break;
             }
         }
 

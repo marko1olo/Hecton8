@@ -42,7 +42,7 @@ Forge preview route: non-authoritative preview resolution scales continuously fr
 - Gate includes padding and late-field offsets for 128-byte config and 64-byte telemetry lanes.
 - Rule staging: `SanitizeConfig` honors nonzero public `config.RuleCount`, falls back to source row count only when `RuleCount == 0`, and then falls back to `DefaultRuleCount=5` for empty public calls.
 - It also clamps non-finite or impossible AUP origin coordinates to the default sector origin before jobs run.
-- Scalar bake controls route through finite-select defaults plus broad clamps for cell size, noise frequency/offset, density multiplier, thermal falloff, base temperature, depth scale, slope softness, temperature softness, and `GlobalQualityWeight`.
+- Scalar bake controls use finite-select defaults and broad clamps for cell size, noise, density, thermal falloff, base temperature, depth scale, slope, temperature, and `GlobalQualityWeight`.
 - Public Editor API calls with `requestedCount > source.Length` are hardened by populating default rule/weight tables before fallback rows are copied into NativeArrays.
 - This prevents a modulo-by-zero bake abort while preserving supplied CSV rows first and keeping all five default rows reachable.
 - Default string species hashes lower ASCII to match CSV parser hash identity.
@@ -85,7 +85,9 @@ Forge preview route: non-authoritative preview resolution scales continuously fr
 - Existing root report content is preserved.
 - Hardened scanner source is static pending next Unity import/run.
 - Self-audit: `Docs/Reports/BIOTA_DENSITY_SELF_AUDIT_SHINOBU_308.md` (written only after successful Editor bake; pending in this session)
-- Blackbox dump on fault: `Docs/AgentLogs/Dump_SHINOBU_308.bin` (written on bake fault/nonfinite detection through write-through temp output and `Flush(true)`; telemetry allocation occurs before layout/sanitize gates and records through a monotonic 300-slot cursor)
+- Blackbox dump on fault: `Docs/AgentLogs/Dump_SHINOBU_308.bin`.
+- Write route: temp output plus `Flush(true)` on bake fault/nonfinite detection.
+- Telemetry allocation precedes layout/sanitize gates and records through monotonic 300-slot cursor.
 
 - SHINOBU_308 domain import/compile proof exists for the pre-Awaitable code path.
 - `PENDING VERIFICATION`: runtime bake execution, Unity import, Burst Inspector, profiler, GCMonitor, actual `.h8bin` generation, scanner refresh, SpawnDirector readback.

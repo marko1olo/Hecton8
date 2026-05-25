@@ -425,6 +425,11 @@ namespace Hecton8.Core.Contracts.Signals
     [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct SystemHealthSignal : ISignal
     {
+        public const int ExpectedCapacity = 16;
+        public const int MaxFrameSignals = 64;
+        public const int LowTierFrameSignals = 16;
+        public const uint LaneHash = 0x48484C54u; // HHLT
+
         [FieldOffset(0)]
         public uint Frame;
         [FieldOffset(4)]
@@ -460,6 +465,10 @@ namespace Hecton8.Core.Contracts.Signals
     [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct ReentryVfxStateSignal : ISignal
     {
+        public const int ExpectedCapacity = 4;
+        public const int MaxFrameSignals = 16;
+        public const int LowTierFrameSignals = 4;
+        public const uint LaneHash = 0xAB8A9BF1u; // FNV32("ReentryVfxStateSignal")
         public const byte FlagLowTier = 1 << 0;
         public const byte FlagWhiteout = 1 << 1;
         public const byte FlagHydrated = 1 << 2;
@@ -489,6 +498,10 @@ namespace Hecton8.Core.Contracts.Signals
     [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct VisorDropletSignal : ISignal
     {
+        public const int ExpectedCapacity = 8;
+        public const int MaxFrameSignals = 32;
+        public const int LowTierFrameSignals = 8;
+        public const uint LaneHash = 0x5A0A8332u; // FNV32("VisorDropletSignal")
         public const byte DropletKindMassiveSplash = 1;
         public const byte FlagExternalSplash = 1 << 0;
 
@@ -889,6 +902,11 @@ namespace Hecton8.Core.Contracts.Signals
     [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct VisualFlareSignal : ISignal
     {
+        public const int ExpectedCapacity = 16;
+        public const int MaxFrameSignals = 16;
+        public const int LowTierFrameSignals = 16;
+        public const uint LaneHash = 0x56464C52u; // VFLR
+
         /// <summary>Stable source ID or component instance fallback.</summary>
         [FieldOffset(0)]
         public uint SourceId;

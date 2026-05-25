@@ -20,6 +20,7 @@ namespace Hecton8.Power
     /// </summary>
     internal sealed class WfcOutpostPowerBootRuntime : IDisposable
     {
+        private static int s_x001WfcOutpostPowerBootRuntimeSignalPushDropCount;
         private const string OwnerName = "OUTPOST_LOGISTICS_INITIALIZER";
         private const int MaxCells = WfcOutpostGridConstants.MaxCellCount;
         private const int MaxDirectedEdges = WfcOutpostGridConstants.MaxDirectedEdges;
@@ -489,7 +490,7 @@ namespace Hecton8.Power
                     Unlocked = (byte)(voltage > DoorUnlockVoltage ? 1 : 0),
                     Flags = (byte)(voltage > DoorUnlockVoltage ? 1 : 0)
                 };
-                SignalBus<WfcOutpostDoorPowerSignal>.TryPush(in signal);
+                SignalBus<WfcOutpostDoorPowerSignal>.TryPushTracked(in signal, ref s_x001WfcOutpostPowerBootRuntimeSignalPushDropCount);
             }
         }
 
@@ -510,7 +511,7 @@ namespace Hecton8.Power
                 Priority = (byte)LogisticsBrownoutTier.EmergencyOnly,
                 Flags = 1 << 2
             };
-            SignalBus<BrownoutSignal>.TryPush(in signal);
+            SignalBus<BrownoutSignal>.TryPushTracked(in signal, ref s_x001WfcOutpostPowerBootRuntimeSignalPushDropCount);
         }
 
         private void TrySeedGasRooms()
@@ -771,7 +772,7 @@ namespace Hecton8.Power
 
         private static uint CurrentFrameU32()
         {
-            return unchecked((uint)math.max(0, Time.frameCount));
+            return Hecton8.Core.SystemDispatcher.CurrentFrameId;
         }
 
         private static bool HasFatalGraphFault(int faultFlags)

@@ -34,7 +34,7 @@ namespace Hecton8.World
             if (!Application.isPlaying || queuedLaunchCount < QueuedLaunchTelemetryThreshold)
                 return false;
 
-            int frame = Time.frameCount;
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (frame < nextTelemetryFrame)
                 return false;
 
@@ -75,7 +75,7 @@ namespace Hecton8.World
             if (!Application.isPlaying)
                 return false;
 
-            int frame = Time.frameCount;
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (frame < nextTelemetryFrame)
                 return false;
 
@@ -104,7 +104,7 @@ namespace Hecton8.World
             if (!Application.isPlaying || patchSampleCount <= patchSampleBudget)
                 return false;
 
-            int frame = Time.frameCount;
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (frame < nextTelemetryFrame)
                 return false;
 

@@ -70,7 +70,9 @@ Status: PENDING VERIFICATION
 
 ## Netcode Fence
 
-The erosion height and silt arrays are excluded from `StateRingBuffer` and Merkle leaves. Runtime netcode synchronizes dynamic entities over terrain; terrain erosion payloads are immutable environment data loaded from StreamingAssets.
+Erosion height and silt arrays are excluded from `StateRingBuffer` and Merkle leaves.
+
+Runtime netcode synchronizes dynamic entities over terrain; erosion payloads are immutable StreamingAssets environment data.
 
 ## Failure Proof
 

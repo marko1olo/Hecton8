@@ -1,4 +1,4 @@
-﻿#if UNITY_EDITOR || UNITY_STANDALONE
+#if UNITY_EDITOR || UNITY_STANDALONE
 #define HECTON8_MMF_AVAILABLE
 #endif
 using Hecton8.Core.Memory;
@@ -29,8 +29,9 @@ namespace Hecton8.Core
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-9990)]
-    public sealed unsafe partial class InputDispatcher : MonoBehaviour, IInputService, IUpdatable, ITickable, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener
+    public sealed unsafe partial class InputDispatcher : MonoBehaviour, IInputService, IUpdatable, ITickable, ILateFrameTickable, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener
     {
+        private static int s_x001InputDispatcherSignalPushDropCount;
         private const int BufferedActionCapacity = 10;
         private const int DeterministicInputRingCapacity = 512;
         private const int ButtonMaskWindowCapacity = 10;
@@ -211,6 +212,7 @@ namespace Hecton8.Core
         private XRRuntimeAup48 _lastXRLookAtHitPointAup;
         private int _lastXRLookAtProbeFrame = -1;
         private bool _registeredUpdatable;
+        private bool _registeredLateFrame;
         private bool _registeredInputService;
         private bool _registeredHotSwapListener;
         private bool _isInitialized;
@@ -256,6 +258,10 @@ namespace Hecton8.Core
         private ushort _deviceLostPauseSequence;
         private byte _lastPublishedXRToolTriggerFlags;
         private byte _lastPublishedXRToolDominantController;
+        private bool _pendingHapticOutput;
+        private uint _pendingHapticSchemeHash;
+        private float _pendingHapticLowMotor;
+        private float _pendingHapticHighMotor;
         private bool _lookBlendActive;
         private bool _lastAutomationOverrideApplied;
         private bool _pollActionsCached;
@@ -531,6 +537,11 @@ namespace Hecton8.Core
             DrainToolHaptics(deltaTime);
         }
 
+        public void LateFrameTick()
+        {
+            FlushPendingHapticOutput();
+        }
+
         public void PreSimulationInputTick(float deltaTime)
         {
             EnsureDeterministicInputNativeBuffers();
@@ -650,7 +661,7 @@ namespace Hecton8.Core
             signal.InputDelayFrames = (byte)delayFrames;
             signal.AppliedDelayFrames = appliedDelayFrames;
             signal.Flags = resolvedState.Flags;
-            SignalBus<InputStateSignal>.TryPush(in signal);
+            SignalBus<InputStateSignal>.TryPushTracked(in signal, ref s_x001InputDispatcherSignalPushDropCount);
             PublishDiscreteInputSignals(resolvedState.ButtonsBitmask, _previousButtonMask);
             _previousButtonMask = resolvedState.ButtonsBitmask;
             WriteDeterministicInputBlackBox(in resolvedState, _currentInputSchemeHash);
@@ -2064,7 +2075,7 @@ namespace Hecton8.Core
         {
             SimulationPauseSignal signal = default;
             signal.SourceHash = DeviceLostSignalSourceHash;
-            signal.Frame = (uint)Time.frameCount;
+            signal.Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             signal.Sequence = ++_deviceLostPauseSequence;
             if (signal.Sequence == 0)
                 signal.Sequence = ++_deviceLostPauseSequence;
@@ -2232,12 +2243,21 @@ namespace Hecton8.Core
 
             if (!_registeredUpdatable)
                 _registeredUpdatable = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Core);
+            if (!_registeredLateFrame)
+                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Core);
             TryRegisterHapticSynthesisPostSimulation();
         }
 
         private void TryUnregisterFromDispatcher()
         {
             TryUnregisterHapticSynthesisPostSimulation();
+            if (_registeredLateFrame)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Core);
+                _registeredLateFrame = false;
+                _pendingHapticOutput = false;
+            }
+
             if (!_registeredUpdatable)
                 return;
 
@@ -2792,7 +2812,7 @@ namespace Hecton8.Core
             signal.Sequence = ++_toolTriggerSequence;
             signal.DominantController = dominantController;
             signal.Flags = flags;
-            SignalBus<ToolTriggerSignal>.TryPush(in signal);
+            SignalBus<ToolTriggerSignal>.TryPushTracked(in signal, ref s_x001InputDispatcherSignalPushDropCount);
 
             _lastPublishedXRToolTriggerStrength = strength;
             _lastPublishedXRSecondaryTriggerStrength = secondaryStrength;
@@ -2979,10 +2999,10 @@ namespace Hecton8.Core
             Vector3 probeOrigin = new Vector3(probeOrigin3.x, probeOrigin3.y, probeOrigin3.z);
             InteractableRegistry.EnsureSceneRegistryCold();
             Ray probe = new Ray(probeOrigin, direction);
-            if (InteractableRegistry.TryRaycastSpatial(
+            if (InteractableRegistry.TryResolveSpatialTarget(
                     in probe,
                     XRLookAtSelectionDistanceMeters,
-                    HectonLayerMasks.DefaultRaycastLayerMask,
+                    HectonLayerMasks.InteractableLayerMask | HectonLayerMasks.StrictInteractionLayerMask,
                     QueryTriggerInteraction.Ignore,
                     out InteractableRegistry.SpatialHit spatialHit))
             {
@@ -3282,11 +3302,11 @@ namespace Hecton8.Core
         {
             PlayerInputSignal signal = default;
             signal.SourceHash = PlayerInputSignalSourceHash;
-            signal.Frame = unchecked((uint)Mathf.Max(0, Time.frameCount));
+            signal.Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             signal.Sequence = unchecked(++_playerInputSignalSequence);
             signal.Command = command;
             signal.Flags = 0;
-            SignalBus<PlayerInputSignal>.TryPush(in signal);
+            SignalBus<PlayerInputSignal>.TryPushTracked(in signal, ref s_x001InputDispatcherSignalPushDropCount);
         }
 
         private void HandleSprintPressed()
@@ -3330,8 +3350,7 @@ namespace Hecton8.Core
             if (schemeHash == InputSchemeHashKeyboardMouse)
             {
                 _lastHapticCommandsActive = 0;
-                ApplyGamepadHaptics(0f, 0f);
-                ResetXRHaptics();
+                QueueHapticOutput(schemeHash, 0f, 0f);
                 return;
             }
 
@@ -3393,6 +3412,42 @@ namespace Hecton8.Core
                 amplitudeScale *= math.saturate(profile.HapticThermalAmplitudeScale);
             lowMotor = ClampFinite01(lowMotor * amplitudeScale);
             highMotor = ClampFinite01(highMotor * amplitudeScale);
+
+            if (schemeHash == InputSchemeHashXRTouch)
+            {
+                QueueHapticOutput(schemeHash, lowMotor, highMotor);
+                return;
+            }
+
+            QueueHapticOutput(schemeHash, lowMotor, highMotor);
+        }
+
+        private void QueueHapticOutput(uint schemeHash, float lowMotor, float highMotor)
+        {
+            _pendingHapticSchemeHash = schemeHash;
+            _pendingHapticLowMotor = ClampFinite01(lowMotor);
+            _pendingHapticHighMotor = ClampFinite01(highMotor);
+            _pendingHapticOutput = true;
+        }
+
+        private void FlushPendingHapticOutput()
+        {
+            if (!_pendingHapticOutput)
+                return;
+
+            _pendingHapticOutput = false;
+            uint schemeHash = _pendingHapticSchemeHash;
+            float lowMotor = _pendingHapticLowMotor;
+            float highMotor = _pendingHapticHighMotor;
+            _pendingHapticLowMotor = 0f;
+            _pendingHapticHighMotor = 0f;
+
+            if (schemeHash == InputSchemeHashKeyboardMouse)
+            {
+                ApplyGamepadHaptics(0f, 0f);
+                ResetXRHaptics();
+                return;
+            }
 
             if (schemeHash == InputSchemeHashXRTouch)
             {

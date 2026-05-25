@@ -16,6 +16,7 @@ namespace Hecton8.Tools
 
     public static class LaserCutterDodRuntime
     {
+        private static int s_x001LaserCutterDodRuntimeSignalPushDropCount;
         private const uint BlackBoxDumpMagic = 0x53483235u; // SH25
         private const uint BlackBoxDumpVersion = 1u;
         private const int BlackBoxDumpHeaderBytes = 32;
@@ -535,7 +536,7 @@ namespace Hecton8.Tools
                 Flags = DebrisSpawnSignal.FlagToolSparks | DebrisSpawnSignal.FlagComputeShard,
                 Quantity = quantity
             };
-            SignalBus<DebrisSpawnSignal>.TryPush(in debris);
+            SignalBus<DebrisSpawnSignal>.TryPushTracked(in debris, ref s_x001LaserCutterDodRuntimeSignalPushDropCount);
 
             VfxSparkRequestSignal spark = new VfxSparkRequestSignal
             {
@@ -546,7 +547,7 @@ namespace Hecton8.Tools
                 Intensity01 = intensity,
                 Frame = frame
             };
-            SignalBus<VfxSparkRequestSignal>.TryPush(in spark);
+            SignalBus<VfxSparkRequestSignal>.TryPushTracked(in spark, ref s_x001LaserCutterDodRuntimeSignalPushDropCount);
 
             if (stageImpactVfx)
                 StageImpactVfxIfBound(hitAup, normal, intensity, heat01, quantity, toolHashID, frame);
@@ -948,7 +949,7 @@ namespace Hecton8.Tools
                     Reason = 0,
                     Flags = 0
                 };
-                SignalBus<PowerDrainSignal>.TryPush(in drain);
+                SignalBus<PowerDrainSignal>.TryPushTracked(in drain, ref s_x001LaserCutterDodRuntimeSignalPushDropCount);
             }
         }
 

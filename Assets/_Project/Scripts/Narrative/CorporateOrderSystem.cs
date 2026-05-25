@@ -94,7 +94,7 @@ namespace Hecton8.Narrative
             if (!TryRegisterRuntime())
                 return;
 
-            _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+            _saveService = GlobalRegistry.Save;
             TryRegisterHotSwapListener();
             TryRegister();
             TryRegisterSaveParticipant();
@@ -220,7 +220,7 @@ namespace Hecton8.Narrative
                 return;
 
             if (_saveService == null)
-                _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+                _saveService = GlobalRegistry.Save;
 
             if (_saveService == null)
                 return;

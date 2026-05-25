@@ -79,12 +79,14 @@ Player/runtime builds must not load human-readable visor profiles from `Streamin
   - SHINOBU_270 lane: stencil bit `0`, `Ref 1`, `WriteMask 1`;
   - runtime code does not mutate stencil material properties.
 - 6.
-- Fullscreen pass `Hidden/Hecton8/VisorAR` first copies the camera color to the resolve target, then draws AR digits, scanlines, fog, and compacted brackets only where stencil equals the reserved visor lane.
+- Fullscreen pass `Hidden/Hecton8/VisorAR` copies camera color to the resolve target.
+- It draws AR digits, scanlines, fog, and brackets only where stencil equals the reserved visor lane.
 - The AR shader uses hard-coded `Ref 1` and `ReadMask 1`.
 - HUD params, digit params, and the compacted 16-row target buffer are uploaded through double-buffered `GraphicsBuffer.LockBufferForWrite` plus `UnsafeUtility.MemCpy`; unused target rows are cleared with `UnsafeUtility.MemClear`.
 - The shader loops only over the uploaded active target count.
 - Chroma uses a branchless `smoothstep` admission weight: survival-tier quality collapses chroma contribution toward neutral, middle/high quality ramps continuously, and no binary quality branch selects a separate shader path.
-- 7. Non-finite projection faults dump a fixed 32-byte little-endian header followed by raw `VisorTelemetryEntry` rows to `Docs/AgentLogs/Dump_SHINOBU_270.bin`; over-budget frames remain telemetry flags and do not perform render-side disk I/O.
+- 7. Non-finite projection faults dump a 32-byte little-endian header plus raw `VisorTelemetryEntry` rows to `Docs/AgentLogs/Dump_SHINOBU_270.bin`.
+- Over-budget frames remain telemetry flags and do not perform render-side disk I/O.
 - 8.
 - `HUDCanvasInquisition` is an editor-only proof facade.
 - It upserts SHINOBU_270 evidence under `shinobu_270_visor_ar_stencil`.

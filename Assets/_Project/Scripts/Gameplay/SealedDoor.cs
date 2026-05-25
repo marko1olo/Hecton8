@@ -53,6 +53,7 @@ namespace Hecton8.Gameplay
     [RequireComponent(typeof(Collider))]
     public sealed class SealedDoor : MonoBehaviour, ICuttable, ITickable, IUpdatable, ILateFrameTickable, IWfcDoorLaserCutTarget, IGlobalRegistryHotSwapListener
     {
+        private static int s_x001SealedDoorSignalPushDropCount;
         // ══════════════════════════════════════════════════════════
         //  SHADER PROPERTY IDs — cached once, zero GC
         // ══════════════════════════════════════════════════════════
@@ -786,7 +787,7 @@ namespace Hecton8.Gameplay
                     : DebrisSpawnSignal.FlagComputeShard),
                 Quantity = quantity
             };
-            SignalBus<DebrisSpawnSignal>.TryPush(in debris);
+            SignalBus<DebrisSpawnSignal>.TryPushTracked(in debris, ref s_x001SealedDoorSignalPushDropCount);
         }
 
         private static bool TryResolveDoorAup(Vector3 runtimePosition, in AbsoluteUniversePosition originAup, out double3 doorAup)
@@ -892,7 +893,7 @@ namespace Hecton8.Gameplay
                 SourceHash = WfcOutpostDoorSourceHash,
                 Flags = 0
             };
-            SignalBus<WfcOutpostStateChangedSignal>.TryPush(in signal);
+            SignalBus<WfcOutpostStateChangedSignal>.TryPushTracked(in signal, ref s_x001SealedDoorSignalPushDropCount);
         }
 
         private static uint ResolveCurrentFrameId()

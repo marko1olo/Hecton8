@@ -1,4 +1,3 @@
-using Hecton8.Atmosphere;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Gameplay;
@@ -20,6 +19,7 @@ namespace Hecton8.Construction
     [AddComponentMenu("Hecton8/Construction/Logistics Pipe Node")]
     public sealed class LogisticsPipeNode : MonoBehaviour, ISlowTickable, IPoolable, IPowerComponent, IGlobalRegistryHotSwapListener
     {
+        private static int s_x001LogisticsPipeNodeSignalPushDropCount;
         private const float SlowTickDeltaTime = 0.5f;
         private const float PositionRefreshEpsilonSqr = 0.0004f;
         private const float ThermalDamageThresholdCelsius = 100f;
@@ -89,7 +89,7 @@ namespace Hecton8.Construction
         [SerializeField] private int _debugEncodedFlowRate;
 
         private PowerNode _powerNode;
-        private SubmarineAtmosphereSystem _atmosphereSystem;
+        private ISubmarineAtmosphereRoomReadModel _atmosphereSystem;
         private Transform _cachedTransform;
         private Transform _cachedSourceTransform;
         private Transform _cachedDestinationTransform;
@@ -131,7 +131,7 @@ namespace Hecton8.Construction
         {
             _cachedTransform = transform;
             _powerNode = GetComponent<PowerNode>();
-            _atmosphereSystem = GetComponentInParent<SubmarineAtmosphereSystem>();
+            _atmosphereSystem = ComponentReferenceUtility.ResolveParentService<ISubmarineAtmosphereRoomReadModel>(this);
             _pipeLinkId = unchecked((int)EntityId.ToULong(GetEntityId()));
             CacheRegistryServicesCold();
             RefreshEndpointCache(true);
@@ -139,8 +139,8 @@ namespace Hecton8.Construction
 
         private void OnEnable()
         {
-            if (_atmosphereSystem == null)
-                _atmosphereSystem = GetComponentInParent<SubmarineAtmosphereSystem>();
+            if (_atmosphereSystem == null || !_atmosphereSystem.IsAtmosphereRuntimeActive)
+                _atmosphereSystem = ComponentReferenceUtility.ResolveParentService<ISubmarineAtmosphereRoomReadModel>(this);
 
             CacheRegistryServicesCold();
             TryRegisterHotSwapListener();
@@ -544,7 +544,7 @@ namespace Hecton8.Construction
 
         private void RefreshAmbientRoomIndex()
         {
-            if (_atmosphereSystem == null)
+            if (_atmosphereSystem == null || !_atmosphereSystem.IsAtmosphereRuntimeActive)
                 return;
 
             Vector3 midpoint = (_cachedSourcePosition + _cachedDestinationPosition) * 0.5f;
@@ -560,7 +560,7 @@ namespace Hecton8.Construction
 
         private void ApplyInFlightThermalDamage()
         {
-            if (_inFlightItem == null || _payloadIntegrity == 0 || _atmosphereSystem == null || _cachedRoomIndex < 0)
+            if (_inFlightItem == null || _payloadIntegrity == 0 || _atmosphereSystem == null || !_atmosphereSystem.IsAtmosphereRuntimeActive || _cachedRoomIndex < 0)
                 return;
 
             float thresholdTemperature = math.max(ThermalDamageThresholdCelsius, thermalDamageStartCelsius);
@@ -671,7 +671,7 @@ namespace Hecton8.Construction
                 Flags = 1,
                 RoomIndex = (short)math.clamp(_cachedRoomIndex, short.MinValue, short.MaxValue)
             };
-            SignalBus<PipeRuptureSignal>.TryPush(in ruptureSignal);
+            SignalBus<PipeRuptureSignal>.TryPushTracked(in ruptureSignal, ref s_x001LogisticsPipeNodeSignalPushDropCount);
 
             ImpactSignal impactSignal = new ImpactSignal
             {
@@ -682,7 +682,7 @@ namespace Hecton8.Construction
                 WeightClass = 1,
                 Flags = 1
             };
-            SignalBus<ImpactSignal>.TryPush(in impactSignal);
+            SignalBus<ImpactSignal>.TryPushTracked(in impactSignal, ref s_x001LogisticsPipeNodeSignalPushDropCount);
         }
 
         internal void TriggerExternalRupture()

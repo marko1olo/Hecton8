@@ -20,6 +20,7 @@ namespace Hecton8.Atmosphere
     [DisallowMultipleComponent]
     public sealed unsafe class ShinobuOceanSurfaceAtmosphereRuntime : MonoBehaviour, IHectonOceanKinematics, IUpdatable, ISlowTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
+        private static int s_x001ShinobuOceanSurfaceAtmosphereRuntimeSignalPushDropCount;
 #if UNITY_EDITOR
         private const int CsvScratchBytes = 16 * 1024;
 #endif
@@ -1587,7 +1588,7 @@ namespace Hecton8.Atmosphere
                 signal.Frame = _simulationFrameCounter;
                 signal.IsAboveSurface = aboveSurface ? (byte)1 : (byte)0;
                 signal.Flags = math.all(math.isfinite(normal)) ? (byte)1 : (byte)2;
-                SignalBus<WaterlineBreachSignal>.TryPush(in signal);
+                SignalBus<WaterlineBreachSignal>.TryPushTracked(in signal, ref s_x001ShinobuOceanSurfaceAtmosphereRuntimeSignalPushDropCount);
                 _lastCameraAboveSurface = aboveSurface;
                 _hasCameraState = true;
             }

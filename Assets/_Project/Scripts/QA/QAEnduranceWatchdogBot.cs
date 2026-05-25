@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Globalization;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -33,6 +33,7 @@ namespace Hecton8.QA
         IOriginShiftListener,
         IGlobalRegistryHotSwapListener
     {
+        private static int s_x001QAEnduranceWatchdogBotSignalPushDropCount;
         private const string AgentId = "QA_WATCHDOG_BOT";
         private const string CsvFileName = "QA_Endurance_Log.csv";
         private const string DumpFileName = "Dump_QA_WATCHDOG_BOT.bin";
@@ -307,7 +308,7 @@ namespace Hecton8.QA
             _blackBoxCursor = 0;
             _blackBoxCount = 0;
             EnsureBlackBox();
-            _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+            _saveService = GlobalRegistry.Save;
             _originShiftCount = 0;
             _trapCount = 0;
             _saveRequestCount = 0;
@@ -640,7 +641,7 @@ namespace Hecton8.QA
                 SourceId = SourceHash,
                 Flags = 1,
             };
-            SignalBus<SonarPingSignal>.TryPush(in sonar);
+            SignalBus<SonarPingSignal>.TryPushTracked(in sonar, ref s_x001QAEnduranceWatchdogBotSignalPushDropCount);
             _nextPdaDistance += pdaIntervalMeters;
             WriteBlackBox(EventHashPdaRadar);
             EnqueueCsvRecord(EventHashPdaRadar);
@@ -832,7 +833,7 @@ namespace Hecton8.QA
                 Severity = severity,
                 Flags = 1,
             };
-            SignalBus<ComplianceViolationSignal>.TryPush(in signal);
+            SignalBus<ComplianceViolationSignal>.TryPushTracked(in signal, ref s_x001QAEnduranceWatchdogBotSignalPushDropCount);
         }
 
         private void EnsureBlackBox()

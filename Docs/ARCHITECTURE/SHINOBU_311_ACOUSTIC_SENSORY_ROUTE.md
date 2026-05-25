@@ -8,7 +8,8 @@
 - Parasite VFX owns `71980..71987` plus `71989,71990`; SHINOBU_311 explicitly does not use those IDs.
 - Race guard: acoustic SignalBus staging is owned by `ScheduleFrameEvaluation` after `_evaluationScheduled` rejects overlapping evaluation chains.
 - `BeginDispatcherFrame` must not mutate acoustic Vault stimuli.
-- Admission guard: if `SwarmAnalysisJob` admission fails while acoustic work is staged, `_lastScheduledFrame` is not advanced and `_acousticSdfPendingStimulusRetry` preserves the staged counter/stimuli across later frames until the acoustic chain consumes them.
+- Admission guard: failed `SwarmAnalysisJob` admission does not advance `_lastScheduledFrame` while acoustic work is staged.
+- `_acousticSdfPendingStimulusRetry` preserves staged counter/stimuli until acoustic chain consumes them.
 - The latch has no write-only frame sidecar; the pending-retry flag is written into the 64-byte counter through the mutable owner handle only.
 - Cold-path guard: frame-owned staging, idle telemetry, and acoustic integration only proceed when acoustic Vault handles already exist.
 - They do not allocate Vault buffers or load CSV fallback data from hot scheduler path.
@@ -28,13 +29,15 @@
 - This includes frames where no predator cognition slot is due.
 - Stale acoustic result rows clear for active predators before the first job is scheduled.
 
-- Idle telemetry copies the staged counter flags and dropped-stimulus count before clearing stale results; invalid-only ingress therefore records `AcousticFaultNonFinite` and dumps the raw blackbox without scheduling empty acoustic jobs.
+- Idle telemetry copies staged counter flags and dropped-stimulus count before clearing stale results.
+- Invalid-only ingress records `AcousticFaultNonFinite` and dumps raw blackbox without scheduling empty acoustic jobs.
 
 - Silent frames do not call the acoustic integration scheduler after job handoff and do not schedule the attenuation/occlusion/telemetry job chain.
 
 - `CalculateAcousticAttenuationJob` computes inverse-square attenuation after double-precision AUP subtraction.
 
-- `EvaluateAcousticOcclusionJob` culls candidates below the hearing threshold before SDF sampling, then applies SDF ray probes scaled continuously by `GlobalQualityWeight` and injects heard results into cognition drives plus acoustic memory.
+- `EvaluateAcousticOcclusionJob` culls candidates below hearing threshold before SDF sampling.
+- It applies SDF ray probes scaled by `GlobalQualityWeight` and injects heard results into cognition drives plus acoustic memory.
 
 - Acoustic occlusion reads the Vault-published `VoxelSdfTexture3D` route through Core contracts; samples outside the published SDF volume fail open at `1.0` instead of applying false dampening.
 

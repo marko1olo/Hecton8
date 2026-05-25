@@ -22,6 +22,8 @@ namespace Hecton8.Physics.Exosuit
     [DefaultExecutionOrder(-9827)]
     public sealed class ExosuitKinematicsRuntime : MonoBehaviour, IFixedTickable, IPostFixedTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
+        private static int s_x001DirectSignalPushDropCount_ExosuitKinematicsRuntime;
+
         private const int TelemetryCapacity = 300;
         private const int CsvScratchCapacity = 4096;
         private const int TelemetryDumpHeaderSizeBytes = 24;
@@ -902,7 +904,7 @@ namespace Hecton8.Physics.Exosuit
             mech.Amplitude = amplitude;
             mech.Duration = math.isfinite(mech.Duration) ? math.max(0.01f, mech.Duration) : 0.01f;
             mech.Frequency = math.isfinite(mech.Frequency) ? math.max(0.0f, mech.Frequency) : 0.0f;
-            if (!SignalBus<MechHapticSignalDTO>.TryPush(in mech))
+            if (!SignalBus<MechHapticSignalDTO>.TryPushTracked(in mech, ref s_x001DirectSignalPushDropCount_ExosuitKinematicsRuntime))
                 RecordSignalDrop();
 
             bool lowFrequencyLoad = mech.Frequency <= 20.0f;
@@ -914,7 +916,7 @@ namespace Hecton8.Physics.Exosuit
             request.Frame = frame;
             request.Channel = lowFrequencyLoad ? HapticRequest.ChannelCrush : HapticRequest.ChannelGearScrape;
             request.Flags = lowFrequencyLoad ? HapticRequest.FlagCrush : HapticRequest.FlagLightThud;
-            if (!SignalBus<HapticRequest>.TryPush(in request))
+            if (!SignalBus<HapticRequest>.TryPushTracked(in request, ref s_x001DirectSignalPushDropCount_ExosuitKinematicsRuntime))
                 RecordSignalDrop();
         }
 
@@ -929,7 +931,7 @@ namespace Hecton8.Physics.Exosuit
                 silt.Intensity01 = math.isfinite(silt.Intensity01) ? math.saturate(silt.Intensity01) : 0.0f;
                 if (silt.Intensity01 <= 0.0f)
                     return;
-                if (!SignalBus<SiltExplosionSignal>.TryPush(in silt))
+                if (!SignalBus<SiltExplosionSignal>.TryPushTracked(in silt, ref s_x001DirectSignalPushDropCount_ExosuitKinematicsRuntime))
                     RecordSignalDrop();
             }
         }
@@ -945,7 +947,7 @@ namespace Hecton8.Physics.Exosuit
                 tap.Intensity01 = math.isfinite(tap.Intensity01) ? math.saturate(tap.Intensity01) : 0.0f;
                 if (tap.Intensity01 <= 0.0f)
                     return;
-                if (!SignalBus<ExosuitAcousticEchoTap>.TryPush(in tap))
+                if (!SignalBus<ExosuitAcousticEchoTap>.TryPushTracked(in tap, ref s_x001DirectSignalPushDropCount_ExosuitKinematicsRuntime))
                     RecordSignalDrop();
             }
         }

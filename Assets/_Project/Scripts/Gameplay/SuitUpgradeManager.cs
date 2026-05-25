@@ -245,7 +245,7 @@ namespace Hecton8.Gameplay
             TryRegisterLateFrame();
             CacheSuitDataVaultCold();
             EnsureSuitVaultBuffers();
-            _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+            _saveService = Hecton8.Core.GlobalRegistry.Save;
             TryRegisterSaveParticipant();
 
             NarrativeEvents.Register(this);
@@ -365,7 +365,7 @@ namespace Hecton8.Gameplay
                 return;
 
             if (_saveService == null)
-                _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+                _saveService = Hecton8.Core.GlobalRegistry.Save;
 
             if (_saveService == null)
                 return;

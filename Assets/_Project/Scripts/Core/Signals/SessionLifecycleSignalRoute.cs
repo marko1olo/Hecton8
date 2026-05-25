@@ -41,7 +41,7 @@ namespace Hecton8.Core
                 PlayerEntityId = playerEntityId,
                 PlayerPosition = math.all(math.isfinite(playerPosition)) ? playerPosition : float3.zero,
                 SlotHash = slotHash,
-                Frame = unchecked((uint)Time.frameCount),
+                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 Sequence = unchecked((uint)Interlocked.Increment(ref s_sequence)),
                 Kind = kind
             };

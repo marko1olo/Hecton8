@@ -232,7 +232,7 @@ namespace Hecton8.World
             if (state == null)
                 return;
 
-            state.LastAccessFrame = unchecked((uint)math.max(0, Time.frameCount));
+            state.LastAccessFrame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
         }
 
         private static bool HasActiveTileCache(TileRuntimeState state)

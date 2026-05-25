@@ -859,7 +859,7 @@ namespace Hecton8.Gameplay
         private void CacheRegistryServicesCold()
         {
             CachePlayerRuntimeContext(GlobalRegistry.Player, forceAssign: true);
-            _cachedAudioService = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
+            _cachedAudioService = GlobalRegistry.Audio;
         }
 
         private void CachePlayerRuntimeContext(IPlayerRuntimeContext playerContext, bool forceAssign)

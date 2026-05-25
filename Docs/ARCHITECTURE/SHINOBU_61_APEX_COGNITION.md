@@ -224,7 +224,9 @@ No `NavMeshAgent`, physics ray fan, or body capsule fitting is used. Line-of-sig
 
 
 
-Loop 10 removed per-node `math.sincos` from ambush placement. Candidate nodes are deterministic octant-lattice lanes with spatial-hash radial jitter, so high-quality 16-node overkill does not pay trig cost on Quest-class CPUs.
+Loop 10 removed per-node `math.sincos` from ambush placement.
+
+Candidate nodes are deterministic octant-lattice lanes with spatial-hash radial jitter; high-quality 16-node overkill avoids Quest-class trig cost.
 
 
 
@@ -243,11 +245,14 @@ The allocation-locked vault path performs the same existing-handle validation an
 
 
 
-Rollback-relevant jobs use `FloatMode.Deterministic` with `FloatPrecision.Standard`. Dormant and faulted rows clear their 16-slot ambush scratch/influence span so stale predator intent cannot leak into gizmos, animation bridges, or downstream consumers.
+Rollback-relevant jobs use `FloatMode.Deterministic` with `FloatPrecision.Standard`.
+
+Dormant/faulted rows clear their 16-slot ambush scratch/influence span; stale predator intent cannot leak into gizmos, animation bridges, or consumers.
 
 
 
-- Loop 16 hardened NaN vaccination for non-finite inputs: non-finite state/target AUP or velocity writes a fault row and returns before AUP delta downcast, SDF sampling, dot-product LOS, or spatial hashing.
+- Loop 16 hardened NaN vaccination: non-finite state/target AUP or velocity writes a fault row.
+- It returns before AUP delta downcast, SDF sampling, dot-product LOS, or spatial hashing.
 - Loop 17 applies the same quarantine to computed SDF/LOS faults, returning before biome, aggro, ambush nodes, signals, telemetry construction, or `HashSpatial(interceptLocal)` can consume poisoned scalars.
 - Optional NativeQueue signal writers are still gated by `EnableSignalQueueWrites`, now with inline three-paragraph safety justifications at each `NativeDisableContainerSafetyRestriction` declaration.
 

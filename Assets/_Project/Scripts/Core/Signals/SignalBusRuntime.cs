@@ -620,6 +620,20 @@ namespace Hecton8.Core.Contracts.Signals
             return true;
         }
 
+        /// <summary>Attempts to push one signal and increments caller-owned refusal telemetry when the lane rejects it.</summary>
+        /// <param name="signal">Signal payload.</param>
+        /// <param name="ownerDroppedSignalCount">Caller-owned drop counter for local black-box or status reporting.</param>
+        /// <returns>True when the payload entered the lane; false when it was shed or rejected.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool TryPushTracked(in T signal, ref int ownerDroppedSignalCount)
+        {
+            if (TryPush(in signal))
+                return true;
+
+            IncrementOwnerDropCounter(ref ownerDroppedSignalCount);
+            return false;
+        }
+
         /// <summary>Attempts a Burst/job writer enqueue using a lane-owned native budget before NativeQueue growth.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static unsafe bool TryEnqueueBounded(
@@ -646,6 +660,14 @@ namespace Hecton8.Core.Contracts.Signals
 
             writer.Enqueue(signal);
             return true;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void IncrementOwnerDropCounter(ref int counter)
+        {
+            int current = Volatile.Read(ref counter);
+            if (current < int.MaxValue)
+                Interlocked.Increment(ref counter);
         }
 
         public static bool TryGetLatest(out T signal, out int sequence)
@@ -1806,6 +1828,375 @@ namespace Hecton8.Core.Contracts.Signals
                 maxFrameSignals = 64;
                 lowTierFrameSignals = 16;
                 laneHash = 0x54584F58u;
+                return true;
+            }
+
+            if (type == typeof(DynamicMusicScalarSignal))
+            {
+                expectedCapacity = DynamicMusicScalarSignal.ExpectedCapacity;
+                maxFrameSignals = DynamicMusicScalarSignal.MaxFrameSignals;
+                lowTierFrameSignals = DynamicMusicScalarSignal.LowTierFrameSignals;
+                laneHash = DynamicMusicScalarSignal.LaneHash;
+                return true;
+            }
+
+            if (type == typeof(SystemHealthSignal))
+            {
+                expectedCapacity = SystemHealthSignal.ExpectedCapacity;
+                maxFrameSignals = SystemHealthSignal.MaxFrameSignals;
+                lowTierFrameSignals = SystemHealthSignal.LowTierFrameSignals;
+                laneHash = SystemHealthSignal.LaneHash;
+                return true;
+            }
+
+            if (type == typeof(FrameTimeSignal))
+            {
+                expectedCapacity = FrameTimeSignal.ExpectedCapacity;
+                maxFrameSignals = FrameTimeSignal.MaxFrameSignals;
+                lowTierFrameSignals = FrameTimeSignal.LowTierFrameSignals;
+                laneHash = FrameTimeSignal.LaneHash;
+                return true;
+            }
+
+            if (type == typeof(KillSwitchSignal))
+            {
+                expectedCapacity = KillSwitchSignal.ExpectedCapacity;
+                maxFrameSignals = KillSwitchSignal.MaxFrameSignals;
+                lowTierFrameSignals = KillSwitchSignal.LowTierFrameSignals;
+                laneHash = KillSwitchSignal.LaneHash;
+                return true;
+            }
+
+            if (type == typeof(SystemKillSwitchBitsSignal))
+            {
+                expectedCapacity = SystemKillSwitchBitsSignal.ExpectedCapacity;
+                maxFrameSignals = SystemKillSwitchBitsSignal.MaxFrameSignals;
+                lowTierFrameSignals = SystemKillSwitchBitsSignal.LowTierFrameSignals;
+                laneHash = SystemKillSwitchBitsSignal.LaneHash;
+                return true;
+            }
+
+            if (type == typeof(ReentryVfxStateSignal))
+            {
+                expectedCapacity = ReentryVfxStateSignal.ExpectedCapacity;
+                maxFrameSignals = ReentryVfxStateSignal.MaxFrameSignals;
+                lowTierFrameSignals = ReentryVfxStateSignal.LowTierFrameSignals;
+                laneHash = ReentryVfxStateSignal.LaneHash;
+                return true;
+            }
+
+            if (type == typeof(VisorDropletSignal))
+            {
+                expectedCapacity = VisorDropletSignal.ExpectedCapacity;
+                maxFrameSignals = VisorDropletSignal.MaxFrameSignals;
+                lowTierFrameSignals = VisorDropletSignal.LowTierFrameSignals;
+                laneHash = VisorDropletSignal.LaneHash;
+                return true;
+            }
+
+            if (type == typeof(PlayerFootstepSignal))
+            {
+                expectedCapacity = PlayerFootstepSignal.ExpectedCapacity;
+                maxFrameSignals = PlayerFootstepSignal.MaxFrameSignals;
+                lowTierFrameSignals = PlayerFootstepSignal.LowTierFrameSignals;
+                laneHash = PlayerFootstepSignal.LaneHash;
+                return true;
+            }
+
+            if (type == typeof(PlayerWaterSplashSignal))
+            {
+                expectedCapacity = PlayerWaterSplashSignal.ExpectedCapacity;
+                maxFrameSignals = PlayerWaterSplashSignal.MaxFrameSignals;
+                lowTierFrameSignals = PlayerWaterSplashSignal.LowTierFrameSignals;
+                laneHash = PlayerWaterSplashSignal.LaneHash;
+                return true;
+            }
+
+            if (type == typeof(WaterTransitionSignal))
+            {
+                expectedCapacity = WaterTransitionSignal.ExpectedCapacity;
+                maxFrameSignals = WaterTransitionSignal.MaxFrameSignals;
+                lowTierFrameSignals = WaterTransitionSignal.LowTierFrameSignals;
+                laneHash = WaterTransitionSignal.LaneHash;
+                return true;
+            }
+
+            if (type == typeof(PlayerExhaleSignal))
+            {
+                expectedCapacity = PlayerExhaleSignal.ExpectedCapacity;
+                maxFrameSignals = PlayerExhaleSignal.MaxFrameSignals;
+                lowTierFrameSignals = PlayerExhaleSignal.LowTierFrameSignals;
+                laneHash = PlayerExhaleSignal.LaneHash;
+                return true;
+            }
+
+            if (type == typeof(PlayerSprintStateSignal))
+            {
+                expectedCapacity = PlayerSprintStateSignal.ExpectedCapacity;
+                maxFrameSignals = PlayerSprintStateSignal.MaxFrameSignals;
+                lowTierFrameSignals = PlayerSprintStateSignal.LowTierFrameSignals;
+                laneHash = PlayerSprintStateSignal.LaneHash;
+                return true;
+            }
+
+            if (type == typeof(PlayerFatalPressureSignal))
+            {
+                expectedCapacity = PlayerFatalPressureSignal.ExpectedCapacity;
+                maxFrameSignals = PlayerFatalPressureSignal.MaxFrameSignals;
+                lowTierFrameSignals = PlayerFatalPressureSignal.LowTierFrameSignals;
+                laneHash = PlayerFatalPressureSignal.LaneHash;
+                return true;
+            }
+
+            if (type == typeof(PlayerTransportBailoutSignal))
+            {
+                expectedCapacity = PlayerTransportBailoutSignal.ExpectedCapacity;
+                maxFrameSignals = PlayerTransportBailoutSignal.MaxFrameSignals;
+                lowTierFrameSignals = PlayerTransportBailoutSignal.LowTierFrameSignals;
+                laneHash = PlayerTransportBailoutSignal.LaneHash;
+                return true;
+            }
+
+            if (type == typeof(VisualFlareSignal))
+            {
+                expectedCapacity = VisualFlareSignal.ExpectedCapacity;
+                maxFrameSignals = VisualFlareSignal.MaxFrameSignals;
+                lowTierFrameSignals = VisualFlareSignal.LowTierFrameSignals;
+                laneHash = VisualFlareSignal.LaneHash;
+                return true;
+            }
+
+            if (type == typeof(SeismicSignal))
+            {
+                expectedCapacity = SeismicSignal.ExpectedCapacity;
+                maxFrameSignals = SeismicSignal.MaxFrameSignals;
+                lowTierFrameSignals = SeismicSignal.LowTierFrameSignals;
+                laneHash = SeismicSignal.LaneHash;
+                return true;
+            }
+
+            if (type == typeof(MockNarrativeTriggerSignal))
+            {
+                expectedCapacity = MockNarrativeTriggerSignal.ExpectedCapacity;
+                maxFrameSignals = MockNarrativeTriggerSignal.MaxFrameSignals;
+                lowTierFrameSignals = MockNarrativeTriggerSignal.LowTierFrameSignals;
+                laneHash = MockNarrativeTriggerSignal.LaneHash;
+                return true;
+            }
+
+            if (type == typeof(DebrisAvalancheSignal))
+            {
+                expectedCapacity = DebrisAvalancheSignal.ExpectedCapacity;
+                maxFrameSignals = DebrisAvalancheSignal.MaxFrameSignals;
+                lowTierFrameSignals = DebrisAvalancheSignal.LowTierFrameSignals;
+                laneHash = DebrisAvalancheSignal.LaneHash;
+                return true;
+            }
+
+            if (type == typeof(AcousticShockwaveSignal))
+            {
+                expectedCapacity = AcousticShockwaveSignal.ExpectedCapacity;
+                maxFrameSignals = AcousticShockwaveSignal.MaxFrameSignals;
+                lowTierFrameSignals = AcousticShockwaveSignal.LowTierFrameSignals;
+                laneHash = AcousticShockwaveSignal.LaneHash;
+                return true;
+            }
+
+            if (type == typeof(GlobalPanicSignal))
+            {
+                expectedCapacity = GlobalPanicSignal.ExpectedCapacity;
+                maxFrameSignals = GlobalPanicSignal.MaxFrameSignals;
+                lowTierFrameSignals = GlobalPanicSignal.LowTierFrameSignals;
+                laneHash = GlobalPanicSignal.LaneHash;
+                return true;
+            }
+
+            if (type == typeof(SeismicShockwaveSignal))
+            {
+                expectedCapacity = SeismicShockwaveSignal.ExpectedCapacity;
+                maxFrameSignals = SeismicShockwaveSignal.MaxFrameSignals;
+                lowTierFrameSignals = SeismicShockwaveSignal.LowTierFrameSignals;
+                laneHash = SeismicShockwaveSignal.LaneHash;
+                return true;
+            }
+
+            if (type == typeof(EclipseGameplayEventPayload))
+            {
+                expectedCapacity = EclipseGameplayEventPayload.ExpectedCapacity;
+                maxFrameSignals = EclipseGameplayEventPayload.MaxFrameSignals;
+                lowTierFrameSignals = EclipseGameplayEventPayload.LowTierFrameSignals;
+                laneHash = EclipseGameplayEventPayload.LaneHash;
+                return true;
+            }
+
+            if (type == typeof(global::Hecton8.Construction.ConstructionPreviewSignal))
+            {
+                expectedCapacity = global::Hecton8.Construction.ConstructionPreviewSignal.ExpectedCapacity;
+                maxFrameSignals = global::Hecton8.Construction.ConstructionPreviewSignal.MaxFrameSignals;
+                lowTierFrameSignals = global::Hecton8.Construction.ConstructionPreviewSignal.LowTierFrameSignals;
+                laneHash = global::Hecton8.Construction.ConstructionPreviewSignal.LaneHash;
+                return true;
+            }
+
+            if (type == typeof(global::Hecton8.Construction.FloraExclusionSignal))
+            {
+                expectedCapacity = global::Hecton8.Construction.FloraExclusionSignal.ExpectedCapacity;
+                maxFrameSignals = global::Hecton8.Construction.FloraExclusionSignal.MaxFrameSignals;
+                lowTierFrameSignals = global::Hecton8.Construction.FloraExclusionSignal.LowTierFrameSignals;
+                laneHash = global::Hecton8.Construction.FloraExclusionSignal.LaneHash;
+                return true;
+            }
+
+            if (type == typeof(global::Hecton8.Physics.SeaglidePropulsionRequestSignal))
+            {
+                expectedCapacity = global::Hecton8.Physics.SeaglidePropulsionRequestSignal.ExpectedCapacity;
+                maxFrameSignals = global::Hecton8.Physics.SeaglidePropulsionRequestSignal.MaxFrameSignals;
+                lowTierFrameSignals = global::Hecton8.Physics.SeaglidePropulsionRequestSignal.LowTierFrameSignals;
+                laneHash = global::Hecton8.Physics.SeaglidePropulsionRequestSignal.LaneHash;
+                return true;
+            }
+
+            if (type == typeof(global::Hecton8.Inventory.MockItemAcquiredSignal))
+            {
+                expectedCapacity = global::Hecton8.Inventory.MockItemAcquiredSignal.ExpectedCapacity;
+                maxFrameSignals = global::Hecton8.Inventory.MockItemAcquiredSignal.MaxFrameSignals;
+                lowTierFrameSignals = global::Hecton8.Inventory.MockItemAcquiredSignal.LowTierFrameSignals;
+                laneHash = global::Hecton8.Inventory.MockItemAcquiredSignal.LaneHash;
+                return true;
+            }
+
+            if (type == typeof(global::Hecton8.Inventory.MockCraftingRequestSignal))
+            {
+                expectedCapacity = global::Hecton8.Inventory.MockCraftingRequestSignal.ExpectedCapacity;
+                maxFrameSignals = global::Hecton8.Inventory.MockCraftingRequestSignal.MaxFrameSignals;
+                lowTierFrameSignals = global::Hecton8.Inventory.MockCraftingRequestSignal.LowTierFrameSignals;
+                laneHash = global::Hecton8.Inventory.MockCraftingRequestSignal.LaneHash;
+                return true;
+            }
+
+            if (type == typeof(global::Hecton8.Inventory.MockConsumeSignal))
+            {
+                expectedCapacity = global::Hecton8.Inventory.MockConsumeSignal.ExpectedCapacity;
+                maxFrameSignals = global::Hecton8.Inventory.MockConsumeSignal.MaxFrameSignals;
+                lowTierFrameSignals = global::Hecton8.Inventory.MockConsumeSignal.LowTierFrameSignals;
+                laneHash = global::Hecton8.Inventory.MockConsumeSignal.LaneHash;
+                return true;
+            }
+
+            if (type == typeof(global::Hecton8.Inventory.MockToolUsedSignal))
+            {
+                expectedCapacity = global::Hecton8.Inventory.MockToolUsedSignal.ExpectedCapacity;
+                maxFrameSignals = global::Hecton8.Inventory.MockToolUsedSignal.MaxFrameSignals;
+                lowTierFrameSignals = global::Hecton8.Inventory.MockToolUsedSignal.LowTierFrameSignals;
+                laneHash = global::Hecton8.Inventory.MockToolUsedSignal.LaneHash;
+                return true;
+            }
+
+            if (type == typeof(global::Hecton8.Inventory.ToolBrokenSignal))
+            {
+                expectedCapacity = global::Hecton8.Inventory.ToolBrokenSignal.ExpectedCapacity;
+                maxFrameSignals = global::Hecton8.Inventory.ToolBrokenSignal.MaxFrameSignals;
+                lowTierFrameSignals = global::Hecton8.Inventory.ToolBrokenSignal.LowTierFrameSignals;
+                laneHash = global::Hecton8.Inventory.ToolBrokenSignal.LaneHash;
+                return true;
+            }
+
+            if (type == typeof(global::Hecton8.Inventory.EncumbranceSignal))
+            {
+                expectedCapacity = global::Hecton8.Inventory.EncumbranceSignal.ExpectedCapacity;
+                maxFrameSignals = global::Hecton8.Inventory.EncumbranceSignal.MaxFrameSignals;
+                lowTierFrameSignals = global::Hecton8.Inventory.EncumbranceSignal.LowTierFrameSignals;
+                laneHash = global::Hecton8.Inventory.EncumbranceSignal.LaneHash;
+                return true;
+            }
+
+            if (type == typeof(global::Hecton8.Inventory.EquipItemSignal))
+            {
+                expectedCapacity = global::Hecton8.Inventory.EquipItemSignal.ExpectedCapacity;
+                maxFrameSignals = global::Hecton8.Inventory.EquipItemSignal.MaxFrameSignals;
+                lowTierFrameSignals = global::Hecton8.Inventory.EquipItemSignal.LowTierFrameSignals;
+                laneHash = global::Hecton8.Inventory.EquipItemSignal.LaneHash;
+                return true;
+            }
+
+            if (type == typeof(global::Hecton8.Inventory.MockHotbarSelectSignal))
+            {
+                expectedCapacity = global::Hecton8.Inventory.MockHotbarSelectSignal.ExpectedCapacity;
+                maxFrameSignals = global::Hecton8.Inventory.MockHotbarSelectSignal.MaxFrameSignals;
+                lowTierFrameSignals = global::Hecton8.Inventory.MockHotbarSelectSignal.LowTierFrameSignals;
+                laneHash = global::Hecton8.Inventory.MockHotbarSelectSignal.LaneHash;
+                return true;
+            }
+
+            if (type == typeof(global::Hecton8.Inventory.DebrisDestroyedSignal))
+            {
+                expectedCapacity = global::Hecton8.Inventory.DebrisDestroyedSignal.ExpectedCapacity;
+                maxFrameSignals = global::Hecton8.Inventory.DebrisDestroyedSignal.MaxFrameSignals;
+                lowTierFrameSignals = global::Hecton8.Inventory.DebrisDestroyedSignal.LowTierFrameSignals;
+                laneHash = global::Hecton8.Inventory.DebrisDestroyedSignal.LaneHash;
+                return true;
+            }
+
+            if (type == typeof(global::Hecton8.Tools.ToolKinematics.Contracts.MockTriggerPullSignal))
+            {
+                expectedCapacity = global::Hecton8.Tools.ToolKinematics.Contracts.MockTriggerPullSignal.ExpectedCapacity;
+                maxFrameSignals = global::Hecton8.Tools.ToolKinematics.Contracts.MockTriggerPullSignal.MaxFrameSignals;
+                lowTierFrameSignals = global::Hecton8.Tools.ToolKinematics.Contracts.MockTriggerPullSignal.LowTierFrameSignals;
+                laneHash = global::Hecton8.Tools.ToolKinematics.Contracts.MockTriggerPullSignal.LaneHash;
+                return true;
+            }
+
+            if (type == typeof(global::Hecton8.Tools.ToolKinematics.Contracts.ToolHeatSignal))
+            {
+                expectedCapacity = global::Hecton8.Tools.ToolKinematics.Contracts.ToolHeatSignal.ExpectedCapacity;
+                maxFrameSignals = global::Hecton8.Tools.ToolKinematics.Contracts.ToolHeatSignal.MaxFrameSignals;
+                lowTierFrameSignals = global::Hecton8.Tools.ToolKinematics.Contracts.ToolHeatSignal.LowTierFrameSignals;
+                laneHash = global::Hecton8.Tools.ToolKinematics.Contracts.ToolHeatSignal.LaneHash;
+                return true;
+            }
+
+            if (type == typeof(global::Hecton8.Tools.ToolKinematics.Contracts.VfxSparkRequestSignal))
+            {
+                expectedCapacity = global::Hecton8.Tools.ToolKinematics.Contracts.VfxSparkRequestSignal.ExpectedCapacity;
+                maxFrameSignals = global::Hecton8.Tools.ToolKinematics.Contracts.VfxSparkRequestSignal.MaxFrameSignals;
+                lowTierFrameSignals = global::Hecton8.Tools.ToolKinematics.Contracts.VfxSparkRequestSignal.LowTierFrameSignals;
+                laneHash = global::Hecton8.Tools.ToolKinematics.Contracts.VfxSparkRequestSignal.LaneHash;
+                return true;
+            }
+
+            if (type == typeof(global::Hecton8.Tools.ToolKinematics.Contracts.MockCarveRequestSignal))
+            {
+                expectedCapacity = global::Hecton8.Tools.ToolKinematics.Contracts.MockCarveRequestSignal.ExpectedCapacity;
+                maxFrameSignals = global::Hecton8.Tools.ToolKinematics.Contracts.MockCarveRequestSignal.MaxFrameSignals;
+                lowTierFrameSignals = global::Hecton8.Tools.ToolKinematics.Contracts.MockCarveRequestSignal.LowTierFrameSignals;
+                laneHash = global::Hecton8.Tools.ToolKinematics.Contracts.MockCarveRequestSignal.LaneHash;
+                return true;
+            }
+
+            if (type == typeof(global::Hecton8.UI.TerminalClickSignal))
+            {
+                expectedCapacity = global::Hecton8.UI.TerminalClickSignal.ExpectedCapacity;
+                maxFrameSignals = global::Hecton8.UI.TerminalClickSignal.MaxFrameSignals;
+                lowTierFrameSignals = global::Hecton8.UI.TerminalClickSignal.LowTierFrameSignals;
+                laneHash = global::Hecton8.UI.TerminalClickSignal.LaneHash;
+                return true;
+            }
+
+            if (type == typeof(global::Hecton8.UI.TerminalCommandSignal))
+            {
+                expectedCapacity = global::Hecton8.UI.TerminalCommandSignal.ExpectedCapacity;
+                maxFrameSignals = global::Hecton8.UI.TerminalCommandSignal.MaxFrameSignals;
+                lowTierFrameSignals = global::Hecton8.UI.TerminalCommandSignal.LowTierFrameSignals;
+                laneHash = global::Hecton8.UI.TerminalCommandSignal.LaneHash;
+                return true;
+            }
+
+            if (type == typeof(global::Hecton8.UI.TerminalUnlockedSignal))
+            {
+                expectedCapacity = global::Hecton8.UI.TerminalUnlockedSignal.ExpectedCapacity;
+                maxFrameSignals = global::Hecton8.UI.TerminalUnlockedSignal.MaxFrameSignals;
+                lowTierFrameSignals = global::Hecton8.UI.TerminalUnlockedSignal.LowTierFrameSignals;
+                laneHash = global::Hecton8.UI.TerminalUnlockedSignal.LaneHash;
                 return true;
             }
 

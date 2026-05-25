@@ -163,6 +163,11 @@ namespace Hecton8.Inventory
     [StructLayout(LayoutKind.Explicit, Size = 32)]
     public partial struct MockItemAcquiredSignal : ISignal
     {
+        public const int ExpectedCapacity = 64;
+        public const int MaxFrameSignals = 64;
+        public const int LowTierFrameSignals = 16;
+        public const uint LaneHash = 0x53493141u; // SI1A
+
         [FieldOffset(0)] public ulong Sequence;
         [FieldOffset(8)] public uint ItemHash;
         [FieldOffset(12)] public uint FrameIndex;
@@ -175,6 +180,11 @@ namespace Hecton8.Inventory
     [StructLayout(LayoutKind.Explicit, Size = 32)]
     public partial struct MockCraftingRequestSignal : ISignal
     {
+        public const int ExpectedCapacity = 64;
+        public const int MaxFrameSignals = 64;
+        public const int LowTierFrameSignals = 16;
+        public const uint LaneHash = 0x53493143u; // SI1C
+
         [FieldOffset(0)] public ulong Sequence;
         [FieldOffset(8)] public uint RecipeHash;
         [FieldOffset(12)] public uint ActorHash;
@@ -187,6 +197,11 @@ namespace Hecton8.Inventory
     [StructLayout(LayoutKind.Explicit, Size = 32)]
     public partial struct MockConsumeSignal : ISignal
     {
+        public const int ExpectedCapacity = 32;
+        public const int MaxFrameSignals = 32;
+        public const int LowTierFrameSignals = 8;
+        public const uint LaneHash = 0x5349314Eu; // SI1N
+
         [FieldOffset(0)] public ulong Sequence;
         [FieldOffset(8)] public uint ItemHash;
         [FieldOffset(12)] public uint ActorHash;
@@ -199,6 +214,11 @@ namespace Hecton8.Inventory
     [StructLayout(LayoutKind.Explicit, Size = 32)]
     public partial struct MockToolUsedSignal : ISignal
     {
+        public const int ExpectedCapacity = 32;
+        public const int MaxFrameSignals = 32;
+        public const int LowTierFrameSignals = 8;
+        public const uint LaneHash = 0x53493154u; // SI1T
+
         [FieldOffset(0)] public ulong Sequence;
         [FieldOffset(8)] public uint ToolHash;
         [FieldOffset(12)] public uint FrameIndex;
@@ -211,6 +231,11 @@ namespace Hecton8.Inventory
     [StructLayout(LayoutKind.Explicit, Size = 32)]
     public partial struct ToolBrokenSignal : ISignal
     {
+        public const int ExpectedCapacity = 32;
+        public const int MaxFrameSignals = 32;
+        public const int LowTierFrameSignals = 8;
+        public const uint LaneHash = 0x53493142u; // SI1B
+
         [FieldOffset(0)] public ulong Sequence;
         [FieldOffset(8)] public uint ToolHash;
         [FieldOffset(12)] public uint FrameIndex;
@@ -223,6 +248,11 @@ namespace Hecton8.Inventory
     [StructLayout(LayoutKind.Explicit, Size = 32)]
     public partial struct EncumbranceSignal : ISignal
     {
+        public const int ExpectedCapacity = 16;
+        public const int MaxFrameSignals = 16;
+        public const int LowTierFrameSignals = 4;
+        public const uint LaneHash = 0x53493145u; // SI1E
+
         [FieldOffset(0)] public float Load01;
         [FieldOffset(4)] public float MassKg;
         [FieldOffset(8)] public float VolumeLiters;
@@ -236,6 +266,11 @@ namespace Hecton8.Inventory
     [StructLayout(LayoutKind.Explicit, Size = 32)]
     public partial struct EquipItemSignal : ISignal
     {
+        public const int ExpectedCapacity = 16;
+        public const int MaxFrameSignals = 16;
+        public const int LowTierFrameSignals = 4;
+        public const uint LaneHash = 0x53493151u; // SI1Q
+
         [FieldOffset(0)] public ulong Sequence;
         [FieldOffset(8)] public uint ItemHash;
         [FieldOffset(12)] public uint FrameIndex;
@@ -248,6 +283,11 @@ namespace Hecton8.Inventory
     [StructLayout(LayoutKind.Explicit, Size = 32)]
     public partial struct MockHotbarSelectSignal : ISignal
     {
+        public const int ExpectedCapacity = 16;
+        public const int MaxFrameSignals = 16;
+        public const int LowTierFrameSignals = 4;
+        public const uint LaneHash = 0x53493148u; // SI1H
+
         [FieldOffset(0)] public ulong Sequence;
         [FieldOffset(8)] public uint ActorHash;
         [FieldOffset(12)] public uint FrameIndex;
@@ -260,6 +300,11 @@ namespace Hecton8.Inventory
     [StructLayout(LayoutKind.Explicit, Size = 32)]
     public partial struct DebrisDestroyedSignal : ISignal
     {
+        public const int ExpectedCapacity = 64;
+        public const int MaxFrameSignals = 64;
+        public const int LowTierFrameSignals = 16;
+        public const uint LaneHash = 0x53493144u; // SI1D
+
         [FieldOffset(0)] public ulong Sequence;
         [FieldOffset(8)] public uint LootHash;
         [FieldOffset(12)] public uint FrameIndex;
@@ -299,6 +344,7 @@ namespace Hecton8.Inventory
 
     public static unsafe class Shinobu19EconomyLedger
     {
+        private static int s_x001Shinobu19EconomyLedgerSignalPushDropCount;
         public const int BlackBoxCapacity = 300;
         public const int CraftingRecipeDtoSizeBytes = 32;
         public const int CraftingIngredientDtoSizeBytes = 16;
@@ -789,23 +835,23 @@ namespace Hecton8.Inventory
 
         public static void WarmSignalLanes()
         {
-            SignalBus<MockItemAcquiredSignal>.Configure(64, 64, 16, 0x53493141u);
+            SignalBus<MockItemAcquiredSignal>.Configure(MockItemAcquiredSignal.ExpectedCapacity, MockItemAcquiredSignal.MaxFrameSignals, MockItemAcquiredSignal.LowTierFrameSignals, MockItemAcquiredSignal.LaneHash);
             SignalBus<MockItemAcquiredSignal>.EnsureInitialized();
-            SignalBus<MockCraftingRequestSignal>.Configure(64, 64, 16, 0x53493143u);
+            SignalBus<MockCraftingRequestSignal>.Configure(MockCraftingRequestSignal.ExpectedCapacity, MockCraftingRequestSignal.MaxFrameSignals, MockCraftingRequestSignal.LowTierFrameSignals, MockCraftingRequestSignal.LaneHash);
             SignalBus<MockCraftingRequestSignal>.EnsureInitialized();
-            SignalBus<MockConsumeSignal>.Configure(32, 32, 8, 0x5349314Eu);
+            SignalBus<MockConsumeSignal>.Configure(MockConsumeSignal.ExpectedCapacity, MockConsumeSignal.MaxFrameSignals, MockConsumeSignal.LowTierFrameSignals, MockConsumeSignal.LaneHash);
             SignalBus<MockConsumeSignal>.EnsureInitialized();
-            SignalBus<MockToolUsedSignal>.Configure(32, 32, 8, 0x53493154u);
+            SignalBus<MockToolUsedSignal>.Configure(MockToolUsedSignal.ExpectedCapacity, MockToolUsedSignal.MaxFrameSignals, MockToolUsedSignal.LowTierFrameSignals, MockToolUsedSignal.LaneHash);
             SignalBus<MockToolUsedSignal>.EnsureInitialized();
-            SignalBus<ToolBrokenSignal>.Configure(32, 32, 8, 0x53493142u);
+            SignalBus<ToolBrokenSignal>.Configure(ToolBrokenSignal.ExpectedCapacity, ToolBrokenSignal.MaxFrameSignals, ToolBrokenSignal.LowTierFrameSignals, ToolBrokenSignal.LaneHash);
             SignalBus<ToolBrokenSignal>.EnsureInitialized();
-            SignalBus<EncumbranceSignal>.Configure(16, 16, 4, 0x53493145u);
+            SignalBus<EncumbranceSignal>.Configure(EncumbranceSignal.ExpectedCapacity, EncumbranceSignal.MaxFrameSignals, EncumbranceSignal.LowTierFrameSignals, EncumbranceSignal.LaneHash);
             SignalBus<EncumbranceSignal>.EnsureInitialized();
-            SignalBus<EquipItemSignal>.Configure(16, 16, 4, 0x53493151u);
+            SignalBus<EquipItemSignal>.Configure(EquipItemSignal.ExpectedCapacity, EquipItemSignal.MaxFrameSignals, EquipItemSignal.LowTierFrameSignals, EquipItemSignal.LaneHash);
             SignalBus<EquipItemSignal>.EnsureInitialized();
-            SignalBus<MockHotbarSelectSignal>.Configure(16, 16, 4, 0x53493148u);
+            SignalBus<MockHotbarSelectSignal>.Configure(MockHotbarSelectSignal.ExpectedCapacity, MockHotbarSelectSignal.MaxFrameSignals, MockHotbarSelectSignal.LowTierFrameSignals, MockHotbarSelectSignal.LaneHash);
             SignalBus<MockHotbarSelectSignal>.EnsureInitialized();
-            SignalBus<DebrisDestroyedSignal>.Configure(64, 64, 16, 0x53493144u);
+            SignalBus<DebrisDestroyedSignal>.Configure(DebrisDestroyedSignal.ExpectedCapacity, DebrisDestroyedSignal.MaxFrameSignals, DebrisDestroyedSignal.LowTierFrameSignals, DebrisDestroyedSignal.LaneHash);
             SignalBus<DebrisDestroyedSignal>.EnsureInitialized();
         }
 
@@ -1506,7 +1552,7 @@ namespace Hecton8.Inventory
                 if (signal.ToolHash == 0u || signal.Flags == 0u)
                     continue;
 
-                SignalBus<ToolBrokenSignal>.TryPush(in signal);
+                SignalBus<ToolBrokenSignal>.TryPushTracked(in signal, ref s_x001Shinobu19EconomyLedgerSignalPushDropCount);
             }
         }
 
@@ -1521,7 +1567,7 @@ namespace Hecton8.Inventory
                 if (signal.ItemHash == 0u)
                     continue;
 
-                SignalBus<EquipItemSignal>.TryPush(in signal);
+                SignalBus<EquipItemSignal>.TryPushTracked(in signal, ref s_x001Shinobu19EconomyLedgerSignalPushDropCount);
             }
         }
 

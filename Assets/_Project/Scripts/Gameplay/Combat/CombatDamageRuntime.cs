@@ -42,7 +42,9 @@ namespace Hecton8.Gameplay
     public enum CombatMathLod : byte
     {
         Low = 0,
-        High = 1
+        Middle = 1,
+        High = 2,
+        Ultra = 3
     }
 
     public enum CombatWeakspotTier : byte
@@ -225,6 +227,7 @@ namespace Hecton8.Gameplay
 
     public static partial class CombatDamageRuntime
     {
+        private static int s_x001CombatDamageRuntimeSignalPushDropCount;
         private const int MaxTargets = 2048;
         private const int MaxQueuedSignals = 1024;
         private const int MaxGlobalDamageSignalsPerFrame = 64;
@@ -276,14 +279,14 @@ namespace Hecton8.Gameplay
         private const int CounterLength = 4;
         private const int MetaDamageTypeShift = 0;
         private const int MetaStatusBitsShift = 8;
-        private const int MetaWeakspotTierShift = 17;
+        private const int MetaWeakspotTierShift = 18;
         private const int MetaDetailIndexShift = 19;
         private const int MetaDamageClassShift = 29;
         private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
         private const Allocator DataVaultExemptOwnerIndexAllocator = Allocator.Persistent;
         private const uint MetaDamageTypeMask = 0xFFu;
-        private const uint MetaStatusBitsMask = 0x1FFu;
-        private const uint MetaWeakspotTierMask = 0x3u;
+        private const uint MetaStatusBitsMask = 0x3FFu;
+        private const uint MetaWeakspotTierMask = 0x1u;
         private const uint MetaDetailIndexMask = 0x3FFu;
         private const uint MetaDamageClassMask = 0x7u;
         private const uint MetaDetailIndexClearMask = ~(MetaDetailIndexMask << MetaDetailIndexShift);
@@ -358,7 +361,8 @@ namespace Hecton8.Gameplay
 
         public static void SetCombatMathLod(CombatMathLod lod)
         {
-            _requestedVisualQualityWeight01 = lod == CombatMathLod.Low ? 0f : 1f;
+            float tier01 = math.saturate((byte)lod * (1f / (byte)CombatMathLod.Ultra));
+            _requestedVisualQualityWeight01 = tier01 * tier01 * (3f - (2f * tier01));
             RefreshRuntimePolicy();
         }
 
@@ -799,7 +803,7 @@ namespace Hecton8.Gameplay
                         VisualQualityWeight01 = _visualQualityWeight01,
                         ArmorTuning = PrepareArmorTuningForJob(ref armorViews),
                         ArmorTelemetryIndex = BeginArmorPenetrationSchedule(),
-                        ArmorFrameIndex = unchecked((uint)Time.frameCount)
+                        ArmorFrameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId
                     };
                     _damageJobHandle = job.Schedule();
                     _damageJobScheduled = true;
@@ -1342,7 +1346,7 @@ namespace Hecton8.Gameplay
             uint anomalyHash = ResolveTelemetryAnomalyHash(in result);
             _telemetryRing[writeIndex] = new CombatTelemetryEntry
             {
-                FrameIndex = unchecked((uint)Time.frameCount),
+                FrameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 Sequence = unchecked((uint)math.max(0, sequence)),
                 PhaseHash = phaseHash,
                 TargetHash = unchecked((uint)result.TargetId),
@@ -1398,15 +1402,15 @@ namespace Hecton8.Gameplay
             if (anomalyHash == 0u)
                 return;
 
-            SignalBus<TelemetryAnomalySignal>.TryPush(new TelemetryAnomalySignal
+            SignalBus<TelemetryAnomalySignal>.TryPushTracked(new TelemetryAnomalySignal
             {
                 SystemHash = CombatTelemetrySystemHash,
                 AnomalyHash = anomalyHash,
                 Scalar = math.select(0f, scalar, math.isfinite(scalar)),
-                Frame = unchecked((uint)Time.frameCount),
+                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 Severity = severity,
                 Flags = flags
-            });
+            }, ref s_x001CombatDamageRuntimeSignalPushDropCount);
         }
 
         private static void PublishQueueRejectAnomaly(uint anomalyHash, float amount)
@@ -1414,7 +1418,7 @@ namespace Hecton8.Gameplay
             if (anomalyHash == 0u)
                 return;
 
-            uint frame = unchecked((uint)Time.frameCount);
+            uint frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             if (_lastQueueRejectFrame == frame && _lastQueueRejectAnomalyHash == anomalyHash)
                 return;
 
@@ -1557,7 +1561,7 @@ namespace Hecton8.Gameplay
             if (!TryResolveAupFromRuntimeOrigin(worldPoint, out AbsoluteUniversePosition positionAup))
                 return;
 
-            SignalBus<DebrisSpawnSignal>.TryPush(new DebrisSpawnSignal
+            SignalBus<DebrisSpawnSignal>.TryPushTracked(new DebrisSpawnSignal
             {
                 PositionAup = positionAup,
                 SpeciesHash = unchecked((uint)result.TargetId),
@@ -1565,7 +1569,7 @@ namespace Hecton8.Gameplay
                 Intensity01 = intensity,
                 DebrisKind = BloodDebrisKind,
                 Flags = 0
-            });
+            }, ref s_x001CombatDamageRuntimeSignalPushDropCount);
         }
 
         private static void TryApplyKineticPushback(in CombatDamageResult result, int slot)
@@ -1594,14 +1598,14 @@ namespace Hecton8.Gameplay
             if (!TryResolveAupFromRuntimeOrigin(worldPoint, out AbsoluteUniversePosition positionAup))
                 return;
 
-            SignalBus<EntityDeathSignal>.TryPush(new EntityDeathSignal
+            SignalBus<EntityDeathSignal>.TryPushTracked(new EntityDeathSignal
             {
                 PositionAup = positionAup,
                 EntityHash = unchecked((uint)result.TargetId),
                 SourceHash = unchecked((uint)result.SourceId),
                 Intensity01 = 1f,
                 Flags = 0
-            });
+            }, ref s_x001CombatDamageRuntimeSignalPushDropCount);
         }
 
         private static void TryDiffusePoison(in CombatDamageResult result, int sourceSlot)
@@ -2118,7 +2122,7 @@ namespace Hecton8.Gameplay
                     detail.LocalPoint = armorSample.LocalPoint;
                     detail.ArmorNormal = armorSample.SurfaceNormal;
                     float3 projectileDirection = ResolveExactDirection(signal.Direction);
-                    float3 armorNormal = ResolveExactDirection(detail.ArmorNormal);
+                    float3 armorNormal = armorSample.SurfaceNormal;
                     float directionalArmorMultiplier = math.saturate(math.dot(projectileDirection, armorNormal) + 0.2f);
                     bool hasDirectionalArmorProof = math.lengthsq(projectileDirection) > 0.0001f &&
                                                      math.lengthsq(armorNormal) > 0.0001f;
@@ -2145,7 +2149,7 @@ namespace Hecton8.Gameplay
                         damage *= BrittleImpactMultiplier;
 
                     ushort flags = CombatDamageResultFlags.None;
-                    float3 attackDirection = ResolveExactDirection(signal.Direction);
+                    float3 attackDirection = projectileDirection;
                     if (IsHeavilyArmoredFront(armorClass) &&
                         math.lengthsq(attackDirection) > 0.0001f &&
                         TryApplyFrontDeflection(

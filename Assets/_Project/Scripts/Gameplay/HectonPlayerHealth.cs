@@ -22,6 +22,7 @@ namespace Hecton8.Gameplay
     [AddComponentMenu("Hecton8/Gameplay/Player Health")]
     public sealed class HectonPlayerHealth : MonoBehaviour, ISaveable, ISlowTickable, IDamageReceiver, ICombatHitProfileSource, ICombatPushbackBodySource, IGlobalRegistryHotSwapListener
     {
+        private static int s_x001HectonPlayerHealthSignalPushDropCount;
         private const float MinimumRuntimeMaxHealth = 1f;
         private const float HealthSlowTickDeltaSeconds = 0.1f;
         private const float SurvivalGraceEligibilityThresholdNormalized = 0.10f;
@@ -541,7 +542,7 @@ namespace Hecton8.Gameplay
             signal.Frame = TimeSliceScheduler.CurrentFrameId;
             signal.Priority = (byte)VocalWarningId.OxygenLow;
             signal.Flags = 0;
-            SignalBus<VitalWarningSignal>.TryPush(in signal);
+            SignalBus<VitalWarningSignal>.TryPushTracked(in signal, ref s_x001HectonPlayerHealthSignalPushDropCount);
         }
 
         private void RefreshVitalWarningSignalReset()
@@ -975,7 +976,7 @@ namespace Hecton8.Gameplay
 
         private void CacheRegistryServicesCold()
         {
-            _audioService = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
+            _audioService = GlobalRegistry.Audio;
             _audioLogs = GlobalRegistry.AudioLogRuntime;
         }
 

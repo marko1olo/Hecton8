@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Runtime.CompilerServices;
 using Hecton8.Atmosphere;
@@ -20,6 +20,7 @@ namespace Hecton8.Physiology
     [DisallowMultipleComponent]
     public sealed unsafe partial class ShinobuPhysiologyRuntime : MonoBehaviour, ISlowTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
+        private static int s_x001ShinobuPhysiologyRuntimeSignalPushDropCount;
         private static ShinobuPhysiologyRuntime s_activeRuntime;
 
         private const SystemID OwnerSystem = SystemID.GameplayPlayer;
@@ -1587,7 +1588,7 @@ namespace Hecton8.Physiology
                 signal.Frame = _simulationFrameCounter;
                 signal.Severity = (byte)math.round(math.saturate(hypoxia01) * 255f);
                 signal.Flags = 1;
-                SignalBus<HypoxiaSignal>.TryPush(in signal);
+                SignalBus<HypoxiaSignal>.TryPushTracked(in signal, ref s_x001ShinobuPhysiologyRuntimeSignalPushDropCount);
             }
         }
 

@@ -74,7 +74,8 @@ They do not own Vault buffers. Predator cognition samples published grid first a
 
 | Shutdown/disposal | Vault buffers remain owner-controlled; scheduled jobs complete at boot/teardown boundaries or normal non-blocking finalization |
 
-| Telemetry fields | Frame, active/pending emitters, diffusion step, published hash, overlay hash, fault flags, quality, and estimated compute time; exact field list remains source-oriented until artifact-backed layout output is linked |
+| Telemetry fields | Frame, active/pending emitters, diffusion step, published hash, overlay hash, fault flags, quality, estimated compute time |
+| Telemetry proof gap | Exact field list remains source-oriented until artifact-backed layout output is linked |
 
 | Black-box fields | 300-entry chemical telemetry ring, cursor, state hash, emitter counts, diffusion counters, and fault flags |
 

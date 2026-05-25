@@ -754,8 +754,8 @@ namespace Hecton8.Modding
 
         internal static ModuleCatalog ResolveActiveCatalog()
         {
-            ConstructionManager constructionManager = Hecton8.Core.GlobalRegistry.ConstructionRuntime;
-            return constructionManager != null ? constructionManager.Catalog : null;
+            ILogisticsService logistics = Hecton8.Core.GlobalRegistry.Logistics;
+            return logistics != null ? logistics.Catalog : null;
         }
 
         private static string NormalizeCategory(string customCategory)

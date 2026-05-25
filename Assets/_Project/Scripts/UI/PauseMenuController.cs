@@ -20,8 +20,10 @@ namespace Hecton8.UI
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Pause Menu Controller")]
-    public sealed class PauseMenuController : MonoBehaviour, ITickable, IUnscaledFastTickable, IUpdatable, ISaveEventListener, ILocalizationLanguageChangedListener, IGlobalRegistryHotSwapListener
+    public sealed class PauseMenuController : MonoBehaviour, ITickable, IUnscaledFastTickable, IUpdatable, ILateFrameTickable, ISaveEventListener, ILocalizationLanguageChangedListener, IGlobalRegistryHotSwapListener
     {
+        private const byte PauseMenuCommandPause = 1 << 0;
+        private const byte PauseMenuCommandCancel = 1 << 1;
         internal static PauseMenuController ActiveRuntimeInstance { get; private set; }
         private const string PauseMenuRootName = "PauseMenu_Root";
 
@@ -67,6 +69,8 @@ namespace Hecton8.UI
         private bool _saveOperationInFlight;
         private bool _pauseRequested;
         private bool _cancelRequested;
+        private bool _lateFrameRegistered;
+        private byte _pendingMenuCommandMask;
         private bool _hasSaveStatusText;
         private PauseSection _activeSection;
         private float _cachedTimeDilationScalar = 1f;
@@ -130,7 +134,7 @@ namespace Hecton8.UI
             SimulationPauseSignal signal = new SimulationPauseSignal
             {
                 SourceHash = PauseMenuSignalSourceHash,
-                Frame = unchecked((uint)Hecton8.Core.SystemDispatcher.CurrentFrameIndex),
+                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 Sequence = _pauseSignalSequence,
                 Paused = paused ? (byte)1 : (byte)0,
                 Flags = 0,
@@ -168,21 +172,29 @@ namespace Hecton8.UI
                 return;
 
             _registered = GlobalRegistry.TryRegisterUnscaledFastTickable(this, PriorityLayer.UI);
+            if (!_lateFrameRegistered)
+                _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
         }
 
         private void TryUnregister()
         {
-            if (!_registered)
-                return;
+            if (_lateFrameRegistered)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+                _lateFrameRegistered = false;
+            }
 
-            GlobalRegistry.UnregisterUnscaledFastTickable(this, PriorityLayer.UI);
-            _registered = false;
+            if (_registered)
+            {
+                GlobalRegistry.UnregisterUnscaledFastTickable(this, PriorityLayer.UI);
+                _registered = false;
+            }
         }
 
         private void CacheRegistryServicesCold()
         {
             _cachedPlayerContext = Hecton8.Core.GlobalRegistry.Player;
-            _cachedSaveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+            _cachedSaveService = Hecton8.Core.GlobalRegistry.Save;
             _cachedLocalization = Hecton8.Core.GlobalRegistry.LocalizationLanguageControl;
         }
 
@@ -344,19 +356,37 @@ namespace Hecton8.UI
             if (_pauseRequested)
             {
                 _pauseRequested = false;
-                HandlePauseRequested();
+                QueuePauseMenuCommand(PauseMenuCommandPause);
             }
 
             if (_cancelRequested)
             {
                 _cancelRequested = false;
-                HandleCancelRequested();
+                QueuePauseMenuCommand(PauseMenuCommandCancel);
             }
         }
 
         public void UnscaledFastTick(float unscaledDeltaTime)
         {
             Tick(unscaledDeltaTime);
+        }
+
+        public void LateFrameTick()
+        {
+            byte pendingCommands = _pendingMenuCommandMask;
+            if (pendingCommands == 0)
+                return;
+
+            _pendingMenuCommandMask = 0;
+            if ((pendingCommands & PauseMenuCommandPause) != 0)
+                HandlePauseRequested();
+            if ((pendingCommands & PauseMenuCommandCancel) != 0)
+                HandleCancelRequested();
+        }
+
+        private void QueuePauseMenuCommand(byte command)
+        {
+            _pendingMenuCommandMask |= command;
         }
 
         public void OnSaveEvent(in SaveEventPayload payload)

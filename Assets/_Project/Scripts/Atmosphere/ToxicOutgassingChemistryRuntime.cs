@@ -21,6 +21,7 @@ namespace Hecton8.Atmosphere
     [DisallowMultipleComponent]
     public unsafe sealed partial class ToxicOutgassingChemistryRuntime : MonoBehaviour, ISlowTickable, ILateFrameTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener
     {
+        private static int s_x001ToxicOutgassingChemistryRuntimeSignalPushDropCount;
         public const int HighResolution = 32;
         public const int LowResolution = 16;
         public const int MaxCellCount = HighResolution * HighResolution * HighResolution;
@@ -1102,7 +1103,7 @@ namespace Hecton8.Atmosphere
                 ToxicityExposureSignal exposure = exposures[i];
                 if (math.isfinite(exposure.Exposure01))
                 {
-                    SignalBus<ToxicityExposureSignal>.TryPush(in exposure);
+                    SignalBus<ToxicityExposureSignal>.TryPushTracked(in exposure, ref s_x001ToxicOutgassingChemistryRuntimeSignalPushDropCount);
                 }
             }
 
@@ -1139,7 +1140,7 @@ namespace Hecton8.Atmosphere
                 ToxicBioluminescenceSignal signal = biolums[i];
                 if (math.isfinite(signal.Intensity01))
                 {
-                    SignalBus<ToxicBioluminescenceSignal>.TryPush(in signal);
+                    SignalBus<ToxicBioluminescenceSignal>.TryPushTracked(in signal, ref s_x001ToxicOutgassingChemistryRuntimeSignalPushDropCount);
                 }
             }
         }
@@ -1628,7 +1629,7 @@ namespace Hecton8.Atmosphere
             return directory != null ? directory.FullName : dataPath;
         }
 
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private struct RebaseGridJob : IJobParallelFor
         {
             [NoAlias, ReadOnly] public NativeArray<float> Front;
@@ -1653,7 +1654,7 @@ namespace Hecton8.Atmosphere
             }
         }
 
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private struct MockFlowFieldJob : IJobParallelFor
         {
             [NoAlias] public NativeArray<MockFlowField> FlowField;
@@ -1699,7 +1700,7 @@ namespace Hecton8.Atmosphere
             }
         }
 
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private struct MockWorldSamplerJob : IJobParallelFor
         {
             [NoAlias] public NativeArray<MockWorldSampler> WorldSamples;
@@ -1746,7 +1747,7 @@ namespace Hecton8.Atmosphere
             }
         }
 
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private struct ToxicDiffusionJob : IJobParallelFor
         {
             [NoAlias, ReadOnly] public NativeArray<float> Front;
@@ -1924,7 +1925,7 @@ namespace Hecton8.Atmosphere
             }
         }
 
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private struct EntityExposureJob : IJob
         {
             [NoAlias, ReadOnly] public NativeArray<float> Density;
@@ -2048,7 +2049,7 @@ namespace Hecton8.Atmosphere
             }
         }
 
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private struct SignalHarvestJob : IJob
         {
             [NoAlias, ReadOnly] public NativeArray<float> Density;
@@ -2106,7 +2107,7 @@ namespace Hecton8.Atmosphere
             }
         }
 
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private struct ScanTelemetryJob : IJob
         {
             [NoAlias, ReadOnly] public NativeArray<float> Density;

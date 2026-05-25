@@ -43,8 +43,9 @@ namespace Hecton8.Construction
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-7000)]
-    public sealed class ConstructionManager : MonoBehaviour, IUpdatable, ILateFrameTickable, ISaveable, ISlowTickable, ILogisticsService, IHabitatGraphService, IHabitatDeconstructionSystem, IGlobalRegistryHotSwapListener, IServiceHeartbeat, IServiceShutdown, IOriginShiftListener, IRandomEventListener
+    public sealed class ConstructionManager : MonoBehaviour, IUpdatable, ILateFrameTickable, ISaveable, ISlowTickable, ILogisticsService, IHabitatGraphService, IConstructionParasiteGraphService, IHabitatDeconstructionSystem, IGlobalRegistryHotSwapListener, IServiceHeartbeat, IServiceShutdown, IOriginShiftListener, IRandomEventListener
     {
+        private static int _signalPushDropCount;
         private const float SlowTickDeltaTime = 0.1f;
         private const int InitialJointRecoveryCapacity = 64;
         private const int InitialJointBodyRecoveryCapacity = 128;
@@ -210,7 +211,7 @@ namespace Hecton8.Construction
 
         // PUBLIC API - QUERIES
 
-        internal bool TryGetHabitatAcousticGraph(out HabitatGraphManager graph)
+        public bool TryGetHabitatAcousticGraph(out HabitatGraphManager graph)
         {
             graph = _habitatGraphManager;
             return graph != null && graph.NodeCount > 0;
@@ -298,10 +299,10 @@ namespace Hecton8.Construction
         }
 
         /// <summary>Cached BaseModule count for hot-path gameplay systems that must not scan components.</summary>
-        internal int SpawnedBaseModuleCount => _spawnedBaseModules != null ? _spawnedBaseModules.Count : 0;
+        public int SpawnedBaseModuleCount => _spawnedBaseModules != null ? _spawnedBaseModules.Count : 0;
 
         /// <summary>Indexed cached BaseModule access for hot-path gameplay systems that must not scan components.</summary>
-        internal BaseModule GetSpawnedBaseModuleAt(int index)
+        public BaseModule GetSpawnedBaseModuleAt(int index)
         {
             return _spawnedBaseModules != null && index >= 0 && index < _spawnedBaseModules.Count
                 ? _spawnedBaseModules[index]
@@ -387,7 +388,7 @@ namespace Hecton8.Construction
             _cachedObjectPool = GlobalRegistry.ObjectPoolService;
             _cachedPlayerInventoryService = GlobalRegistry.PlayerInventory;
             _cachedDataVault = GlobalRegistry.DataVault;
-            _cachedSaveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+            _cachedSaveService = GlobalRegistry.Save;
         }
 
         private void ClearCachedRegistryServices()
@@ -622,7 +623,7 @@ namespace Hecton8.Construction
             if (!_isInitialized || !Application.isPlaying)
                 return false;
 
-            SignalBus<DeconstructRequestSignal>.TryPush(in signal);
+            SignalBus<DeconstructRequestSignal>.TryPushTracked(in signal, ref _signalPushDropCount);
             return true;
         }
 
@@ -818,7 +819,7 @@ namespace Hecton8.Construction
             AbsoluteUniversePosition positionAup = TryResolveAupFromRuntimeOrigin(module.transform.position, out AbsoluteUniversePosition resolvedPositionAup)
                 ? resolvedPositionAup
                 : RuntimeOriginRoute.CurrentRuntimeOriginAup();
-            SignalBus<HabitatConstructionSignal>.TryPush(new HabitatConstructionSignal
+            SignalBus<HabitatConstructionSignal>.TryPushTracked(new HabitatConstructionSignal
             {
                 PositionAup = positionAup,
                 ModuleHash = moduleHash,
@@ -826,7 +827,7 @@ namespace Hecton8.Construction
                 NodeId = (ushort)Mathf.Clamp(moduleIndex, 0, ushort.MaxValue),
                 Operation = operation,
                 Flags = flags
-            });
+            }, ref _signalPushDropCount);
         }
 
         private static void PublishModuleDeconstructSignal(
@@ -842,7 +843,7 @@ namespace Hecton8.Construction
             if (dfsSkipped)
                 flags |= ModuleDeconstructFlagDfsSkippedLowTier;
 
-            SignalBus<ModuleDeconstructSignal>.TryPush(new ModuleDeconstructSignal
+            SignalBus<ModuleDeconstructSignal>.TryPushTracked(new ModuleDeconstructSignal
             {
                 PositionAup = request.TargetAup,
                 ModuleHash = moduleHash,
@@ -850,13 +851,13 @@ namespace Hecton8.Construction
                 NodeId = nodeId,
                 Operation = ModuleDeconstructOperationDeleteMarker,
                 Flags = flags,
-                Frame = (uint)Mathf.Max(0, Time.frameCount)
-            });
+                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId
+            }, ref _signalPushDropCount);
         }
 
         private void PublishDeconstructionVfx(in DeconstructRequestSignal request)
         {
-            SignalBus<DebrisSpawnSignal>.TryPush(new DebrisSpawnSignal
+            SignalBus<DebrisSpawnSignal>.TryPushTracked(new DebrisSpawnSignal
             {
                 PositionAup = request.TargetAup,
                 SpeciesHash = 0u,
@@ -864,7 +865,7 @@ namespace Hecton8.Construction
                 Intensity01 = 1f,
                 DebrisKind = DeconstructionDebrisKindDisintegrate,
                 Flags = 0
-            });
+            }, ref _signalPushDropCount);
         }
 
         private void AcceptDeconstruction(in DeconstructRequestSignal request, ushort refundItemCount, bool dfsSkipped)
@@ -891,7 +892,7 @@ namespace Hecton8.Construction
             byte reason,
             ushort refundItemCount)
         {
-            SignalBus<DeconstructResultSignal>.TryPush(new DeconstructResultSignal
+            SignalBus<DeconstructResultSignal>.TryPushTracked(new DeconstructResultSignal
             {
                 TargetAup = request.TargetAup,
                 TargetEntityId = request.TargetEntityId,
@@ -899,21 +900,21 @@ namespace Hecton8.Construction
                 RefundItemCount = refundItemCount,
                 Result = result,
                 Reason = reason,
-                Frame = (uint)Mathf.Max(0, Time.frameCount)
-            });
+                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId
+            }, ref _signalPushDropCount);
         }
 
         private static void PublishDeconstructionHudNotification(uint sourceId, byte reason)
         {
-            SignalBus<HUDNotificationSignal>.TryPush(new HUDNotificationSignal
+            SignalBus<HUDNotificationSignal>.TryPushTracked(new HUDNotificationSignal
             {
                 MessageHash = 0xD3C04A11u,
                 ContextHash = reason,
                 SourceId = sourceId,
-                Frame = (uint)Mathf.Max(0, Time.frameCount),
+                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 Severity = 2,
                 Flags = 0
-            });
+            }, ref _signalPushDropCount);
         }
 
         private BaseModule ResolveBaseModuleByEntityId(uint targetEntityId)
@@ -1111,7 +1112,7 @@ namespace Hecton8.Construction
                 NodeCount = nodeCount,
                 EdgeCount = edgeCount,
                 MaxTeardownsPerFrame = HabitatDeconstructionTransactionKernel.ResolveMaxTeardownsPerFrame(HomeostasisBrain.GlobalQualityWeight),
-                Frame = (uint)Mathf.Max(0, Time.frameCount),
+                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 SequenceBase = ++_deconstructionSequence,
                 LayoutValid = 1u,
                 GlobalQualityWeight = HomeostasisBrain.GlobalQualityWeight
@@ -1333,7 +1334,7 @@ namespace Hecton8.Construction
             uint itemHash,
             int quantity)
         {
-            SignalBus<ItemAcquiredSignal>.TryPush(new ItemAcquiredSignal
+            SignalBus<ItemAcquiredSignal>.TryPushTracked(new ItemAcquiredSignal
             {
                 PositionAup = request.TargetAup,
                 ItemHash = itemHash,
@@ -1341,8 +1342,8 @@ namespace Hecton8.Construction
                 Quantity = (ushort)Mathf.Clamp(quantity, 0, ushort.MaxValue),
                 SourceKind = 4,
                 Flags = 0,
-                Frame = (uint)Mathf.Max(0, Time.frameCount)
-            });
+                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId
+            }, ref _signalPushDropCount);
         }
 
         private bool AppendOverflowLootCache(
@@ -1412,13 +1413,13 @@ namespace Hecton8.Construction
                     InventoryHash = cache.SourceModuleHash,
                     ItemHash = cache.ItemHash,
                     Sequence = cache.Sequence,
-                    Frame = (uint)Mathf.Max(0, Time.frameCount),
+                    Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                     Quantity = (ushort)Mathf.Clamp(cache.Quantity, 0, ushort.MaxValue),
                     QualityMilli = 1000,
                     Flags = cache.Flags,
                     StateFlags = 0
                 };
-                SignalBus<InventoryDeathLootCacheSignal>.TryPush(in signal);
+                SignalBus<InventoryDeathLootCacheSignal>.TryPushTracked(in signal, ref _signalPushDropCount);
             }
         }
 
@@ -1758,7 +1759,7 @@ namespace Hecton8.Construction
 
             _deconstructionBlackBox[index] = new HabitatDeconstructionTelemetryEntry
             {
-                Frame = (uint)Mathf.Max(0, Time.frameCount),
+                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 TargetEntityId = request.TargetEntityId,
                 RequesterEntityId = request.RequesterEntityId,
                 DistanceMeters = Mathf.Max(0f, request.MaxDistance),
@@ -2990,7 +2991,7 @@ namespace Hecton8.Construction
             UpdateDiagnostics();
         }
 
-        internal void NotifyModuleParasiteRootStateChanged(BaseModule module)
+        public void NotifyModuleParasiteRootStateChanged(BaseModule module)
         {
             if (_habitatGraphManager == null || module == null)
                 return;
@@ -2998,7 +2999,7 @@ namespace Hecton8.Construction
             MarkHabitatGraphDirty();
         }
 
-        internal bool TryResolveFungalMindTarget(BaseModule sourceModule, out BaseModule targetModule, out float targetPotential)
+        public bool TryResolveFungalMindTarget(BaseModule sourceModule, out BaseModule targetModule, out float targetPotential)
         {
             targetModule = null;
             targetPotential = 0f;

@@ -16,7 +16,7 @@ namespace Hecton8.Physics
     public struct QueryResult
     {
         public bool hasHit;
-        public RaycastHit hit;
+        public InteractionSurfaceHit hit;
 
         public float distance => hasHit ? hit.distance : float.MaxValue;
         public Vector3 point => hasHit ? hit.point : Vector3.zero;
@@ -117,11 +117,12 @@ namespace Hecton8.Physics
             object previousService,
             object currentService)
         {
-            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher || currentService == null || !isActiveAndEnabled)
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
                 return;
 
-            TryUnregisterLateFrame();
-            TryRegisterLateFrame();
+            _registeredLateFrame = false;
+            if (currentService != null && isActiveAndEnabled)
+                TryRegisterLateFrame();
         }
 
         /// <summary>

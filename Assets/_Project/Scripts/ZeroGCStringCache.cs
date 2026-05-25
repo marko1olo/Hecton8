@@ -1,34 +1,35 @@
 namespace Hecton8.Core
 {
-    /// <summary>
-    /// Reuses uppercase string projections for frequently repeated UI labels.
-    /// </summary>
     public static class ZeroGCStringCache
     {
-        private const int CacheSize = 64;
-
-        private static readonly string[] _sourceCache = new string[CacheSize];
-        private static readonly string[] _upperCache = new string[CacheSize];
-
         /// <summary>
-        /// Returns an uppercase invariant projection and reuses a cached value when the source string repeats.
+        /// Legacy string API kept for compatibility. It returns the original stable reference because
+        /// allocating an uppercase managed string would violate the zero-GC presentation contract.
         /// </summary>
-        /// <param name="input">Source string to convert.</param>
-        /// <returns>Cached uppercase projection for repeated inputs, or a freshly created uppercase string on miss.</returns>
-        public static string CachedToUpperInvariant(string input)
+        public static string GetStableReference(string input)
         {
-            if (string.IsNullOrEmpty(input))
-                return input;
+            return input;
+        }
 
-            int hash = (input.GetHashCode() & int.MaxValue) % CacheSize;
-            string cachedSource = _sourceCache[hash];
-            if (!string.IsNullOrEmpty(cachedSource) && string.Equals(cachedSource, input, System.StringComparison.Ordinal))
-                return _upperCache[hash];
+        public static bool TryWriteUpperAscii(
+            System.ReadOnlySpan<char> input,
+            System.Span<char> destination,
+            out int charsWritten)
+        {
+            charsWritten = 0;
+            if (input.Length > destination.Length)
+                return false;
 
-            string upperValue = input.ToUpperInvariant();
-            _sourceCache[hash] = input;
-            _upperCache[hash] = upperValue;
-            return upperValue;
+            for (int i = 0; i < input.Length; i++)
+            {
+                char value = input[i];
+                destination[i] = value >= 'a' && value <= 'z'
+                    ? (char)(value - 32)
+                    : value;
+            }
+
+            charsWritten = input.Length;
+            return true;
         }
     }
 }

@@ -29,6 +29,9 @@ namespace Hecton8.Inventory
 
     public sealed partial class PlayerInventory
     {
+
+        private static int s_x001DirectSignalPushDropCount_PlayerInventory_SoaQuery;
+
         private InventorySoaVaultHandles _soaQueryVaultHandles;
         private int _soaQueryVaultSlotCapacity;
         private int _soaQueryDumped;
@@ -300,7 +303,7 @@ namespace Hecton8.Inventory
             signal.QualityMilli = qualityMilli > 0 ? qualityMilli : DefaultQualityMilli;
             signal.Flags = 1u;
             signal.StateFlags = stateFlags;
-            if (!SignalBus<InventoryDeathLootCacheSignal>.TryPush(in signal))
+            if (!SignalBus<InventoryDeathLootCacheSignal>.TryPushTracked(in signal, ref s_x001DirectSignalPushDropCount_PlayerInventory_SoaQuery))
             {
                 TryAddItemWithState(itemHashId, geneticsMask, qualityMilli, stateFlags);
                 return false;
@@ -531,7 +534,7 @@ namespace Hecton8.Inventory
 
             InventorySoaTelemetryEntry entry = new InventorySoaTelemetryEntry
             {
-                Frame = unchecked((uint)Time.frameCount),
+                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 TargetHashID = hasDebugMutation ? debugMutation.TargetHashID : 0u,
                 FirstIndex = hasDebugMutation ? debugMutation.SlotIndex : -1,
                 QuantityTotal = hasDebugMutation ? debugMutation.NewQuantity : (uint)math.max(0, active),

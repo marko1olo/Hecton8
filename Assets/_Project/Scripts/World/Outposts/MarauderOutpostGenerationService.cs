@@ -3,6 +3,7 @@ using System.IO;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
+using Hecton8.Core.Memory;
 using Hecton8.Gameplay;
 using Hecton8.Logistics.Grid.Contracts;
 using Hecton8.Narrative;
@@ -24,7 +25,7 @@ namespace Hecton8.World.Outposts
     [AddComponentMenu("Hecton8/World/Marauder Outpost Generation Service")]
     public sealed class MarauderOutpostGenerationService : MonoBehaviour, IUpdatable, ILateFrameTickable, IRenderable, IOutpostGenerationService, IGlobalRegistryHotSwapListener
     {
-        private const string OwnerName = "MARAUDER_OUTPOST_ARCHITECT";
+        private static int s_x001MarauderOutpostGenerationServiceSignalPushDropCount;
         private const ulong DefaultFirstBaseHash = 0x4D41524155444552UL; // MARAUDER
         private const uint DefaultWorldSeed = 0x48454338u; // HEC8
         private const float DefaultCellSizeMeters = 4f;
@@ -43,6 +44,14 @@ namespace Hecton8.World.Outposts
         private const float MiddleOutpostQualityThreshold01 = 0.25f;
         private const float HighOutpostQualityThreshold01 = 0.55f;
         private const float UltraOutpostQualityThreshold01 = 0.85f;
+        private const SystemID VaultOwnerSystemId = SystemID.WorldOutposts;
+        private const BufferID WfcGridBufferId = BufferID.MarauderOutpostWfcGrid;
+        private const BufferID ShellMatricesBufferId = BufferID.MarauderOutpostShellMatrices;
+        private const BufferID ShellCellTypesBufferId = BufferID.MarauderOutpostShellCellTypes;
+        private const BufferID InteractableSpawnsBufferId = BufferID.MarauderOutpostInteractableSpawns;
+        private const BufferID WfcMutableStateGridBufferId = BufferID.MarauderOutpostMutableStateGrid;
+        private const BufferID CountersBufferId = BufferID.MarauderOutpostCounters;
+        private const BufferID TelemetryRingBufferId = BufferID.MarauderOutpostTelemetryRing;
 
         private static readonly int OutpostMatricesId = Shader.PropertyToID("_OutpostMatrices");
         private static readonly int OutpostCellTypesId = Shader.PropertyToID("_OutpostCellTypes");
@@ -81,14 +90,14 @@ namespace Hecton8.World.Outposts
         [SerializeField] private GameObject sealedDoorProxyPrefab;
         [SerializeField] private GameObject datapadProxyPrefab;
 
-        [NonSerialized] public NativeArray<byte> WfcGrid;
-
-        private NativeArray<float4x4> _shellMatrices;
-        private NativeArray<uint> _shellCellTypes;
-        private NativeArray<OutpostInteractableSpawn> _interactableSpawns;
-        private NativeArray<byte> _wfcMutableStateGrid;
-        private NativeArray<int> _counters;
-        private NativeArray<OutpostTelemetryEntry> _telemetryRing;
+        private IDataVault _dataVault;
+        private VaultGenerationHandle<byte> _wfcGridHandle;
+        private VaultGenerationHandle<float4x4> _shellMatricesHandle;
+        private VaultGenerationHandle<uint> _shellCellTypesHandle;
+        private VaultGenerationHandle<OutpostInteractableSpawn> _interactableSpawnsHandle;
+        private VaultGenerationHandle<byte> _wfcMutableStateGridHandle;
+        private VaultGenerationHandle<int> _countersHandle;
+        private VaultGenerationHandle<OutpostTelemetryEntry> _telemetryRingHandle;
         private GraphicsBuffer _matrixBufferA;
         private GraphicsBuffer _matrixBufferB;
         private GraphicsBuffer _activeMatrixBuffer;
@@ -149,6 +158,9 @@ namespace Hecton8.World.Outposts
         private bool _interactableProxyShiftDirty;
         private bool _heightmapFallback;
         private bool _renderPropertiesDirty = true;
+        private bool _solveJobBufferLocked;
+        private bool _extractionJobBuffersLocked;
+        private bool _shiftJobBufferLocked;
 
         public bool IsGenerated => _generated;
         public bool IsBusy => _jobPhase != JobPhase.None;
@@ -161,7 +173,7 @@ namespace Hecton8.World.Outposts
                 return;
 
             SignalCorridorRuntime.EnsureInitialized();
-            AllocatePersistentState();
+            EnsurePersistentState();
             EnsureGraphicsResources();
             BakeInteractableProxyMeshes();
             _registeredRenderables = GlobalRegistry.Renderables;
@@ -217,9 +229,7 @@ namespace Hecton8.World.Outposts
 
             ReleasePublishedPowerGrid();
 
-            bool deferNativeDispose = _jobPhase != JobPhase.None;
-            JobHandle nativeDisposeDependency = deferNativeDispose ? _jobHandle : default;
-            _jobPhase = JobPhase.None;
+            CompleteCurrentOutpostJobForTeardown();
 
             DespawnInteractables();
             ReleaseGraphicsBuffer(ref _matrixBufferA);
@@ -234,14 +244,7 @@ namespace Hecton8.World.Outposts
             _renderPropertyMatrixBuffer = null;
             _renderPropertyCellTypeBuffer = null;
             _shellUploadBufferIndex = 0;
-            DisposeNativeArray(ref WfcGrid, ref nativeDisposeDependency, deferNativeDispose);
-            DisposeNativeArray(ref _wfcMutableStateGrid, ref nativeDisposeDependency, deferNativeDispose);
-            DisposeNativeArray(ref _shellMatrices, ref nativeDisposeDependency, deferNativeDispose);
-            DisposeNativeArray(ref _shellCellTypes, ref nativeDisposeDependency, deferNativeDispose);
-            DisposeNativeArray(ref _interactableSpawns, ref nativeDisposeDependency, deferNativeDispose);
-            DisposeNativeArray(ref _counters, ref nativeDisposeDependency, deferNativeDispose);
-            DisposeNativeArray(ref _telemetryRing, ref nativeDisposeDependency, deferNativeDispose);
-            _jobHandle = nativeDisposeDependency;
+            ReleaseVaultBuffers();
 
             if (_runtimeShellMesh != null)
             {
@@ -296,12 +299,15 @@ namespace Hecton8.World.Outposts
                 case GlobalRegistryServiceSlot.ObjectPool:
                     _cachedObjectPool = currentService as IObjectPoolService;
                     break;
+                case GlobalRegistryServiceSlot.DataVault:
+                    OnDataVaultReplaced(currentService as IDataVault);
+                    break;
             }
         }
 
         public void Tick(float deltaTime)
         {
-            if (!WfcGrid.IsCreated)
+            if (!IsExactVaultHandle(in _wfcGridHandle, WfcGridBufferId))
                 return;
 
             DrainAupShiftSignals();
@@ -319,6 +325,7 @@ namespace Hecton8.World.Outposts
                 if (!DispatcherJobFence.TryFinalizeCompleted(ref _jobHandle))
                     return;
 
+                ReleaseSolveJobBufferLock();
                 ScheduleMatrixExtraction();
                 return;
             }
@@ -328,6 +335,7 @@ namespace Hecton8.World.Outposts
                 if (!DispatcherJobFence.TryFinalizeCompleted(ref _jobHandle))
                     return;
 
+                ReleaseExtractionJobBufferLocks();
                 CommitCompletedGeneration();
                 return;
             }
@@ -337,6 +345,7 @@ namespace Hecton8.World.Outposts
                 if (!DispatcherJobFence.TryFinalizeCompleted(ref _jobHandle))
                     return;
 
+                ReleaseShiftJobBufferLock();
                 _jobPhase = JobPhase.None;
                 _matrixUploadDirty = true;
                 SetState(_generated ? OutpostGenerationState.Ready : OutpostGenerationState.Idle);
@@ -393,8 +402,11 @@ namespace Hecton8.World.Outposts
                 return false;
             }
 
-            if (!WfcGrid.IsCreated)
-                AllocatePersistentState();
+            if (!EnsurePersistentState())
+            {
+                SetState(OutpostGenerationState.Faulted);
+                return false;
+            }
 
             if (_jobPhase != JobPhase.None)
                 return false;
@@ -437,26 +449,43 @@ namespace Hecton8.World.Outposts
 
             RestoreWfcMutableState(sectorHash);
 
-            MarauderOutpostSolveJob job = new MarauderOutpostSolveJob
+            if (!TryAcquireSolveJobBuffer(out NativeArray<byte> wfcGrid))
             {
-                WfcGrid = WfcGrid,
-                Dimensions = ResolveActiveDimensions(),
-                Seed = _activeSolveSeed,
-                LowTier = _qualityTier == OutpostGenerationQualityTier.Low ? (byte)1 : (byte)0
-            };
+                WriteTelemetry(MarauderOutpostConstants.FaultFlag, sectorHash);
+                SetState(OutpostGenerationState.Faulted);
+                return false;
+            }
 
-            _jobHandle = job.Schedule();
-            _jobPhase = JobPhase.Solving;
-            SetState(OutpostGenerationState.Solving);
-            _generationSequence++;
-            UpdateSnapshot();
-            return true;
+            try
+            {
+                MarauderOutpostSolveJob job = new MarauderOutpostSolveJob
+                {
+                    WfcGrid = wfcGrid,
+                    Dimensions = ResolveActiveDimensions(),
+                    Seed = _activeSolveSeed,
+                    LowTier = _qualityTier == OutpostGenerationQualityTier.Low ? (byte)1 : (byte)0
+                };
+
+                _jobHandle = job.Schedule();
+                _jobPhase = JobPhase.Solving;
+                SetState(OutpostGenerationState.Solving);
+                _generationSequence++;
+                UpdateSnapshot();
+                return true;
+            }
+            catch
+            {
+                _jobHandle = default;
+                _jobPhase = JobPhase.None;
+                ReleaseSolveJobBufferLock();
+                throw;
+            }
         }
 
         public bool TryGetWfcGrid(out NativeArray<byte>.ReadOnly cells, out int3 dimensions, out int cellCount, out uint gridHash, out uint generationSequence)
         {
             generationSequence = _generationSequence;
-            if (!_generated || !WfcGrid.IsCreated)
+            if (!_generated || !TryReadWfcGrid(out NativeArray<byte>.ReadOnly wfcGrid))
             {
                 cells = default;
                 dimensions = default;
@@ -465,7 +494,7 @@ namespace Hecton8.World.Outposts
                 return false;
             }
 
-            cellCount = math.min(ResolveActiveCellCount(), WfcGrid.Length);
+            cellCount = math.min(ResolveActiveCellCount(), wfcGrid.Length);
             if (cellCount <= 0)
             {
                 cells = default;
@@ -474,7 +503,7 @@ namespace Hecton8.World.Outposts
                 return false;
             }
 
-            cells = WfcGrid.AsReadOnly();
+            cells = wfcGrid;
             dimensions = ResolveActiveDimensions();
             gridHash = _activeGridHash;
             return true;
@@ -483,21 +512,21 @@ namespace Hecton8.World.Outposts
         public bool TryGetShellMatrices(out NativeArray<float4x4>.ReadOnly matrices, out int matrixCount, out uint generationSequence)
         {
             generationSequence = _generationSequence;
-            if (!_generated || _jobPhase == JobPhase.Shifting || !_shellMatrices.IsCreated)
+            if (!_generated || _jobPhase == JobPhase.Shifting || !TryReadShellMatrices(out NativeArray<float4x4>.ReadOnly shellMatrices))
             {
                 matrices = default;
                 matrixCount = 0;
                 return false;
             }
 
-            matrixCount = math.min(math.max(0, _matrixCount), _shellMatrices.Length);
+            matrixCount = math.min(math.max(0, _matrixCount), shellMatrices.Length);
             if (matrixCount <= 0)
             {
                 matrices = default;
                 return false;
             }
 
-            matrices = _shellMatrices.AsReadOnly();
+            matrices = shellMatrices;
             return true;
         }
 
@@ -562,22 +591,39 @@ namespace Hecton8.World.Outposts
             _generationOrigin -= shiftMeters;
             _lastShiftFrameId = shiftFrameId;
             ShiftInteractableProxies(shiftMeters);
-            if (!_generated || _matrixCount <= 0 || !_shellMatrices.IsCreated)
+            if (!_generated || _matrixCount <= 0)
             {
+                UpdateSnapshot();
+                return;
+            }
+
+            if (!TryAcquireShiftJobBuffer(out NativeArray<float4x4> shellMatrices))
+            {
+                AccumulatePendingShift(shiftMeters, shiftFrameId);
                 UpdateSnapshot();
                 return;
             }
 
             MarauderOutpostAupShiftJob job = new MarauderOutpostAupShiftJob
             {
-                ShellMatrices = _shellMatrices,
+                ShellMatrices = shellMatrices,
                 ShiftMeters = shiftMeters
             };
-            _jobHandle = job.Schedule(_matrixCount, 64);
-            _jobPhase = JobPhase.Shifting;
-            _drawBounds.center -= new Vector3(shiftMeters.x, shiftMeters.y, shiftMeters.z);
-            WriteTelemetry(MarauderOutpostConstants.AupShiftFlag);
-            UpdateSnapshot();
+            try
+            {
+                _jobHandle = job.Schedule(_matrixCount, 64);
+                _jobPhase = JobPhase.Shifting;
+                _drawBounds.center -= new Vector3(shiftMeters.x, shiftMeters.y, shiftMeters.z);
+                WriteTelemetry(MarauderOutpostConstants.AupShiftFlag);
+                UpdateSnapshot();
+            }
+            catch
+            {
+                _jobHandle = default;
+                _jobPhase = JobPhase.None;
+                ReleaseShiftJobBufferLock();
+                throw;
+            }
         }
 
         private void DrainSectorHydratedSignals()
@@ -608,17 +654,32 @@ namespace Hecton8.World.Outposts
 
         private void ScheduleMatrixExtraction()
         {
+            if (!TryAcquireExtractionJobBuffers(
+                    out NativeArray<byte> wfcGrid,
+                    out NativeArray<byte> mutableGrid,
+                    out NativeArray<float4x4> shellMatrices,
+                    out NativeArray<uint> shellCellTypes,
+                    out NativeArray<OutpostInteractableSpawn> interactableSpawns,
+                    out NativeArray<int> counters))
+            {
+                _jobHandle = default;
+                _jobPhase = JobPhase.None;
+                WriteTelemetry(MarauderOutpostConstants.FaultFlag);
+                SetState(OutpostGenerationState.Faulted);
+                return;
+            }
+
             MapMagicBridge.QuantizedHeightmapPayload payload = ResolveHeightmapPayload();
             bool hasHeightmapPayload = IsValidHeightmapPayload(in payload, _generationOrigin);
             MarauderOutpostMatrixExtractionJob job = new MarauderOutpostMatrixExtractionJob
             {
-                WfcGrid = WfcGrid,
-                MutableGrid = _wfcMutableStateGrid,
+                WfcGrid = wfcGrid,
+                MutableGrid = mutableGrid,
                 HeightSamples = hasHeightmapPayload ? payload.HeightSamples : default,
-                ShellMatrices = _shellMatrices,
-                CellTypes = _shellCellTypes,
-                InteractableSpawns = _interactableSpawns,
-                Counters = _counters,
+                ShellMatrices = shellMatrices,
+                CellTypes = shellCellTypes,
+                InteractableSpawns = interactableSpawns,
+                Counters = counters,
                 Dimensions = ResolveActiveDimensions(),
                 OriginMeters = _generationOrigin,
                 TerrainPosition = hasHeightmapPayload ? ToFloat3(payload.TerrainPosition) : _generationOrigin - new float3(16f, ResolveStiltClearanceMeters(), 16f),
@@ -632,19 +693,37 @@ namespace Hecton8.World.Outposts
                 LowTier = _qualityTier == OutpostGenerationQualityTier.Low ? (byte)1 : (byte)0
             };
 
-            _jobHandle = job.Schedule();
-            _jobPhase = JobPhase.Extracting;
-            SetState(OutpostGenerationState.ExtractingMatrices);
+            try
+            {
+                _jobHandle = job.Schedule();
+                _jobPhase = JobPhase.Extracting;
+                SetState(OutpostGenerationState.ExtractingMatrices);
+            }
+            catch
+            {
+                _jobHandle = default;
+                _jobPhase = JobPhase.None;
+                ReleaseExtractionJobBufferLocks();
+                throw;
+            }
         }
 
         private void CommitCompletedGeneration()
         {
             _jobPhase = JobPhase.None;
-            _matrixCount = _counters.IsCreated && _counters.Length > 0 ? math.clamp(_counters[0], 0, MarauderOutpostConstants.MaxShellMatrices) : 0;
-            _interactableCount = _counters.IsCreated && _counters.Length > 1 ? math.clamp(_counters[1], 0, MarauderOutpostConstants.MaxInteractables) : 0;
-            _solidCellCount = _counters.IsCreated && _counters.Length > 2 ? math.max(0, _counters[2]) : 0;
-            _supportCount = _counters.IsCreated && _counters.Length > 3 ? math.max(0, _counters[3]) : 0;
-            _heightmapFallback = _counters.IsCreated && _counters.Length > 4 && _counters[4] != 0;
+            if (!TryReadCounters(out NativeArray<int>.ReadOnly counters))
+            {
+                SetState(OutpostGenerationState.Faulted);
+                WriteTelemetry(MarauderOutpostConstants.FaultFlag);
+                DumpBlackBox();
+                return;
+            }
+
+            _matrixCount = counters.Length > 0 ? math.clamp(counters[0], 0, MarauderOutpostConstants.MaxShellMatrices) : 0;
+            _interactableCount = counters.Length > 1 ? math.clamp(counters[1], 0, MarauderOutpostConstants.MaxInteractables) : 0;
+            _solidCellCount = counters.Length > 2 ? math.max(0, counters[2]) : 0;
+            _supportCount = counters.Length > 3 ? math.max(0, counters[3]) : 0;
+            _heightmapFallback = counters.Length > 4 && counters[4] != 0;
             ApplyPendingShiftToExtractedData(_matrixCount, _interactableCount);
             _generated = _matrixCount > 0;
             _activeGridHash = _generated ? ComputeGridHash() : 0u;
@@ -859,46 +938,53 @@ namespace Hecton8.World.Outposts
             return Sanitize01(outpostAge01, DefaultOutpostAge01);
         }
 
-        private void AllocatePersistentState()
+        private bool EnsurePersistentState()
         {
-            if (WfcGrid.IsCreated)
-                return;
+            IDataVault vault = CacheDataVaultCold();
+            if (vault == null)
+                return false;
 
-            WfcGrid = new NativeArray<byte>(MarauderOutpostConstants.FullCellCount, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<byte>[10x10x5] - deterministic WFC cell grid - owner: MARAUDER_OUTPOST_ARCHITECT
-            _wfcMutableStateGrid = new NativeArray<byte>(MarauderOutpostConstants.FullCellCount, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<byte>[10x10x5] - restored WFC mutable-state grid - owner: MARAUDER_OUTPOST_ARCHITECT
-            _shellMatrices = new NativeArray<float4x4>(MarauderOutpostConstants.MaxShellMatrices, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float4x4>[1024] - outpost shell indirect matrices - owner: MARAUDER_OUTPOST_ARCHITECT
-            _shellCellTypes = new NativeArray<uint>(MarauderOutpostConstants.MaxShellMatrices, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<uint>[1024] - packed shell cell type metadata - owner: MARAUDER_OUTPOST_ARCHITECT
-            _interactableSpawns = new NativeArray<OutpostInteractableSpawn>(MarauderOutpostConstants.MaxInteractables, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<OutpostInteractableSpawn>[16] - bounded door/datapad spawn packets - owner: MARAUDER_OUTPOST_ARCHITECT
-            _counters = new NativeArray<int>(MarauderOutpostConstants.CounterCount, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[8] - WFC extraction counters - owner: MARAUDER_OUTPOST_ARCHITECT
-            _telemetryRing = new NativeArray<OutpostTelemetryEntry>(MarauderOutpostConstants.TelemetryFrames, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<OutpostTelemetryEntry>[300] - blackbox ring - owner: MARAUDER_OUTPOST_ARCHITECT
-            _spawnedInteractables = new GameObject[MarauderOutpostConstants.MaxInteractables]; // COLD ALLOC: GameObject[16] - spawned interactable proxy handles - owner: MARAUDER_OUTPOST_ARCHITECT
-            _spawnedDoorControllers = new SealedDoor[MarauderOutpostConstants.MaxInteractables]; // COLD ALLOC: SealedDoor[16] - cached WFC door controllers for power unlocks - owner: MARAUDER_OUTPOST_ARCHITECT
+            bool buffersReady =
+                EnsureVaultBuffer(ref _wfcGridHandle, WfcGridBufferId, MarauderOutpostConstants.FullCellCount, NativeArrayOptions.ClearMemory) &&
+                EnsureVaultBuffer(ref _wfcMutableStateGridHandle, WfcMutableStateGridBufferId, MarauderOutpostConstants.FullCellCount, NativeArrayOptions.ClearMemory) &&
+                EnsureVaultBuffer(ref _shellMatricesHandle, ShellMatricesBufferId, MarauderOutpostConstants.MaxShellMatrices, NativeArrayOptions.ClearMemory) &&
+                EnsureVaultBuffer(ref _shellCellTypesHandle, ShellCellTypesBufferId, MarauderOutpostConstants.MaxShellMatrices, NativeArrayOptions.ClearMemory) &&
+                EnsureVaultBuffer(ref _interactableSpawnsHandle, InteractableSpawnsBufferId, MarauderOutpostConstants.MaxInteractables, NativeArrayOptions.ClearMemory) &&
+                EnsureVaultBuffer(ref _countersHandle, CountersBufferId, MarauderOutpostConstants.CounterCount, NativeArrayOptions.ClearMemory) &&
+                EnsureVaultBuffer(ref _telemetryRingHandle, TelemetryRingBufferId, MarauderOutpostConstants.TelemetryFrames, NativeArrayOptions.ClearMemory);
 
-            RegisterNativeArray(WfcGrid, nameof(WfcGrid));
-            RegisterNativeArray(_wfcMutableStateGrid, nameof(_wfcMutableStateGrid));
-            RegisterNativeArray(_shellMatrices, nameof(_shellMatrices));
-            RegisterNativeArray(_shellCellTypes, nameof(_shellCellTypes));
-            RegisterNativeArray(_interactableSpawns, nameof(_interactableSpawns));
-            RegisterNativeArray(_counters, nameof(_counters));
-            RegisterNativeArray(_telemetryRing, nameof(_telemetryRing));
+            if (_spawnedInteractables == null || _spawnedInteractables.Length != MarauderOutpostConstants.MaxInteractables)
+                _spawnedInteractables = new GameObject[MarauderOutpostConstants.MaxInteractables]; // COLD ALLOC: GameObject[16] - spawned interactable proxy handles - owner: MARAUDER_OUTPOST_ARCHITECT
+
+            if (_spawnedDoorControllers == null || _spawnedDoorControllers.Length != MarauderOutpostConstants.MaxInteractables)
+                _spawnedDoorControllers = new SealedDoor[MarauderOutpostConstants.MaxInteractables]; // COLD ALLOC: SealedDoor[16] - cached WFC door controllers for power unlocks - owner: MARAUDER_OUTPOST_ARCHITECT
+
+            return buffersReady;
         }
 
         private void RestoreWfcMutableState(ulong sectorHash)
         {
-            if (!_wfcMutableStateGrid.IsCreated)
+            if (!TryAcquireMutableStateWriteBuffer(out NativeArray<byte> mutableStateGrid))
                 return;
 
-            for (int i = 0; i < _wfcMutableStateGrid.Length; i++)
-                _wfcMutableStateGrid[i] = 0;
+            try
+            {
+                for (int i = 0; i < mutableStateGrid.Length; i++)
+                    mutableStateGrid[i] = 0;
 
-            if (sectorHash == 0UL)
-                return;
+                if (sectorHash == 0UL)
+                    return;
 
-            IAsyncPersistenceService persistence = ResolveAsyncPersistence();
-            if (persistence == null)
-                return;
+                IAsyncPersistenceService persistence = ResolveAsyncPersistence();
+                if (persistence == null)
+                    return;
 
-            persistence.TryApplyWfcOutpostStateOverride(sectorHash, _wfcMutableStateGrid, out _);
+                persistence.TryApplyWfcOutpostStateOverride(sectorHash, mutableStateGrid, out _);
+            }
+            finally
+            {
+                ReleaseMutableStateWriteBuffer();
+            }
         }
 
         private void EnsureGraphicsResources()
@@ -971,12 +1057,18 @@ namespace Hecton8.World.Outposts
 
         private void UploadMatricesAndArgs()
         {
-            if (!_shellMatrices.IsCreated || !_shellCellTypes.IsCreated || _activeMatrixBuffer == null || _activeCellTypeBuffer == null || _activeArgsBuffer == null)
+            if (!TryReadShellMatrices(out NativeArray<float4x4>.ReadOnly shellMatrices) ||
+                !TryReadShellCellTypes(out NativeArray<uint>.ReadOnly shellCellTypes) ||
+                _activeMatrixBuffer == null ||
+                _activeCellTypeBuffer == null ||
+                _activeArgsBuffer == null)
+            {
                 return;
+            }
 
             int count = math.clamp(_matrixCount, 0, MarauderOutpostConstants.MaxShellMatrices);
-            count = math.min(count, _shellMatrices.Length);
-            count = math.min(count, _shellCellTypes.Length);
+            count = math.min(count, shellMatrices.Length);
+            count = math.min(count, shellCellTypes.Length);
             GraphicsBuffer matrixWriteBuffer = ResolveShellMatrixWriteBuffer();
             GraphicsBuffer cellTypeWriteBuffer = ResolveShellCellTypeWriteBuffer();
             GraphicsBuffer argsWriteBuffer = ResolveShellArgsWriteBuffer();
@@ -988,8 +1080,8 @@ namespace Hecton8.World.Outposts
             count = math.min(count, cellTypeWriteBuffer.count);
             if (count > 0)
             {
-                UploadNativeArray(matrixWriteBuffer, _shellMatrices, count);
-                UploadNativeArray(cellTypeWriteBuffer, _shellCellTypes, count);
+                UploadNativeArray(matrixWriteBuffer, shellMatrices, count);
+                UploadNativeArray(cellTypeWriteBuffer, shellCellTypes, count);
                 _activeMatrixBuffer = matrixWriteBuffer;
                 _activeCellTypeBuffer = cellTypeWriteBuffer;
                 _activeArgsBuffer = argsWriteBuffer;
@@ -1067,9 +1159,13 @@ namespace Hecton8.World.Outposts
             if (pool == null)
                 return;
 
-            for (int i = 0; i < _interactableCount; i++)
+            if (!TryReadInteractableSpawns(out NativeArray<OutpostInteractableSpawn>.ReadOnly interactableSpawns))
+                return;
+
+            int count = math.min(_interactableCount, interactableSpawns.Length);
+            for (int i = 0; i < count; i++)
             {
-                OutpostInteractableSpawn spawn = _interactableSpawns[i];
+                OutpostInteractableSpawn spawn = interactableSpawns[i];
                 GameObject prefab = spawn.Kind == MarauderOutpostConstants.SealedDoor ? sealedDoorProxyPrefab : datapadProxyPrefab;
                 if (prefab == null)
                     continue;
@@ -1100,6 +1196,9 @@ namespace Hecton8.World.Outposts
             if (!_generated || _publishedPowerGridHandle == 0u || _spawnedDoorControllers == null || _interactableCount <= 0)
                 return;
 
+            if (!TryReadInteractableSpawns(out NativeArray<OutpostInteractableSpawn>.ReadOnly interactableSpawns))
+                return;
+
             ReadOnlySpan<WfcOutpostDoorPowerSignal> signals = SignalBus<WfcOutpostDoorPowerSignal>.GetFrameSnapshot();
             for (int signalIndex = 0; signalIndex < signals.Length; signalIndex++)
             {
@@ -1109,9 +1208,10 @@ namespace Hecton8.World.Outposts
                     continue;
                 }
 
-                for (int i = 0; i < _interactableCount && i < _spawnedDoorControllers.Length; i++)
+                int count = math.min(_interactableCount, math.min(_spawnedDoorControllers.Length, interactableSpawns.Length));
+                for (int i = 0; i < count; i++)
                 {
-                    if (_interactableSpawns[i].CellIndex != signal.CellIndex)
+                    if (interactableSpawns[i].CellIndex != signal.CellIndex)
                         continue;
 
                     SealedDoor door = _spawnedDoorControllers[i];
@@ -1303,22 +1403,42 @@ namespace Hecton8.World.Outposts
             _generationOrigin -= shift;
             _lastShiftFrameId = shiftFrameId;
 
-            int safeMatrixCount = _shellMatrices.IsCreated ? math.min(math.max(0, matrixCount), _shellMatrices.Length) : 0;
-            for (int i = 0; i < safeMatrixCount; i++)
+            if (TryAcquireShellMatricesWriteBuffer(out NativeArray<float4x4> shellMatrices))
             {
-                float4x4 matrix = _shellMatrices[i];
-                matrix.c3.x -= shift.x;
-                matrix.c3.y -= shift.y;
-                matrix.c3.z -= shift.z;
-                _shellMatrices[i] = matrix;
+                try
+                {
+                    int safeMatrixCount = math.min(math.max(0, matrixCount), shellMatrices.Length);
+                    for (int i = 0; i < safeMatrixCount; i++)
+                    {
+                        float4x4 matrix = shellMatrices[i];
+                        matrix.c3.x -= shift.x;
+                        matrix.c3.y -= shift.y;
+                        matrix.c3.z -= shift.z;
+                        shellMatrices[i] = matrix;
+                    }
+                }
+                finally
+                {
+                    ReleaseShellMatricesWriteBuffer();
+                }
             }
 
-            int safeInteractableCount = _interactableSpawns.IsCreated ? math.min(math.max(0, interactableCount), _interactableSpawns.Length) : 0;
-            for (int i = 0; i < safeInteractableCount; i++)
+            if (TryAcquireInteractableSpawnsWriteBuffer(out NativeArray<OutpostInteractableSpawn> interactableSpawns))
             {
-                OutpostInteractableSpawn spawn = _interactableSpawns[i];
-                spawn.PositionMeters -= shift;
-                _interactableSpawns[i] = spawn;
+                try
+                {
+                    int safeInteractableCount = math.min(math.max(0, interactableCount), interactableSpawns.Length);
+                    for (int i = 0; i < safeInteractableCount; i++)
+                    {
+                        OutpostInteractableSpawn spawn = interactableSpawns[i];
+                        spawn.PositionMeters -= shift;
+                        interactableSpawns[i] = spawn;
+                    }
+                }
+                finally
+                {
+                    ReleaseInteractableSpawnsWriteBuffer();
+                }
             }
 
             WriteTelemetry(MarauderOutpostConstants.AupShiftFlag);
@@ -1414,7 +1534,27 @@ namespace Hecton8.World.Outposts
                 Flags = ResolveDescriptorFlags()
             };
 
-            if (!WfcOutpostGridRegistry.RegisterGrid(in descriptor, WfcGrid, out _publishedPowerGridHandle))
+            if (!TryAcquireWriteBuffer(in _wfcGridHandle, WfcGridBufferId, MarauderOutpostConstants.FullCellCount, out NativeArray<byte> wfcGrid))
+            {
+                _publishedPowerGridHandle = 0u;
+                _generatedSignalReplayFrames = 0;
+                _generatedSignalHeartbeatFrames = GeneratedSignalHeartbeatFrames;
+                WriteTelemetry(MarauderOutpostConstants.FaultFlag);
+                DumpBlackBox();
+                return false;
+            }
+
+            bool registered;
+            try
+            {
+                registered = WfcOutpostGridRegistry.RegisterGrid(in descriptor, wfcGrid, out _publishedPowerGridHandle);
+            }
+            finally
+            {
+                ReleaseWriteBuffer(in _wfcGridHandle, WfcGridBufferId);
+            }
+
+            if (!registered)
             {
                 _publishedPowerGridHandle = 0u;
                 _generatedSignalReplayFrames = 0;
@@ -1483,7 +1623,7 @@ namespace Hecton8.World.Outposts
                 CellCount = (ushort)math.min(ResolveActiveCellCount(), ushort.MaxValue),
                 Flags = ResolveDescriptorFlags()
             };
-            SignalBus<WfcOutpostGeneratedSignal>.TryPush(in signal);
+            SignalBus<WfcOutpostGeneratedSignal>.TryPushTracked(in signal, ref s_x001MarauderOutpostGenerationServiceSignalPushDropCount);
         }
 
         private void ReleasePublishedPowerGrid()
@@ -1517,19 +1657,19 @@ namespace Hecton8.World.Outposts
 
         private static uint CurrentFrameU32()
         {
-            return unchecked((uint)math.max(0, Time.frameCount));
+            return Hecton8.Core.SystemDispatcher.CurrentFrameId;
         }
 
         private uint ComputeGridHash()
         {
-            if (!WfcGrid.IsCreated)
+            if (!TryReadWfcGrid(out NativeArray<byte>.ReadOnly wfcGrid))
                 return 0u;
 
-            int cellCount = math.min(ResolveActiveCellCount(), WfcGrid.Length);
+            int cellCount = math.min(ResolveActiveCellCount(), wfcGrid.Length);
             uint hash = 2166136261u ^ _activeSolveSeed;
             for (int i = 0; i < cellCount; i++)
             {
-                hash ^= WfcGrid[i];
+                hash ^= wfcGrid[i];
                 hash *= 16777619u;
             }
 
@@ -1547,37 +1687,47 @@ namespace Hecton8.World.Outposts
 
         private void WriteTelemetry(uint flags, ulong sectorHash)
         {
-            if (!_telemetryRing.IsCreated || _telemetryRing.Length == 0)
+            if (!TryAcquireTelemetryWriteBuffer(out NativeArray<OutpostTelemetryEntry> telemetryRing))
                 return;
 
-            int length = _telemetryRing.Length;
-            int index = _telemetryWriteIndex;
-            if ((uint)index >= (uint)length)
-                index = 0;
-
-            _telemetryRing[index] = new OutpostTelemetryEntry
+            try
             {
-                Frame = CurrentFrameU32(),
-                Flags = flags,
-                SectorHash = sectorHash,
-                Seed = _activeSolveSeed,
-                GenerationSequence = _generationSequence,
-                OriginMeters = _generationOrigin,
-                Dimensions = ResolveActiveDimensions(),
-                MatrixCount = _matrixCount,
-                InteractableCount = _interactableCount,
-                SolidCellCount = _solidCellCount,
-                SupportCount = _supportCount,
-                OutpostAge01 = ResolveOutpostAge01(),
-                ShiftFrameId = _lastShiftFrameId
-            };
-            index++;
-            _telemetryWriteIndex = index >= length ? 0 : index;
+                int length = telemetryRing.Length;
+                if (length <= 0)
+                    return;
+
+                int index = _telemetryWriteIndex;
+                if ((uint)index >= (uint)length)
+                    index = 0;
+
+                telemetryRing[index] = new OutpostTelemetryEntry
+                {
+                    Frame = CurrentFrameU32(),
+                    Flags = flags,
+                    SectorHash = sectorHash,
+                    Seed = _activeSolveSeed,
+                    GenerationSequence = _generationSequence,
+                    OriginMeters = _generationOrigin,
+                    Dimensions = ResolveActiveDimensions(),
+                    MatrixCount = _matrixCount,
+                    InteractableCount = _interactableCount,
+                    SolidCellCount = _solidCellCount,
+                    SupportCount = _supportCount,
+                    OutpostAge01 = ResolveOutpostAge01(),
+                    ShiftFrameId = _lastShiftFrameId
+                };
+                index++;
+                _telemetryWriteIndex = index >= length ? 0 : index;
+            }
+            finally
+            {
+                ReleaseTelemetryWriteBuffer();
+            }
         }
 
         private void DumpBlackBox()
         {
-            if (!_telemetryRing.IsCreated)
+            if (!TryReadTelemetryRing(out NativeArray<OutpostTelemetryEntry>.ReadOnly telemetryRing))
                 return;
 
             try
@@ -1585,7 +1735,7 @@ namespace Hecton8.World.Outposts
                 string path = Path.Combine(Application.dataPath, "..", "Docs", "AgentLogs", "Dump_MARAUDER_OUTPOST_ARCHITECT.bin");
                 using FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read);
                 using BinaryWriter writer = new BinaryWriter(stream);
-                int length = _telemetryRing.Length;
+                int length = telemetryRing.Length;
                 int startIndex = _telemetryWriteIndex;
                 if ((uint)startIndex >= (uint)length)
                     startIndex = 0;
@@ -1601,7 +1751,7 @@ namespace Hecton8.World.Outposts
                     if (sourceIndex >= length)
                         sourceIndex -= length;
 
-                    OutpostTelemetryEntry entry = _telemetryRing[sourceIndex];
+                    OutpostTelemetryEntry entry = telemetryRing[sourceIndex];
                     writer.Write(entry.Frame);
                     writer.Write(entry.Flags);
                     writer.Write(entry.SectorHash);
@@ -1786,22 +1936,338 @@ namespace Hecton8.World.Outposts
             return math.all(math.abs(shiftMeters) <= new float3(MaxAupShiftMeters));
         }
 
-        private static void RegisterNativeArray<T>(NativeArray<T> array, string label) where T : struct
+        private IDataVault CacheDataVaultCold()
         {
-            NativeMemorySentinel.RegisterNativeArray(array, OwnerName, label, NativeAllocationLifetime.Scene);
+            if (_dataVault == null)
+                _dataVault = GlobalRegistry.DataVault;
+
+            return _dataVault;
         }
 
-        private static void DisposeNativeArray<T>(ref NativeArray<T> array, ref JobHandle dependency, bool defer) where T : struct
+        private bool EnsureVaultBuffer<T>(
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            NativeArrayOptions options) where T : struct
         {
-            if (!array.IsCreated)
+            IDataVault vault = CacheDataVaultCold();
+            if (vault == null)
+                return false;
+
+            int safeLength = math.max(1, requiredLength);
+            if (IsExactVaultHandle(in handle, bufferId) &&
+                vault.TryReadOnlyHandle(in handle, out NativeArray<T>.ReadOnly existing) &&
+                existing.IsCreated &&
+                existing.Length >= safeLength)
+            {
+                return true;
+            }
+
+            ReleaseVaultHandle(ref handle);
+            handle = vault.EnsureGenerationHandle<T>(
+                bufferId,
+                safeLength,
+                VaultOwnerSystemId,
+                options);
+
+            return IsExactVaultHandle(in handle, bufferId) &&
+                   vault.TryReadOnlyHandle(in handle, out NativeArray<T>.ReadOnly resolved) &&
+                   resolved.IsCreated &&
+                   resolved.Length >= safeLength;
+        }
+
+        private bool TryReadVaultBuffer<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T>.ReadOnly buffer) where T : struct
+        {
+            buffer = default;
+            IDataVault vault = _dataVault;
+            return vault != null &&
+                   IsExactVaultHandle(in handle, bufferId) &&
+                   vault.TryReadOnlyHandle(in handle, out buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= math.max(1, requiredLength);
+        }
+
+        private bool TryAcquireWriteBuffer<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            IDataVault vault = _dataVault;
+            if (vault == null ||
+                !IsExactVaultHandle(in handle, bufferId) ||
+                !vault.TryAcquireWriteLock(in handle, VaultOwnerSystemId, out buffer))
+            {
+                return false;
+            }
+
+            if (buffer.IsCreated && buffer.Length >= math.max(1, requiredLength))
+                return true;
+
+            vault.ReleaseWriteLock(in handle, VaultOwnerSystemId);
+            buffer = default;
+            return false;
+        }
+
+        private void ReleaseWriteBuffer<T>(in VaultGenerationHandle<T> handle, BufferID bufferId) where T : struct
+        {
+            IDataVault vault = _dataVault;
+            if (vault != null && IsExactVaultHandle(in handle, bufferId))
+                vault.ReleaseWriteLock(in handle, VaultOwnerSystemId);
+        }
+
+        private bool TryReadWfcGrid(out NativeArray<byte>.ReadOnly wfcGrid)
+        {
+            return TryReadVaultBuffer(in _wfcGridHandle, WfcGridBufferId, 1, out wfcGrid);
+        }
+
+        private bool TryReadShellMatrices(out NativeArray<float4x4>.ReadOnly shellMatrices)
+        {
+            return TryReadVaultBuffer(in _shellMatricesHandle, ShellMatricesBufferId, 1, out shellMatrices);
+        }
+
+        private bool TryReadShellCellTypes(out NativeArray<uint>.ReadOnly shellCellTypes)
+        {
+            return TryReadVaultBuffer(in _shellCellTypesHandle, ShellCellTypesBufferId, 1, out shellCellTypes);
+        }
+
+        private bool TryReadInteractableSpawns(out NativeArray<OutpostInteractableSpawn>.ReadOnly interactableSpawns)
+        {
+            return TryReadVaultBuffer(in _interactableSpawnsHandle, InteractableSpawnsBufferId, 1, out interactableSpawns);
+        }
+
+        private bool TryReadCounters(out NativeArray<int>.ReadOnly counters)
+        {
+            return TryReadVaultBuffer(in _countersHandle, CountersBufferId, MarauderOutpostConstants.CounterCount, out counters);
+        }
+
+        private bool TryReadTelemetryRing(out NativeArray<OutpostTelemetryEntry>.ReadOnly telemetryRing)
+        {
+            return TryReadVaultBuffer(in _telemetryRingHandle, TelemetryRingBufferId, 1, out telemetryRing);
+        }
+
+        private bool TryAcquireSolveJobBuffer(out NativeArray<byte> wfcGrid)
+        {
+            wfcGrid = default;
+            if (_solveJobBufferLocked)
+                return false;
+
+            if (!TryAcquireWriteBuffer(in _wfcGridHandle, WfcGridBufferId, MarauderOutpostConstants.FullCellCount, out wfcGrid))
+                return false;
+
+            _solveJobBufferLocked = true;
+            return true;
+        }
+
+        private void ReleaseSolveJobBufferLock()
+        {
+            if (!_solveJobBufferLocked)
                 return;
 
-            NativeMemorySentinel.UnregisterNativeArray(array);
-            if (defer)
-                dependency = array.Dispose(dependency);
-            else
-                array.Dispose();
-            array = default;
+            ReleaseWriteBuffer(in _wfcGridHandle, WfcGridBufferId);
+            _solveJobBufferLocked = false;
+        }
+
+        private bool TryAcquireExtractionJobBuffers(
+            out NativeArray<byte> wfcGrid,
+            out NativeArray<byte> mutableGrid,
+            out NativeArray<float4x4> shellMatrices,
+            out NativeArray<uint> shellCellTypes,
+            out NativeArray<OutpostInteractableSpawn> interactableSpawns,
+            out NativeArray<int> counters)
+        {
+            wfcGrid = default;
+            mutableGrid = default;
+            shellMatrices = default;
+            shellCellTypes = default;
+            interactableSpawns = default;
+            counters = default;
+            if (_extractionJobBuffersLocked)
+                return false;
+
+            if (!TryAcquireWriteBuffer(in _wfcGridHandle, WfcGridBufferId, MarauderOutpostConstants.FullCellCount, out wfcGrid))
+                return false;
+
+            if (!TryAcquireWriteBuffer(in _wfcMutableStateGridHandle, WfcMutableStateGridBufferId, MarauderOutpostConstants.FullCellCount, out mutableGrid))
+            {
+                ReleaseWriteBuffer(in _wfcGridHandle, WfcGridBufferId);
+                return false;
+            }
+
+            if (!TryAcquireWriteBuffer(in _shellMatricesHandle, ShellMatricesBufferId, MarauderOutpostConstants.MaxShellMatrices, out shellMatrices))
+            {
+                ReleaseWriteBuffer(in _wfcMutableStateGridHandle, WfcMutableStateGridBufferId);
+                ReleaseWriteBuffer(in _wfcGridHandle, WfcGridBufferId);
+                return false;
+            }
+
+            if (!TryAcquireWriteBuffer(in _shellCellTypesHandle, ShellCellTypesBufferId, MarauderOutpostConstants.MaxShellMatrices, out shellCellTypes))
+            {
+                ReleaseWriteBuffer(in _shellMatricesHandle, ShellMatricesBufferId);
+                ReleaseWriteBuffer(in _wfcMutableStateGridHandle, WfcMutableStateGridBufferId);
+                ReleaseWriteBuffer(in _wfcGridHandle, WfcGridBufferId);
+                return false;
+            }
+
+            if (!TryAcquireWriteBuffer(in _interactableSpawnsHandle, InteractableSpawnsBufferId, MarauderOutpostConstants.MaxInteractables, out interactableSpawns))
+            {
+                ReleaseWriteBuffer(in _shellCellTypesHandle, ShellCellTypesBufferId);
+                ReleaseWriteBuffer(in _shellMatricesHandle, ShellMatricesBufferId);
+                ReleaseWriteBuffer(in _wfcMutableStateGridHandle, WfcMutableStateGridBufferId);
+                ReleaseWriteBuffer(in _wfcGridHandle, WfcGridBufferId);
+                return false;
+            }
+
+            if (!TryAcquireWriteBuffer(in _countersHandle, CountersBufferId, MarauderOutpostConstants.CounterCount, out counters))
+            {
+                ReleaseWriteBuffer(in _interactableSpawnsHandle, InteractableSpawnsBufferId);
+                ReleaseWriteBuffer(in _shellCellTypesHandle, ShellCellTypesBufferId);
+                ReleaseWriteBuffer(in _shellMatricesHandle, ShellMatricesBufferId);
+                ReleaseWriteBuffer(in _wfcMutableStateGridHandle, WfcMutableStateGridBufferId);
+                ReleaseWriteBuffer(in _wfcGridHandle, WfcGridBufferId);
+                return false;
+            }
+
+            _extractionJobBuffersLocked = true;
+            return true;
+        }
+
+        private void ReleaseExtractionJobBufferLocks()
+        {
+            if (!_extractionJobBuffersLocked)
+                return;
+
+            ReleaseWriteBuffer(in _countersHandle, CountersBufferId);
+            ReleaseWriteBuffer(in _interactableSpawnsHandle, InteractableSpawnsBufferId);
+            ReleaseWriteBuffer(in _shellCellTypesHandle, ShellCellTypesBufferId);
+            ReleaseWriteBuffer(in _shellMatricesHandle, ShellMatricesBufferId);
+            ReleaseWriteBuffer(in _wfcMutableStateGridHandle, WfcMutableStateGridBufferId);
+            ReleaseWriteBuffer(in _wfcGridHandle, WfcGridBufferId);
+            _extractionJobBuffersLocked = false;
+        }
+
+        private bool TryAcquireShiftJobBuffer(out NativeArray<float4x4> shellMatrices)
+        {
+            shellMatrices = default;
+            if (_shiftJobBufferLocked)
+                return false;
+
+            if (!TryAcquireWriteBuffer(in _shellMatricesHandle, ShellMatricesBufferId, MarauderOutpostConstants.MaxShellMatrices, out shellMatrices))
+                return false;
+
+            _shiftJobBufferLocked = true;
+            return true;
+        }
+
+        private void ReleaseShiftJobBufferLock()
+        {
+            if (!_shiftJobBufferLocked)
+                return;
+
+            ReleaseWriteBuffer(in _shellMatricesHandle, ShellMatricesBufferId);
+            _shiftJobBufferLocked = false;
+        }
+
+        private bool TryAcquireMutableStateWriteBuffer(out NativeArray<byte> mutableStateGrid)
+        {
+            return TryAcquireWriteBuffer(in _wfcMutableStateGridHandle, WfcMutableStateGridBufferId, MarauderOutpostConstants.FullCellCount, out mutableStateGrid);
+        }
+
+        private void ReleaseMutableStateWriteBuffer()
+        {
+            ReleaseWriteBuffer(in _wfcMutableStateGridHandle, WfcMutableStateGridBufferId);
+        }
+
+        private bool TryAcquireShellMatricesWriteBuffer(out NativeArray<float4x4> shellMatrices)
+        {
+            return TryAcquireWriteBuffer(in _shellMatricesHandle, ShellMatricesBufferId, MarauderOutpostConstants.MaxShellMatrices, out shellMatrices);
+        }
+
+        private void ReleaseShellMatricesWriteBuffer()
+        {
+            ReleaseWriteBuffer(in _shellMatricesHandle, ShellMatricesBufferId);
+        }
+
+        private bool TryAcquireInteractableSpawnsWriteBuffer(out NativeArray<OutpostInteractableSpawn> interactableSpawns)
+        {
+            return TryAcquireWriteBuffer(in _interactableSpawnsHandle, InteractableSpawnsBufferId, MarauderOutpostConstants.MaxInteractables, out interactableSpawns);
+        }
+
+        private void ReleaseInteractableSpawnsWriteBuffer()
+        {
+            ReleaseWriteBuffer(in _interactableSpawnsHandle, InteractableSpawnsBufferId);
+        }
+
+        private bool TryAcquireTelemetryWriteBuffer(out NativeArray<OutpostTelemetryEntry> telemetryRing)
+        {
+            return TryAcquireWriteBuffer(in _telemetryRingHandle, TelemetryRingBufferId, MarauderOutpostConstants.TelemetryFrames, out telemetryRing);
+        }
+
+        private void ReleaseTelemetryWriteBuffer()
+        {
+            ReleaseWriteBuffer(in _telemetryRingHandle, TelemetryRingBufferId);
+        }
+
+        private void CompleteCurrentOutpostJobForTeardown()
+        {
+            if (_jobPhase != JobPhase.None)
+                _jobHandle.Complete();
+
+            _jobHandle = default;
+            _jobPhase = JobPhase.None;
+            ReleaseShiftJobBufferLock();
+            ReleaseExtractionJobBufferLocks();
+            ReleaseSolveJobBufferLock();
+        }
+
+        private void OnDataVaultReplaced(IDataVault nextVault)
+        {
+            CompleteCurrentOutpostJobForTeardown();
+            ReleaseVaultBuffers();
+            _dataVault = nextVault;
+            ReleasePublishedPowerGrid();
+            _generated = false;
+            _matrixCount = 0;
+            _interactableCount = 0;
+            _solidCellCount = 0;
+            _supportCount = 0;
+            _matrixUploadDirty = false;
+            SetState(OutpostGenerationState.Idle);
+            if (isActiveAndEnabled && nextVault != null)
+                EnsurePersistentState();
+        }
+
+        private void ReleaseVaultBuffers()
+        {
+            ReleaseShiftJobBufferLock();
+            ReleaseExtractionJobBufferLocks();
+            ReleaseSolveJobBufferLock();
+            ReleaseVaultHandle(ref _telemetryRingHandle);
+            ReleaseVaultHandle(ref _countersHandle);
+            ReleaseVaultHandle(ref _wfcMutableStateGridHandle);
+            ReleaseVaultHandle(ref _interactableSpawnsHandle);
+            ReleaseVaultHandle(ref _shellCellTypesHandle);
+            ReleaseVaultHandle(ref _shellMatricesHandle);
+            ReleaseVaultHandle(ref _wfcGridHandle);
+        }
+
+        private void ReleaseVaultHandle<T>(ref VaultGenerationHandle<T> handle) where T : struct
+        {
+            IDataVault vault = _dataVault;
+            if (vault != null && handle.BufferID != 0u && handle.Generation != 0u)
+                vault.ReleaseBuffer(in handle);
+
+            handle = default;
+        }
+
+        private static bool IsExactVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID bufferId) where T : struct
+        {
+            return handle.BufferID == unchecked((uint)(int)bufferId) && handle.Generation != 0u;
         }
 
         private static void ReleaseGraphicsBuffer(ref GraphicsBuffer buffer)
@@ -1822,7 +2288,7 @@ namespace Hecton8.World.Outposts
                 UnsafeUtility.SizeOf<T>());
         }
 
-        private static void UploadNativeArray<T>(GraphicsBuffer destination, NativeArray<T> source, int count) where T : struct
+        private static void UploadNativeArray<T>(GraphicsBuffer destination, NativeArray<T>.ReadOnly source, int count) where T : struct
         {
             if (destination == null || !source.IsCreated)
                 return;
@@ -1832,7 +2298,8 @@ namespace Hecton8.World.Outposts
                 return;
 
             NativeArray<T> mapped = destination.LockBufferForWrite<T>(0, safeCount);
-            NativeArray<T>.Copy(source, mapped, safeCount);
+            for (int i = 0; i < safeCount; i++)
+                mapped[i] = source[i];
             destination.UnlockBufferAfterWrite<T>(safeCount);
         }
     }

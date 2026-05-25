@@ -24,13 +24,16 @@ Scope: cited local paths exist at capture time. No compile/import/Play/profiler/
 
 - Quality is continuous through `GlobalQualityWeight` in the 0..1 range.
 
-- Below `GlobalQualityWeight` 0.3, expensive height/SDF interpolation collapses to nearest lookup and math raymarching trends to one step. Above 0.3, smoothstep ramps toward bilinear/trilinear; above 0.7, extra micro-detail is allowed.
+- Below `GlobalQualityWeight` 0.3, height/SDF interpolation collapses to nearest lookup and raymarching trends to one step.
+- Above 0.3, smoothstep ramps toward bilinear/trilinear; above 0.7, extra micro-detail is allowed.
 
 - Normal estimation follows the same curve: below 0.3 it returns a stable cheap up-normal, then `math.lerp` blends into tetrahedron gradient normals as quality rises.
 
-- Biome and erosion lanes also collapse below 0.3: biome uses nearest hash, erosion uses nearest mask only when micro-detail is active, and Simplex micro-detail is skipped until the ramp opens.
+- Biome and erosion lanes collapse below `0.3`.
+- Biome uses nearest hash; erosion uses nearest mask only with active micro-detail; Simplex micro-detail waits for the ramp.
 
-- `ResolveSamplingCadenceDivisor()` maps low quality to a 12-frame divisor (60Hz caller -> 5Hz) and high quality to divisor 1. Dispatchers own stale-buffer policy; the sampler does not block for immediate reads.
+- `ResolveSamplingCadenceDivisor()` maps low quality to divisor 12 (60Hz caller -> 5Hz) and high quality to divisor 1.
+- Dispatchers own stale-buffer policy; sampler does not block for immediate reads.
 
 - `FilterGlobalQualityWeight()` accepts deterministic `SimulationTickDelta` so thermal load shedding/recovery can be rate-limited without Unity `Time.deltaTime`.
 
@@ -162,7 +165,8 @@ Editor hot-reload target `biome_atlas_overrides.csv` is absent in the current ch
   - Removed tokens: `GlobalRegistry.ScalabilityTier`, `ScalabilityTierProfileByte`.
   - Remaining `ForceMathLodLow` is a documented legacy ABI enum bit in `GlobalWorldSamplerConfigFlags`.
 
-- Direct-field reflection purge re-probe: failed with CS1061 because the local generated Core project resolves stale terrain job metadata without `GlobalQualityWeight` / `GlobalQualityWeightValid`. The direct-field chunk was reverted under fail-fast rules.
+- Direct-field reflection purge re-probe failed with CS1061 from stale terrain job metadata lacking `GlobalQualityWeight` / `GlobalQualityWeightValid`.
+- The direct-field chunk was reverted under fail-fast rules.
 
 - `dotnet build Hecton8.Core.csproj --no-restore /clp:ErrorsOnly`: latest post-revert local run failed outside SHINOBU_41.
 - Blocking files: `HomeostasisBrain.ScalabilityDictator.cs`, `SaveBinaryPayloadCodec.cs`, Visor features, `ShinobuFloraFaunaSymbiosisSolver.cs`.

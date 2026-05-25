@@ -13,7 +13,7 @@ namespace Hecton8.Gameplay
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Gameplay/Beacon Network System")]
-    public sealed class BeaconNetworkSystem : MonoBehaviour, ISaveable, IGlobalRegistryHotSwapListener
+    public sealed class BeaconNetworkSystem : MonoBehaviour, ISaveable, IBeaconNetworkService, IGlobalRegistryHotSwapListener
     {
         public readonly struct BeaconSnapshot
         {
@@ -49,6 +49,7 @@ namespace Hecton8.Gameplay
         [SerializeField] private int maxTrackedBeacons = 24;
         [SerializeField] private string defaultLabelPrefix = "BEACON";
         [SerializeField] private bool verboseLogging;
+        private const string DefaultBeaconPrefix = "BEACON";
 
         [Header("Prefabs")]
         [Tooltip("Prefab for becons spawned from save data or as fallback. Should have BeaconRuntime component.")]
@@ -61,6 +62,7 @@ namespace Hecton8.Gameplay
         private IObjectPoolService _cachedObjectPool;
         private ILocalizationTextReadModel _cachedLocalization;
         private ISaveService _cachedSaveService;
+        private readonly char[] _labelPrefixBuffer = new char[32];
         private static BeaconNetworkSystem s_activeRuntime;
 
         public static BeaconNetworkSystem Instance => s_activeRuntime;
@@ -326,14 +328,53 @@ namespace Hecton8.Gameplay
                 out label);
         }
 
+        public bool TryDeployBeaconFromTool(
+            GameObject worldBeaconPrefab,
+            Vector3 position,
+            Quaternion rotation,
+            Color color,
+            float lightRange,
+            Vector3 fallbackScale,
+            int maxActive,
+            out string label)
+        {
+            return TryDeployInternal(
+                worldBeaconPrefab,
+                position,
+                rotation,
+                color,
+                lightRange,
+                fallbackScale,
+                maxActive,
+                out _,
+                out label);
+        }
+
         public bool TryRetractNearestFromTool(in AbsoluteUniversePosition originAup, out BeaconRuntime beacon, out float distance)
         {
             return TryRetractNearestInternal(in originAup, out beacon, out distance);
         }
 
+        public bool TryRetractNearestFromTool(in AbsoluteUniversePosition originAup, out float distance)
+        {
+            return TryRetractNearestInternal(in originAup, out _, out distance);
+        }
+
         public bool TryGetNearestFromTool(in AbsoluteUniversePosition originAup, out BeaconSnapshot snapshot, out float distance)
         {
             return TryGetNearestInternal(in originAup, out snapshot, out distance);
+        }
+
+        public bool TryGetNearestFromTool(in AbsoluteUniversePosition originAup, out BeaconNetworkSnapshot snapshot, out float distance)
+        {
+            if (TryGetNearestInternal(in originAup, out BeaconSnapshot ownerSnapshot, out distance))
+            {
+                snapshot = ToContractSnapshot(ownerSnapshot);
+                return true;
+            }
+
+            snapshot = default;
+            return false;
         }
 
         public int CopySnapshots(BeaconSnapshot[] buffer)
@@ -361,6 +402,30 @@ namespace Hecton8.Gameplay
                 {
                     buffer[i] = default;
                 }
+            }
+
+            return count;
+        }
+
+        public int CopySnapshots(BeaconNetworkSnapshot[] buffer)
+        {
+            CleanupNullEntries();
+            if (buffer == null || buffer.Length == 0 || _activeBeacons.Count == 0)
+                return 0;
+
+            int count = Mathf.Min(buffer.Length, _activeBeacons.Count);
+            for (int i = 0; i < count; i++)
+            {
+                BeaconRuntime beacon = _activeBeacons[i];
+                buffer[i] = beacon != null
+                    ? new BeaconNetworkSnapshot(
+                        beacon.BeaconId,
+                        beacon.Label,
+                        beacon.RuntimePosition,
+                        beacon.PositionAup,
+                        beacon.BeaconColor,
+                        beacon.LightRange)
+                    : default;
             }
 
             return count;
@@ -482,11 +547,9 @@ namespace Hecton8.Gameplay
                 {
                     oldest.DespawnSelf();
                     FieldOperationLogSystem.RecordOperation(
-                        ResolveLocalized(LocalizationKeys.BEACON_PREFIX, "BEACON"),
-                        ResolveLocalized(LocalizationKeys.BEACON_LOG_TRIMMED_TITLE, "BEACON GRID TRIMMED"),
-                        ResolveLocalized(
-                            LocalizationKeys.BEACON_LOG_TRIMMED_MESSAGE,
-                            "Oldest beacon anchor was retired to preserve the active field-marker cap."),
+                        DefaultBeaconPrefix,
+                        "BEACON GRID TRIMMED",
+                        "Oldest beacon anchor was retired to preserve the active field-marker cap.",
                         "WARN");
                 }
             }
@@ -595,6 +658,17 @@ namespace Hecton8.Gameplay
             distance = ApproximateDistance(bestDistanceSq);
             snapshot = new BeaconSnapshot(best.BeaconId, best.Label, bestPosition, bestAup, best.BeaconColor, best.LightRange);
             return true;
+        }
+
+        private static BeaconNetworkSnapshot ToContractSnapshot(BeaconSnapshot snapshot)
+        {
+            return new BeaconNetworkSnapshot(
+                snapshot.Id,
+                snapshot.Label,
+                snapshot.Position,
+                snapshot.PositionAup,
+                snapshot.Color,
+                snapshot.LightRange);
         }
 
         private static float ApproximateDistance(float distanceSq)
@@ -744,27 +818,45 @@ namespace Hecton8.Gameplay
 
         private string BuildNextLabel()
         {
-            string prefix = string.IsNullOrWhiteSpace(defaultLabelPrefix)
-                ? ResolveLocalized(LocalizationKeys.BEACON_PREFIX, "BEACON")
-                : CachedToUpperInvariant(defaultLabelPrefix.Trim());
+            ReadOnlySpan<char> prefix = ResolveLabelPrefixSpan();
             string label = CreateBeaconLabel(prefix, _nextSequence);
             _nextSequence++;
             return label;
         }
 
-        private string ResolveLocalized(string key, string fallback)
+        private ReadOnlySpan<char> ResolveLabelPrefixSpan()
         {
+            ReadOnlySpan<char> authoredPrefix = string.IsNullOrWhiteSpace(defaultLabelPrefix)
+                ? ReadOnlySpan<char>.Empty
+                : defaultLabelPrefix.AsSpan();
+            if (!authoredPrefix.IsEmpty)
+                return CopyLabelPrefix(authoredPrefix);
+
             ILocalizationTextReadModel manager = _cachedLocalization;
-            return manager != null
-                ? manager.GetOrFallback(key, fallback)
-                : fallback;
+            ReadOnlySpan<char> localized = manager != null
+                ? manager.GetRawSpanOrFallback(LocHash.Compute(LocalizationKeys.BEACON_PREFIX), DefaultBeaconPrefix.AsSpan())
+                : DefaultBeaconPrefix.AsSpan();
+            return CopyLabelPrefix(localized);
+        }
+
+        private ReadOnlySpan<char> CopyLabelPrefix(ReadOnlySpan<char> source)
+        {
+            int length = math.min(source.Length, _labelPrefixBuffer.Length);
+            if (length <= 0)
+            {
+                source = DefaultBeaconPrefix.AsSpan();
+                length = math.min(source.Length, _labelPrefixBuffer.Length);
+            }
+
+            source.Slice(0, length).CopyTo(_labelPrefixBuffer);
+            return _labelPrefixBuffer.AsSpan(0, length);
         }
 
         private void CacheRegistryServicesCold()
         {
             _cachedObjectPool = GlobalRegistry.ObjectPoolService;
             _cachedLocalization = Hecton8.Core.GlobalRegistry.LocalizationText;
-            _cachedSaveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+            _cachedSaveService = GlobalRegistry.Save;
         }
 
         private void TryRegisterHotSwapListener()
@@ -784,51 +876,29 @@ namespace Hecton8.Gameplay
             _hotSwapListenerRegistered = false;
         }
 
-        // ZERO-GC STRING CACHING
-
-        private static readonly string[] _cachedUpperStrings = new string[16]; // COLD ALLOC: string[16] - upper-case label cache slots - owner: BeaconNetworkSystem
-
-        /// <summary>
-        /// Caches uppercase label variants to avoid repeated string allocations.
-        /// Keeps the last 16 transformed labels for reuse.
-        /// </summary>
-        private static string CachedToUpperInvariant(string input)
-        {
-            if (string.IsNullOrEmpty(input))
-                return input;
-
-            int hash = input.GetHashCode() & 0xF;
-
-            string cached = _cachedUpperStrings[hash];
-            if (cached != null && string.Equals(cached, input, System.StringComparison.OrdinalIgnoreCase))
-                return cached;
-
-            string upper = input.ToUpperInvariant();
-            _cachedUpperStrings[hash] = upper;
-            return upper;
-        }
-
         private readonly struct BeaconLabelState
         {
-            public readonly string Prefix;
+            public readonly char[] PrefixBuffer;
+            public readonly int PrefixLength;
             public readonly int Sequence;
 
-            public BeaconLabelState(string prefix, int sequence)
+            public BeaconLabelState(char[] prefixBuffer, int prefixLength, int sequence)
             {
-                Prefix = prefix;
+                PrefixBuffer = prefixBuffer;
+                PrefixLength = prefixLength;
                 Sequence = sequence;
             }
         }
 
-        private static string CreateBeaconLabel(string prefix, int sequence)
+        private string CreateBeaconLabel(ReadOnlySpan<char> prefix, int sequence)
         {
             int safeSequence = math.max(0, sequence);
             int digitCount = safeSequence < 100 ? 2 : CountDecimalDigits(safeSequence);
-            int prefixLength = prefix != null ? prefix.Length : 0;
-            return string.Create(prefixLength + 1 + digitCount, new BeaconLabelState(prefix, safeSequence), (buffer, state) =>
+            int prefixLength = math.min(prefix.Length, _labelPrefixBuffer.Length);
+            return string.Create(prefixLength + 1 + digitCount, new BeaconLabelState(_labelPrefixBuffer, prefixLength, safeSequence), (buffer, state) =>
             {
-                string statePrefix = state.Prefix;
-                int statePrefixLength = statePrefix != null ? statePrefix.Length : 0;
+                char[] statePrefix = state.PrefixBuffer;
+                int statePrefixLength = state.PrefixLength;
                 for (int i = 0; i < statePrefixLength; i++)
                     buffer[i] = statePrefix[i];
 

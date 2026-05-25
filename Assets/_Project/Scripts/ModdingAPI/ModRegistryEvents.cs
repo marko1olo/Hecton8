@@ -246,7 +246,7 @@ namespace Hecton8.Modding
 
             ModRegistryEventPayload payload = new ModRegistryEventPayload
             {
-                Frame = unchecked((uint)Mathf.Max(0, Time.frameCount)),
+                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 ModHash = modHash,
                 SubjectHash = subjectHash,
                 EventType = (ushort)eventType,

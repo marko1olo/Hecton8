@@ -21,6 +21,7 @@ namespace Hecton8.Tools
     [AddComponentMenu("Hecton8/Tools/Tool Durability System")]
     public sealed class ToolDurabilitySystem : MonoBehaviour, ISaveable, ISlowTickable, IUpdatable, ILateFrameTickable, IToolDurabilityService, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener
     {
+        private static int s_x001ToolDurabilitySystemSignalPushDropCount;
         private const int MaxTrackedTools = 32;
         private const int MaxQueuedDurabilityCommands = 32;
         private const float SlowTickDeltaTime = 0.5f;
@@ -1003,7 +1004,7 @@ namespace Hecton8.Tools
                 Flags = flags,
                 BiomeHash = 0u
             };
-            SignalBus<ItemDurabilityChangedSignal>.TryPush(in signal);
+            SignalBus<ItemDurabilityChangedSignal>.TryPushTracked(in signal, ref s_x001ToolDurabilitySystemSignalPushDropCount);
         }
 
         private uint NextDurabilitySignalFrame()
@@ -1506,7 +1507,7 @@ namespace Hecton8.Tools
         private void CacheRegistryDependenciesCold()
         {
             _dataVault = GlobalRegistry.DataVault;
-            _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+            _saveService = GlobalRegistry.Save;
             _playerRuntimeContext = GlobalRegistry.Player;
             _brineDensityReadModel = GlobalRegistry.BrineFluidDensity;
         }

@@ -26,7 +26,9 @@ Verification: PENDING VERIFICATION
 
 ## Purpose
 
-`SaveThumbnailSystem` must capture save-slot thumbnails without breaking the URP camera stack, without forcing a synchronous GPU readback, and without blocking the main thread on image encoding or disk I/O.
+`SaveThumbnailSystem` must capture save-slot thumbnails without breaking the URP camera stack.
+
+It must not force synchronous GPU readback or block main thread on image encoding/disk I/O.
 
 ## Why `Camera.Render()` Is Forbidden
 

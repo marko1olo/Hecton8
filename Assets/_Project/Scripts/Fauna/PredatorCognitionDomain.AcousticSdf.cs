@@ -700,6 +700,9 @@ namespace Hecton8.AI
             for (int i = start; i < signals.Length; i++)
             {
                 CombatDamageSignal signal = signals[i];
+                if ((signal.Flags & CombatDamageSignal.VisualOnlyFlag) != 0)
+                    continue;
+
                 if (!math.isfinite(signal.Magnitude) || !math.all(math.isfinite(signal.ImpactAup)))
                 {
                     MarkAcousticCounterFlag(counter, AcousticCounterFlagInvalidIngress);

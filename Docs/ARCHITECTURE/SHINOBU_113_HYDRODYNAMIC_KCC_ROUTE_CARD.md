@@ -60,7 +60,8 @@ It owns only KCC state, movement commands, deferred capsule sweep commands/resul
 
 | Capacity | Vault-backed KCC state/input/command/hit/output lanes sized by runtime capacity; telemetry ring fixed at 300 entries |
 
-| Producer/consumer phase | External input writer or mock input before simulation; KCC integration during simulation; wake/visual output during post phase -> post-simulation rollback/state readback, visual sync, wake consumption, and editor diagnostics |
+| Producer phase | External input writer or mock input before simulation; KCC integration during simulation; wake/visual output during post phase |
+| Consumer phase | Post-simulation rollback/state readback, visual sync, wake consumption, editor diagnostics |
 
 | Cadence/capacity | Per simulation tick for KCC state; dirty-only for external input/wake packets; Vault-backed KCC lanes sized by runtime capacity and fixed 300-entry telemetry ring |
 
@@ -116,7 +117,9 @@ The editor graph reads Vault telemetry only when runtime has no scheduled collis
 
 ## Input Route
 
-External writers must build `HydrodynamicKccInputDTO` through `HydrodynamicKccInputContract.BuildExternalInput(...)`, write `BufferID.ShinobuHydroKccInputs`, then call `TryRegisterExternalInputWriter(JobHandle)`. The runtime rejects external registration while mock input is active or while a batch is in flight.
+External writers build `HydrodynamicKccInputDTO` through `HydrodynamicKccInputContract.BuildExternalInput(...)`, write `BufferID.ShinobuHydroKccInputs`, then call `TryRegisterExternalInputWriter(JobHandle)`.
+
+Runtime rejects external registration while mock input is active or batch is in flight.
 
 Sanitizer rejects stale packets by frame, sequence, source hash, finite AUP/move/look values, local AUP range, and sector-generation stamp.
 

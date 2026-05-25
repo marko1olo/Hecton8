@@ -678,3 +678,75 @@ Task count: open-ended product hardening
   - DOD practice: API typecheck/build, full workspace build, Telegram bot/source/validation smokes, Russian fallback/API encoding and settings persistence/preference smokes passed.
   - Rejected: stopping after the first failed replay smoke; the failure was ordering-related and was fixed before verification.
   - Estimate: 0 us Unity runtime; Node/Vite verification only. Residual Vite chunk warning remains at 662.01 kB.
+
+## Loop 38
+
+- [x] Implement official outpatient medical card 025/u.
+  - DOD practice: dedicated structured payload, renderer, source URL, DB enum migration, missing-payload guard, signed-source issue blocker, clinical-row blocker, and 274n source note.
+  - Rejected: labeling the generic extract as official 025/u output.
+  - Estimate: 0 us Unity runtime; web/API document generation only.
+- [x] Expose 025/u in the doctor-facing document UI and Telegram document workflow.
+  - DOD practice: Russian fallback labels, conditional payload editor mount, signed-source/274n/third-party confirmations, Communications quick action, and medical-document request workflow inclusion.
+  - Rejected: command-only or English fallback entry points.
+  - Estimate: 0 us Unity runtime; bounded React form work.
+- [x] Verify shared/API/web contracts and document smoke coverage.
+  - DOD practice: shared/API/web typecheck, full build, catalog, payload, guard, issue-chain, UI-source, legal-confirmation, Telegram, encoding, DB-contract, Russian fallback and mobile Documents smokes passed.
+  - Rejected: source-only report for official-form output.
+  - Estimate: 0 us Unity runtime; Node/Vite verification only. Residual Vite chunk warning remains at 676.25 kB.
+
+## Loop 39
+
+- [x] Add scoped local draft recovery for 025/u.
+  - DOD practice: patient + visit + document-kind draft key stores only the long 025/u editor fields and restores them after reload while the selected document kind remains active.
+  - Rejected: putting clinical 025/u text into global UI preferences, because preferences must not become a medical data cache.
+  - Estimate: 0 us Unity runtime; bounded browser localStorage JSON under 60 draft entries.
+- [x] Keep legal confirmations non-persistent.
+  - DOD practice: local draft hydrate resets signed-source, 274n and third-party confirmations, so recovered text cannot silently re-attest legal/source facts.
+  - Rejected: auto-saving checkboxes together with medical text.
+  - Estimate: 0 us Unity runtime; three boolean resets on hydrate.
+- [x] Correct official-document claims.
+  - DOD practice: KND XML documentation now says the output is shaped to published fields and still needs external XSD/EDO validation, instead of claiming complete published-XSD validation.
+  - Rejected: leaving an overclaim after source audit found no real XSD validator in the code path.
+  - Estimate: 0 us Unity runtime; docs-only correction.
+- [x] Verify compile, build, source, persistence and mobile behavior.
+  - DOD practice: web typecheck, full workspace build, document catalog/payload/source smokes, UI-preference clinical-key guard, encoding/Russian fallback smokes, 390 px Documents mobile smoke and a reload browser smoke for 025/u draft recovery passed.
+  - Rejected: source-only proof for a data-preservation UX change.
+  - Estimate: 0 us Unity runtime; Node/Vite/Edge verification only. Residual Vite chunk warning remains at 683.60 kB.
+
+## Loop 40
+
+- [x] Add internal structural preflight for KND XML before archiving.
+  - DOD practice: `buildKnd1151156Xml` now checks XML declaration, root/document/expense tag balance, KND 1184043, version 5.01, tax office/year, `НомерСвед`, correction number, patient flag, payer/patient nodes, service-code sums, technical placeholders and mojibake before returning bytes for snapshot storage.
+  - Rejected: claiming official XSD/ЭДО validation or adding an ad hoc dependency without the real FNS XSD validator contour.
+  - Estimate: 0 us Unity runtime; bounded string checks over one generated XML document on manual tax export.
+- [x] Expand KND XML regression proof.
+  - DOD practice: `smoke:tax-knd-xml` now guards preflight source markers and asserts real self/non-self XML flags, patient node presence/absence, correction number, no `undefined`/`NaN`/`null`/object placeholders, frozen facts and immutable first export.
+  - Rejected: source-only validator proof without exercising the route after API build.
+  - Estimate: 0 us Unity runtime; Fastify smoke only.
+- [x] Update factual documentation without overstating legality.
+  - DOD practice: README and document-generation docs now say DENTE runs an internal structural preflight but still requires external XSD/ЭДО/КЭП validation for official submission.
+  - Rejected: calling the draft a signed ФНС package or complete operator validation.
+  - Estimate: 0 us runtime; docs only.
+- [x] Verify compile, build and adjacent document/text smokes.
+  - DOD practice: API typecheck/build, full workspace build, KND XML smoke after rebuild, API encoding, document catalog, document payload and Russian fallback smokes passed.
+  - Rejected: stopping after the first pre-build smoke because dist can go stale.
+  - Estimate: 0 us Unity runtime; Node/Vite verification only. Residual Vite chunk warning remains at 683.60 kB.
+
+## Loop 41
+
+- [x] Pin official FNS KND 1151156 source attachments.
+  - DOD practice: official FNS order page was rechecked; appendices 1-4 and `UT_SVOPLMEDUSL_1_278_00_05_01_02.xsd` were downloaded once and recorded in `docs/legal-sources/fns-knd-1151156.json` with URL, byte size and SHA-256.
+  - Rejected: sourceUrls-only documentation, because it cannot detect attachment drift; also rejected claiming this is official XSD validation.
+  - Estimate: 0 us Unity runtime; cold documentation/source manifest only.
+- [x] Expose the FNS XSD source in document metadata.
+  - DOD practice: `tax_deduction_certificate.sourceUrls` now includes the official XSD 5.01 URL alongside the order and PDF form, so the issue passport can show the schema source to operators.
+  - Rejected: hiding XSD only in prose docs, because the app passport is the operator-facing source route.
+  - Estimate: 0 us Unity runtime; one extra metadata URL in shared dist.
+- [x] Add source-regression smoke.
+  - DOD practice: `smoke:official-document-sources` checks the manifest, appendices 1-4, XSD URL/filename/bytes/SHA-256, package script wiring, shared metadata and docs.
+  - Rejected: live network smoke in the default suite, because CI/offline clinic builds should not fail on public-site latency.
+  - Estimate: 0 us runtime; source/dist smoke only.
+- [x] Verify build and adjacent document/tax regressions.
+  - DOD practice: shared typecheck, shared build, full workspace build, official-source smoke, documents catalog, tax XML, API encoding, document payload and Russian fallback smokes passed.
+  - Rejected: accepting stale shared dist after metadata change.
+  - Estimate: 0 us Unity runtime; Node/Vite verification only. Residual Vite chunk warning remains at 683.60 kB.

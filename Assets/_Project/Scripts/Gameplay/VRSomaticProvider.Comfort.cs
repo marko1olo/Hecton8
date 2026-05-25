@@ -199,7 +199,7 @@ namespace Hecton8.Gameplay
             if (samples.Length == 0 || write.Length == 0 || derivatives.Length == 0 || profiles.Length == 0)
                 return;
 
-            uint frame = unchecked((uint)Time.frameCount);
+            uint frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             float quality = ResolveGlobalQualityWeight01();
             GenerateMockSicknessDataJob job = new GenerateMockSicknessDataJob
             {
@@ -489,7 +489,7 @@ namespace Hecton8.Gameplay
             {
                 Samples = mock,
                 GlobalQualityWeight01 = ResolveGlobalQualityWeight01(),
-                Frame = unchecked((uint)Time.frameCount)
+                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId
             };
             _somaticComfortHandle = mockJob.Schedule(mock.Length, 32, telemetryHandle);
             _somaticComfortBuffersSeeded = true;
@@ -851,7 +851,7 @@ namespace Hecton8.Gameplay
             int index = PositiveModuloSomatic(_somaticTelemetryCursor, telemetry.Length);
             telemetry[index] = new ComfortTelemetryEntry
             {
-                Frame = unchecked((uint)Time.frameCount),
+                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 Flags = flags,
                 PeakAngularVelocityRadS = SanitizeNonNegative(derivative.PeakAngularVelocityRadS),
                 PeakAngularAccelerationRadS2 = SanitizeNonNegative(derivative.PeakAngularAccelerationRadS2),

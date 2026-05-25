@@ -446,7 +446,7 @@ namespace Hecton8.Atmosphere
         }
     }
 
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct BaseAtmosphereColdTickJob : IJob
     {
         [ReadOnly, NoAlias] public NativeArray<CompartmentState> Input;

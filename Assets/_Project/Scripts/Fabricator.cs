@@ -1,33 +1,33 @@
-﻿// ============================================================================
-// HECTON-8 — Fabricator.cs
+// ============================================================================
+// HECTON-8 � Fabricator.cs
 // Mashina-verstak dlya krafta predmetov.
 //
-// REFAKTORING v3 — DINAMIChESKOE PITANIE:
-//   • Realizuet IPowerComponent dlya integratsii s PowerGrid.
-//   • Pri otsutstvii pitaniya kraft vstaet na PAUZU (ne otmenyaetsya).
-//   • PowerRating: 0 v idle, -craftPowerDraw pri krafte.
-//   • Pri vosstanovlenii pitaniya kraft prodolzhaetsya s togo zhe mesta.
-//   • Pri StartCraft/CompleteCraft/CancelCraft → PowerGrid.UpdateBalance()
+// REFAKTORING v3 � DINAMIChESKOE PITANIE:
+//   � Realizuet IPowerComponent dlya integratsii s PowerGrid.
+//   � Pri otsutstvii pitaniya kraft vstaet na PAUZU (ne otmenyaetsya).
+//   � PowerRating: 0 v idle, -craftPowerDraw pri krafte.
+//   � Pri vosstanovlenii pitaniya kraft prodolzhaetsya s togo zhe mesta.
+//   � Pri StartCraft/CompleteCraft/CancelCraft ? PowerGrid.UpdateBalance()
 //     dlya mgnovennogo perescheta balansa seti.
 //
 // ZhIZNENNYY TsIKL KRAFTA:
-//   1. Igrok navoditsya → OnHoverStart → HUD pokazyvaet prompt
-//   2. [E] → Interact → CraftingEvents.TryRaiseFabricatorOpened
-//   3. UI vyzyvaet StartCraft(recipe) → CanCraft proverka
+//   1. Igrok navoditsya ? OnHoverStart ? HUD pokazyvaet prompt
+//   2. [E] ? Interact ? CraftingEvents.TryRaiseFabricatorOpened
+//   3. UI vyzyvaet StartCraft(recipe) ? CanCraft proverka
 //   4. Resursy spisyvayutsya SRAZU -> Vault FabricationJobDTO zapuskaetsya
-//      → NotifyGridBalanceChanged() — set pereschityvaet s -100W
+//      ? NotifyGridBalanceChanged() � set pereschityvaet s -100W
 //   5. SIMULATION: esli HasPower -> Vault Progress01 prodvigaetsya Burst job
 //               esli !HasPower -> PAUZA (Vault Progress01 ne tikaet)
-//   6. Zavershenie → rezultat v inventar → OnCraftCompleted
-//      → NotifyGridBalanceChanged() — set pereschityvaet bez -100W
-//   7. Otmena → resursy vozvraschayutsya → OnCraftCancelled
-//      → NotifyGridBalanceChanged() — set pereschityvaet bez -100W
+//   6. Zavershenie ? rezultat v inventar ? OnCraftCompleted
+//      ? NotifyGridBalanceChanged() � set pereschityvaet bez -100W
+//   7. Otmena ? resursy vozvraschayutsya ? OnCraftCancelled
+//      ? NotifyGridBalanceChanged() � set pereschityvaet bez -100W
 //
 // ZERO GC:
-//   • Tick: float arifmetika, delegate?.Invoke (no boxing)
-//   • CanCraft: for-tsikly s ReferenceEquals, no LINQ
-//   • IPowerComponent svoystva: value types only
-//   • PowerNode keshirovan v Awake — zero TryGetComponent v goryachem puti
+//   � Tick: float arifmetika, delegate?.Invoke (no boxing)
+//   � CanCraft: for-tsikly s ReferenceEquals, no LINQ
+//   � IPowerComponent svoystva: value types only
+//   � PowerNode keshirovan v Awake � zero TryGetComponent v goryachem puti
 // ============================================================================
 
 using System;
@@ -61,6 +61,7 @@ namespace Hecton8.Crafting
     [RequireComponent(typeof(Collider))]
     public sealed partial class Fabricator : MonoBehaviour, IInteractable, IInteractableTextProvider, ISlowTickable, IUpdatable, ILateFrameTickable, IPowerComponent, IFabricator, IModRegistryEventListener, ILocalizationLanguageChangedListener, IOriginShiftListener, IGlobalRegistryHotSwapListener
     {
+        private static int s_x001FabricatorSignalPushDropCount;
         // COLD ALLOC: List<Fabricator>[8] - active fabricator registry for cold-path recipe lookups - owner: Fabricator
         private static readonly List<Fabricator> _activeFabricators = new List<Fabricator>(8);
         private static readonly int _uiFabricatorLocalizationHash = LocHash.Compute(LocalizationKeys.UI_FABRICATOR);
@@ -71,27 +72,27 @@ namespace Hecton8.Crafting
         private const string LegacyInteractText = "FABRICATOR";
         private const float ExothermicRunningHeatDeltaCelsius = 20f;
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  INSPECTOR
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
-        [Header("── Identity ──────────────────────────────────")]
+        [Header("-- Identity ----------------------------------")]
         [Tooltip("Nazvanie fabrikatora dlya UI prompta")]
         [SerializeField] private string fabricatorName = "Fabrikator";
 
-        [Header("── Recipes ───────────────────────────────────")]
+        [Header("-- Recipes -----------------------------------")]
         [Tooltip("Spisok dostupnyh retseptov na etom verstake")]
         [SerializeField] private List<RecipeData> availableRecipes = new List<RecipeData>();
 
-        [Header("── Settings ──────────────────────────────────")]
+        [Header("-- Settings ----------------------------------")]
         [Tooltip("Maksimalnaya distantsiya ispolzovaniya (metry). " +
-                 "Esli igrok otoydet dalshe — kraft otmenyaetsya.")]
+                 "Esli igrok otoydet dalshe � kraft otmenyaetsya.")]
         [SerializeField] private float maxUseDistance = 3.5f;
 
         [Tooltip("When enabled, a completed recipe immediately queues again if unlocks, ingredients, capacity, and power still pass.")]
         [SerializeField] private bool isContinuous;
 
-        [Header("── Power ─────────────────────────────────────")]
+        [Header("-- Power -------------------------------------")]
         [Tooltip("Potreblenie energii VO VREMYa KRAFTA (Vatty). " +
                  "V idle fabrikator ne potreblyaet dopolnitelno. " +
                  "Bazovoe potreblenie modulya beretsya iz BuildableData cherez PowerNode.")]
@@ -102,7 +103,7 @@ namespace Hecton8.Crafting
         [Range(0, 100)]
         [SerializeField] private int powerPriority = 50;
 
-        [Header("── Audio (optional) ──────────────────────────")]
+        [Header("-- Audio (optional) --------------------------")]
         [SerializeField] private AudioClip   craftStartSound;
         [SerializeField] private AudioClip   craftCompleteSound;
         [SerializeField] private AudioClip   craftCancelSound;
@@ -140,7 +141,7 @@ namespace Hecton8.Crafting
         [SerializeField] private Color assemblyBaseColor = new Color(0.05f, 0.86f, 1f, 0.72f);
         [SerializeField] private Color assemblyPausedColor = new Color(1f, 0.04f, 0.02f, 0.86f);
 
-        [Header("── Physical Output ──────────────────────────")]
+        [Header("-- Physical Output --------------------------")]
         [Tooltip("Optional socket used as the fabrication output origin.")]
         [SerializeField] private Transform outputSocket;
         [Tooltip("Local output direction used when no dedicated socket forward is authored.")]
@@ -154,7 +155,7 @@ namespace Hecton8.Crafting
         [Tooltip("Extra upward velocity change so the crafted stack clears the hatch before falling.")]
         [SerializeField] private float outputUpwardVelocityChange = 0.55f;
 
-        [Header("── Deconstruction Output ────────────────────────")]
+        [Header("-- Deconstruction Output ------------------------")]
         [Tooltip("Optional catch-bin socket used when salvage components are ground back out of the fabricator.")]
         [SerializeField] private Transform deconstructOutputSocket;
         [Tooltip("Local ejection direction for reclaimed salvage when no dedicated catch-bin socket is authored.")]
@@ -175,9 +176,9 @@ namespace Hecton8.Crafting
         [Tooltip("Optional host module receiving the craft heat pulse. If unset, the fabricator resolves the nearest parent module once.")]
         [SerializeField] private BaseModule thermalHostModule;
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  CACHED STATE
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         // COLD ALLOC: char[96] - cached IInteractable prompt staging buffer - owner: Fabricator
         private readonly char[] _interactTextBuffer = new char[InteractTextBufferCapacity];
@@ -200,7 +201,7 @@ namespace Hecton8.Crafting
         /// Keshirovannyy PowerNode na etom zhe GameObject.
         /// Ispolzuetsya dlya mgnovennogo uvedomleniya PowerGrid
         /// pri izmenenii sostoyaniya krafta (PowerRating menyaetsya).
-        /// Null-safe: esli PowerNode otsutstvuet — uvedomlenie ne otpravlyaetsya.
+        /// Null-safe: esli PowerNode otsutstvuet � uvedomlenie ne otpravlyaetsya.
         /// </summary>
         private PowerNode _powerNode;
         private IScanLogService _scanLogSystem;
@@ -251,14 +252,14 @@ namespace Hecton8.Crafting
         private Vector3 _pendingAudioPosition;
         private bool _pendingAudioDirty;
 
-        // ── Craft State ──
+        // -- Craft State --
         private bool       _isCrafting;
         private bool       _runningExothermicHeatInjected;
         private RecipeData _activeRecipe;
         private float      _craftProgressSecondsMirror;
         private float      _lastPublishedProgress;
 
-        // ── Power State ──
+        // -- Power State --
         private bool _hasPower = true;
         private bool _emergencyPowerLockActive;
 
@@ -322,9 +323,9 @@ namespace Hecton8.Crafting
         private const Allocator DataVaultExemptSceneScratchAllocator = Allocator.Persistent;
         private static readonly int EmissionColorId = Shader.PropertyToID("_EmissionColor");
 
-        // ══════════════════════════════════════════════════════════
-        //  PUBLIC API — QUERIES
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
+        //  PUBLIC API � QUERIES
+        // ----------------------------------------------------------
 
         /// <summary>Idet li seychas protsess krafta.</summary>
         public bool IsCrafting => _isCrafting;
@@ -389,9 +390,9 @@ namespace Hecton8.Crafting
 
         internal PowerGrid CurrentPowerGrid => _powerNode != null ? _powerNode.Grid : null;
 
-        // ══════════════════════════════════════════════════════════
-        //  IPowerComponent — ENERGOSISTEMA
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
+        //  IPowerComponent � ENERGOSISTEMA
+        // ----------------------------------------------------------
 
         /// <summary>
         /// Potreblenie energii fabrikatorom.
@@ -421,12 +422,12 @@ namespace Hecton8.Crafting
         /// Uvedomlenie ot PowerGrid ob izmenenii pitaniya.
         ///
         /// Pri potere pitaniya:
-        ///   • Kraft ZAMORAZhIVAETSYa (Vault Progress01 ne prodvigaetsya).
-        ///   • Kraft NE otmenyaetsya — resursy uzhe spisany.
-        ///   • Pri vosstanovlenii — kraft prodolzhitsya.
+        ///   � Kraft ZAMORAZhIVAETSYa (Vault Progress01 ne prodvigaetsya).
+        ///   � Kraft NE otmenyaetsya � resursy uzhe spisany.
+        ///   � Pri vosstanovlenii � kraft prodolzhitsya.
         ///
         /// Pri vosstanovlenii:
-        ///   • Kraft prodolzhaetsya s togo zhe mesta.
+        ///   � Kraft prodolzhaetsya s togo zhe mesta.
         /// </summary>
         public void OnPowerStatusChanged(bool hasPower)
         {
@@ -460,9 +461,9 @@ namespace Hecton8.Crafting
             }
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  LIFECYCLE
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         private void Awake()
         {
@@ -546,9 +547,9 @@ namespace Hecton8.Crafting
             PublishFabricatorActiveCountBlackBox();
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  IInteractable
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         public void OnHoverStart() { }
 
@@ -596,9 +597,9 @@ namespace Hecton8.Crafting
             }
         }
 
-        // ══════════════════════════════════════════════════════════
-        //  PUBLIC API — CRAFTING
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
+        //  PUBLIC API � CRAFTING
+        // ----------------------------------------------------------
 
         /// <summary>
         /// Proveryaet, mozhno li skraftit dannyy retsept.
@@ -718,7 +719,7 @@ namespace Hecton8.Crafting
 
         /// <summary>
         /// Zapuskaet protsess krafta.
-        /// Posle smeny _isCrafting → PowerRating menyaetsya s 0 na -craftPowerDraw.
+        /// Posle smeny _isCrafting ? PowerRating menyaetsya s 0 na -craftPowerDraw.
         /// NotifyGridBalanceChanged() zastavlyaet set mgnovenno pereschitat balans.
         /// </summary>
         public bool StartCraft(RecipeData recipe)
@@ -759,7 +760,7 @@ namespace Hecton8.Crafting
             BeginAssemblyVisual(recipe);
             SetFabricationSparksActive(true);
 
-            // ── Uvedomlyaem energoset: PowerRating izmenilsya (0 → -craftPowerDraw) ──
+            // -- Uvedomlyaem energoset: PowerRating izmenilsya (0 ? -craftPowerDraw) --
             NotifyGridBalanceChanged();
             PublishFabricatorActiveCountBlackBox();
 
@@ -783,7 +784,7 @@ namespace Hecton8.Crafting
 
         /// <summary>
         /// Otmenyaet tekuschiy kraft. Vozvraschaet ingredienty.
-        /// Posle smeny _isCrafting → PowerRating menyaetsya s -craftPowerDraw na 0.
+        /// Posle smeny _isCrafting ? PowerRating menyaetsya s -craftPowerDraw na 0.
         /// NotifyGridBalanceChanged() zastavlyaet set mgnovenno pereschitat balans.
         /// </summary>
         public void CancelCraft()
@@ -801,7 +802,7 @@ namespace Hecton8.Crafting
             SetFabricationSparksActive(false);
             EndAssemblyVisual();
 
-            // ── Uvedomlyaem energoset: PowerRating izmenilsya (-craftPowerDraw → 0) ──
+            // -- Uvedomlyaem energoset: PowerRating izmenilsya (-craftPowerDraw ? 0) --
             NotifyGridBalanceChanged();
             PublishFabricatorActiveCountBlackBox();
 
@@ -811,18 +812,18 @@ namespace Hecton8.Crafting
             PlaySound(craftCancelSound);
         }
 
-        // ══════════════════════════════════════════════════════════
-        //  ITickable — TAYMER KRAFTA
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
+        //  ITickable � TAYMER KRAFTA
+        // ----------------------------------------------------------
 
         /// <summary>
         /// Vyzyvaetsya GameTickManager kazhdyy kadr.
         ///
         /// ENERGOPAUZA: esli _hasPower == false i idet kraft:
-        ///   • Taymer NE prodvigaetsya.
-        ///   • Progress NE publikuetsya (UI pokazyvaet pauzu).
-        ///   • Kraft NE otmenyaetsya.
-        ///   • Proverka distantsii prodolzhaetsya (igrok mozhet otoyti).
+        ///   � Taymer NE prodvigaetsya.
+        ///   � Progress NE publikuetsya (UI pokazyvaet pauzu).
+        ///   � Kraft NE otmenyaetsya.
+        ///   � Proverka distantsii prodolzhaetsya (igrok mozhet otoyti).
         /// </summary>
         public void Tick(float deltaTime)
         {
@@ -895,16 +896,16 @@ namespace Hecton8.Crafting
                 return;
             }
 
-            // ── Proverka distantsii (vsegda, dazhe bez pitaniya) ──
+            // -- Proverka distantsii (vsegda, dazhe bez pitaniya) --
             if (!IsPlayerInRange())
             {
                 CancelCraft();
                 return;
             }
 
-            // ═══════════════════════════════════════════════════
+            // ---------------------------------------------------
             //  POWER PAUSE: net pitaniya -> Vault Progress01 zamorozhen
-            // ═══════════════════════════════════════════════════
+            // ---------------------------------------------------
             if (!_hasActiveCraftingTask)
             {
                 CancelCraft();
@@ -1028,13 +1029,13 @@ namespace Hecton8.Crafting
             return 1f;
         }
 
-        // ══════════════════════════════════════════════════════════
-        //  PRIVATE — CRAFT COMPLETION
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
+        //  PRIVATE � CRAFT COMPLETION
+        // ----------------------------------------------------------
 
         /// <summary>
         /// Zavershaet kraft: vydaet rezultat v inventar.
-        /// Posle smeny _isCrafting → PowerRating menyaetsya s -craftPowerDraw na 0.
+        /// Posle smeny _isCrafting ? PowerRating menyaetsya s -craftPowerDraw na 0.
         /// NotifyGridBalanceChanged() zastavlyaet set mgnovenno pereschitat balans.
         /// </summary>
         private void CreateCraftingTaskSlot(RecipeData recipe, float powerMultiplier, int multiplier)
@@ -1152,10 +1153,10 @@ namespace Hecton8.Crafting
                 _networkReservation = null;
             }
 
-            // ── Uvedomlyaem energoset: PowerRating izmenilsya (-craftPowerDraw → 0) ──
+            // -- Uvedomlyaem energoset: PowerRating izmenilsya (-craftPowerDraw ? 0) --
             NotifyGridBalanceChanged();
 
-            // ── Potreblyaem energiyu iz seti pri zavershenii krafta ──
+            // -- Potreblyaem energiyu iz seti pri zavershenii krafta --
             if (powerCost > 0f && _powerNode != null && _powerNode.Grid != null)
             {
                 _powerNode.Grid.ConsumePower(powerCost);
@@ -1221,23 +1222,23 @@ namespace Hecton8.Crafting
             StartCraft(recipe, multiplier);
         }
 
-        // ══════════════════════════════════════════════════════════
-        //  PRIVATE — POWER GRID NOTIFICATION
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
+        //  PRIVATE � POWER GRID NOTIFICATION
+        // ----------------------------------------------------------
 
         /// <summary>
         /// Uvedomlyaet PowerGrid o neobhodimosti perescheta balansa.
         ///
         /// Vyzyvaetsya pri kazhdom izmenenii PowerRating:
-        ///   • StartCraft:    0 → -craftPowerDraw (nachalo potrebleniya)
-        ///   • CompleteCraft: -craftPowerDraw → 0 (konets potrebleniya)
-        ///   • CancelCraft:   -craftPowerDraw → 0 (otmena potrebleniya)
+        ///   � StartCraft:    0 ? -craftPowerDraw (nachalo potrebleniya)
+        ///   � CompleteCraft: -craftPowerDraw ? 0 (konets potrebleniya)
+        ///   � CancelCraft:   -craftPowerDraw ? 0 (otmena potrebleniya)
         ///
         /// Bez etogo vyzova PowerGrid uznal by ob izmenenii tolko
-        /// pri sleduyuschem SlowTick (~0.5-1s zaderzhka). S vyzovom —
+        /// pri sleduyuschem SlowTick (~0.5-1s zaderzhka). S vyzovom �
         /// balans pereschityvaetsya mgnovenno.
         ///
-        /// Null-safe: esli PowerNode ili Grid otsutstvuyut — no-op.
+        /// Null-safe: esli PowerNode ili Grid otsutstvuyut � no-op.
         /// </summary>
         private void NotifyGridBalanceChanged()
         {
@@ -1260,9 +1261,9 @@ namespace Hecton8.Crafting
             }
         }
 
-        // ══════════════════════════════════════════════════════════
-        //  PRIVATE — INGREDIENT MANAGEMENT
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
+        //  PRIVATE � INGREDIENT MANAGEMENT
+        // ----------------------------------------------------------
 
         private void CacheThermalHostModule()
         {
@@ -1416,35 +1417,35 @@ namespace Hecton8.Crafting
         {
             if (!_craftInventoryCounts.IsCreated)
             {
-                // COLD ALLOC: NativeParallelHashMap<Int32,Int32>[128] — temporary per-craft accessible item counts — owner: Fabricator
+                // COLD ALLOC: NativeParallelHashMap<Int32,Int32>[128] � temporary per-craft accessible item counts � owner: Fabricator
                 _craftInventoryCounts = new NativeParallelHashMap<int, int>(128, DataVaultExemptSceneScratchAllocator);
                 NativeMemorySentinel.RegisterNativeParallelHashMap(_craftInventoryCounts, NativeMemoryOwner, nameof(_craftInventoryCounts), NativeMemoryLifetime);
             }
 
             if (!_craftRecipeCosts.IsCreated)
             {
-                // COLD ALLOC: NativeArray<int2>[32] — flattened recipe ingredient cost buffer — owner: Fabricator
+                // COLD ALLOC: NativeArray<int2>[32] � flattened recipe ingredient cost buffer � owner: Fabricator
                 _craftRecipeCosts = new NativeArray<int2>(CraftingSystem.MaxRecipeIngredientCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
                 RegisterTrackedNativeArray(_craftRecipeCosts, nameof(_craftRecipeCosts));
             }
 
             if (!_craftRecipeEvaluationResult.IsCreated)
             {
-                // COLD ALLOC: NativeArray<byte>[1] — Burst crafting-availability result cell — owner: Fabricator
+                // COLD ALLOC: NativeArray<byte>[1] � Burst crafting-availability result cell � owner: Fabricator
                 _craftRecipeEvaluationResult = new NativeArray<byte>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
                 RegisterTrackedNativeArray(_craftRecipeEvaluationResult, nameof(_craftRecipeEvaluationResult));
             }
 
             if (!_deconstructionRecipeOutputs.IsCreated)
             {
-                // COLD ALLOC: NativeArray<int2>[32] — deconstruction output yield scratch — owner: Fabricator
+                // COLD ALLOC: NativeArray<int2>[32] � deconstruction output yield scratch � owner: Fabricator
                 _deconstructionRecipeOutputs = new NativeArray<int2>(CraftingSystem.MaxDeconstructionOutputCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
                 RegisterTrackedNativeArray(_deconstructionRecipeOutputs, nameof(_deconstructionRecipeOutputs));
             }
 
             if (!_deconstructionOutputCount.IsCreated)
             {
-                // COLD ALLOC: NativeArray<int>[1] — deconstruction output count cell — owner: Fabricator
+                // COLD ALLOC: NativeArray<int>[1] � deconstruction output count cell � owner: Fabricator
                 _deconstructionOutputCount = new NativeArray<int>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
                 RegisterTrackedNativeArray(_deconstructionOutputCount, nameof(_deconstructionOutputCount));
             }
@@ -1879,9 +1880,9 @@ namespace Hecton8.Crafting
 
         }
 
-        // ══════════════════════════════════════════════════════════
-        //  PRIVATE — DISTANCE CHECK
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
+        //  PRIVATE � DISTANCE CHECK
+        // ----------------------------------------------------------
 
         private bool IsPlayerInRange()
         {
@@ -1976,9 +1977,9 @@ namespace Hecton8.Crafting
             _playerMovementLookupAttempted = true;
         }
 
-        // ══════════════════════════════════════════════════════════
-        //  PRIVATE — AUDIO
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
+        //  PRIVATE � AUDIO
+        // ----------------------------------------------------------
 
         private void PlaySound(AudioClip clip)
         {
@@ -2414,8 +2415,8 @@ namespace Hecton8.Crafting
         private void PublishWeldingToolAcoustic(float progress01)
         {
             float progress = math.saturate(progress01);
-            uint frame = unchecked((uint)math.max(0, SystemDispatcher.CurrentFrameIndex));
-            SignalBus<ToolAcousticSignal>.TryPush(new ToolAcousticSignal
+            uint frame = SystemDispatcher.CurrentFrameId;
+            SignalBus<ToolAcousticSignal>.TryPushTracked(new ToolAcousticSignal
             {
                 ToolHash = FabricatorToolHash,
                 TargetHash = _assemblyTargetHash != 0u ? _assemblyTargetHash : FabricatorWeldingFallbackHash,
@@ -2425,7 +2426,7 @@ namespace Hecton8.Crafting
                 Frame = frame,
                 State = ToolAcousticStateWelding,
                 Flags = IsPausedNoPower ? PowerDrainFlagPaused : (byte)0
-            });
+            }, ref s_x001FabricatorSignalPushDropCount);
         }
 
         private void PublishPowerDrainSignal(float progressPerSecond, float progress01, bool paused)
@@ -2435,8 +2436,8 @@ namespace Hecton8.Crafting
             if (!(watts > 0f) && !paused)
                 return;
 
-            uint frame = unchecked((uint)math.max(0, SystemDispatcher.CurrentFrameIndex));
-            SignalBus<PowerDrainSignal>.TryPush(new PowerDrainSignal
+            uint frame = SystemDispatcher.CurrentFrameId;
+            SignalBus<PowerDrainSignal>.TryPushTracked(new PowerDrainSignal
             {
                 ConsumerHash = ResolveFabricatorSignalHash(),
                 NetworkHash = 0u,
@@ -2445,13 +2446,13 @@ namespace Hecton8.Crafting
                 Frame = frame,
                 Reason = PowerDrainReasonFabrication,
                 Flags = paused ? PowerDrainFlagPaused : (byte)0
-            });
+            }, ref s_x001FabricatorSignalPushDropCount);
         }
 
         private void PublishCraftingStartedSignal(RecipeData recipe, int multiplier)
         {
-            uint frame = unchecked((uint)math.max(0, SystemDispatcher.CurrentFrameIndex));
-            SignalBus<CraftingStartedSignal>.TryPush(new CraftingStartedSignal
+            uint frame = SystemDispatcher.CurrentFrameId;
+            SignalBus<CraftingStartedSignal>.TryPushTracked(new CraftingStartedSignal
             {
                 FabricatorHash = ResolveFabricatorSignalHash(),
                 RecipeHash = ComputeRecipeSignalHash(recipe),
@@ -2459,12 +2460,12 @@ namespace Hecton8.Crafting
                 Frame = frame,
                 Multiplier = (ushort)math.min(math.max(1, multiplier), ushort.MaxValue),
                 Flags = 0
-            });
+            }, ref s_x001FabricatorSignalPushDropCount);
         }
 
         private void PublishCraftingCompletedSignal(RecipeData recipe, ItemData item, int quantity)
         {
-            uint frame = unchecked((uint)math.max(0, SystemDispatcher.CurrentFrameIndex));
+            uint frame = SystemDispatcher.CurrentFrameId;
             CraftingSignalRoute.TryQueueCompleted(new CraftingCompletedSignal
             {
                 FabricatorHash = ResolveFabricatorSignalHash(),
@@ -2486,7 +2487,7 @@ namespace Hecton8.Crafting
             if (!TryResolveAupFromRuntimeOrigin(spawnPosition, out AbsoluteUniversePosition positionAup))
                 return;
 
-            SignalBus<ItemAcquiredSignal>.TryPush(new ItemAcquiredSignal
+            SignalBus<ItemAcquiredSignal>.TryPushTracked(new ItemAcquiredSignal
             {
                 PositionAup = positionAup,
                 ItemHash = unchecked((uint)itemHash),
@@ -2494,8 +2495,8 @@ namespace Hecton8.Crafting
                 Quantity = (ushort)math.min(math.max(1, quantity), ushort.MaxValue),
                 SourceKind = ItemAcquiredSourceFabricator,
                 Flags = 0,
-                Frame = unchecked((uint)math.max(0, SystemDispatcher.CurrentFrameIndex))
-            });
+                Frame = SystemDispatcher.CurrentFrameId
+            }, ref s_x001FabricatorSignalPushDropCount);
         }
 
         private uint ResolveFabricatorSignalHash()
@@ -2992,9 +2993,9 @@ namespace Hecton8.Crafting
                 : 0f;
         }
 
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
         //  EDITOR
-        // ══════════════════════════════════════════════════════════
+        // ----------------------------------------------------------
 
         private void TryRegister()
         {
@@ -3088,7 +3089,7 @@ namespace Hecton8.Crafting
             _resourceScarcityDirector = GlobalRegistry.ResourceScarcity;
             _powerGridService = GlobalRegistry.PowerGrid;
             _persistentWorldRegistry = GlobalRegistry.PersistentWorldRegistry;
-            _audioService = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
+            _audioService = GlobalRegistry.Audio;
             _localizationManager = Hecton8.Core.GlobalRegistry.LocalizationText;
             CacheScanLogSystem(Hecton8.Core.GlobalRegistry.ScanLogService);
         }

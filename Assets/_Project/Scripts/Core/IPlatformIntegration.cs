@@ -49,6 +49,8 @@ namespace Hecton8.Core
     /// </summary>
     public static class ScalabilityEvents
     {
+        private static int s_x001DirectSignalPushDropCount_IPlatformIntegration;
+
         private const int ListenerCapacity = 32;
         private const int PendingEventCapacity = 4;
 
@@ -134,7 +136,7 @@ namespace Hecton8.Core
         public static void Raise(in ScalabilityChangedEvent payload)
         {
             EnsureTypedSignalLaneConfigured();
-            global::Hecton8.Core.Contracts.Signals.SignalBus<ScalabilityChangedEvent>.TryPush(in payload);
+            global::Hecton8.Core.Contracts.Signals.SignalBus<ScalabilityChangedEvent>.TryPushTracked(in payload, ref s_x001DirectSignalPushDropCount_IPlatformIntegration);
         }
 
         /// <summary>Flushes queued scalability events to listeners on the main dispatcher lane.</summary>

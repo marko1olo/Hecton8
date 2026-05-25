@@ -2,7 +2,9 @@
 
 Review disposition: `YELLOW`.
 
-Reason: static source route is present, but compile, Unity import, Play Mode, profiler/GCMonitor, Burst Inspector, Frame Debugger, shader import, player build, and device proof are absent. `GREEN` requires those artifacts.
+Reason: static source route is present, but compile, Unity import, Play Mode, profiler/GCMonitor, Burst Inspector, Frame Debugger, shader import, player build, and device proof are absent.
+
+`GREEN` requires those artifacts.
 
 Owner: `TerminalOsRuntime`.
 

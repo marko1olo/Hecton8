@@ -560,22 +560,25 @@ namespace Hecton8.Power
             int edgeReadLimit = math.min(EdgeDestinations.Length, EdgeConductance.Length);
             int edgeStart = math.clamp(NodeEdgeOffsets[index], 0, edgeReadLimit);
             int edgeEnd = math.clamp(NodeEdgeOffsets[index + 1], edgeStart, edgeReadLimit);
+            int potentialReadLimit = math.min(NodeCount, FrontPotential.Length);
+            int safePotentialMaxIndex = math.max(0, potentialReadLimit - 1);
             float weightedPotential = 0f;
             float conductanceSum = 0f;
             for (int edgeCursor = edgeStart; edgeCursor < edgeEnd; edgeCursor++)
             {
                 int destination = EdgeDestinations[edgeCursor];
-                if ((uint)destination >= (uint)NodeCount || (uint)destination >= (uint)FrontPotential.Length)
-                    continue;
+                bool validDestination = (uint)destination < (uint)potentialReadLimit;
+                int safeDestination = math.clamp(destination, 0, safePotentialMaxIndex);
 
                 float conductance = math.clamp(math.select(0f, EdgeConductance[edgeCursor], math.isfinite(EdgeConductance[edgeCursor])), 0f, PowerGridJacobiConstants.MaximumConductance);
+                conductance *= math.select(0f, 1f, validDestination);
                 conductance *= math.select(1f, 0f, conductance <= PowerGridJacobiConstants.MinimumConductance);
 
-                weightedPotential += conductance * Sanitize01(FrontPotential[destination]);
+                weightedPotential += conductance * Sanitize01(FrontPotential[safeDestination]);
                 conductanceSum += conductance;
             }
 
-            float generatorRate = (flags & PowerGridJacobiConstants.NodeFlagSource) != 0u ? 1f : 0f;
+            float generatorRate = math.select(0f, 1f, (flags & PowerGridJacobiConstants.NodeFlagSource) != 0u);
             float demandRaw = DemandRate.IsCreated && (uint)index < (uint)DemandRate.Length
                 ? DemandRate[index]
                 : 0f;
@@ -626,15 +629,17 @@ namespace Hecton8.Power
             int edgeReadLimit = math.min(EdgeDestinations.Length, EdgeConductance.Length);
             int edgeStart = math.clamp(NodeEdgeOffsets[index], 0, edgeReadLimit);
             int edgeEnd = math.clamp(NodeEdgeOffsets[index + 1], edgeStart, edgeReadLimit);
+            int safeDestinationMaxIndex = math.max(0, NodeCount - 1);
             float netCurrentOut = 0f;
             for (int edgeCursor = edgeStart; edgeCursor < edgeEnd; edgeCursor++)
             {
                 int destination = EdgeDestinations[edgeCursor];
-                if ((uint)destination >= (uint)NodeCount)
-                    continue;
+                bool validDestination = (uint)destination < (uint)NodeCount;
+                int safeDestination = math.clamp(destination, 0, safeDestinationMaxIndex);
 
-                ref PowerNodeDTO destinationNode = ref UnsafeUtility.AsRef<PowerNodeDTO>(NodesPtr + destination);
+                ref PowerNodeDTO destinationNode = ref UnsafeUtility.AsRef<PowerNodeDTO>(NodesPtr + safeDestination);
                 float conductance = math.clamp(math.select(0f, EdgeConductance[edgeCursor], math.isfinite(EdgeConductance[edgeCursor])), 0f, PowerGridJacobiConstants.MaximumConductance);
+                conductance *= math.select(0f, 1f, validDestination);
                 float current = math.clamp((potential - Sanitize01(destinationNode.Potential)) * conductance, -PowerGridJacobiConstants.MaximumConductance, PowerGridJacobiConstants.MaximumConductance);
                 netCurrentOut = math.clamp(netCurrentOut + current, -PowerGridJacobiConstants.MaximumNetCurrentAbs, PowerGridJacobiConstants.MaximumNetCurrentAbs);
                 if ((uint)edgeCursor < (uint)EdgeCurrentFlow.Length)

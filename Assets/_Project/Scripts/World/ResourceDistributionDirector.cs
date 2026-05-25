@@ -618,8 +618,6 @@ namespace Hecton8.World
             if (!TryResolveRuntimeDependencies())
                 return;
 
-            EnsureRuntimePool();
-
             if (!TryResolvePlayerAup(out AbsoluteUniversePosition playerAup))
                 return;
 
@@ -628,7 +626,6 @@ namespace Hecton8.World
 
             RefreshResidentSectors(playerSector);
             ProcessGhostProxySurfaceSnaps();
-            ProcessPendingSpawns();
             SchedulePressureMetamorphismJob();
             TickMeteorImpacts(0.5f, in playerAup, playerSector);
             UpdateDiagnostics(playerSector);
@@ -639,7 +636,9 @@ namespace Hecton8.World
         /// </summary>
         public void LateFrameTick()
         {
+            EnsureRuntimePool();
             FlushPendingNodeDeactivations();
+            ProcessPendingSpawns();
 
             if (!_metamorphismJobActive || !_metamorphismJobHandle.IsCompleted)
                 return;
@@ -1075,23 +1074,26 @@ namespace Hecton8.World
             if (sectorState == null || ContainsActiveNodeWithTombstone(sectorState, tombstoneId))
                 return false;
 
-            IObjectPoolService pool = _objectPool;
-            if (pool == null)
+            int templateIndex = FindTemplateIndex(template);
+            if (templateIndex < 0)
                 return false;
 
-            GameObject instance = pool.Spawn(_runtimePrefab, runtimePosition, rotation);
-            if (instance == null)
-                return false;
-
-            if (!instance.TryGetComponent(out ResourceNode node))
+            SpawnRequest request = new SpawnRequest
             {
-                pool.Despawn(instance);
-                return false;
-            }
+                SectorKey = sectorKey,
+                TemplateIndex = templateIndex,
+                RuntimePosition = runtimePosition,
+                Rotation = rotation,
+                YawDegrees = yawDegrees,
+                SurfaceOffsetMeters = template.SpawnOffsetMeters,
+                StableSeed = state,
+                TombstoneId = tombstoneId,
+                RequiresGhostProxySnap = 0
+            };
 
-            node.ApplyRuntimeTemplate(template, _ghostCubeMesh, _ghostMaterial);
-            node.RefreshRuntimeSpatialRegistration();
-            sectorState.ActiveNodes.Add(node);
+            if (!QueueSpawnRequest(in request))
+                return false;
+
             _debugLastAcceptedTemplateHash = template.StableHashId;
             _debugMeteorImpactCount++;
             RegisterMeteoriteRadiationHazard(runtimePosition, state);
@@ -2066,6 +2068,24 @@ namespace Hecton8.World
             return false;
         }
 
+        private int FindTemplateIndex(ResourceNodeTemplate template)
+        {
+            if (template == null || resourceTemplates == null)
+                return -1;
+
+            for (int i = 0; i < resourceTemplates.Length; i++)
+            {
+                ResourceNodeTemplate candidate = resourceTemplates[i];
+                if (ReferenceEquals(candidate, template) ||
+                    (candidate != null && candidate.StableHashId == template.StableHashId))
+                {
+                    return i;
+                }
+            }
+
+            return -1;
+        }
+
         private SectorState ResolveOrCreateRuntimeSectorState(int2 sector, long sectorKey)
         {
             if (_residentSectors == null)
@@ -2577,7 +2597,6 @@ namespace Hecton8.World
                 return;
 
             UnregisterBrineHazard(ref state.BrinePool);
-            IObjectPoolService pool = _objectPool;
             List<ResourceNode> nodes = state.ActiveNodes;
             for (int i = 0; i < nodes.Count; i++)
             {
@@ -2585,10 +2604,7 @@ namespace Hecton8.World
                 if (node == null)
                     continue;
 
-                if (pool != null)
-                    pool.Despawn(node.gameObject);
-                else
-                    _pendingNodeDeactivations.Add(node.gameObject);
+                _pendingNodeDeactivations.Add(node.gameObject);
             }
 
             nodes.Clear();
@@ -2597,10 +2613,16 @@ namespace Hecton8.World
 
         private void FlushPendingNodeDeactivations()
         {
+            IObjectPoolService pool = _objectPool;
             for (int i = 0; i < _pendingNodeDeactivations.Count; i++)
             {
                 GameObject target = _pendingNodeDeactivations[i];
-                if (target != null)
+                if (target == null)
+                    continue;
+
+                if (pool != null)
+                    pool.Despawn(target);
+                else
                     target.SetActive(false);
             }
 

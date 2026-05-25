@@ -30,7 +30,9 @@ Review disposition: YELLOW / STATIC_SOURCE_ONLY.
 
 ## Authority
 
-AUP is the only simulation-scale spatial truth. `Transform.position` is presentation only and is not accepted as a coordinate source for simulation, culling authority, physics integration, rollback hashes, or persistence.
+AUP is the only simulation-scale spatial truth.
+
+`Transform.position` is presentation only and is not accepted for simulation, culling authority, physics integration, rollback hashes, or persistence.
 
 Approved conversion order:
 
@@ -68,7 +70,9 @@ Owner system: `SystemID.CoreDeterminism`
 
 | `73208` | `AupPrecisionFaultCounter64` | 1 | clear | cache-line fault counter |
 
-The route uses `VaultGenerationHandle<T>` and resolves transient `NativeArray<T>` views only at boot, editor facade, parser, dump, or job scheduling boundaries. It stores no private persistent `NativeArray<T>` ownership.
+Route uses `VaultGenerationHandle<T>` and resolves transient `NativeArray<T>` views only at boot, editor facade, parser, dump, or job scheduling boundaries.
+
+It stores no private persistent `NativeArray<T>` ownership.
 
 ## DTO Layout
 
@@ -171,6 +175,10 @@ SHINOBU_205 removed provable player/camera observer fallbacks. Remaining finding
 - Strict `Transform.position` blockers: `79` across `55` files.
 - Rerun before using counts.
 
-CLI gate fixture: `Tools/TestAupPrecisionGate_SHINOBU_205.py` is reported as a `STATIC_SOURCE/PY_TOOL` fixture pass for direct-cast, component-cast, editor-review, transform-authority, approved-helper, and self-diagnostic exclusion semantics; proof requires artifact path, command, timestamp, environment, and output.
+CLI gate fixture: `Tools/TestAupPrecisionGate_SHINOBU_205.py` is reported as `STATIC_SOURCE/PY_TOOL`.
+
+Covered semantics: direct-cast, component-cast, editor-review, transform-authority, approved-helper, self-diagnostic exclusion.
+
+Proof requires artifact path, command, timestamp, environment, and output.
 
 Pending: Unity import, Burst compile, Play Mode boundary swim, profiler/GC capture, ARM64 layout proof. Build launch remains blocked by CPU/dotnet/csc guard.

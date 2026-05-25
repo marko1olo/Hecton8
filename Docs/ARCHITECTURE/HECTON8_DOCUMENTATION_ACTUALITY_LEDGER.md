@@ -60,18 +60,26 @@ Prompt/report values that disagree with source are stale. Current source wins.
 | 33-word density pass | Manually split residual architecture blocks and made scanner fail at `>32` words | `../Reports/ARCHITECTURE_33WORD_DENSITY_AUDIT_X_012.json` |
 | 32-word density pass | Manually split residual architecture blocks and made scanner fail at `>31` words | `../Reports/ARCHITECTURE_32WORD_DENSITY_AUDIT_X_012.json` |
 | 31-word density pass | Manually split residual architecture blocks and made scanner fail at `>30` words | `../Reports/ARCHITECTURE_31WORD_DENSITY_AUDIT_X_012.json` |
+| 30-word density pass | Manually split residual architecture blocks and made scanner fail at `>29` words | `../Reports/ARCHITECTURE_30WORD_DENSITY_AUDIT_X_012.json` |
+| 29-word density pass | Manually split residual architecture blocks and made scanner fail at `>28` words | `../Reports/ARCHITECTURE_29WORD_DENSITY_AUDIT_X_012.json` |
 
 ## Active Gaps
 
 | Gap | Required proof artifact |
 |---|---|
+| EXTERNAL_CODEX loop165 source gate | Remaining 34 runtime files moved unsigned `Time.frameCount` casts to `SystemDispatcher.CurrentFrameId`; touched grep 0; build skipped by `BUILD_GUARD cpu=100 compiler_count=2` |
+| EXTERNAL_CODEX loop164 source gate | 34 runtime files moved unsigned `Time.frameCount` casts to `SystemDispatcher.CurrentFrameId`; touched cast grep 0; build skipped by `BUILD_GUARD cpu=100 compiler_count=0` |
+| EXTERNAL_CODEX loop163 source gate | 38 files moved frame-id payload casts to `SystemDispatcher.CurrentFrameId`; targeted cast grep 0; scoped `diff --check` passed; build skipped by guard |
+| EXTERNAL_CODEX loop162 source gate | 29 files moved selected frame stamps to `SystemDispatcher`; `HectonBiolumZone` reads cached/hot-swapped; selected frame grep 0; build skipped by `BUILD_GUARD cpu=100 compiler_count=0` |
+| EXTERNAL_CODEX loop161 source gate | 19 Dispatcher/TickManager stale-registration tails fixed; touched-file `diff --check` passed; broad stale scans 0; build skipped by `BUILD_GUARD cpu=73 compiler_count=9` |
+| EXTERNAL_CODEX loop160 source gate | 50 additional Dispatcher stale-registration tails fixed; targeted touched-file `diff --check` passed with LF warnings only; build skipped by `BUILD_GUARD cpu=63 compiler_count=1` |
 | EXTERNAL_CODEX loop159 source gate | Singleton owner-route grep returned 0; `?? GlobalRegistry|GlobalRegistry.TryGet` grep returned 0; scoped `diff --check` passed; build skipped by `BUILD_GUARD cpu=100 compiler_count=2` |
 | EXTERNAL_CODEX loop158 source gate | Latest wall: `Build_EXTERNAL_CODEX_hotpath_cleanup158_world_dispatcher_rebind.log`; `NETSDK1004` before C#; no warnings/`CS*`; retry blocked by `BUILD_GUARD cpu=79 compiler_count=2`; targeted greps pass |
 | EXTERNAL_CODEX loop157 source gate | UI/Construction singleton-tail greps pass; scoped `diff --check` passed; build skipped by `BUILD_GUARD cpu=100 compiler_count=2` |
 | EXTERNAL_CODEX loop143 compile verification | Source-only; guarded build skipped by `BUILD_GUARD cpu=100 compiler_count=0` after targeted hot-swap/getter greps |
 | EXTERNAL_CODEX loop142 compile verification | Source-only after pre-build `BUILD_GUARD cpu=78.3 compiler_count=2` |
 | EXTERNAL_CODEX loop141 compile verification | Fresh guarded build after CPU <= 50% and no active compiler; current loop141 is source-only after latest `BUILD_GUARD cpu=93.2 compiler_count=1` |
-| EXTERNAL_CODEX loop140 build wall | `Build_EXTERNAL_CODEX_hotpath_cleanup139_context_purity.log`: `NETSDK1004` missing project.assets and `MSB3491` Temp/obj access denied before C# diagnostics; restore retry log exits 1 after `Determining projects to restore...` with no explicit diagnostics |
+| EXTERNAL_CODEX loop140 build wall | `Build_EXTERNAL_CODEX_hotpath_cleanup139_context_purity.log`: `NETSDK1004` project.assets missing and `MSB3491` Temp/obj denied before C# diagnostics |
 | EXTERNAL_CODEX loop139 compile verification | Fresh guarded build after CPU <= 50% and no active compiler; current loop139 is source-only |
 | EXTERNAL_CODEX loop138 compile verification | Fresh guarded build after CPU <= 50% and no active compiler; current loop138 is source-only |
 | EXTERNAL_CODEX loop137 compile verification | Fresh guarded build after CPU <= 50% and no active compiler; current loop137 is source-only |

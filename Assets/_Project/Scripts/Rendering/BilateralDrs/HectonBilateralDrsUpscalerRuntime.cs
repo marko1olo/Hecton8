@@ -383,7 +383,7 @@ namespace Hecton8.Rendering
             }
 
             s_runtimeInstance = this;
-            InitializeService();
+            InitializeServiceForVisualSync();
         }
 
         private void OnDisable()
@@ -431,7 +431,7 @@ namespace Hecton8.Rendering
         {
             if (!_isInitialized)
             {
-                InitializeService();
+                InitializeServiceForSimulation();
                 if (!_isInitialized)
                     return;
             }
@@ -521,7 +521,7 @@ namespace Hecton8.Rendering
         {
             if (!_isInitialized)
             {
-                InitializeService();
+                InitializeServiceForVisualSync();
                 if (!_isInitialized)
                     return;
             }
@@ -530,10 +530,36 @@ namespace Hecton8.Rendering
                 _pendingGpuUpload = false;
         }
 
-        private void InitializeService()
+        private void InitializeServiceForSimulation()
+        {
+            if (!PrepareServiceState())
+                return;
+
+            bool hasConstantBuffers = HasConstantBuffers();
+            _isInitialized = _vaultStateReady && hasConstantBuffers;
+            if (!_isInitialized)
+                return;
+
+            RegisterDispatcherRouteAllOrFail();
+        }
+
+        private void InitializeServiceForVisualSync()
+        {
+            if (!PrepareServiceState())
+                return;
+
+            bool hasConstantBuffers = EnsureConstantBuffers();
+            _isInitialized = _vaultStateReady && hasConstantBuffers;
+            if (!_isInitialized)
+                return;
+
+            RegisterDispatcherRouteAllOrFail();
+        }
+
+        private bool PrepareServiceState()
         {
             if (!Application.isPlaying)
-                return;
+                return false;
 
             EnsureBlackBoxDumpPathCold();
             TryRegisterHotSwapListener();
@@ -550,15 +576,10 @@ namespace Hecton8.Rendering
             {
                 _lastFaultFlags = BilateralDrsUpscalerConstants.FaultLayout;
                 DumpBlackBox();
-                return;
+                return false;
             }
 
-            bool hasConstantBuffers = EnsureConstantBuffers();
-            _isInitialized = _vaultStateReady && hasConstantBuffers;
-            if (!_isInitialized)
-                return;
-
-            RegisterDispatcherRouteAllOrFail();
+            return true;
         }
 
         private void EnsureVaultState()
@@ -935,6 +956,15 @@ namespace Hecton8.Rendering
         {
             if (_dispatcherRouteReady)
                 return;
+
+            if (_registeredPreSimulationDispatcher &&
+                _registeredSimulationDispatcher &&
+                _registeredPostSimulationDispatcher &&
+                _registeredVisualSyncDispatcher)
+            {
+                _dispatcherRouteReady = true;
+                return;
+            }
 
             if (_simulationBridge == null)
                 _simulationBridge = new SimulationKernelBridge(this); // COLD ALLOC: IDispatcherSystem[1] - SHINOBU_236 scheduled Burst kernel bridge.

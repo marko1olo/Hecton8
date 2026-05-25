@@ -23,6 +23,7 @@ namespace Hecton8.VFX.Materials
         IGlobalRegistryHotSwapListener,
         IGlobalRegistryHotSwapRefListener
     {
+        private static int s_x001MaterialDecayRuntimeSignalPushDropCount;
         private const int TelemetryCapacity = 300;
         private const int MaterialDecayStateSizeBytes = 32;
         private const int RustAtlasSize = 512;
@@ -347,7 +348,7 @@ namespace Hecton8.VFX.Materials
                 State = signal.Reason,
                 Flags = signal.Flags
             };
-            SignalBus<ToolAcousticSignal>.TryPush(in acousticSignal);
+            SignalBus<ToolAcousticSignal>.TryPushTracked(in acousticSignal, ref s_x001MaterialDecayRuntimeSignalPushDropCount);
         }
 
         private void UploadShaderGlobals(bool force)
@@ -574,7 +575,7 @@ namespace Hecton8.VFX.Materials
 
             blackBox[_blackBoxCursor] = new MaterialDecayState
             {
-                Frame = (uint)math.max(0, Time.frameCount),
+                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 ItemHash = _lastItemHash,
                 Rust01 = rust01,
                 Wetness01 = wetness01,

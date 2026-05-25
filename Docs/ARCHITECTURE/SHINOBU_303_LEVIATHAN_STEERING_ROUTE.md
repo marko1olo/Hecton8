@@ -7,10 +7,12 @@ Domain: Echelon 3, Predator Steering & Lunge
 
 ## Authority
 
-One fact: leviathan steering output velocity.
-One owner: `PredatorCognitionDomain` partial steering route.
-One route: `GlobalDataVault` buffers owned by `SystemID.AICognition`.
-One proof artifact: `SteeringTelemetryEntry[300]`, central `GlobalTelemetryBus` breadcrumb, and `Docs/AgentLogs/Dump_SHINOBU_303.bin`.
+- Fact: leviathan steering output velocity.
+- Owner: `PredatorCognitionDomain` partial steering route.
+- Route: `GlobalDataVault` buffers owned by `SystemID.AICognition`.
+- Proof artifact: `SteeringTelemetryEntry[300]`.
+- Fault breadcrumb: central `GlobalTelemetryBus`.
+- Dump path: `Docs/AgentLogs/Dump_SHINOBU_303.bin`.
 
 ## Phase
 
@@ -43,7 +45,9 @@ One proof artifact: `SteeringTelemetryEntry[300]`, central `GlobalTelemetryBus` 
 
 `GlobalQualityWeight` continuously maps active SDF whiskers from `6` to `26`.
 
-Mock SDF whisker length maps from `24m` to `48m`. DTO layout, BufferIDs, save identity, and authority route do not change with quality.
+Mock SDF whisker length maps from `24m` to `48m`.
+
+DTO layout, BufferIDs, save identity, and authority route do not change with quality.
 Non-finite quality resolves to `0.0`, not ultra fidelity.
 
 ## Compile-Wall Boundary

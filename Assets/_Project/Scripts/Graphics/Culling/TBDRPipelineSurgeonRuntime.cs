@@ -169,7 +169,7 @@ namespace Hecton8.Graphics.Culling
 
         public unsafe JobHandle ScheduleTBDRProtectionPass(int requestedInstanceCount, JobHandle dependency)
         {
-            return ScheduleTBDRProtectionPass(requestedInstanceCount, unchecked((uint)Time.frameCount), dependency);
+            return ScheduleTBDRProtectionPass(requestedInstanceCount, Hecton8.Core.SystemDispatcher.CurrentFrameId, dependency);
         }
 
         public unsafe JobHandle ScheduleTBDRProtectionPass(int requestedInstanceCount, uint simulationFrame, JobHandle dependency)

@@ -90,6 +90,7 @@ namespace Hecton8.World
     [DefaultExecutionOrder(-4037)]
     public sealed class EcosystemDirector : MonoBehaviour, ISlowTickable, IFrostTickable, ILateFrameTickable, IEcosystemDirectorService, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener
     {
+        private int _signalPushDropCount;
         internal static EcosystemDirector ActiveRuntimeInstance { get; private set; }
 
         private const float DefaultSlowTickIntervalSeconds = 0.5f;
@@ -2173,7 +2174,7 @@ namespace Hecton8.World
             signal.SourceId = _activeWhaleFallAcousticUid;
             signal.Channel = AcousticPingSignal.ChannelLeviathanRoar;
             signal.Flags = AcousticPingSignal.FlagLeviathanRoar;
-            SignalBus<AcousticPingSignal>.TryPush(in signal);
+            SignalBus<AcousticPingSignal>.TryPushTracked(in signal, ref _signalPushDropCount);
         }
 
         private void DrainBiomeGradientSignal()
@@ -2740,7 +2741,7 @@ namespace Hecton8.World
                 StateKind = FaunaStateChangedSignalKinds.Mutated,
                 Flags = FaunaStateChangedSignalFlags.StateActive
             };
-            SignalBus<FaunaStateChangedSignal>.TryPush(in signal);
+            SignalBus<FaunaStateChangedSignal>.TryPushTracked(in signal, ref _signalPushDropCount);
         }
 
         private void PublishBatchFaunaMutatedSignal(byte resultFlags)
@@ -2770,7 +2771,7 @@ namespace Hecton8.World
                 StateKind = FaunaStateChangedSignalKinds.Mutated,
                 Flags = FaunaStateChangedSignalFlags.StateActive
             };
-            SignalBus<FaunaStateChangedSignal>.TryPush(in signal);
+            SignalBus<FaunaStateChangedSignal>.TryPushTracked(in signal, ref _signalPushDropCount);
         }
 
         /// <inheritdoc />
@@ -5055,7 +5056,7 @@ namespace Hecton8.World
                 Flags = 1,
                 QualityTier = _macroSwarmQualityTierProfileByte
             };
-            SignalBus<SwarmDispersedSignal>.TryPush(in signal);
+            SignalBus<SwarmDispersedSignal>.TryPushTracked(in signal, ref _signalPushDropCount);
         }
 
         private void PushMacroSwarmBlackBox(int flags)
@@ -6135,7 +6136,7 @@ namespace Hecton8.World
                 Severity = 3,
                 Flags = 0
             };
-            SignalBus<HUDNotificationSignal>.TryPush(in notification);
+            SignalBus<HUDNotificationSignal>.TryPushTracked(in notification, ref _signalPushDropCount);
         }
 
         private static bool TryReadLatestScannerToolActiveSignal(
@@ -6219,7 +6220,7 @@ namespace Hecton8.World
                 Source = 3,
                 Flags = 0
             };
-            SignalBus<ProgressionEventSignal>.TryPush(in signal);
+            SignalBus<ProgressionEventSignal>.TryPushTracked(in signal, ref _signalPushDropCount);
         }
 
         private void PushBiomassBlackBox(

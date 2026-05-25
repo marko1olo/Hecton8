@@ -1,7 +1,7 @@
 {
   "metadata": {
     "agent": "X_008",
-    "generatedUtc": "2026-05-25T00:25:47.019710+00:00",
+    "generatedUtc": "2026-05-25T02:15:53.437476+00:00",
     "root": "C:\\hades\\Hecton8",
     "evidenceClass": "STATIC_PROJECT_WIDE_TOKEN_SWEEP",
     "domainBoundary": "X_008 may prove and edit Echelon 5 combat routes. Non-combat hits are owner handoff items unless they directly bypass CombatDamageRuntime."
@@ -302,7 +302,7 @@
     "combatArmorVerdict": "PASS"
   },
   "damageBypassInventory": {
-    "projectDirectMutationTokenCount": 710,
+    "projectDirectMutationTokenCount": 714,
     "projectDirectMutationUniqueFiles": 136,
     "projectDirectMutationByDomain": {
       "GlobalPhysicsStateManager.cs": 127,
@@ -310,16 +310,16 @@
       "PhysicsApplySystem.cs": 69,
       "Physics": 56,
       "World": 56,
-      "Core": 43,
+      "Core": 45,
       "Fauna": 24,
       "Interaction": 21,
       "Networking": 19,
       "Editor": 14,
       "HectonFluidEngine.cs": 13,
       "SubmarineFluidDynamics.cs": 11,
+      "Construction": 10,
       "TetherInstance.cs": 10,
       "ResourceNode.cs": 9,
-      "Construction": 8,
       "ToolHitUtility.cs": 8,
       "HarpoonLauncherTool.cs": 7,
       "PropulsionTool.cs": 7,
@@ -364,7 +364,7 @@
       "WorldStreamingDirector.cs": 1
     },
     "projectDamageQueueCallScanner": "balanced-parentheses call parser after comment/string stripping",
-    "projectDamageQueueCallCount": 9,
+    "projectDamageQueueCallCount": 8,
     "projectDirectOneArgQueueCallCount": 0,
     "projectDirectTwoArgQueueCallCount": 0,
     "projectDirectReturnQueueCallCount": 0,
@@ -398,27 +398,27 @@
     "damageBypassCandidateFirstHits": [
       {
         "file": "Assets/_Project/Scripts/BaseModule.cs",
-        "line": 1224,
+        "line": 1233,
         "text": "ApplyDamage(degradation);"
       },
       {
         "file": "Assets/_Project/Scripts/BaseModule.cs",
-        "line": 1503,
+        "line": 1514,
         "text": "public void ApplyDamage(float amount)"
       },
       {
         "file": "Assets/_Project/Scripts/BaseModule.cs",
-        "line": 1514,
+        "line": 1525,
         "text": "ModuleDamageOutcome outcome = _integrityComponent.ApplyDamage(amount);"
       },
       {
         "file": "Assets/_Project/Scripts/BaseModule.cs",
-        "line": 2071,
+        "line": 2082,
         "text": "ApplyDamage(damageAmount);"
       },
       {
         "file": "Assets/_Project/Scripts/BaseModule.cs",
-        "line": 2133,
+        "line": 2144,
         "text": "ApplyDamage(ruptureDamage);"
       },
       {
@@ -433,17 +433,17 @@
       },
       {
         "file": "Assets/_Project/Scripts/ConstructionManager.cs",
-        "line": 1960,
+        "line": 1961,
         "text": "moduleDto.health = PackHealthByte(baseModule.CurrentIntegrity, baseModule.MaxIntegrity);"
       },
       {
         "file": "Assets/_Project/Scripts/ConstructionManager.cs",
-        "line": 1972,
+        "line": 1973,
         "text": "moduleDto.health = byte.MaxValue;"
       },
       {
         "file": "Assets/_Project/Scripts/ConstructionManager.cs",
-        "line": 2909,
+        "line": 2910,
         "text": "module.ApplyDamage(module.CurrentIntegrity + 1f);"
       },
       {
@@ -458,7 +458,7 @@
       },
       {
         "file": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
-        "line": 6230,
+        "line": 6225,
         "text": "public void TakeDamage(float amount)"
       },
       {
@@ -473,37 +473,37 @@
       },
       {
         "file": "Assets/_Project/Scripts/FaunaDirector.cs",
-        "line": 3016,
+        "line": 3080,
         "text": "Health = PersistentWorldRegistry.GetFaunaHibernationHealth(in cachedState),"
       },
       {
         "file": "Assets/_Project/Scripts/FaunaDirector.cs",
-        "line": 3060,
+        "line": 3124,
         "text": "restoredState.health = restoreResult.Health;"
       },
       {
         "file": "Assets/_Project/Scripts/FaunaDirector.cs",
-        "line": 3264,
+        "line": 3328,
         "text": "restoredState.health = savedState.health;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/BioReactor.cs",
-        "line": 738,
+        "line": 739,
         "text": "_hostModule.ApplyDamage(overheatIntegrityDamagePerSecond * deltaTime * parasiteOverheatMultiplier);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/BioReactor.cs",
-        "line": 802,
+        "line": 803,
         "text": "module.ApplyDamage(meltdownModuleDamage * damage01);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 771,
+        "line": 775,
         "text": "Health = _health,"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime_StatusEffects.cs",
-        "line": 793,
+        "line": 796,
         "text": "Health = _health,"
       },
       {
@@ -513,82 +513,82 @@
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/EnvironmentalHazard.cs",
-        "line": 365,
+        "line": 366,
         "text": "ApplyDamage();"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/EnvironmentalHazard.cs",
-        "line": 535,
+        "line": 536,
         "text": "private void ApplyDamage()"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/HabitatIntegrityManager.cs",
-        "line": 434,
+        "line": 435,
         "text": "_baseModule.ApplyDamage(packet.Magnitude);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/HarvestableOutcrop.cs",
-        "line": 128,
+        "line": 129,
         "text": "public float CurrentHealth => _currentHealth;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/HarvestableOutcrop.cs",
-        "line": 174,
+        "line": 175,
         "text": "TakeDamage(damage, hitPoint, 1f, ResolveFallbackNormal(hitPoint));"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/HarvestableOutcrop.cs",
-        "line": 184,
+        "line": 185,
         "text": "TakeDamage(signal.PowerDelivered, runtimeHitPoint, signal.Source.Power, hitNormal);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/HarvestableOutcrop.cs",
-        "line": 203,
+        "line": 204,
         "text": "TakeDamage(damagePerHit, _cachedTransform.position, 1f, Vector3.up);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/HarvestableOutcrop.cs",
-        "line": 225,
+        "line": 226,
         "text": "public void TakeDamage(float damage, Vector3 hitPoint)"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/HarvestableOutcrop.cs",
-        "line": 227,
+        "line": 228,
         "text": "TakeDamage(damage, hitPoint, 1f, ResolveFallbackNormal(hitPoint));"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/HarvestableOutcrop.cs",
-        "line": 236,
+        "line": 237,
         "text": "TakeDamage(damagePerHit, hitPoint, 1f, ResolveFallbackNormal(hitPoint));"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/HarvestableOutcrop.cs",
-        "line": 239,
+        "line": 240,
         "text": "private void TakeDamage(float damage, Vector3 hitPoint, float toolPower, Vector3 hitNormal)"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/HectonPlayerHealth.cs",
-        "line": 106,
+        "line": 107,
         "text": "public float CurrentHealth => currentHealth;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/HectonPlayerHealth.cs",
-        "line": 453,
+        "line": 454,
         "text": "public bool TakeDamage(float damage, bool ignoreInvulnerability = false)"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/HectonPlayerHealth.cs",
-        "line": 494,
+        "line": 495,
         "text": "bool applied = TakeDamage(damage);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/HectonPlayerHealth.cs",
-        "line": 758,
+        "line": 759,
         "text": "bool applied = TakeDamage(packet.Magnitude);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Mining/DeployableSdfDrillRuntime.cs",
-        "line": 456,
+        "line": 457,
         "text": "Health = _health,"
       },
       {
@@ -598,7 +598,7 @@
       },
       {
         "file": "Assets/_Project/Scripts/HectonSurvivalSystem.cs",
-        "line": 2610,
+        "line": 2613,
         "text": "public void TakeDamage(float amount)"
       },
       {
@@ -608,37 +608,37 @@
       },
       {
         "file": "Assets/_Project/Scripts/KnifeTool.cs",
-        "line": 383,
+        "line": 379,
         "text": "bool applied = ToolHitUtility.ApplyDamage("
       },
       {
         "file": "Assets/_Project/Scripts/ResourceNode.cs",
-        "line": 171,
+        "line": 172,
         "text": "public float CurrentHealth => _currentHealth;"
       },
       {
         "file": "Assets/_Project/Scripts/ResourceNode.cs",
-        "line": 362,
+        "line": 363,
         "text": "TakeDamage("
       },
       {
         "file": "Assets/_Project/Scripts/ResourceNode.cs",
-        "line": 387,
+        "line": 388,
         "text": "TakeDamage("
       },
       {
         "file": "Assets/_Project/Scripts/ResourceNode.cs",
-        "line": 400,
+        "line": 401,
         "text": "public void TakeDamage(float amount)"
       },
       {
         "file": "Assets/_Project/Scripts/ResourceNode.cs",
-        "line": 403,
+        "line": 404,
         "text": "TakeDamage("
       },
       {
         "file": "Assets/_Project/Scripts/ResourceNode.cs",
-        "line": 854,
+        "line": 855,
         "text": "private void TakeDamage("
       },
       {
@@ -673,31 +673,31 @@
       },
       {
         "file": "Assets/_Project/Scripts/ToolHitUtility.cs",
-        "line": 68,
+        "line": 69,
         "text": "public static bool ApplyDamage("
       },
       {
         "file": "Assets/_Project/Scripts/ToolHitUtility.cs",
-        "line": 75,
+        "line": 76,
         "text": "return ApplyDamage("
       },
       {
         "file": "Assets/_Project/Scripts/ToolHitUtility.cs",
-        "line": 87,
+        "line": 88,
         "text": "public static bool ApplyDamage("
       },
       {
         "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
-        "line": 1905,
+        "line": 1924,
         "text": "Health = health,"
       },
       {
         "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
-        "line": 1921,
+        "line": 1940,
         "text": "Health = health,"
       }
     ],
-    "projectRigidbodyDirectTokenCount": 683,
+    "projectRigidbodyDirectTokenCount": 687,
     "projectRigidbodyDirectUniqueFiles": 127,
     "projectRigidbodyDirectByDomain": {
       "GlobalPhysicsStateManager.cs": 127,
@@ -705,15 +705,15 @@
       "PhysicsApplySystem.cs": 72,
       "Physics": 56,
       "World": 54,
-      "Core": 44,
+      "Core": 46,
       "Interaction": 21,
       "Fauna": 20,
       "Networking": 19,
       "Editor": 14,
       "HectonFluidEngine.cs": 13,
       "SubmarineFluidDynamics.cs": 11,
+      "Construction": 10,
       "TetherInstance.cs": 10,
-      "Construction": 8,
       "ToolHitUtility.cs": 8,
       "HarpoonLauncherTool.cs": 7,
       "PropulsionTool.cs": 7,
@@ -807,32 +807,32 @@
       },
       {
         "file": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
-        "line": 517,
+        "line": 518,
         "text": "public UnityEngine.Events.UnityEvent OnPanicTriggered;"
       },
       {
         "file": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
-        "line": 518,
+        "line": 519,
         "text": "public UnityEngine.Events.UnityEvent OnBurrowBreach;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/EnvironmentalHazard.cs",
-        "line": 90,
+        "line": 91,
         "text": "[SerializeField] private UnityEvent OnPlayerEnter;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/EnvironmentalHazard.cs",
-        "line": 93,
+        "line": 94,
         "text": "[SerializeField] private UnityEvent OnPlayerExit;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/EnvironmentalHazard.cs",
-        "line": 96,
+        "line": 97,
         "text": "[SerializeField] private UnityEvent<float> OnIntensityChanged;"
       },
       {
         "file": "Assets/_Project/Scripts/Input/InputManager.cs",
-        "line": 219,
+        "line": 222,
         "text": "public event Action OnDebugToggleEngineHealthOverlay;"
       }
     ],

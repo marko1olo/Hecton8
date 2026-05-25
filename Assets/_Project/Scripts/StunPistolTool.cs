@@ -199,7 +199,7 @@ namespace Hecton8.Gameplay
             if (!IsEquipped || _cooldown > 0f)
                 return;
 
-            if (TryQueueTargetHit(out RaycastHit hit, out Vector3 shotDirection))
+            if (TryQueueTargetHit(out InteractionSurfaceHit hit, out Vector3 shotDirection))
             {
                 float effectiveDamage = ResolveEffectiveDamage();
                 ToolHitUtility.ApplyDamage(
@@ -225,18 +225,18 @@ namespace Hecton8.Gameplay
                 else if (TryConsumeFeedbackGate())
                 {
                     InvalidateAssessmentCache();
-                    PublishWarningMessage(ResolveLocalized(LocalizationKeys.STUN_HUD_NO_BIOFORM_CIRCUIT, "STUN PISTOL - NO BIOFORM CIRCUIT"));
+                    PublishWarningMessage(StableText(LocalizationKeys.STUN_HUD_NO_BIOFORM_CIRCUIT, "STUN PISTOL - NO BIOFORM CIRCUIT"));
                     RecordNonBioformLog();
                 }
             }
             else if (TryConsumeFeedbackGate())
             {
                 InvalidateAssessmentCache();
-                PublishWarningMessage(ResolveLocalized(LocalizationKeys.STUN_HUD_NO_TARGET_LOCK, "STUN PISTOL - NO TARGET LOCK"));
+                PublishWarningMessage(StableText(LocalizationKeys.STUN_HUD_NO_TARGET_LOCK, "STUN PISTOL - NO TARGET LOCK"));
                 FieldOperationLogSystem.RecordOperation(
-                    ResolveLocalized(LocalizationKeys.STUN_CATEGORY, StunCategory),
-                    ResolveLocalized(LocalizationKeys.STUN_LOG_CLEAR_TITLE, "STUN SHOT RETURNED CLEAR"),
-                    ResolveLocalized(LocalizationKeys.STUN_LOG_CLEAR_MESSAGE, "No valid target was present in the stun pistol engagement cone."),
+                    StableText(LocalizationKeys.STUN_CATEGORY, StunCategory),
+                    StableText(LocalizationKeys.STUN_LOG_CLEAR_TITLE, "STUN SHOT RETURNED CLEAR"),
+                    StableText(LocalizationKeys.STUN_LOG_CLEAR_MESSAGE, "No valid target was present in the stun pistol engagement cone."),
                     "WARN");
             }
 
@@ -262,9 +262,7 @@ namespace Hecton8.Gameplay
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public override string BuildLegacyOperationalSummaryString()
         {
-            s_legacySummaryBuffer.Clear();
-            WriteOperationalSummary(ref s_legacySummaryBuffer);
-            return CreateLegacyString(in s_legacySummaryBuffer);
+            return StunCategory;
         }
 
         public override void WriteOperationalSummary(ref FixedCharBuffer buffer)
@@ -284,22 +282,20 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            AppendText(ref buffer, ResolveLocalized(LocalizationKeys.STUN_OPERATIONAL_READY, "STUN PISTOL // READY"));
+            AppendText(ref buffer, StableText(LocalizationKeys.STUN_OPERATIONAL_READY, "STUN PISTOL // READY"));
         }
 
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         public override string BuildLegacyOperationalDirectiveString()
         {
-            s_legacySummaryBuffer.Clear();
-            WriteOperationalDirective(ref s_legacySummaryBuffer);
-            return CreateLegacyString(in s_legacySummaryBuffer);
+            return "Primary disrupts. Secondary checks whether the target is worth stunning.";
         }
 
         public override void WriteOperationalDirective(ref FixedCharBuffer buffer)
         {
             if (_cooldown > 0f)
             {
-                AppendText(ref buffer, ResolveLocalized(LocalizationKeys.STUN_DIRECTIVE_RECHARGING, "Capacitors are recharging for the next disruption shot."));
+                AppendText(ref buffer, StableText(LocalizationKeys.STUN_DIRECTIVE_RECHARGING, "Capacitors are recharging for the next disruption shot."));
                 return;
             }
 
@@ -309,7 +305,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            AppendText(ref buffer, ResolveLocalized(LocalizationKeys.STUN_DIRECTIVE_READY, "Primary disrupts. Secondary checks whether the target is worth stunning."));
+            AppendText(ref buffer, StableText(LocalizationKeys.STUN_DIRECTIVE_READY, "Primary disrupts. Secondary checks whether the target is worth stunning."));
         }
 
         public override void UseSecondary(float deltaTime)
@@ -321,9 +317,9 @@ namespace Hecton8.Gameplay
 
             _secondaryLatched = true;
 
-            if (!TryQueueTargetHit(out RaycastHit hit))
+            if (!TryQueueTargetHit(out InteractionSurfaceHit hit))
             {
-                WarnSecondary(ResolveLocalized(LocalizationKeys.STUN_HUD_NO_TARGET_LOCK, "STUN PISTOL - NO TARGET LOCK"));
+                WarnSecondary(StableText(LocalizationKeys.STUN_HUD_NO_TARGET_LOCK, "STUN PISTOL - NO TARGET LOCK"));
                 InvalidateAssessmentCache();
                 return;
             }
@@ -337,7 +333,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            WarnSecondary(ResolveLocalized(LocalizationKeys.STUN_HUD_TARGET_NO_BIO_CIRCUIT, "STUN PISTOL - TARGET HAS NO BIO CIRCUIT"));
+            WarnSecondary(StableText(LocalizationKeys.STUN_HUD_TARGET_NO_BIO_CIRCUIT, "STUN PISTOL - TARGET HAS NO BIO CIRCUIT"));
             InvalidateAssessmentCache();
         }
 
@@ -348,9 +344,9 @@ namespace Hecton8.Gameplay
 
             PublishWarningMessage(message);
             FieldOperationLogSystem.RecordOperation(
-                ResolveLocalized(LocalizationKeys.STUN_CATEGORY, StunCategory),
+                StableText(LocalizationKeys.STUN_CATEGORY, StunCategory),
                 message,
-                ResolveLocalized(LocalizationKeys.STUN_LOG_SECONDARY_FAILED, "Secondary target check could not confirm a valid disruption candidate."),
+                StableText(LocalizationKeys.STUN_LOG_SECONDARY_FAILED, "Secondary target check could not confirm a valid disruption candidate."),
                 "WARN");
         }
 
@@ -372,20 +368,20 @@ namespace Hecton8.Gameplay
             _cachedAssessment = default;
         }
 
-        private bool TryQueueTargetHit(out RaycastHit hit)
+        private bool TryQueueTargetHit(out InteractionSurfaceHit hit)
         {
             Vector3 unusedDirection;
             return TryQueueTargetHit(out hit, out unusedDirection);
         }
 
-        private bool TryQueueTargetHit(out RaycastHit hit, out Vector3 direction)
+        private bool TryQueueTargetHit(out InteractionSurfaceHit hit, out Vector3 direction)
         {
             hit = default;
             direction = default;
             if (!TryResolveStunRay(out Vector3 origin, out direction))
                 return false;
 
-            return TryQueuePrimaryRaycast(
+            return TryResolvePrimarySurfaceHit(
                 origin,
                 direction,
                 ResolveRuntimeRange(),
@@ -517,7 +513,7 @@ namespace Hecton8.Gameplay
             assessment.TryWriteHeadline(ref s_logTitleBuffer);
 
             FieldOperationLogSystem.RecordOperation(
-                ResolveLocalized(LocalizationKeys.STUN_CATEGORY, StunCategory),
+                StableText(LocalizationKeys.STUN_CATEGORY, StunCategory),
                 in s_logTitleBuffer,
                 in s_logSummaryBuffer,
                 assessment.Severity);
@@ -528,14 +524,14 @@ namespace Hecton8.Gameplay
             s_logSummaryBuffer.Clear();
             TryAppendSingleStringTemplate(
                 ref s_logSummaryBuffer,
-                ResolveLocalized(
+                StableText(
                     LocalizationKeys.STUN_LOG_NON_BIOFORM_MESSAGE,
                     "{0} absorbed a stun shot without a compatible AI circuit."),
                 GenericFieldTargetLabel);
 
             FieldOperationLogSystem.RecordOperation(
-                ResolveLocalized(LocalizationKeys.STUN_CATEGORY, StunCategory),
-                ResolveLocalized(LocalizationKeys.STUN_LOG_NON_BIOFORM_TITLE, "STUN CHECK REJECTED TARGET"),
+                StableText(LocalizationKeys.STUN_CATEGORY, StunCategory),
+                StableText(LocalizationKeys.STUN_LOG_NON_BIOFORM_TITLE, "STUN CHECK REJECTED TARGET"),
                 in s_logSummaryBuffer,
                 "WARN");
         }
@@ -545,34 +541,25 @@ namespace Hecton8.Gameplay
             s_logSummaryBuffer.Clear();
             TryAppendSingleStringTemplate(
                 ref s_logSummaryBuffer,
-                ResolveLocalized(localization, LocalizationKeys.STUN_LOG_RECOVERED_MESSAGE, "{0} recovered from disruption and resumed activity."),
+                StableText(localization, LocalizationKeys.STUN_LOG_RECOVERED_MESSAGE, "{0} recovered from disruption and resumed activity."),
                 GenericBioformLabel);
 
             FieldOperationLogSystem.RecordOperation(
-                ResolveLocalized(localization, LocalizationKeys.STUN_CATEGORY, StunCategory),
-                ResolveLocalized(localization, LocalizationKeys.STUN_LOG_RECOVERED_TITLE, "BIOFORM RECOVERED"),
+                StableText(localization, LocalizationKeys.STUN_CATEGORY, StunCategory),
+                StableText(localization, LocalizationKeys.STUN_LOG_RECOVERED_TITLE, "BIOFORM RECOVERED"),
                 in s_logSummaryBuffer,
                 "INFO");
         }
 
-        private string ResolveLocalized(string key, string fallback)
+        private string StableText(string key, string fallback)
         {
             ILocalizationTextReadModel manager = _localization;
-            return ResolveLocalized(manager, key, fallback);
+            return StableText(manager, key, fallback);
         }
 
-        private static string ResolveLocalized(ILocalizationTextReadModel manager, string key, string fallback)
+        private static string StableText(ILocalizationTextReadModel manager, string key, string fallback)
         {
-            return manager != null
-                ? manager.GetOrFallback(key, fallback)
-                : fallback;
-        }
-
-        private static string CreateLegacyString(in FixedCharBuffer buffer)
-        {
-            return buffer.Length > 0
-                ? new string(buffer.Buffer, 0, buffer.Length)
-                : string.Empty;
+            return fallback ?? string.Empty;
         }
 
         private static StunText CreateSingleStringText(string template, string value)

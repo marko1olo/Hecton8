@@ -77,6 +77,25 @@ namespace Hecton8.VFX
         private float _cachedSpeedLineVelocityZ = float.MinValue;
         private float _cachedSpeedLineStretch = -1f;
         private bool _speedLineVisualDirty;
+        private bool _projectionFovDirty;
+        private float _queuedProjectionFov;
+        private bool _biomeBlendDirty;
+        private BiomeProfile _queuedBiomeBlendFrom;
+        private BiomeProfile _queuedBiomeBlendTo;
+        private float _queuedBiomeBlendT;
+        private bool _healthVignetteDirty;
+        private float _queuedHealthVignetteIntensity;
+        private bool _queuedHealthVignetteActive;
+        private bool _interactionDofDirty;
+        private bool _queuedInteractionDofActive;
+        private float _queuedInteractionFocusDistance;
+        private bool _pauseDofDirty;
+        private bool _pauseDofRestoreDirty;
+        private float _queuedPauseDofFocusDistance;
+        private float _queuedPauseDofFocalLength;
+        private float _queuedPauseDofAperture;
+        private float _queuedPauseDofGaussianEnd;
+        private float _queuedPauseDofGaussianMaxRadius;
 
         [Header("References")]
         [SerializeField, Tooltip("Optional explicit camera reference. Falls back to local hierarchy lookup.")]
@@ -747,6 +766,11 @@ namespace Hecton8.VFX
                 UpdateCameraSpeedLines(speedLineDeltaTime);
             }
 
+            FlushQueuedProjectionFov();
+            FlushQueuedBiomeBlend();
+            FlushQueuedInteractionDof();
+            FlushQueuedPauseDof();
+            FlushQueuedHealthVignette();
             PublishProceduralCameraJuiceProjection();
             ApplyPostAupShakeOffset();
             RecordCameraJuiceTelemetry();
@@ -954,7 +978,7 @@ namespace Hecton8.VFX
             _inputReclaimFovDuration = math.max(0.0001f, durationSeconds);
             _inputReclaimFovElapsed = 0f;
             _inputReclaimFovActive = true;
-            ApplyProjectionFov(_inputReclaimFovStart);
+            QueueProjectionFov(_inputReclaimFovStart);
         }
 
         /// <summary>
@@ -1045,7 +1069,7 @@ namespace Hecton8.VFX
             _biomeBlendDuration = math.max(0.0001f, blendDuration);
             _biomeBlendElapsed = 0f;
             _biomeBlendActive = true;
-            ApplyBiomeBlend(_biomeBlendFrom, _targetBiome, 0f);
+            QueueBiomeBlend(_biomeBlendFrom, _targetBiome, 0f);
         }
 
         private static float EvaluateEaseOutQuad(float t)
@@ -1755,7 +1779,7 @@ namespace Hecton8.VFX
                     _inputReclaimFovActive = false;
             }
 
-            ApplyProjectionFov(targetFOV);
+            QueueProjectionFov(targetFOV);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1785,6 +1809,21 @@ namespace Hecton8.VFX
             _mainCamera.projectionMatrix = projection;
         }
 
+        private void QueueProjectionFov(float targetFOV)
+        {
+            _queuedProjectionFov = math.clamp(targetFOV, MIN_FOV, MAX_FOV);
+            _projectionFovDirty = true;
+        }
+
+        private void FlushQueuedProjectionFov()
+        {
+            if (!_projectionFovDirty)
+                return;
+
+            _projectionFovDirty = false;
+            ApplyProjectionFov(_queuedProjectionFov);
+        }
+
         private void UpdateBiomeBlend(float dt)
         {
             if (!_biomeBlendActive)
@@ -1793,12 +1832,29 @@ namespace Hecton8.VFX
             _biomeBlendElapsed = math.min(_biomeBlendElapsed + dt, _biomeBlendDuration);
             float normalizedBlend = math.saturate(_biomeBlendElapsed / _biomeBlendDuration);
             float easedBlend = EvaluateEaseInOutQuad(normalizedBlend);
-            ApplyBiomeBlend(_biomeBlendFrom, _targetBiome, easedBlend);
+            QueueBiomeBlend(_biomeBlendFrom, _targetBiome, easedBlend);
             if (normalizedBlend >= 1f)
             {
                 _currentBiome = _targetBiome;
                 _biomeBlendActive = false;
             }
+        }
+
+        private void QueueBiomeBlend(BiomeProfile from, BiomeProfile to, float t)
+        {
+            _queuedBiomeBlendFrom = from;
+            _queuedBiomeBlendTo = to;
+            _queuedBiomeBlendT = math.saturate(t);
+            _biomeBlendDirty = true;
+        }
+
+        private void FlushQueuedBiomeBlend()
+        {
+            if (!_biomeBlendDirty)
+                return;
+
+            _biomeBlendDirty = false;
+            ApplyBiomeBlend(_queuedBiomeBlendFrom, _queuedBiomeBlendTo, _queuedBiomeBlendT);
         }
 
         private void UpdateInteractionFocus(float dt)
@@ -1809,7 +1865,7 @@ namespace Hecton8.VFX
             // Performance mode check
             if (_adaptiveDisableInteractionDoF)
             {
-                _interactionDoF.active = false;
+                QueueInteractionDof(active: false, focusDistance: 0f);
                 return;
             }
 
@@ -1818,8 +1874,7 @@ namespace Hecton8.VFX
             float focusBlendT = ResolvePadeApproach01(2f / math.max(0.02f, _focusTransitionDuration), dt);
             _focusDistance = math.lerp(currentFocusDistance, targetFocusDistance, focusBlendT);
 
-            _interactionDoF.focusDistance.value = _focusDistance;
-            _interactionDoF.active = true;
+            QueueInteractionDof(active: true, focusDistance: _focusDistance);
         }
 
         private void UpdatePauseDepthOfField(float dt)
@@ -1829,11 +1884,13 @@ namespace Hecton8.VFX
 
             if (_pauseDepthOfFieldWeight <= 0f)
             {
+                bool restoreQueued = _pauseDofOverrideEngaged;
                 if (_pauseDofOverrideEngaged)
-                    RestorePauseDofOpticalDefaults();
+                    QueuePauseDofRestore();
 
                 _pauseDofOverrideEngaged = false;
-                _pauseDofDefaultsCaptured = false;
+                if (!restoreQueued)
+                    _pauseDofDefaultsCaptured = false;
                 return;
             }
 
@@ -1845,14 +1902,75 @@ namespace Hecton8.VFX
 
             float easedBlend = EvaluateSmoothStep01(_pauseDepthOfFieldWeight);
             float baseFocusDistance = _focusDistance > 0f ? _focusDistance : _worldFocusDistance;
-            _interactionDoF.focusDistance.value = math.lerp(
-                baseFocusDistance,
-                PauseDofFocusDistance,
-                easedBlend);
-            _interactionDoF.focalLength.value = math.lerp(_pauseDofBaseFocalLength, PauseDofFocalLength, easedBlend);
-            _interactionDoF.aperture.value = math.lerp(_pauseDofBaseAperture, PauseDofAperture, easedBlend);
-            _interactionDoF.gaussianEnd.value = math.lerp(_pauseDofBaseGaussianEnd, PauseDofGaussianEnd, easedBlend);
-            _interactionDoF.gaussianMaxRadius.value = math.lerp(_pauseDofBaseGaussianMaxRadius, PauseDofGaussianMaxRadius, easedBlend);
+            QueuePauseDof(
+                math.lerp(baseFocusDistance, PauseDofFocusDistance, easedBlend),
+                math.lerp(_pauseDofBaseFocalLength, PauseDofFocalLength, easedBlend),
+                math.lerp(_pauseDofBaseAperture, PauseDofAperture, easedBlend),
+                math.lerp(_pauseDofBaseGaussianEnd, PauseDofGaussianEnd, easedBlend),
+                math.lerp(_pauseDofBaseGaussianMaxRadius, PauseDofGaussianMaxRadius, easedBlend));
+        }
+
+        private void QueueInteractionDof(bool active, float focusDistance)
+        {
+            _queuedInteractionDofActive = active;
+            _queuedInteractionFocusDistance = math.max(0f, focusDistance);
+            _interactionDofDirty = true;
+        }
+
+        private void FlushQueuedInteractionDof()
+        {
+            if (!_interactionDofDirty || _interactionDoF == null)
+                return;
+
+            _interactionDofDirty = false;
+            if (!_queuedInteractionDofActive)
+            {
+                _interactionDoF.active = false;
+                return;
+            }
+
+            _interactionDoF.focusDistance.value = _queuedInteractionFocusDistance;
+            _interactionDoF.active = true;
+        }
+
+        private void QueuePauseDof(float focusDistance, float focalLength, float aperture, float gaussianEnd, float gaussianMaxRadius)
+        {
+            _queuedPauseDofFocusDistance = math.max(0f, focusDistance);
+            _queuedPauseDofFocalLength = math.max(0f, focalLength);
+            _queuedPauseDofAperture = math.max(0f, aperture);
+            _queuedPauseDofGaussianEnd = math.max(0f, gaussianEnd);
+            _queuedPauseDofGaussianMaxRadius = math.max(0f, gaussianMaxRadius);
+            _pauseDofDirty = true;
+            _pauseDofRestoreDirty = false;
+        }
+
+        private void QueuePauseDofRestore()
+        {
+            _pauseDofRestoreDirty = true;
+            _pauseDofDirty = false;
+        }
+
+        private void FlushQueuedPauseDof()
+        {
+            if (_interactionDoF == null)
+                return;
+
+            if (_pauseDofRestoreDirty)
+            {
+                _pauseDofRestoreDirty = false;
+                RestorePauseDofOpticalDefaults();
+                _pauseDofDefaultsCaptured = false;
+            }
+
+            if (!_pauseDofDirty)
+                return;
+
+            _pauseDofDirty = false;
+            _interactionDoF.focusDistance.value = _queuedPauseDofFocusDistance;
+            _interactionDoF.focalLength.value = _queuedPauseDofFocalLength;
+            _interactionDoF.aperture.value = _queuedPauseDofAperture;
+            _interactionDoF.gaussianEnd.value = _queuedPauseDofGaussianEnd;
+            _interactionDoF.gaussianMaxRadius.value = _queuedPauseDofGaussianMaxRadius;
             _interactionDoF.active = true;
         }
 
@@ -2126,15 +2244,29 @@ namespace Hecton8.VFX
                 // Calculate vignette intensity
                 float intensity = math.lerp(0f, 1f, (0.3f - healthNormalized) / 0.3f) * _adaptivePostFxScale;
 
-                // Direct Volume override assignment (not renderer-based, no MaterialPropertyBlock needed)
-                _healthVignette.intensity.value = intensity;
-                _healthVignette.active = intensity > 0.001f;
+                QueueHealthVignette(intensity, intensity > 0.001f);
             }
             else
             {
-                _healthVignette.intensity.value = 0f;
-                _healthVignette.active = false;
+                QueueHealthVignette(0f, active: false);
             }
+        }
+
+        private void QueueHealthVignette(float intensity, bool active)
+        {
+            _queuedHealthVignetteIntensity = math.max(0f, intensity);
+            _queuedHealthVignetteActive = active;
+            _healthVignetteDirty = true;
+        }
+
+        private void FlushQueuedHealthVignette()
+        {
+            if (!_healthVignetteDirty || _healthVignette == null)
+                return;
+
+            _healthVignetteDirty = false;
+            _healthVignette.intensity.value = _queuedHealthVignetteIntensity;
+            _healthVignette.active = _queuedHealthVignetteActive;
         }
 
         private void RefreshAdaptiveBudgetResponse()

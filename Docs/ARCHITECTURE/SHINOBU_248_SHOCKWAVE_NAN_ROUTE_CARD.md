@@ -125,7 +125,9 @@ Shockwave active checks reject non-finite radius, max radius, peak pressure, exp
 
 ## Dear Lie
 
-The visual cavitation bubble is not a fluid simulation. CPU writes `CavitationVisualSphereDTO` rows to the shader buffer. `Hecton8_UberNoir` consumes sphere radius, pressure-derived intensity, age, quality, and phase to fake refraction/collapse.
+Visual cavitation bubble is not fluid simulation. CPU writes `CavitationVisualSphereDTO` rows to shader buffer.
+
+`Hecton8_UberNoir` consumes radius, pressure intensity, age, quality, and phase to fake refraction/collapse.
 
 ## Black-Box Dump
 

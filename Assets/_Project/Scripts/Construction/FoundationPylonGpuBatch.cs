@@ -20,6 +20,7 @@ namespace Hecton8.Construction
     [DisallowMultipleComponent]
     public sealed class FoundationPylonGpuBatch : MonoBehaviour, IRenderable, ILateFrameTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener
     {
+        private static int s_x001FoundationPylonGpuBatchSignalPushDropCount;
         private const string PylonShaderPath = "Assets/_Project/Shaders/Hecton_FoundationPylon.shader";
         private const uint WarningMask = FoundationPylonFlags.ExtensionCulled | FoundationPylonFlags.OutOfSdfBounds | FoundationPylonFlags.NonFinite;
         private const int MaxVaultJobLocks = 18;
@@ -835,7 +836,7 @@ namespace Hecton8.Construction
             signal.ResultHash = counters.ResultHash;
             signal._pad0 = 0ul;
             signal._pad1 = 0ul;
-            SignalBus<FoundationStructuralWarningSignal>.TryPush(in signal);
+            SignalBus<FoundationStructuralWarningSignal>.TryPushTracked(in signal, ref s_x001FoundationPylonGpuBatchSignalPushDropCount);
         }
 
         public void OnOriginShift(in OriginShiftEventData shiftData)

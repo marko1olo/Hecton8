@@ -85,6 +85,7 @@ namespace Hecton8.World.VoxelSurfaceNets
         public const byte NonFinite = 1 << 4;
         public const byte RawDebugEnabled = 1 << 5;
         public const byte PhysicsBakePending = 1 << 6;
+        public const byte GpuResourceInvalid = 1 << 7;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = VoxelSurfaceNetsContractsLayout.VoxelVertexDTOStrideBytes)]

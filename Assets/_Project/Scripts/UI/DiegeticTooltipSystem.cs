@@ -1392,7 +1392,7 @@ namespace Hecton8.UI
             {
                 blackBox[_blackBoxCursor] = new TooltipBlackBoxEntry
                 {
-                    Frame = unchecked((uint)Hecton8.Core.SystemDispatcher.CurrentFrameIndex),
+                    Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                     TargetHash = _activeTargetHash,
                     Anchor = anchorPayload,
                     Alpha = tint.w,

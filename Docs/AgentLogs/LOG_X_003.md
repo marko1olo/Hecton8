@@ -2110,3 +2110,137 @@ Residual risk:
 Exact microseconds saved:
 - Runtime: 0 claimed. No profiler sample was taken.
 - Editor compile wall: source-owner knowledge reduced by 17 broad concrete-cast findings in this slice, 1009->992; since Loop 37, broad concrete-cast findings are 1151->992. Asmdef sibling edge count remains 91.
+
+## 2026-05-25 - Loop 50 Localization Player Health Hot Lookup Contract Slice
+
+What was wrong:
+- Localization consumers still knew concrete `LocalizationManager` for text expansion, hull-stress corruption, PDA lore corruption, madness whisper preview, language cycling, and transient override routes.
+- `FaunaBrain` and `EnvironmentalHazard` still had direct concrete player-health fallback paths through component lookups.
+- `EnvironmentalStrainManager.LateFrameTick()` still performed a registry lookup in a dispatcher callback.
+- `CorporateOrderSystem.cs` and `SaveManager.cs` contain invalid UTF-8 byte sequences, blocking safe semantic edits through `apply_patch`.
+
+What was done:
+- Added localization contracts and registry routes: `ILocalizationTextExpansionReadModel`, `ILocalizationLanguageControl`, `ILocalizationStressPresentationReadModel`, `ILocalizationMadnessPresentationReadModel`, `IPdaCorrosionPresentationSink`, `ILocalizationTransientOverrideSink`, `ILocalizationStressHudRefreshSink`, and `LocalizationMadnessHash`.
+- Converted 24 localization consumers away from concrete `LocalizationManager` / `GlobalRegistry.Localization` routes.
+- Added `CombatDamageRuntime.TryResolveRegisteredTarget` and rerouted `FaunaBrain` through the combat registry plus `IDamageReceiver`.
+- Removed `EnvironmentalHazard`'s transform fallback to concrete `HectonPlayerHealth`.
+- Removed the last X_003 hot registry lookup from `EnvironmentalStrainManager.LateFrameTick`.
+- Loop 50 source touch set: 28 source files.
+
+Cinematic cheats / DOD patterns:
+- Narrow synchronous read-model/sink contracts instead of concrete owner imports.
+- Deterministic hash helper in Core.Contracts for localization madness token hashing; no duplicate owner math.
+- No SignalBus request/response for immediate text reads.
+- No reflection, no `object` hiding, no concrete player-health fallback.
+
+Evidence:
+- `CompileWallX003Audit.py`: 167 asmdefs, 0 cycles, 96 runtime concrete sibling refs, concrete casts 979, critical source using 0, critical FQN 0, hot-path lookup 0, hot-path registry mutation notes 3, direct player concrete coupling 0, AI/Physics/Physiology concrete casts 0, AI/Physics/Physiology direct player coupling 0.
+- `AssemblyDependencyAudit.py --source-root Assets/_Project`: 167 asmdefs, 0 cycles, `autoReferenced=false` 167/167, Core concrete sibling refs 0, unresolved first-party refs 0, duplicate assembly names 0, runtime concrete sibling refs 96, Core.Contracts boundary violations 124.
+- Scoped `git diff --check` over the Loop 50 source slice passed with CRLF warnings only.
+- Build was not launched: latest guard sample was CPU 70% with active `dotnet` PID 52216, so AGENTS.md forbids compile.
+
+Blast radius proof:
+- `CablePhysicsSolver132.cs`: assembly `Hecton8.Physics.Cable132`, radius 3, direct inbound 1, UI=false, audio=false; previous Core state was radius 98/direct inbound 92/UI=true/audio=true. Reduction: 95 assemblies and 91 direct inbound edges.
+- `ShinobuMetabolismRuntime.cs`: assembly `Hecton8.Physiology`, radius 2, direct inbound 1, UI=false, audio=false.
+- `UtilityAICognitionVault.cs` / `ShinobuApexBrainVault.cs`: assembly `Hecton8.AI.Cognition`, radius 2, direct inbound 1, UI=false, audio=false; previous Core state was radius 99/direct inbound 2/UI=true/audio=true. Reduction: 97 assemblies and 1 direct inbound edge.
+- `HectonPlayerMovement.cs`: still in `Hecton8.Core`, radius 108, direct inbound 103, UI=true, audio=true. This is the honest remaining root-Core monolith debt.
+
+Residual risk:
+- Product-runtime concrete sibling refs are 96. This is not green.
+- Broad concrete cast findings are 979. Critical lanes are zero; the whole project is not clean.
+- `CorporateOrderSystem.cs` and `SaveManager.cs` still need encoding normalization before safe contract edits.
+- Unity import, Console, PlayMode, profiler, GC, and player build proof are absent for Loop 50.
+
+Exact microseconds saved:
+- Runtime: 0 claimed. No profiler sample was taken.
+- Editor compile wall: source-owner knowledge reduced by 13 broad concrete-cast findings since Loop 48, 992->979; since Loop 37, broad concrete-cast findings are 1151->979. Cable and AI cognition selected files no longer reach UI/audio by static reverse-closure proof.
+
+## 2026-05-25 - Loop 51 Submarine Atmosphere + Beacon Network Contract Slice
+
+What was wrong:
+- Submarine construction, power, gameplay, fluid, structural, electrolysis, equipment, and player-tool code still knew concrete `SubmarineAtmosphereSystem` for room reads or narrow mutation paths.
+- `BeaconDeployerTool`, `SargassumMicroFaunaBoids`, and the dev smoke tester still cached or serialized concrete `BeaconNetworkSystem` and its nested `BeaconSnapshot`.
+- `BaseModule.cs`, `CorporateOrderSystem.cs`, and `SaveManager.cs` contain invalid UTF-8 byte sequences that block safe `apply_patch` semantic edits.
+
+What was done:
+- Added `ISubmarineAtmosphereRoomReadModel`, `ISubmarineAtmosphereRoomMutationSink`, and `ComponentReferenceUtility.ResolveParentService<T>`.
+- `SubmarineAtmosphereSystem` now implements the room-atmosphere mutation/read contract.
+- Converted 14 safe atmosphere consumers plus the owner/contract surface away from direct concrete room-atmosphere calls.
+- Added `BeaconNetworkSnapshot` and `IBeaconNetworkService`.
+- `BeaconNetworkSystem` implements the beacon service contract and exposes snapshot copy, deploy, nearest, and retract routes without leaking `BeaconRuntime` to consumers.
+- `GlobalRegistry.BeaconNetworkService` exposes the contract route.
+- `BeaconDeployerTool` and `SargassumMicroFaunaBoids` now use interface storage and contract snapshots.
+- `ToolTrialRangeRuntimeSmokeTester` now uses a `MonoBehaviour` provider plus cached `IBeaconNetworkService`, keeps `FormerlySerializedAs("beaconNetwork")`, and has a dev-only interface scene scan fallback.
+- Semantic source touch set in this continuation: 20 source files.
+
+Cinematic cheats / DOD patterns:
+- Narrow read-model/sink/service contracts instead of moving MonoBehaviour owners into Core.Contracts.
+- No SignalBus request/response for synchronous deploy/retract/read operations.
+- No reflection, no `object` hiding, no byte-level source rewrite.
+
+Evidence:
+- `CompileWallX003Audit.py`: 167 asmdefs, 0 cycles, 96 runtime concrete sibling refs, concrete casts 973, critical source using 0, critical FQN 0, hot-path lookup 0, hot-path registry mutation notes 3, direct player concrete coupling 0, AI/Physics/Physiology concrete casts 0, AI/Physics/Physiology direct player coupling 0.
+- `AssemblyDependencyAudit.py`: 167 asmdefs, `autoReferenced=false` 167/167, Core concrete sibling refs 0, unresolved first-party refs 0, duplicate assembly names 0, runtime concrete sibling refs 96, Core.Contracts boundary violations 124.
+- Scoped `git diff --check` over the Beacon/dev-smoke slice passed with CRLF warnings only.
+- Latest full compile-wall rerun emitted the same metrics and refreshed the artifact, but the shell command ended by timeout; clean command exit is not claimed for that rerun.
+- Build was not launched: latest guard sample was CPU 100% with active `dotnet` PID 54944.
+
+Blast radius proof:
+- `CablePhysicsSolver132.cs`: assembly `Hecton8.Physics.Cable132`, radius 3, direct inbound 1, UI=false, audio=false; previous Core state was radius 98/direct inbound 92/UI=true/audio=true. Reduction: 95 assemblies and 91 direct inbound edges.
+- `ShinobuMetabolismRuntime.cs`: assembly `Hecton8.Physiology`, radius 2, direct inbound 1, UI=false, audio=false.
+- `UtilityAICognitionVault.cs` / `ShinobuApexBrainVault.cs`: assembly `Hecton8.AI.Cognition`, radius 2, direct inbound 1, UI=false, audio=false; previous Core state was radius 99/direct inbound 2/UI=true/audio=true. Reduction: 97 assemblies and 1 direct inbound edge.
+
+Residual risk:
+- Product-runtime concrete sibling refs are 96. This is not green.
+- Broad concrete cast findings are 973. Critical lanes are zero; the whole project is not clean.
+- `BaseModule.cs`, `CorporateOrderSystem.cs`, and `SaveManager.cs` need encoding normalization before safe contract edits.
+- Unity import, Console, PlayMode, profiler, GC, and player build proof are absent for Loop 51.
+
+Exact microseconds saved:
+- Runtime: 0 claimed. No profiler sample was taken.
+- Editor compile wall: source-owner knowledge reduced by 6 broad concrete-cast findings in this continuation, 979->973; since Loop 37, broad concrete-cast findings are 1151->973. Cable, metabolism, and AI cognition selected files do not reach UI/audio by static reverse-closure proof.
+
+## 2026-05-25 - Loop 52 Construction Graph + Vehicle Docking Physics Boundary
+
+What was wrong:
+- UI, smoke, tool, audio, flora, mod, and bootstrap consumers still knew concrete `ConstructionManager` for logistics, habitat acoustic graph, module registration, module clearing, or parasite graph queries.
+- `VehicleDockingModule` imported `Hecton8.Physics` to reach `PhysicsForceRouter` and `GlobalPhysicsStateManager`, and it reached concrete submarine fluid mass handling.
+- These were source-level owner leaks. They did not create a cycle, but they preserved concrete compile-wall routes.
+
+What was done:
+- Expanded `ILogisticsService` with existing construction owner operations: catalog/module count, indexed module access, module registration, module clear.
+- Expanded `IHabitatGraphService` with `TryGetHabitatAcousticGraph`.
+- Added `IConstructionParasiteGraphService` and routed flora/base-degradation parasite graph reads/notifications through it.
+- Added `IPhysicsStateEventService` and implemented it on `GlobalPhysicsStateManager`.
+- Added `IDockedExternalMassSink` and implemented it on `SubmarineFluidDynamics`.
+- `VehicleDockingModule` now uses `IPhysicsService`, `IPhysicsStateEventService`, and `IDockedExternalMassSink`; targeted grep finds no `Hecton8.Physics`, `PhysicsForceRouter`, or `GlobalPhysicsStateManager` text in that file.
+- Updated the stale spatial-audio editor smoke assertion to expect `IHabitatGraphService`, not concrete `ConstructionManager`.
+- Semantic source touch set in this continuation: exactly 20 source files.
+
+Cinematic cheats / DOD patterns:
+- Narrow read-model/sink/service routes instead of moving MonoBehaviour owners into Core.Contracts.
+- No SignalBus request/response for synchronous construction enumeration, docking impact, dock connection, or external mass state.
+- No reflection, no `object` hiding, no byte-level source rewrite.
+
+Evidence:
+- `CompileWallX003Audit.py` clean exit: 167 asmdefs, 0 cycles, runtime concrete sibling refs 96, concrete casts 968, critical source using 0, critical FQN 0, hot-path lookup 0, hot-path registry mutation notes 3, direct player concrete coupling 0, AI/Physics/Physiology concrete casts 0, AI/Physics/Physiology direct player coupling 0.
+- `AssemblyDependencyAudit.py --source-root Assets\_Project`: 167 asmdefs, first-party asmdefs 167, runtime first-party asmdefs 103, editor first-party asmdefs 64, `autoReferenced=false` 167/167, Core concrete sibling refs 0, unresolved first-party refs 0, duplicate assembly names 0, runtime concrete sibling refs 96, Core.Contracts boundary violations 124.
+- Targeted greps over `VehicleDockingModule.cs` returned no `Hecton8.Physics`, `PhysicsForceRouter`, or `GlobalPhysicsStateManager`.
+- Targeted construction consumer grep over the touched slice returned no concrete `ConstructionManager` casts outside owner/bootstrap compatibility paths.
+- Scoped `git diff --check` over the 20-source-file Loop 52 slice passed with LF/CRLF warnings only.
+- Build was not launched: latest guard samples found active `csc`/`dotnet` processes and later CPU 97, so AGENTS.md forbids compile.
+
+Blast radius proof:
+- `CablePhysicsSolver132.cs`: assembly `Hecton8.Physics.Cable132`, radius 3, direct inbound 1, UI=false, audio=false; previous Core state was radius 98/direct inbound 92/UI=true/audio=true. Reduction: 95 assemblies and 91 direct inbound edges.
+- `ShinobuMetabolismRuntime.cs`: assembly `Hecton8.Physiology`, radius 2, direct inbound 1, UI=false, audio=false.
+- `UtilityAICognitionVault.cs` / `ShinobuApexBrainVault.cs`: assembly `Hecton8.AI.Cognition`, radius 2, direct inbound 1, UI=false, audio=false; previous Core state was radius 99/direct inbound 2/UI=true/audio=true. Reduction: 97 assemblies and 1 direct inbound edge.
+
+Residual risk:
+- Product-runtime concrete sibling refs are 96. This is not green.
+- Broad concrete cast findings are 968. Critical lanes are zero; the whole project is not clean.
+- `BaseModule.cs`, `CorporateOrderSystem.cs`, and `SaveManager.cs` still need encoding normalization before safe contract edits.
+- Unity import, Console, PlayMode, profiler, GC, and player build proof are absent for Loop 52.
+
+Exact microseconds saved:
+- Runtime: 0 claimed. No profiler sample was taken.
+- Editor compile wall: source-owner knowledge reduced by 5 broad concrete-cast findings in this continuation, 973->968; since Loop 37, broad concrete-cast findings are 1151->968. Cable, metabolism, and AI cognition selected files do not reach UI/audio by static reverse-closure proof.

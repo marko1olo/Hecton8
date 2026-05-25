@@ -11,6 +11,16 @@ namespace Hecton8.Core
 {
     public static partial class GlobalSignals
     {
+        private static bool TryPushLegacy<T>(in T signal)
+            where T : unmanaged, ISignal
+        {
+            if (SignalBus<T>.TryPush(in signal))
+                return true;
+
+            SignalBridgeState.RecordLegacyPublishDrop();
+            return false;
+        }
+
         [global::System.Obsolete("Legacy publish facade is retired. Use SignalBus<T> or an owner route wrapper.", true)]
         public static void Publish(in CombatDamageSignal signal)
         {
@@ -25,7 +35,7 @@ namespace Hecton8.Core
 
             _latestDamageSignal = sanitizedSignal;
             AdvanceSignalSequence(ref _latestDamageSignalSequence);
-            SignalBus<CombatDamageSignal>.TryPush(in sanitizedSignal);
+            TryPushLegacy(in sanitizedSignal);
         }
 
         /// <summary>Queues one physics impact packet from the main thread.</summary>
@@ -38,7 +48,7 @@ namespace Hecton8.Core
             if (guardCode != 0)
                 GlobalTelemetryBus.PublishMathGuardInvalidNumber(guardCode);
 
-            SignalBus<ImpactSignal>.TryPush(in sanitizedSignal);
+            TryPushLegacy(in sanitizedSignal);
         }
 
         /// <summary>Queues one high-speed kinematic CCD impact packet on the typed native lane.</summary>
@@ -46,7 +56,7 @@ namespace Hecton8.Core
         public static void Publish(in HighSpeedImpactSignal signal)
         {
             EnsureInitialized();
-            SignalBus<HighSpeedImpactSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one haptic rupture request on the typed native lane.</summary>
@@ -54,7 +64,7 @@ namespace Hecton8.Core
         public static void Publish(in HapticRequest signal)
         {
             EnsureInitialized();
-            SignalBus<HapticRequest>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one final haptic synthesis envelope on the typed native lane.</summary>
@@ -62,7 +72,7 @@ namespace Hecton8.Core
         public static void Publish(in HapticPulseSignal signal)
         {
             EnsureInitialized();
-            SignalBus<HapticPulseSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one player state packet on the typed native lane.</summary>
@@ -72,7 +82,7 @@ namespace Hecton8.Core
             EnsureInitialized();
             _latestPlayerStateSignal = signal;
             AdvanceSignalSequence(ref _latestPlayerStateSignalSequence);
-            SignalBus<PlayerStateSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one player survival-vitals dirty packet on the typed native lane.</summary>
@@ -87,7 +97,7 @@ namespace Hecton8.Core
         public static void Publish(in HullDeformedSignal signal)
         {
             EnsureInitialized();
-            SignalBus<HullDeformedSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one hull repair completion packet for atmosphere and VFX consumers.</summary>
@@ -95,14 +105,14 @@ namespace Hecton8.Core
         public static void Publish(in HullRepairedSignal signal)
         {
             EnsureInitialized();
-            SignalBus<HullRepairedSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         [global::System.Obsolete("Legacy publish facade is retired. Use SignalBus<T> or an owner route wrapper.", true)]
         public static void Publish(in BaseModuleCompromisedSignal signal)
         {
             EnsureInitialized();
-            SignalBus<BaseModuleCompromisedSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one player-entered-base packet for habitat atmosphere hibernation gates.</summary>
@@ -110,7 +120,7 @@ namespace Hecton8.Core
         public static void Publish(in PlayerBaseEnterSignal signal)
         {
             EnsureInitialized();
-            SignalBus<PlayerBaseEnterSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one player-exited-base packet for habitat atmosphere hibernation gates.</summary>
@@ -118,7 +128,7 @@ namespace Hecton8.Core
         public static void Publish(in PlayerBaseExitSignal signal)
         {
             EnsureInitialized();
-            SignalBus<PlayerBaseExitSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one AUP shift broadcast packet from the main thread.</summary>
@@ -140,7 +150,7 @@ namespace Hecton8.Core
         public static void Publish(in DropPodLandedSignal signal)
         {
             EnsureInitialized();
-            SignalBus<DropPodLandedSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one absolute-position temperature change packet.</summary>
@@ -148,7 +158,7 @@ namespace Hecton8.Core
         public static void Publish(in TemperatureChangedSignal signal)
         {
             EnsureInitialized();
-            SignalBus<TemperatureChangedSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one logistics brownout packet from the main thread.</summary>
@@ -156,7 +166,7 @@ namespace Hecton8.Core
         public static void Publish(in BrownoutSignal signal)
         {
             EnsureInitialized();
-            SignalBus<BrownoutSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one ecosystem debris spawn packet from the main thread.</summary>
@@ -164,7 +174,7 @@ namespace Hecton8.Core
         public static void Publish(in DebrisSpawnSignal signal)
         {
             EnsureInitialized();
-            SignalBus<DebrisSpawnSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one armor deflection packet from the main thread.</summary>
@@ -172,7 +182,7 @@ namespace Hecton8.Core
         public static void Publish(in DeflectSignal signal)
         {
             EnsureInitialized();
-            SignalBus<DeflectSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one entity death packet from the main thread.</summary>
@@ -180,7 +190,7 @@ namespace Hecton8.Core
         public static void Publish(in EntityDeathSignal signal)
         {
             EnsureInitialized();
-            SignalBus<EntityDeathSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one entity spawn packet from the main thread.</summary>
@@ -188,7 +198,7 @@ namespace Hecton8.Core
         public static void Publish(in EntitySpawnSignal signal)
         {
             EnsureInitialized();
-            SignalBus<EntitySpawnSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one narrative solar flare packet from the main thread.</summary>
@@ -196,7 +206,7 @@ namespace Hecton8.Core
         public static void Publish(in SolarFlareSignal signal)
         {
             EnsureInitialized();
-            SignalBus<SolarFlareSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one origin rebase packet from the main thread.</summary>
@@ -204,7 +214,7 @@ namespace Hecton8.Core
         public static void Publish(in RebaseSignal signal)
         {
             EnsureInitialized();
-            SignalBus<RebaseSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one input control packet from the main thread.</summary>
@@ -212,7 +222,7 @@ namespace Hecton8.Core
         public static void Publish(in ControlSignal signal)
         {
             EnsureInitialized();
-            SignalBus<ControlSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one runtime anomaly packet from the main thread.</summary>
@@ -220,7 +230,7 @@ namespace Hecton8.Core
         public static void Publish(in AnomalySignal signal)
         {
             EnsureInitialized();
-            SignalBus<AnomalySignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one telemetry anomaly packet from the main thread.</summary>
@@ -228,7 +238,7 @@ namespace Hecton8.Core
         public static void Publish(in TelemetryAnomalySignal signal)
         {
             EnsureInitialized();
-            SignalBus<TelemetryAnomalySignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one postmortem crash telemetry packet from the main thread.</summary>
@@ -236,7 +246,7 @@ namespace Hecton8.Core
         public static void Publish(in CrashTelemetrySignal signal)
         {
             EnsureInitialized();
-            SignalBus<CrashTelemetrySignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one habitat construction packet from the main thread.</summary>
@@ -244,7 +254,7 @@ namespace Hecton8.Core
         public static void Publish(in HabitatConstructionSignal signal)
         {
             EnsureInitialized();
-            SignalBus<HabitatConstructionSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one habitat deconstruction request packet from the main thread.</summary>
@@ -252,7 +262,7 @@ namespace Hecton8.Core
         public static void Publish(in DeconstructRequestSignal signal)
         {
             EnsureInitialized();
-            SignalBus<DeconstructRequestSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one habitat deconstruction result packet from the main thread.</summary>
@@ -260,7 +270,7 @@ namespace Hecton8.Core
         public static void Publish(in DeconstructResultSignal signal)
         {
             EnsureInitialized();
-            SignalBus<DeconstructResultSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one persistence-facing habitat deletion delta packet from the main thread.</summary>
@@ -268,7 +278,7 @@ namespace Hecton8.Core
         public static void Publish(in ModuleDeconstructSignal signal)
         {
             EnsureInitialized();
-            SignalBus<ModuleDeconstructSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one player-vital warning packet from the main thread.</summary>
@@ -276,7 +286,7 @@ namespace Hecton8.Core
         public static void Publish(in VitalWarningSignal signal)
         {
             EnsureInitialized();
-            SignalBus<VitalWarningSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one crush-depth warning packet from the main thread.</summary>
@@ -284,7 +294,7 @@ namespace Hecton8.Core
         public static void Publish(in CrushWarningSignal signal)
         {
             EnsureInitialized();
-            SignalBus<CrushWarningSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one vocal warning packet from the main thread.</summary>
@@ -292,7 +302,7 @@ namespace Hecton8.Core
         public static void Publish(in VocalWarningSignal signal)
         {
             EnsureInitialized();
-            SignalBus<VocalWarningSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one hash-addressed protagonist voice packet from the main thread.</summary>
@@ -304,7 +314,7 @@ namespace Hecton8.Core
             int guardCode = SignalPayloadFiniteGuards.Sanitize(ref sanitizedSignal);
             if (guardCode != 0)
                 GlobalTelemetryBus.PublishMathGuardInvalidNumber(guardCode);
-            SignalBus<VocalCueSignal>.TryPush(in sanitizedSignal);
+            TryPushLegacy(in sanitizedSignal);
         }
 
         /// <summary>Queues one subtitle packet from the main thread.</summary>
@@ -312,7 +322,7 @@ namespace Hecton8.Core
         public static void Publish(in SubtitleSignal signal)
         {
             EnsureInitialized();
-            SignalBus<SubtitleSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one editor data reload packet from the main thread.</summary>
@@ -320,7 +330,7 @@ namespace Hecton8.Core
         public static void Publish(in DataReloadSignal signal)
         {
             EnsureInitialized();
-            SignalBus<DataReloadSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one memory pressure packet from the main thread.</summary>
@@ -328,7 +338,7 @@ namespace Hecton8.Core
         public static void Publish(in MemoryPressureSignal signal)
         {
             EnsureInitialized();
-            SignalBus<MemoryPressureSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one vault pointer relocation packet from the main thread.</summary>
@@ -336,7 +346,7 @@ namespace Hecton8.Core
         public static void Publish(in MemoryAddressShiftSignal signal)
         {
             EnsureInitialized();
-            SignalBus<MemoryAddressShiftSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one runtime resolution/mip residency transition packet.</summary>
@@ -344,7 +354,7 @@ namespace Hecton8.Core
         public static void Publish(in ResolutionChangedSignal signal)
         {
             EnsureInitialized();
-            SignalBus<ResolutionChangedSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one homeostasis health-index packet.</summary>
@@ -352,7 +362,7 @@ namespace Hecton8.Core
         public static void Publish(in SystemHealthIndexSignal signal)
         {
             EnsureInitialized();
-            SignalBus<SystemHealthIndexSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one CPU job-admission starvation diagnostic signal.</summary>
@@ -360,7 +370,7 @@ namespace Hecton8.Core
         public static void Publish(in CpuStarvationSignal signal)
         {
             EnsureInitialized();
-            SignalBus<CpuStarvationSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one acoustic ping packet from the main thread.</summary>
@@ -370,7 +380,7 @@ namespace Hecton8.Core
             EnsureInitialized();
             _latestAcousticPingSignal = signal;
             AdvanceSignalSequence(ref _latestAcousticPingSignalSequence);
-            SignalBus<AcousticPingSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one movement acoustic packet from the main thread.</summary>
@@ -378,7 +388,7 @@ namespace Hecton8.Core
         public static void Publish(in MovementAcousticSignal signal)
         {
             EnsureInitialized();
-            SignalBus<MovementAcousticSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one swarm dispersion packet from the main thread.</summary>
@@ -386,7 +396,7 @@ namespace Hecton8.Core
         public static void Publish(in SwarmDispersedSignal signal)
         {
             EnsureInitialized();
-            SignalBus<SwarmDispersedSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one sonar ping packet from the main thread.</summary>
@@ -394,7 +404,7 @@ namespace Hecton8.Core
         public static void Publish(in SonarPingSignal signal)
         {
             EnsureInitialized();
-            SignalBus<SonarPingSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one hypoxia packet from the main thread.</summary>
@@ -402,7 +412,7 @@ namespace Hecton8.Core
         public static void Publish(in HypoxiaSignal signal)
         {
             EnsureInitialized();
-            SignalBus<HypoxiaSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one oxygen critical packet from the main thread.</summary>
@@ -410,7 +420,7 @@ namespace Hecton8.Core
         public static void Publish(in OxygenCriticalSignal signal)
         {
             EnsureInitialized();
-            SignalBus<OxygenCriticalSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one interaction UI packet from the main thread.</summary>
@@ -418,7 +428,7 @@ namespace Hecton8.Core
         public static void Publish(in InteractionUiSignal signal)
         {
             EnsureInitialized();
-            SignalBus<InteractionUiSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one UI rescale request packet from the main thread.</summary>
@@ -426,7 +436,7 @@ namespace Hecton8.Core
         public static void Publish(in UIRescaleRequestSignal signal)
         {
             EnsureInitialized();
-            SignalBus<UIRescaleRequestSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one fluid incursion packet from the main thread.</summary>
@@ -434,7 +444,7 @@ namespace Hecton8.Core
         public static void Publish(in FluidIncursionSignal signal)
         {
             EnsureInitialized();
-            SignalBus<FluidIncursionSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one submarine flood mass-state packet from the main thread.</summary>
@@ -442,7 +452,7 @@ namespace Hecton8.Core
         public static void Publish(in SubmarineFloodStateSignal signal)
         {
             EnsureInitialized();
-            SignalBus<SubmarineFloodStateSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one fluid-density transition packet from the main thread.</summary>
@@ -452,7 +462,7 @@ namespace Hecton8.Core
             EnsureInitialized();
             _latestFluidDensityChangedSignal = signal;
             AdvanceSignalSequence(ref _latestFluidDensityChangedSignalSequence);
-            SignalBus<FluidDensityChangedSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one fluid pipe rupture packet from the main thread.</summary>
@@ -460,7 +470,7 @@ namespace Hecton8.Core
         public static void Publish(in PipeRuptureSignal signal)
         {
             EnsureInitialized();
-            SignalBus<PipeRuptureSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one spectrum scan packet from the main thread.</summary>
@@ -468,7 +478,7 @@ namespace Hecton8.Core
         public static void Publish(in SpectrumScanSignal signal)
         {
             EnsureInitialized();
-            SignalBus<SpectrumScanSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one rigidbody sleep packet from the main thread.</summary>
@@ -476,7 +486,7 @@ namespace Hecton8.Core
         public static void Publish(in RigidbodySleepSignal signal)
         {
             EnsureInitialized();
-            SignalBus<RigidbodySleepSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one scanner-active packet from the main thread.</summary>
@@ -486,7 +496,7 @@ namespace Hecton8.Core
             EnsureInitialized();
             _latestScannerToolActiveSignal = signal;
             AdvanceSignalSequence(ref _latestScannerToolActiveSignalSequence);
-            SignalBus<ScannerToolActiveSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one scan-complete packet from the main thread.</summary>
@@ -494,7 +504,7 @@ namespace Hecton8.Core
         public static void Publish(in ScanCompleteSignal signal)
         {
             EnsureInitialized();
-            SignalBus<ScanCompleteSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one lore-fragment scanned packet from the main thread.</summary>
@@ -502,7 +512,7 @@ namespace Hecton8.Core
         public static void Publish(in LoreFragmentScannedSignal signal)
         {
             EnsureInitialized();
-            SignalBus<LoreFragmentScannedSignal>.TryPush(signal);
+            TryPushLegacy(signal);
         }
 
         /// <summary>Queues one blueprint-unlocked packet from the main thread.</summary>
@@ -510,7 +520,7 @@ namespace Hecton8.Core
         public static void Publish(in BlueprintUnlockedSignal signal)
         {
             EnsureInitialized();
-            SignalBus<BlueprintUnlockedSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one crafting-started packet from the main thread.</summary>
@@ -518,7 +528,7 @@ namespace Hecton8.Core
         public static void Publish(in CraftingStartedSignal signal)
         {
             EnsureInitialized();
-            SignalBus<CraftingStartedSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one crafting-completed packet from the main thread.</summary>
@@ -535,7 +545,7 @@ namespace Hecton8.Core
             EnsureInitialized();
             _latestToolStateChangedSignal = signal;
             AdvanceSignalSequence(ref _latestToolStateChangedSignalSequence);
-            SignalBus<ToolStateChangedSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one player tool loadout or active-slot dirty packet.</summary>
@@ -543,7 +553,7 @@ namespace Hecton8.Core
         public static void Publish(in ToolLoadoutChangedSignal signal)
         {
             EnsureInitialized();
-            SignalBus<ToolLoadoutChangedSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one tool acoustic packet from the main thread.</summary>
@@ -551,7 +561,7 @@ namespace Hecton8.Core
         public static void Publish(in ToolAcousticSignal signal)
         {
             EnsureInitialized();
-            SignalBus<ToolAcousticSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one power-drain packet from the main thread.</summary>
@@ -559,7 +569,7 @@ namespace Hecton8.Core
         public static void Publish(in PowerDrainSignal signal)
         {
             EnsureInitialized();
-            SignalBus<PowerDrainSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one tool trigger packet from the main thread.</summary>
@@ -567,7 +577,7 @@ namespace Hecton8.Core
         public static void Publish(in ToolTriggerSignal signal)
         {
             EnsureInitialized();
-            SignalBus<ToolTriggerSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one HUD notification packet from the main thread.</summary>
@@ -575,7 +585,7 @@ namespace Hecton8.Core
         public static void Publish(in HUDNotificationSignal signal)
         {
             EnsureInitialized();
-            SignalBus<HUDNotificationSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one diegetic HUD prompt packet from the main thread.</summary>
@@ -583,7 +593,7 @@ namespace Hecton8.Core
         public static void Publish(in DiegeticHudSignal signal)
         {
             EnsureInitialized();
-            SignalBus<DiegeticHudSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one cached platform thermal state packet.</summary>
@@ -591,7 +601,7 @@ namespace Hecton8.Core
         public static void Publish(in ThermalStateChangedSignal signal)
         {
             EnsureInitialized();
-            SignalBus<ThermalStateChangedSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one cached platform battery level packet.</summary>
@@ -599,7 +609,7 @@ namespace Hecton8.Core
         public static void Publish(in BatteryLevelSignal signal)
         {
             EnsureInitialized();
-            SignalBus<BatteryLevelSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one inventory item durability update packet.</summary>
@@ -607,7 +617,7 @@ namespace Hecton8.Core
         public static void Publish(in ItemDurabilityChangedSignal signal)
         {
             EnsureInitialized();
-            SignalBus<ItemDurabilityChangedSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one player delayed-action progress packet.</summary>
@@ -615,7 +625,7 @@ namespace Hecton8.Core
         public static void Publish(in PlayerActionProgressSignal signal)
         {
             EnsureInitialized();
-            SignalBus<PlayerActionProgressSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one player delayed-action completion packet.</summary>
@@ -623,7 +633,7 @@ namespace Hecton8.Core
         public static void Publish(in PlayerActionCompletedSignal signal)
         {
             EnsureInitialized();
-            SignalBus<PlayerActionCompletedSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one player delayed-action cancellation packet.</summary>
@@ -631,7 +641,7 @@ namespace Hecton8.Core
         public static void Publish(in PlayerActionCancelledSignal signal)
         {
             EnsureInitialized();
-            SignalBus<PlayerActionCancelledSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one scan-log mutation packet.</summary>
@@ -639,7 +649,7 @@ namespace Hecton8.Core
         public static void Publish(in ScanLogChangedSignal signal)
         {
             EnsureInitialized();
-            SignalBus<ScanLogChangedSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one PDA exchange dirty-state packet.</summary>
@@ -647,7 +657,7 @@ namespace Hecton8.Core
         public static void Publish(in PdaExchangeStateChangedSignal signal)
         {
             EnsureInitialized();
-            SignalBus<PdaExchangeStateChangedSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one vehicle upgrade bitmask mutation packet.</summary>
@@ -655,7 +665,7 @@ namespace Hecton8.Core
         public static void Publish(in VehicleUpgradesChangedSignal signal)
         {
             EnsureInitialized();
-            SignalBus<VehicleUpgradesChangedSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one storage IO backpressure scalar packet from the streaming service.</summary>
@@ -666,7 +676,7 @@ namespace Hecton8.Core
             Volatile.Write(ref _latestStorageDebtMilli, (int)math.round(math.saturate(signal.Debt01) * 1000f));
             Volatile.Write(ref _latestStorageLatencyMilli, (int)math.round(math.max(0f, signal.LatencyEwmaMs)));
             Volatile.Write(ref _latestStorageDebtSequence, unchecked((int)signal.Sequence));
-            SignalBus<StorageDebtSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues a visual-only turbulence cover-up packet when IO backpressure is high.</summary>
@@ -674,7 +684,7 @@ namespace Hecton8.Core
         public static void Publish(in StreamingTurbulenceSignal signal)
         {
             EnsureInitialized();
-            SignalBus<StreamingTurbulenceSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one orbital prologue atmospheric re-entry state packet.</summary>
@@ -682,7 +692,7 @@ namespace Hecton8.Core
         public static void Publish(in AtmosphericReentrySignal signal)
         {
             EnsureInitialized();
-            SignalBus<AtmosphericReentrySignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one orbital prologue completion handoff packet.</summary>
@@ -690,7 +700,7 @@ namespace Hecton8.Core
         public static void Publish(in PrologueCompleteSignal signal)
         {
             EnsureInitialized();
-            SignalBus<PrologueCompleteSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one physical cockpit manual override latch packet.</summary>
@@ -698,7 +708,7 @@ namespace Hecton8.Core
         public static void Publish(in ManualOverridePulledSignal signal)
         {
             EnsureInitialized();
-            SignalBus<ManualOverridePulledSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one recon data packet from the main thread.</summary>
@@ -706,7 +716,7 @@ namespace Hecton8.Core
         public static void Publish(in ReconDataSignal signal)
         {
             EnsureInitialized();
-            SignalBus<ReconDataSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one save lifecycle packet from the main thread.</summary>
@@ -714,7 +724,7 @@ namespace Hecton8.Core
         public static void Publish(in SaveLifecycleSignal signal)
         {
             EnsureInitialized();
-            SignalBus<SaveLifecycleSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one macro database hydration packet on the typed native lane.</summary>
@@ -722,7 +732,7 @@ namespace Hecton8.Core
         public static void Publish(in MacroDatabaseSectorHydrationSignal signal)
         {
             EnsureInitialized();
-            SignalBus<MacroDatabaseSectorHydrationSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one WFC outpost generation completion packet on the typed native lane.</summary>
@@ -730,7 +740,7 @@ namespace Hecton8.Core
         public static void Publish(in WfcOutpostGeneratedSignal signal)
         {
             EnsureInitialized();
-            SignalBus<WfcOutpostGeneratedSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one WFC outpost mutable-cell state change on the typed native lane.</summary>
@@ -738,7 +748,7 @@ namespace Hecton8.Core
         public static void Publish(in WfcOutpostStateChangedSignal signal)
         {
             EnsureInitialized();
-            SignalBus<WfcOutpostStateChangedSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one WFC outpost door-power packet on the typed native lane.</summary>
@@ -746,7 +756,7 @@ namespace Hecton8.Core
         public static void Publish(in WfcOutpostDoorPowerSignal signal)
         {
             EnsureInitialized();
-            SignalBus<WfcOutpostDoorPowerSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one compliance violation packet from the main thread.</summary>
@@ -754,7 +764,7 @@ namespace Hecton8.Core
         public static void Publish(in ComplianceViolationSignal signal)
         {
             EnsureInitialized();
-            SignalBus<ComplianceViolationSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one global time sync packet from the main thread.</summary>
@@ -762,7 +772,7 @@ namespace Hecton8.Core
         public static void Publish(in GlobalTimeSyncSignal signal)
         {
             EnsureInitialized();
-            SignalBus<GlobalTimeSyncSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one deterministic seismic/tide packet from the main thread.</summary>
@@ -777,7 +787,7 @@ namespace Hecton8.Core
 
             _latestSeismicSignal = sanitizedSignal;
             AdvanceSignalSequence(ref _latestSeismicSignalSequence);
-            SignalBus<SeismicSignal>.TryPush(in sanitizedSignal);
+            TryPushLegacy(in sanitizedSignal);
         }
 
         /// <summary>Queues one authoritative dispatcher time-dilation packet from the main thread.</summary>
@@ -799,7 +809,7 @@ namespace Hecton8.Core
         public static void Publish(in SystemPauseSignal signal)
         {
             EnsureInitialized();
-            SignalBus<SystemPauseSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one bullet-time post-process fake packet from the main thread.</summary>
@@ -819,7 +829,7 @@ namespace Hecton8.Core
             if (guardCode != 0)
                 GlobalTelemetryBus.PublishMathGuardInvalidNumber(guardCode);
 
-            SignalBus<WeatherStrengthSignal>.TryPush(in sanitizedSignal);
+            TryPushLegacy(in sanitizedSignal);
             WeatherChangedSignal weatherSignal = default;
             weatherSignal.Strength01 = sanitizedSignal.Strength01;
             weatherSignal.FlowFieldScale = sanitizedSignal.FlowFieldScale;
@@ -828,7 +838,7 @@ namespace Hecton8.Core
             weatherSignal.Frame = sanitizedSignal.Frame;
             weatherSignal.QualityWeightByte = EncodeSignalQualityWeightByte(SignalBusRegistry.GlobalQualityWeight01);
             weatherSignal.Flags = sanitizedSignal.Flags;
-            SignalBus<WeatherChangedSignal>.TryPush(in weatherSignal);
+            TryPushLegacy(in weatherSignal);
         }
 
         /// <summary>Queues one item decay packet from the main thread.</summary>
@@ -836,7 +846,7 @@ namespace Hecton8.Core
         public static void Publish(in ItemDecaySignal signal)
         {
             EnsureInitialized();
-            SignalBus<ItemDecaySignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one resource-acquired packet from the main thread.</summary>
@@ -844,7 +854,7 @@ namespace Hecton8.Core
         public static void Publish(in ItemAcquiredSignal signal)
         {
             EnsureInitialized();
-            SignalBus<ItemAcquiredSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one radiation dose packet from the main thread.</summary>
@@ -852,7 +862,7 @@ namespace Hecton8.Core
         public static void Publish(in RadiationDoseSignal signal)
         {
             EnsureInitialized();
-            SignalBus<RadiationDoseSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one resource-depletion delta packet from the main thread.</summary>
@@ -860,20 +870,20 @@ namespace Hecton8.Core
         public static void Publish(in ResourceDepletionDeltaSignal signal)
         {
             EnsureInitialized();
-            SignalBus<ResourceDepletionDeltaSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Legacy alias pinned to the typed signal lane.</summary>
         [global::System.Obsolete("Legacy push facade is retired. Use SignalBus<T> or an owner route wrapper.", true)]
-        public static void Push(in ItemAcquiredSignal signal) => SignalBus<ItemAcquiredSignal>.TryPush(in signal);
+        public static void Push(in ItemAcquiredSignal signal) => TryPushLegacy(in signal);
 
         /// <summary>Legacy alias pinned to the typed signal lane.</summary>
         [global::System.Obsolete("Legacy push facade is retired. Use SignalBus<T> or an owner route wrapper.", true)]
-        public static void Push(in RadiationDoseSignal signal) => SignalBus<RadiationDoseSignal>.TryPush(in signal);
+        public static void Push(in RadiationDoseSignal signal) => TryPushLegacy(in signal);
 
         /// <summary>Legacy alias pinned to the typed signal lane.</summary>
         [global::System.Obsolete("Legacy push facade is retired. Use SignalBus<T> or an owner route wrapper.", true)]
-        public static void Push(in ResourceDepletionDeltaSignal signal) => SignalBus<ResourceDepletionDeltaSignal>.TryPush(in signal);
+        public static void Push(in ResourceDepletionDeltaSignal signal) => TryPushLegacy(in signal);
 
         /// <summary>Queues one player-light sample packet from the main thread.</summary>
         [global::System.Obsolete("Legacy publish facade is retired. Use SignalBus<T> or an owner route wrapper.", true)]
@@ -882,7 +892,7 @@ namespace Hecton8.Core
             EnsureInitialized();
             _latestLightLevelSignal = signal;
             AdvanceSignalSequence(ref _latestLightLevelSignalSequence);
-            SignalBus<LightLevelSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one player/submersible headlight state packet into the typed lane.</summary>
@@ -890,7 +900,7 @@ namespace Hecton8.Core
         public static void Publish(in SubmarineLightsChangedSignal signal)
         {
             EnsureInitialized();
-            SignalBus<SubmarineLightsChangedSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one fauna state transition packet from the main thread.</summary>
@@ -898,7 +908,7 @@ namespace Hecton8.Core
         public static void Publish(in FaunaStateChangedSignal signal)
         {
             EnsureInitialized();
-            SignalBus<FaunaStateChangedSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one physiology-state packet from the main thread.</summary>
@@ -913,7 +923,7 @@ namespace Hecton8.Core
 
             _latestPhysiologyStateSignal = sanitizedSignal;
             AdvanceSignalSequence(ref _latestPhysiologyStateSignalSequence);
-            SignalBus<PhysiologyStateSignal>.TryPush(in sanitizedSignal);
+            TryPushLegacy(in sanitizedSignal);
         }
 
         /// <summary>Queues one player stress packet from the main thread.</summary>
@@ -928,7 +938,7 @@ namespace Hecton8.Core
 
             _latestPlayerStressSignal = sanitizedSignal;
             AdvanceSignalSequence(ref _latestPlayerStressSignalSequence);
-            SignalBus<PlayerStressSignal>.TryPush(in sanitizedSignal);
+            TryPushLegacy(in sanitizedSignal);
         }
 
         /// <summary>Queues one player trauma packet from the main thread.</summary>
@@ -936,7 +946,7 @@ namespace Hecton8.Core
         public static void Publish(in TraumaSignal signal)
         {
             EnsureInitialized();
-            SignalBus<TraumaSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one procedural flora wake packet from the main thread.</summary>
@@ -944,7 +954,7 @@ namespace Hecton8.Core
         public static void Publish(in WakeGeneratedSignal signal)
         {
             EnsureInitialized();
-            SignalBus<WakeGeneratedSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one bounded visual-fluid impulse for GPU advection consumers.</summary>
@@ -952,7 +962,7 @@ namespace Hecton8.Core
         public static void Publish(in FluidImpulseSignal signal)
         {
             EnsureInitialized();
-            SignalBus<FluidImpulseSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one bounded submarine bubble-spawn marker for VFX consumers.</summary>
@@ -960,7 +970,7 @@ namespace Hecton8.Core
         public static void Publish(in BubbleSpawnSignal signal)
         {
             EnsureInitialized();
-            SignalBus<BubbleSpawnSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one narrative progression packet from the main thread.</summary>
@@ -968,7 +978,7 @@ namespace Hecton8.Core
         public static void Publish(in ProgressionEventSignal signal)
         {
             EnsureInitialized();
-            SignalBus<ProgressionEventSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one AUP-independent global world-state mutation from the main thread.</summary>
@@ -976,7 +986,7 @@ namespace Hecton8.Core
         public static void Publish(in GlobalWorldStateSignal signal)
         {
             EnsureInitialized();
-            SignalBus<GlobalWorldStateSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one biome transition packet from the main thread.</summary>
@@ -984,7 +994,7 @@ namespace Hecton8.Core
         public static void Publish(in BiomeChangedSignal signal)
         {
             EnsureInitialized();
-            SignalBus<BiomeChangedSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one procedural narrative camera focus packet from the main thread.</summary>
@@ -992,7 +1002,7 @@ namespace Hecton8.Core
         public static void Publish(in NarrativeFocusSignal signal)
         {
             EnsureInitialized();
-            SignalBus<NarrativeFocusSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one player-authored focus break packet from the main thread.</summary>
@@ -1000,7 +1010,7 @@ namespace Hecton8.Core
         public static void Publish(in FocusBrokenSignal signal)
         {
             EnsureInitialized();
-            SignalBus<FocusBrokenSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one mixer-state request packet from the main thread.</summary>
@@ -1008,7 +1018,7 @@ namespace Hecton8.Core
         public static void Publish(in MixerStateSignal signal)
         {
             EnsureInitialized();
-            SignalBus<MixerStateSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one diegetic narrative waypoint packet from the main thread.</summary>
@@ -1016,7 +1026,7 @@ namespace Hecton8.Core
         public static void Publish(in NarrativeHudWaypointSignal signal)
         {
             EnsureInitialized();
-            SignalBus<NarrativeHudWaypointSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one soundscape profile handoff packet from the main thread.</summary>
@@ -1024,7 +1034,7 @@ namespace Hecton8.Core
         public static void Publish(in SoundscapeProfileSignal signal)
         {
             EnsureInitialized();
-            SignalBus<SoundscapeProfileSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         /// <summary>Queues one narrative POI save-state packet from the main thread.</summary>
@@ -1032,7 +1042,7 @@ namespace Hecton8.Core
         public static void Publish(in NarrativePoiStateSignal signal)
         {
             EnsureInitialized();
-            SignalBus<NarrativePoiStateSignal>.TryPush(in signal);
+            TryPushLegacy(in signal);
         }
 
         [global::System.Obsolete("Legacy destructive dequeue facade is retired. Use SignalBus<T>.TryConsumeFrame or an owner route reader.", true)]

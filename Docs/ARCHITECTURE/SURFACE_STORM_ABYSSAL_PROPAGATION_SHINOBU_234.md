@@ -440,7 +440,8 @@ Overflow/failure:
 - Telemetry wraps modulo 300 with signed-overflow-safe cursor helpers.
 - Missing Vault, missing weather owner row, stale handle, compaction fence, missing CSV, oversized CSV, or short CSV reads fail closed and reuse stable rows.
 - Schedule-time lock/resolve failure clears cached Vault handles after unlock so `SlowTick` can cold-rebind instead of spinning on stale handles.
-- `SampleAup` is currently the core floating-origin fallback, not a player/camera accessor, so hot propagation does not depend on player-context availability and Task 13 remains blocked for literal camera-AUP depth.
+- `SampleAup` is the core floating-origin fallback, not a player/camera accessor.
+- Hot propagation does not depend on player context; Task 13 remains blocked for literal camera-AUP depth.
 - Non-finite attenuation caches telemetry flags during publication and defers one fail-closed file export attempt to slow tick at `Docs/AgentLogs/Dump_SHINOBU_234.bin`; full async exporter handoff is still absent.
 
 
@@ -562,7 +563,9 @@ Why this does not increase global monolith risk:
 
 
 
-The route owns one narrow fact: depth-attenuated storm propagation scalars. It does not own fog, audio, biolum, ocean swell, flow-grid simulation, or weather truth beyond a cold mock fallback row.
+Route owns one fact: depth-attenuated storm propagation scalars.
+
+It does not own fog, audio, biolum, ocean swell, flow-grid simulation, or weather truth beyond cold mock fallback row.
 
 
 

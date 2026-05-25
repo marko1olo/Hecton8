@@ -1175,7 +1175,7 @@ namespace Hecton8.Modding
                 CameraJuiceState = cameraJuiceState,
                 KernelProfiles = kernelProfiles,
                 Count = 2,
-                Frame = (uint)Time.frameCount,
+                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 OpcodeRecordCount = state.OpcodeCount,
                 MaxCommandsPerSignature = maxPerSignature,
                 GlobalQualityWeight = quality,
@@ -1208,7 +1208,7 @@ namespace Hecton8.Modding
                 ? FutureCommandSandboxConstants.FaultHashLayout
                 : FutureCommandSandboxConstants.FaultHashInvalidPayload;
             RecordTelemetry(
-                (uint)Time.frameCount,
+                Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 stats.Incoming,
                 stats.Valid,
                 stats.Rejected,
@@ -2734,7 +2734,7 @@ namespace Hecton8.Modding
                 staging.Length,
                 maxPerSignature);
 
-            uint frame = (uint)Time.frameCount;
+            uint frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             uint rollbackActive = IsRollbackFrozen() ? 1u : 0u;
             ModSandboxRingState state = ringState[0];
             uint enqueueOverflowDropped = state.PendingOverflowDropped;

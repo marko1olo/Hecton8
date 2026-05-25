@@ -152,7 +152,9 @@ Hecton Deep Sea Noir Post.
 
 GC proof required:
 
-Unity Profiler and GCMonitor proof of 0 B/frame in active deepSeaNoirUnifiedPass path. Static source currently shows no per-frame managed collection allocation in the active route, but measured proof is absent.
+Required proof: Unity Profiler and GCMonitor `0 B/frame` for active deepSeaNoirUnifiedPass.
+
+Static source shows no per-frame managed collection allocation in active route, but measured proof is absent.
 
 Shutdown/disposal:
 

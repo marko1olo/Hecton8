@@ -14,6 +14,7 @@ namespace Hecton8.Gameplay
     [AddComponentMenu("Hecton8/Gameplay/Scan Log System")]
     public sealed class ScanLogSystem : MonoBehaviour, ISaveable, IScanEventListener, IScanLogService, IGlobalRegistryHotSwapListener
     {
+        private static int s_x001ScanLogSystemSignalPushDropCount;
         public readonly struct ScanEntrySnapshot
         {
             public readonly string Id;
@@ -225,7 +226,7 @@ namespace Hecton8.Gameplay
                 return;
 
             if (_saveService == null)
-                _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+                _saveService = GlobalRegistry.Save;
 
             if (_saveService == null)
                 return;
@@ -512,7 +513,7 @@ namespace Hecton8.Gameplay
             {
                 SourceId = _signalSourceId,
                 EntryHash = entryHash,
-                Frame = unchecked((uint)Time.frameCount),
+                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 EntryCount = (ushort)math.clamp(_entries.Count, 0, ushort.MaxValue),
                 RecentCount = (ushort)math.clamp(_recentEntryHashes.Count, 0, ushort.MaxValue),
                 Reason = reason,
@@ -521,7 +522,7 @@ namespace Hecton8.Gameplay
                 CategoryHash = categoryHash
             };
 
-            SignalBus<ScanLogChangedSignal>.TryPush(in signal);
+            SignalBus<ScanLogChangedSignal>.TryPushTracked(in signal, ref s_x001ScanLogSystemSignalPushDropCount);
         }
 
         private void PushRecent(uint entryHash)

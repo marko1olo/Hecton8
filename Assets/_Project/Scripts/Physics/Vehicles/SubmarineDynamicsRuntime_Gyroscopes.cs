@@ -13,6 +13,8 @@ namespace Hecton8.Physics.Vehicles
 {
     public sealed partial class SubmarineDynamicsRuntime
     {
+        private static int s_x001DirectSignalPushDropCount_SubmarineDynamicsRuntime_Gyroscopes;
+
         private const long MaxGyroProfileCsvBytes = 4096L;
         private static readonly int s_GyroVisualBufferId = Shader.PropertyToID("_H8SubmarineGyroVisuals");
         private static readonly int s_GyroVisualCountId = Shader.PropertyToID("_H8SubmarineGyroVisualCount");
@@ -391,7 +393,7 @@ namespace Hecton8.Physics.Vehicles
             signal.DurationSeconds = 1.5f;
             signal.Reason = 1;
             signal.Flags = latest.NonFiniteCount > 0u ? (byte)1 : (byte)0;
-            if (!SignalBus<SystemGlitchSignal>.TryPush(in signal))
+            if (!SignalBus<SystemGlitchSignal>.TryPushTracked(in signal, ref s_x001DirectSignalPushDropCount_SubmarineDynamicsRuntime_Gyroscopes))
                 IncrementDroppedSignalCount();
         }
 

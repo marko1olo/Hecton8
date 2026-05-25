@@ -295,14 +295,14 @@ namespace Hecton8.Construction
                 return false;
             }
 
-            if (!interactionService.TryRaycastPrimary(
+            if (!interactionService.TryResolvePrimarySurfaceHit(
                     _placementRayRequesterId,
                     origin,
                     Vector3.down,
                     math.max(0.001f, placementProbeHeight + placementProbeDistance),
                     seabedMask.value,
                     QueryTriggerInteraction.Ignore,
-                    out RaycastHit hit))
+                    out InteractionSurfaceHit hit))
             {
                 blockReason = DefaultPlacementBlockedReason;
                 return false;

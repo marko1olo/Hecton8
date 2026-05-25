@@ -1401,6 +1401,10 @@ namespace Hecton8.Core.Contracts.Signals
     [StructLayout(LayoutKind.Explicit, Size = 96)]
     public struct SeismicSignal : ISignal
     {
+        public const int ExpectedCapacity = 64;
+        public const int MaxFrameSignals = 64;
+        public const int LowTierFrameSignals = 16;
+        public const uint LaneHash = 0x4A180124u;
         public const byte FlagRadialWave = 1 << 7;
         public const byte FlagPresentationOnly = 1 << 6;
         public const byte LegacyQualityMask = 0x0F;

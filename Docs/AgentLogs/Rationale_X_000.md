@@ -495,3 +495,81 @@ Solution: Replaced the twelve raw native fields with a local `VaultNativeArray<T
 Rejected Alternatives: Rewriting the entire radiation kernel into writer-fenced helper calls was rejected for this pass because the file is under active parallel gameplay edits and already has the DataVault owner route. Keeping cached raw views was rejected because it violates relocation safety and the X_000 task scope.
 Scalability potential: Low keeps fixed 32^3 grid and 64 source capacity. Middle/High/Ultra can raise sampling fidelity or visual response elsewhere without changing radiation DTO layout or owner route.
 Hardware Impact: Removes twelve persistent native aliases from a gameplay MonoBehaviour. Scoped regex now reports 0 direct private native collection fields in `RadiationHazardGrid.cs`; compile proof is pending Unity/Bee compiler drain.
+
+## Decision 060 - Migratory Sargassum Vault Migration
+
+Problem: `WorldProceduralScatterDirectorMigratorySargassum` retained six persistent `NativeArray` fields inside a MonoBehaviour partial for island state, scratch state, selected sources, flow samples, and AUP spatial handles. These buffers cross scatter slow-tick, Burst drift, spatial publication, and DataVault replacement phases.
+Solution: Added six `SystemID.WorldSargassum` BufferIDs and replaced the raw fields with `MigratoryVaultArray<T>` descriptors holding only `IDataVault` plus `VaultGenerationHandle<T>`. The drift job now receives method-local native views only after explicit DataVault writer locks are acquired.
+Rejected Alternatives: Leaving these arrays local because the island cap is only 24 was rejected; small persistent native aliases still stale under relocation. Moving the spatial hash itself into DataVault was rejected because `HectonSpatialHash` owns its own internal native tables and requires a separate route card.
+Scalability potential: Low keeps the same 24-island cap and fails closed if DataVault allocation is locked. Middle/High/Ultra can increase visual density around migratory canopies elsewhere, but island DTO layout, buffer ownership, and spatial signal truth stay unchanged.
+Hardware Impact: Removes six additional persistent native aliases from a world-generation MonoBehaviour. No heap allocation is introduced; descriptor access is generation-checked and method-local.
+
+## Decision 061 - Migratory Sargassum Job Lock And Phase Purity
+
+Problem: The old slow-tick path could refresh island/source state while a previous migratory drift job was still marked running, and a DataVault-backed job would need relocation protection until completion.
+Solution: `TickMigratorySargassumLane` now returns while the migratory job is running. `TryAcquireMigratorySargassumJobBuffers` locks the island and flow-sample buffers before sampling flow and scheduling the Burst job; `ReleaseMigratorySargassumJobBufferLocks` runs after normal completion, forced teardown, schedule failure, and DataVault hot-swap.
+Rejected Alternatives: Resolving DataVault views without writer locks was rejected because defragmentation could move memory while Burst owns the pointer. Completing the job from read helpers was rejected because reads must not hide synchronization.
+Scalability potential: Low avoids hidden same-phase mutation and relocation hazards. Middle/High/Ultra preserve deterministic sargassum spatial publication while visual overkill scales through presentation lanes, not by changing memory ownership.
+Hardware Impact: Scoped regex reports 0 direct private native collection fields in `WorldProceduralScatterDirectorMigratorySargassum.cs`. Build proof is pending because CPU was 50.56% and `dotnet exec ... VBCSCompiler.dll` process 52216 was active.
+
+## Decision 062 - MarauderOutpostGenerationService Vault Migration
+
+Problem: `MarauderOutpostGenerationService` retained seven persistent MonoBehaviour native arrays for WFC solve state, shell extraction, interactable spawns, counters, mutable WFC persistence, and the 300-frame black-box ring.
+Solution: Added `SystemID.WorldOutposts` plus BufferIDs 74375..74381, replaced all seven arrays with `VaultGenerationHandle<T>` descriptors, and kept native views method-local through DataVault read-only resolution or writer locks.
+Rejected Alternatives: Leaving the WFC grid as a public `NativeArray<byte>` was rejected because power-grid publication would retain a stale pointer carrier. Moving the registry handoff to managed bytes was rejected because the existing logistics grid registry uses native fixed-slot copies and would add heap churn.
+Scalability potential: Low uses the same low-tier 5x5x3 solve shape and fails closed if vault buffers are unavailable. Middle/High/Ultra can spend saved safety margin on denser shell visuals and interactable presentation while keeping WFC truth, DTO layout, and authority route unchanged.
+Hardware Impact: Removes seven persistent native aliases from a world-generation MonoBehaviour. Expected GC delta remains 0 B/frame; static proof only, no profiler microseconds available from shell.
+
+## Decision 063 - Marauder Outpost Job Fences And Read Purity
+
+Problem: The outpost solve, matrix extraction, and AUP-shift jobs need stable native pointers until completion, while `TryGet*` and `TryRead*` routes must not allocate, regenerate buffers, complete jobs, or publish state.
+Solution: Added explicit `_solveJobBufferLocked`, `_extractionJobBuffersLocked`, and `_shiftJobBufferLocked` state. Solve, extraction, and shift paths acquire DataVault writer locks immediately before scheduling and release them on late-frame completion, schedule failure, forced teardown, and DataVault hot-swap. `TryGetWfcGrid`, `TryGetShellMatrices`, and private `TryRead*` helpers now resolve read-only handles only.
+Rejected Alternatives: Completing jobs from read accessors was rejected because it hides synchronization in consumer reads. Resolving writable views without DataVault locks was rejected because relocation/defragmentation could move memory while Burst owns the pointer.
+Scalability potential: Low avoids hidden stalls and allocator pressure under outpost hydration. Middle/High/Ultra keep deterministic WFC state ownership and scale visual overkill through matrices/material response, not through a different buffer route.
+Hardware Impact: Blocks stale pointer retention between solve/extract/shift phases. Lock/unlock overhead is bounded by generation events, not per-frame reads; profiler microseconds are pending build/profiler access.
+
+## Decision 064 - Marauder Outpost ARM64 Layout Proof And Registry Boundary
+
+Problem: The new outpost DataVault payloads needed explicit proof that custom DTO rows are 8-byte-clean and that the registry handoff does not force raw native field retention in the MonoBehaviour.
+Solution: Documented `OutpostTelemetryEntry` as explicit 128 bytes with `SectorHash` at offset 8 and padding ulongs at offsets 72,80,88,96,104,112,120. Documented `OutpostInteractableSpawn` as explicit 32 bytes with `_pad1` at offset 24. Added a `WfcOutpostGridRegistry.RegisterGrid` overload for `NativeArray<byte>.ReadOnly` so publication copies from a scoped view.
+Rejected Alternatives: Faking byte maps for Unity `float4x4` internals was rejected; the report states it as a 64-byte Unity.Mathematics row with no double/long scalar. Reusing the old public `WfcGrid` field for compatibility was rejected because it was the exact stale alias being removed.
+Scalability potential: Low/Middle/High/Ultra share one DTO layout. GlobalQualityWeight affects quality tier and presentation, not telemetry row size or buffer authority.
+Hardware Impact: `OutpostTelemetryEntry` and `OutpostInteractableSpawn` sizes are divisible by 8. All 8-byte scalar/padding lanes start on 8-byte offsets. Scoped regex reports zero direct native collection fields in `MarauderOutpostGenerationService.cs`; final build reports 0 warnings and 0 errors.
+
+## Decision 065 - Marauder Build And Residual Audit Truth
+
+Problem: Static proof was not enough; the migration needed compiler and Roslyn evidence after the DataVault descriptor rewrite.
+Solution: Waited until the build gate cleared at CPU 21.93% with no active compiler processes, then ran `dotnet build Hecton8.Editor.csproj /nr:false -p:UseSharedCompilation=false -v:minimal`. Build completed in 00:02:08.87 with 0 warnings and 0 errors. Reran the Roslyn audit and regenerated the mono residual and exorcism reports.
+Rejected Alternatives: Launching a build while CPU was 100% or `csc` was active was rejected by project rule. Reporting the Marauder slice from scoped regex only was rejected because the compiler and AST scanner are the proof channels.
+Scalability potential: Low/Middle/High/Ultra behavior is unchanged by proof generation. Residual risk remains memory ownership correctness, not a quality-level trade.
+Hardware Impact: Latest full ledger: 2406 files, 0 parse failures, 7710 native fields, 2138 forbidden persistent candidates, 581 MonoBehaviour candidates across 58 files, hash `1a2db4092081840dfc0366bb82ed12aaa304e226b1fc5b3b1ee858e37456c58a`. Project-wide purge is still incomplete.
+
+Status: BUILD CLEAN / MARAUDER OUTPOST VAULT MIGRATION COMPLETE / PROJECT-WIDE PURGE INCOMPLETE
+
+## Decision 066 - CrashTelemetryBuffer Vault Migration
+
+Problem: `CrashTelemetryBuffer` retained three persistent MonoBehaviour native arrays for the live crash ring, export snapshot, and export scratch bytes. This is a critical black-box owner, so stale native aliases here are unacceptable.
+Solution: Added CoreDiagnostics-owned BufferIDs 74382..74384 and replaced the three fields with a `VaultArray<T>` descriptor wrapper that stores `IDataVault` plus `VaultGenerationHandle<T>`. Initialization acquires fixed DataVault payloads; disposal releases handles through the cached vault.
+Rejected Alternatives: Leaving the ring local because it is a diagnostic singleton was rejected; diagnostics still obey memory sovereignty. Moving crash export scratch entirely to managed memory was rejected because the existing binary exporter already uses native snapshot/scratch for bounded unsafe copies.
+Scalability potential: Low/Middle/High/Ultra share the same black-box payload shape. Quality settings must not alter crash telemetry authority, DTO layout, or export identity.
+Hardware Impact: Removes three persistent native aliases from a critical MonoBehaviour. Expected GC delta remains 0 B/frame because existing managed file scratch buffers were already allocated cold.
+
+## Decision 067 - Crash Export Thread DataVault Boundary
+
+Problem: The background crash export worker must not resolve DataVault handles from a non-owner thread.
+Solution: `TryExportSnapshot` and the unhandled-exception path now build the native export scratch and mirror it into `_crashExportFileScratch` before signaling the worker. `WritePreparedExportToDisk` writes the managed scratch only and no longer touches `_exportScratch` or `_exportSnapshot`.
+Rejected Alternatives: Letting the worker call `BuildExportScratch` was rejected because it would resolve DataVault-backed views off the owner thread. Removing the worker was rejected because crash export I/O should remain isolated from the game tick.
+Scalability potential: Low keeps export bounded to a 1000-row snapshot. Middle/High/Ultra receive the same deterministic crash payload; visual quality has no authority over the black-box route.
+Hardware Impact: Prevents cross-thread DataVault handle resolution while retaining the existing fixed 64016-byte export payload. Build proof is pending because CPU remains above the allowed threshold.
+
+Status: BUILD PENDING / CRASH TELEMETRY BUFFER VAULT MIGRATION IN PROGRESS / PROJECT-WIDE PURGE INCOMPLETE
+
+## Decision 068 - Crash Telemetry Layout And Read Purity Static Proof
+
+Problem: The crash telemetry migration needed ARM64 layout evidence and read-purity evidence before the compiler gate was available. Reporting only the field replacement would leave the black-box owner under-proven.
+Solution: Audited the explicit structs in `CrashTelemetryBuffer`: `CrashExportHeader` is 16 bytes with `Magic` at offset 0, `TelemetryEntry` is 64 bytes with only 4-byte scalar/vector lanes, and `LiveTelemetryRecord` is 32 bytes. The fixed byte export scratch is 64016 bytes. `TryExportSnapshot` and `TryExportSnapshotFromUnhandledException` build native scratch on the owner thread, then the background worker writes the fixed managed scratch only.
+Rejected Alternatives: Running `dotnet build` while CPU was 100% and `dotnet`/`csc` were active was rejected by build-gate law. Claiming runtime ARM64 proof without editor/player verification was rejected; this is static source proof until the compiler/profiler gate clears.
+Scalability potential: Low/Middle/High/Ultra all share one crash DTO/export contract. Visual quality must not change black-box row size, export identity, or crash authority route.
+Hardware Impact: Confirms the three CrashTelemetryBuffer payloads removed from MonoBehaviour fields have 8-byte-clean DTO or byte-lane storage. Targeted removals remain at least 74 persistent aliases/alias carriers pending clean build and full Roslyn refresh.
+
+Status: BUILD PENDING / CRASH TELEMETRY BUFFER VAULT MIGRATION STATIC-PROOFED / PROJECT-WIDE PURGE INCOMPLETE

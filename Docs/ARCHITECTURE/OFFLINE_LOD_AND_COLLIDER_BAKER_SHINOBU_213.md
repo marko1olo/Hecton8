@@ -214,7 +214,9 @@ No `[StructLayout(Pack=1)]` is used.
 
 
 
-LOD0 is capped by `Lod0HardBudget`. LOD1 and LOD2 derive hard caps from `Lod0HardBudget * resolvedRatio`, with LOD2 clamped below LOD1, so source meshes above budget cannot leak oversized lower-detail meshes.
+LOD0 is capped by `Lod0HardBudget`.
+
+LOD1/LOD2 caps derive from `Lod0HardBudget * resolvedRatio`; LOD2 stays below LOD1, preventing oversized lower-detail meshes.
 
 
 
@@ -258,7 +260,8 @@ If target triangle count is lower than source submesh count, hard budget wins. S
 
 
 - `OfflineLodManifestHeader` is 64 bytes and `OfflineLodManifestRecord` is 128 bytes.
-- Both are explicit layouts with 4-byte aligned fields and explicit uint reserve lanes; the manifest header includes an endian tag so importers can reject or byte-swap future non-little-endian payloads.
+- Both are explicit layouts with 4-byte aligned fields and uint reserve lanes.
+- Manifest header includes an endian tag for future reject/byte-swap handling.
 - Float lanes are serialized through `math.asuint`; byte reversal is local because this checkout's Unity.Mathematics package does not expose `math.reversebytes`.
 
 

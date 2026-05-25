@@ -833,6 +833,7 @@ namespace Hecton8.Gameplay
     [AddComponentMenu("Hecton8/Gameplay/Somatic Kinematics Runtime")]
     public sealed class SomaticKinematicsRuntime : MonoBehaviour, IFixedTickable, IPostFixedTickable, ISlowTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener
     {
+        private static int s_x001SomaticKinematicsRuntimeSignalPushDropCount;
         public const int BlackBoxCapacity = 300;
         public const int DragLutCapacity = 16;
         public const int HandHistoryCapacity = 6;
@@ -1054,7 +1055,7 @@ namespace Hecton8.Gameplay
             fence.SourceId = _sourceId;
             fence.Sequence = shiftData.Sequence;
             fence.Flags = shiftData.IsSafeTeleport != 0 ? (byte)1 : (byte)0;
-            SignalBus<SyncFenceSignal>.TryPush(in fence);
+            SignalBus<SyncFenceSignal>.TryPushTracked(in fence, ref s_x001SomaticKinematicsRuntimeSignalPushDropCount);
         }
 
         internal static void EnsureOnPlayerRoot(GameObject playerRoot)
@@ -1586,7 +1587,7 @@ namespace Hecton8.Gameplay
             velocitySignal.SourceId = _sourceId;
             velocitySignal.Sequence = NextSequence(ref _kccVelocitySequence);
             velocitySignal.Flags = flags;
-            SignalBus<KccVelocitySignal>.TryPush(in velocitySignal);
+            SignalBus<KccVelocitySignal>.TryPushTracked(in velocitySignal, ref s_x001SomaticKinematicsRuntimeSignalPushDropCount);
 
             if ((scratch.Flags & SignalFlagAcoustic) != 0u)
             {
@@ -1598,7 +1599,7 @@ namespace Hecton8.Gameplay
                 movement.LocomotionMode = state.PlayerRadius > 0.01f ? (byte)1 : (byte)0;
                 movement.SurfaceMode = state.SurfaceSubmersion01 <= 0.001f ? (byte)1 : (byte)0;
                 movement.Flags = state.LastPushOutMeters > 0.001f ? (byte)1 : (byte)0;
-                SignalBus<MovementAcousticSignal>.TryPush(in movement);
+                SignalBus<MovementAcousticSignal>.TryPushTracked(in movement, ref s_x001SomaticKinematicsRuntimeSignalPushDropCount);
             }
 
             if ((scratch.Flags & SignalFlagHaptic) != 0u)
@@ -1611,7 +1612,7 @@ namespace Hecton8.Gameplay
                 canonicalHaptic.Frame = state.Frame;
                 canonicalHaptic.Channel = HapticRequest.ChannelCollision;
                 canonicalHaptic.Flags = HapticRequest.FlagLightThud;
-                SignalBus<HapticRequest>.TryPush(in canonicalHaptic);
+                SignalBus<HapticRequest>.TryPushTracked(in canonicalHaptic, ref s_x001SomaticKinematicsRuntimeSignalPushDropCount);
             }
 
             if ((scratch.Flags & SignalFlagFault) != 0u)
@@ -1632,7 +1633,7 @@ namespace Hecton8.Gameplay
             exertion.StrokeMagnitude = math.isfinite(_slowExertionAccumulator) ? math.max(0f, _slowExertionAccumulator) : 0f;
             exertion.AgainstCurrent01 = math.isfinite(_slowAgainstCurrentAccumulator) ? math.saturate(_slowAgainstCurrentAccumulator) : 0f;
             exertion.Stamina01 = state.PlayerRadius > 0.01f ? math.saturate(state.Stamina01) : 1.0f;
-            SignalBus<ShinobuPlayerExertionSignal>.TryPush(in exertion);
+            SignalBus<ShinobuPlayerExertionSignal>.TryPushTracked(in exertion, ref s_x001SomaticKinematicsRuntimeSignalPushDropCount);
             _slowExertionAccumulator = 0f;
             _slowAgainstCurrentAccumulator = 0f;
         }

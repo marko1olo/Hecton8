@@ -42,7 +42,8 @@ Cold fallback generation uses Burst-decorated `IJob.Run()` for both the emergenc
 - Payload is not in Atmosphere assembly.
 - Reactor/gameplay consumers do not depend on Atmosphere runtime.
 
-- Legacy `HabitatIntegrityManager` global oxygen values are fallback-only. When the atmosphere runtime exposes a valid snapshot, module oxygen contribution syncing removes its old fallback contribution and stops maintaining a competing aggregate.
+- Legacy `HabitatIntegrityManager` global oxygen is fallback-only.
+- With valid atmosphere snapshot, module syncing removes old fallback contribution and stops maintaining a competing aggregate.
 
 ## Determinism And Scale
 
@@ -74,11 +75,14 @@ Cold fallback generation uses Burst-decorated `IJob.Run()` for both the emergenc
 - Odd Jacobi iteration counts can swap `_frontCells`/`_backCells`.
 - Originally locked Vault rows do not leak.
 
-- Editor and gizmo read APIs fail closed while `_simulationScheduled` is true, because the active front handle is swapped before the scheduled job has necessarily completed writing the new front buffer.
+- Editor and gizmo read APIs fail closed while `_simulationScheduled` is true.
+- Reason: active front handle swaps before the scheduled job necessarily finishes writing the new front buffer.
 
 ## Black Box
 
-The runtime writes a fixed 300-frame `AtmosphereTelemetryEntry` ring with node count, max CO2, average O2, max toxin, iterations, microseconds, and state hash. NaN detection dumps the ring to `Docs/AgentLogs/Dump_SHINOBU_221.bin`.
+The runtime writes a fixed 300-frame `AtmosphereTelemetryEntry` ring.
+
+Fields: node count, max CO2, average O2, max toxin, iterations, microseconds, state hash. NaN dumps to `Docs/AgentLogs/Dump_SHINOBU_221.bin`.
 
 ## Editor Facade
 

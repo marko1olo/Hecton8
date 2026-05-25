@@ -47,7 +47,7 @@ Successful placement no longer publishes managed `BaseModulePlacedEvent` objects
 - One inventory stack cannot satisfy duplicate rows independently.
 - `HabitatConstructionManager` no longer owns managed cost transaction arrays.
 - The builder-facing cost digest routes (`PlayerBuilder`, `BuilderStatusOverlay`, and `PDAConstructionTab`) mirror that grouped view with stack spans and `CountAvailableTotal`, so displayed counts match craft-reservation-aware readiness.
-- Final resource consumption still uses the Inventory owner transaction route (`TryRemoveFirstMatchingItemByHash`); the stronger future route is an Inventory-owned immutable count snapshot plus reserve/commit/release API, not a SHINOBU-local inventory cache.
+- Final resource consumption still uses Inventory owner transaction `TryRemoveFirstMatchingItemByHash`. Future route: Inventory-owned immutable counts plus reserve/commit/release API, not a SHINOBU-local cache.
 
 
 `PDAConstructionTab` dependency model:
@@ -244,7 +244,9 @@ Quality controls visual shader cost and pipe preview density only. Placement leg
 
 
 
-Preview validation result consumption uses `DispatcherJobFence.TryFinalizeCompleted`. `ResetValidation` marks a pending validation result for discard and returns without completing the job; the only forced completion left in `HabitatConstructionManager` is teardown disposal.
+Preview validation consumption uses `DispatcherJobFence.TryFinalizeCompleted`.
+
+`ResetValidation` marks pending result for discard and returns without completing the job. Only teardown disposal still forces completion in `HabitatConstructionManager`.
 
 
 
@@ -275,7 +277,9 @@ The shader builds a cube from `SV_VertexID`, reads `ValidationFlags`, and scales
 
 The visual-sync path is deferred.
 
-State, visual, and indirect-args jobs publish into a pending `JobHandle`; `LateFrameTick` uploads only after `DispatcherJobFence.TryFinalizeCompleted`. The current frame keeps the previous buffer, so presentation does not force mid-frame completion.
+State, visual, and indirect-args jobs publish into a pending `JobHandle`.
+
+`LateFrameTick` uploads only after `DispatcherJobFence.TryFinalizeCompleted`; current frame keeps the previous buffer and avoids mid-frame completion.
 
 
 
@@ -380,7 +384,7 @@ This replaces the unused tiny telemetry job. The owner presentation phase update
 - and no static-audit self-residue from unsplit forbidden probe literals, including socket-trigger, collider, PhysX, fixed-joint, instantiate/destroy
 - and object-creation probes in the editor scanners.
 
-- A guarded `dotnet build Assembly-CSharp.csproj --no-restore /p:UseSharedCompilation=false` was attempted only when CPU/process guard was clear; it failed in `Hecton8.Core.csproj` on broader unresolved project dependencies and generated-project inclusion drift.
+- Guarded `dotnet build Assembly-CSharp.csproj --no-restore /p:UseSharedCompilation=false` ran only when CPU/process guard was clear. It failed on broader Core dependency/project drift.
 
 - No Unity import, Play Mode, profiler, Frame Debugger, GCMonitor, or player build proof is claimed.
 

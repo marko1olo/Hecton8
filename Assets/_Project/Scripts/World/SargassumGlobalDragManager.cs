@@ -817,6 +817,10 @@ namespace Hecton8.World
         private bool _registeredTick;
         private bool _registeredSlowTick;
         private bool _registeredLateFrameTick;
+        private bool _debrisPetrificationDrainRequested;
+        private bool _collapseZoneEvaluationRequested;
+        private bool _dynamicTextureRefreshRequested;
+        private bool _dynamicTextureRefreshIncrementRevision;
         private bool _registeredHotSwap;
         private bool _saveRegistered;
         private ISaveService _saveService;
@@ -1608,11 +1612,11 @@ namespace Hecton8.World
         public void SlowTick()
         {
             RefreshRenderLayerCache();
-            ProcessDebrisPetrificationTimers();
             ResolveBridge();
             RebuildDensityField();
-            EvaluateBuoyancyCollapseZones();
-            RefreshDynamicTextures(incrementRevision: true);
+            _debrisPetrificationDrainRequested = true;
+            _collapseZoneEvaluationRequested = true;
+            QueueDynamicTextureRefresh(incrementRevision: true);
             _nestedAttachmentRebuildRequested = true;
             QueueShaderGlobals();
         }
@@ -1623,6 +1627,22 @@ namespace Hecton8.World
         public void LateFrameTick()
         {
             CompleteDensityFieldBuildIfReady();
+            if (_debrisPetrificationDrainRequested)
+            {
+                ProcessDebrisPetrificationTimers();
+                _debrisPetrificationDrainRequested = false;
+            }
+            if (_collapseZoneEvaluationRequested)
+            {
+                EvaluateBuoyancyCollapseZones();
+                _collapseZoneEvaluationRequested = false;
+            }
+            if (_dynamicTextureRefreshRequested)
+            {
+                RefreshDynamicTextures(_dynamicTextureRefreshIncrementRevision);
+                _dynamicTextureRefreshRequested = false;
+                _dynamicTextureRefreshIncrementRevision = false;
+            }
             ApplyDynamicTexturesIfDirty();
             FlushShaderGlobals();
             if (_nestedAttachmentRebuildRequested)
@@ -1655,7 +1675,7 @@ namespace Hecton8.World
             bool texturesChanged = UpdateDisruptionZones(dt);
             if (texturesChanged)
             {
-                RefreshDynamicTextures(incrementRevision: false);
+                QueueDynamicTextureRefresh(incrementRevision: false);
                 QueueShaderGlobals();
             }
 
@@ -1801,8 +1821,8 @@ namespace Hecton8.World
                 ExtremePanicRadiusWS = extremePanicRadius
             });
 
-            RefreshDynamicTextures(incrementRevision: false);
-            PublishShaderGlobals();
+            QueueDynamicTextureRefresh(incrementRevision: false);
+            QueueShaderGlobals();
         }
 
         void ISargassumMassiveDisplacementReceiver.RegisterMassiveDisplacement(Vector3 position, float radius, float duration)
@@ -4082,7 +4102,7 @@ namespace Hecton8.World
         private void RefreshColdRegistryDependencies()
         {
             _cutManager = GlobalRegistry.SargassumCut;
-            _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+            _saveService = GlobalRegistry.Save;
         }
 
         private void TryRegisterSaveOwner()
@@ -4636,6 +4656,12 @@ namespace Hecton8.World
             _sinkFieldTexture.LoadRawTextureData(_sinkTextureRaw);
             _dynamicTexturesUploadDirty = true;
             _debugMaxSinkDepth = maxSinkDepthWS;
+        }
+
+        private void QueueDynamicTextureRefresh(bool incrementRevision)
+        {
+            _dynamicTextureRefreshRequested = true;
+            _dynamicTextureRefreshIncrementRevision |= incrementRevision;
         }
 
         private void ApplyDynamicTexturesIfDirty()

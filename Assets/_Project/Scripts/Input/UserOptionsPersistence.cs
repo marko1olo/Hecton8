@@ -19,6 +19,7 @@ namespace Hecton8.Input
         public const string LanguageKey = "Hecton_Language";
         public const string ScalabilityTierKey = "Hecton_ScalabilityTier";
         public const string FileName = "options.h8cfg";
+        private const string TempFileName = "options.h8cfg.tmp";
 
         private const int FileVersion = 2;
         private const int TypeInt = 1;
@@ -41,6 +42,7 @@ namespace Hecton8.Input
         private readonly byte[] _payloadBuffer = new byte[MaxOptionsPayloadBytes]; // COLD ALLOC: byte[64K] - fixed options.h8cfg payload buffer - owner: UserOptionsPersistence
         private readonly byte[] _headerBuffer = new byte[FileHeaderBytes]; // COLD ALLOC: byte[16] - fixed options.h8cfg header buffer - owner: UserOptionsPersistence
         private string _optionsPath;
+        private string _optionsTempPath;
         private string _optionsDirectory;
         private byte _scalabilityTier = DefaultScalabilityTier;
         private bool _loaded;
@@ -364,7 +366,7 @@ namespace Hecton8.Input
             _optionsFile.Version = FileVersion;
             _optionsFile.Records = _writeRecords;
 
-            string tempPath = path + ".tmp";
+            string tempPath = ResolveOptionsTempPath();
             WritePortableOptionsFile(tempPath, JsonUtility.ToJson(_optionsFile, false));
 
             if (File.Exists(path))
@@ -405,10 +407,10 @@ namespace Hecton8.Input
                 ApplyOptionsJson(json);
                 ApplyLoadedScalabilityTier(loadedScalabilityTier, hasLoadedScalabilityTier);
             }
-            catch (Exception exception)
+            catch (Exception)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError("[UserOptionsPersistence] Failed to read options.h8cfg: " + exception.Message);
+                Debug.LogError("[UserOptionsPersistence] Failed to read options.h8cfg.");
 #endif
                 ApplyLoadedScalabilityTier(loadedScalabilityTier, hasLoadedScalabilityTier);
             }
@@ -599,6 +601,18 @@ namespace Hecton8.Input
             return _optionsPath;
         }
 
+        private string ResolveOptionsTempPath()
+        {
+            if (!string.IsNullOrEmpty(_optionsTempPath))
+                return _optionsTempPath;
+
+            if (string.IsNullOrEmpty(_optionsDirectory))
+                _optionsDirectory = ResolvePersistentRootPath();
+
+            _optionsTempPath = Path.Combine(_optionsDirectory, NormalizePersistentRelativeSegment(TempFileName));
+            return _optionsTempPath;
+        }
+
         private static string ResolvePersistentRootPath()
         {
             string root = Application.persistentDataPath;
@@ -610,14 +624,29 @@ namespace Hecton8.Input
             if (string.IsNullOrEmpty(segment))
                 return string.Empty;
 
-            string normalized = segment
-                .Replace('\\', Path.DirectorySeparatorChar)
-                .Replace('/', Path.DirectorySeparatorChar)
-                .TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            if (!ContainsPathSeparator(segment) &&
+                segment.IndexOf("..", StringComparison.Ordinal) < 0)
+            {
+                return segment;
+            }
 
-            return normalized.IndexOf("..", StringComparison.Ordinal) >= 0
-                ? Path.GetFileName(normalized)
-                : normalized;
+            string fileName = Path.GetFileName(segment);
+            return string.IsNullOrEmpty(fileName) ||
+                   fileName.IndexOf("..", StringComparison.Ordinal) >= 0
+                ? string.Empty
+                : fileName;
+        }
+
+        private static bool ContainsPathSeparator(string value)
+        {
+            for (int i = 0; i < value.Length; i++)
+            {
+                char c = value[i];
+                if (c == '\\' || c == '/' || c == Path.DirectorySeparatorChar || c == Path.AltDirectorySeparatorChar)
+                    return true;
+            }
+
+            return false;
         }
 
         private static bool TryReadExact(FileStream stream, byte[] buffer, int offset, int count)

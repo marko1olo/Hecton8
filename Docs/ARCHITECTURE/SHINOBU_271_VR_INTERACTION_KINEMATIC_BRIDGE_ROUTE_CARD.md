@@ -83,7 +83,8 @@ GC proof required:
 
 Shutdown/disposal:
 - Bridge persistent runtime lanes are owned by `GlobalDataVault`.
-- `PhysicalHandController` disposes only its pre-existing finger spherecast native buffers; they are warmed from cold lifecycle only and fixed-step does not allocate them. It does not own or dispose Vault lanes.
+- `PhysicalHandController` disposes only pre-existing finger spherecast native buffers.
+- They warm from cold lifecycle only; fixed-step does not allocate them. It owns no Vault lanes.
 
 Scene unload behavior:
 - controller clears cached Vault/SDF references on destroy; Vault owner controls lane lifetime.

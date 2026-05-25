@@ -1,6 +1,6 @@
 ﻿# Status X_012
 
-Date: 2026-05-24
+Date: 2026-05-25
 Domain: Documentation cleanup and root/architecture actuality
 Evidence: STATIC_DOC / STATIC_SOURCE / STATIC_FILESYSTEM / OFFLINE_VALIDATOR
 
@@ -224,6 +224,44 @@ Evidence: STATIC_DOC / STATIC_SOURCE / STATIC_FILESYSTEM / OFFLINE_VALIDATOR
 - [x] `git diff --check` passed for touched docs/tooling/proof artifacts; only LF/CRLF warnings were emitted. Rejected: ignoring whitespace errors after broad markdown edits. Estimate: `0` runtime us.
 - [x] C# runtime source untouched by X_012 Loop 20; no `dotnet build` launched. Rejected: build as fake proof for markdown/tooling-only edits under CPU/compiler guard. Estimate: `0` runtime us.
 
+## Loop 21 - APEX 31-Word Manual Density Audit
+
+- [x] Re-read status/rationale, domain file, current batch state, and four applicable mandates: evidence filtering, save persistence, SignalBus segregation, and GlobalRegistry authority. Rejected: editing from compressed memory. Estimate: `0` runtime us.
+- [x] Confirmed `Docs/Tasks/CURRENT_BATCH.md` currently lacks `<AGENT_PROMPT id="X_012">`; Loop 21 used the active repeated APEX override plus X_012 disk state. Rejected: importing another agent prompt. Estimate: `0` runtime us.
+- [x] Ran active architecture discovery at `>=31` words: initial state `96` offenders; final state `0`. Rejected: stopping at Loop 20 `>=32` proof. Estimate: `0` runtime us.
+- [x] Manually patched residual `>=31` word paragraphs, sentences, bullets, numbered lines, and table rows with `apply_patch`; scripts were used only for discovery, validation, and proof. Rejected: regex/bulk prose rewrite after explicit user ban. Estimate: `0` runtime us.
+- [x] Hardened `Tools/OOP_Doc_Scanner.py`: architecture paragraphs, sentences, and structured lines now fail at `>30` words. Rejected: one-off proof without repeatable enforcement. Estimate: `0` runtime us.
+- [x] Created and indexed `Docs/Reports/ARCHITECTURE_31WORD_DENSITY_AUDIT_X_012.json` in `Docs/README.md`, `Docs/Reports/README.md`, and the actuality ledger. Rejected: hidden proof JSON. Estimate: `0` runtime us.
+- [x] Reconfirmed source constants: save version `0x000B`, save header `56`, legacy header `44`, SignalBus lane capacity `512`, Data Monolith header `64`, static payload `1,064,384` bytes. Rejected: prompt-stale SignalBus `256`. Estimate: `0` runtime us.
+- [x] Re-ran `Tools/OOP_Doc_Scanner.py`: `finalPass=true`, active files `592`, active words `540383`, architecture words `164368`, source sync pass `true`, stale parameter files `0`, reduction `54.87674634739819%`. Rejected: chat-only reduction proof. Estimate: `0` runtime us; scanner wall time `178.4` s final run.
+- [x] Re-ran `Tools/VerifyDocStructure.py`: final `pass=true`, active docs `592`, root text docs `3`, broken links `0`, duplicate headers `0`, fence issues `0`, stale parameter files `0`, non-BOM active files `0`. Rejected: reporting while parallel-agent report encoding drift kept the structure gate red. Estimate: `0` runtime us.
+- [x] C# runtime source untouched by X_012 Loop 21; no `dotnet build` launched. Rejected: build as fake proof for markdown/tooling-only edits under CPU/compiler guard. Estimate: `0` runtime us.
+
+## Loop 22 - APEX 30-Word Manual Density Audit
+
+- [x] Re-read status/rationale, current X_012 batch prompt, domain file, and four mandates: evidence filtering, save persistence, SignalBus segregation, and GlobalRegistry authority. Rejected: editing from stale memory. Estimate: `0` runtime us.
+- [x] Ran active architecture discovery at `>=30` words: initial state `107` offenders; final state `0`. Rejected: stopping at Loop 21 `>=31` proof. Estimate: `0` runtime us.
+- [x] Manually patched residual `>=30` word paragraphs, sentences, bullets, numbered lines, and table rows with `apply_patch`; scripts were used only for discovery, validation, and proof. Rejected: regex/bulk prose rewrite after explicit user ban. Estimate: `0` runtime us.
+- [x] Hardened `Tools/OOP_Doc_Scanner.py`: architecture paragraphs, sentences, and structured lines now fail at `>29` words. Rejected: one-off density proof without repeatable enforcement. Estimate: `0` runtime us.
+- [x] Created and indexed `Docs/Reports/ARCHITECTURE_30WORD_DENSITY_AUDIT_X_012.json` in `Docs/README.md`, `Docs/Reports/README.md`, and the actuality ledger. Rejected: hidden proof JSON. Estimate: `0` runtime us.
+- [x] Reconfirmed source constants: save version `0x000B`, save header `56`, legacy header `44`, SignalBus lane capacity `512`, Data Monolith header `64`, static payload `1,064,384` bytes. Rejected: prompt-stale SignalBus `256`. Estimate: `0` runtime us.
+- [x] Re-ran `Tools/OOP_Doc_Scanner.py`: `finalPass=true`, active files `595`, active words `543494`, architecture words `164257`, source sync pass `true`, stale parameter files `0`, reduction `54.727998480643194%`. Rejected: chat-only reduction proof. Estimate: `0` runtime us; scanner wall time `170.7` s final run.
+- [x] Re-ran `Tools/VerifyDocStructure.py`: final `pass=true`, active docs `595`, root text docs `3`, broken links `0`, duplicate headers `0`, fence issues `0`, stale parameter files `0`, non-BOM active files `0`. Rejected: reporting while parallel-agent report encoding drift kept the structure gate red. Estimate: `0` runtime us.
+- [x] C# runtime source untouched by X_012 Loop 22; no `dotnet build` launched. Rejected: build as fake proof for markdown/tooling-only edits under CPU/compiler guard. Estimate: `0` runtime us.
+
+## Loop 23 - APEX 29-Word Manual Density Audit
+
+- [x] Re-read status/rationale, domain file, current batch state, and four applicable mandates: evidence filtering, save persistence, SignalBus segregation, and GlobalRegistry authority. Rejected: editing from compressed memory. Estimate: `0` runtime us.
+- [x] Confirmed `Docs/Tasks/CURRENT_BATCH.md` currently lacks `<AGENT_PROMPT id="X_012">`; Loop 23 used the active repeated APEX override plus X_012 disk state. Rejected: importing another agent prompt. Estimate: `0` runtime us.
+- [x] Ran active architecture discovery at `>=29` words: initial state `122` offenders across `81` files; final state `0`. Rejected: stopping at Loop 22 `>=30` proof. Estimate: `0` runtime us.
+- [x] Manually patched residual `>=29` word paragraphs, sentences, bullets, numbered lines, and table rows with `apply_patch`; scripts were used only for discovery, validation, and proof. Rejected: regex/bulk prose rewrite after explicit user ban. Estimate: `0` runtime us.
+- [x] Hardened `Tools/OOP_Doc_Scanner.py`: architecture paragraphs, sentences, and structured lines now fail at `>28` words. Rejected: one-off proof without repeatable enforcement. Estimate: `0` runtime us.
+- [x] Created and indexed `Docs/Reports/ARCHITECTURE_29WORD_DENSITY_AUDIT_X_012.json` in `Docs/README.md`, `Docs/Reports/README.md`, and the actuality ledger. Rejected: hidden proof JSON. Estimate: `0` runtime us.
+- [x] Reconfirmed source constants through OOP scanner: save version `0x000B`, save header `56`, legacy header `44`, SignalBus lane capacity `512`, Data Monolith header `64`, static payload `1,064,384` bytes. Rejected: prompt-stale SignalBus `256`. Estimate: `0` runtime us.
+- [x] Re-ran `Tools/OOP_Doc_Scanner.py`: final `finalPass=true`, active files `596`, active words `543819`, architecture words `163717`, source sync pass `true`, stale parameter files `0`, reduction `54.71277175135032%`. Rejected: chat-only reduction proof. Estimate: `0` runtime us; scanner wall time `157.8` s final run.
+- [x] Re-ran `Tools/VerifyDocStructure.py`: final `pass=true`, active docs `596`, root text docs `3`, broken links `0`, duplicate headers `0`, fence issues `0`, stale parameter files `0`, non-BOM active files `0`. Rejected: reporting while parallel-agent report encoding drift kept the structure gate red. Estimate: `0` runtime us.
+- [x] C# runtime source untouched by X_012 Loop 23; no `dotnet build` launched. Rejected: build as fake proof for markdown/tooling-only edits under CPU/compiler guard. Estimate: `0` runtime us.
+
 ## Artifacts
 
 - `Docs/Reports/DOCUMENTATION_CORPUS_INVENTORY_X_012.json`
@@ -244,6 +282,9 @@ Evidence: STATIC_DOC / STATIC_SOURCE / STATIC_FILESYSTEM / OFFLINE_VALIDATOR
 - `Docs/Reports/ARCHITECTURE_34WORD_DENSITY_AUDIT_X_012.json`
 - `Docs/Reports/ARCHITECTURE_33WORD_DENSITY_AUDIT_X_012.json`
 - `Docs/Reports/ARCHITECTURE_32WORD_DENSITY_AUDIT_X_012.json`
+- `Docs/Reports/ARCHITECTURE_31WORD_DENSITY_AUDIT_X_012.json`
+- `Docs/Reports/ARCHITECTURE_30WORD_DENSITY_AUDIT_X_012.json`
+- `Docs/Reports/ARCHITECTURE_29WORD_DENSITY_AUDIT_X_012.json`
 - `Docs/_Archive/Reports_X_012_2026-05-23/README.md`
 - `Docs/_Archive/Reports_X_012_2026-05-23/MANIFEST.md`
 - `Docs/_Archive/Architecture_X_012_APEX_2026-05-23/README.md`

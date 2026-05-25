@@ -21,6 +21,7 @@ namespace Hecton8.Gameplay.Loot
     [DisallowMultipleComponent]
     public sealed class LootMagnetSystem : MonoBehaviour, IFastTickable, ISlowTickable, ILateFrameTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener
     {
+        private static int _signalPushDropCount;
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_ITEM_MAGNET_SOLVER.bin";
         private const string RuntimeObjectName = "[LootMagnetSystem]";
         private const uint TelemetryFaultFlag = 1u;
@@ -732,7 +733,7 @@ namespace Hecton8.Gameplay.Loot
             for (int signalIndex = 0; signalIndex < signals.Length; signalIndex++)
             {
                 InventoryDeathLootCacheSignal signal = signals[signalIndex];
-                if (!SignalBus<InventoryDeathLootCacheSignal>.TryPush(in signal))
+                if (!SignalBus<InventoryDeathLootCacheSignal>.TryPushTracked(in signal, ref _signalPushDropCount))
                     _dependencyTelemetryFlags |= TelemetryDeathCacheRequeueRejectedFlag;
             }
         }
@@ -763,7 +764,7 @@ namespace Hecton8.Gameplay.Loot
                 if (slot < 0)
                 {
                     _dependencyTelemetryFlags |= TelemetryDeathCacheSaturatedFlag | TelemetryDeathCacheDeferredFlag;
-                    if (!SignalBus<InventoryDeathLootCacheSignal>.TryPush(in signal))
+                    if (!SignalBus<InventoryDeathLootCacheSignal>.TryPushTracked(in signal, ref _signalPushDropCount))
                         _dependencyTelemetryFlags |= TelemetryDeathCacheRequeueRejectedFlag;
                     continue;
                 }
@@ -1578,7 +1579,7 @@ namespace Hecton8.Gameplay.Loot
                 Flags = LootMagnetConstants.SignalFlagLootMagnet,
                 Frame = signalEvent.Frame
             };
-            SignalBus<ItemAcquiredSignal>.TryPush(in itemSignal);
+            SignalBus<ItemAcquiredSignal>.TryPushTracked(in itemSignal, ref _signalPushDropCount);
         }
 
         private static void PublishItemSnapSpark(in LootMagnetSignalEvent signalEvent, int addedQuantity)
@@ -1603,7 +1604,7 @@ namespace Hecton8.Gameplay.Loot
                     LootMagnetConstants.ItemSnapSparkQuantity * math.max(1, addedQuantity),
                     (int)ushort.MaxValue)
             };
-            SignalBus<DebrisSpawnSignal>.TryPush(in debrisSignal);
+            SignalBus<DebrisSpawnSignal>.TryPushTracked(in debrisSignal, ref _signalPushDropCount);
         }
 
         private uint PublishPresentationSignals(
@@ -1669,7 +1670,7 @@ namespace Hecton8.Gameplay.Loot
                     Channel = AcousticPingSignal.ChannelLootZip,
                     Flags = AcousticPingSignal.FlagLootZip
                 };
-                SignalBus<AcousticPingSignal>.TryPush(in acousticSignal);
+                SignalBus<AcousticPingSignal>.TryPushTracked(in acousticSignal, ref _signalPushDropCount);
             }
 
             if (publishWake)
@@ -1681,7 +1682,7 @@ namespace Hecton8.Gameplay.Loot
                     Velocity = signalEvent.Velocity,
                     SourceFlags = LootMagnetConstants.WakeSourceLootZip
                 };
-                SignalBus<WakeGeneratedSignal>.TryPush(in wakeSignal);
+                SignalBus<WakeGeneratedSignal>.TryPushTracked(in wakeSignal, ref _signalPushDropCount);
 
                 float fluidImpulseWeight01 = ResolveFluidImpulseWeight01(_qualityWeight01);
                 if (fluidImpulseWeight01 > 0f)
@@ -1702,7 +1703,7 @@ namespace Hecton8.Gameplay.Loot
                         SourceHash = LootMagnetConstants.FluidImpulseSourceLootZip,
                         Flags = LootMagnetConstants.SignalFlagLootMagnet
                     };
-                    SignalBus<FluidImpulseSignal>.TryPush(in fluidImpulse);
+                    SignalBus<FluidImpulseSignal>.TryPushTracked(in fluidImpulse, ref _signalPushDropCount);
                 }
             }
 

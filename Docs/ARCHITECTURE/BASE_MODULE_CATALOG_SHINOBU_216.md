@@ -62,7 +62,8 @@
 
 - Job `NativeArray` fields are marked `[NoAlias]` where the buffers are physically distinct Vault lanes; scheduling consumes a caller dependency and returns the output `JobHandle`.
 
-- Binary bytes may be loaded by `TryStartCatalogByteLoad` on a background `FileStream` directly into Vault-owned `NativeArray<byte>` through a native span; hydration remains a separate Burst job fenced behind boot/dispatcher dependency.
+- `TryStartCatalogByteLoad` may load binary bytes on a background `FileStream` into Vault-owned `NativeArray<byte>` through native span.
+- Hydration remains a separate Burst job behind boot/dispatcher dependency.
 
 - GlobalQualityWeight does not alter catalog truth, DTO layout, socket positions, masks, or save/network identity. It may only scale editor/presentation overlays owned outside this runtime lane.
 

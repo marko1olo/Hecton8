@@ -1237,7 +1237,7 @@ namespace Hecton8.World
             state.WriteIndex = state.WriteIndex + 1;
             state.ActiveCount = math.min(capacity, state.ActiveCount + 1);
             state.Capacity = capacity;
-            state.Frame = unchecked((uint)Time.frameCount);
+            state.Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             state.Flags = SpawnValidationFlags.RollbackExcluded;
             state.OwnerPhaseAUP = HectonFloatingOrigin.CurrentTotalOffsetDouble;
             ringState[0] = state;
@@ -1264,7 +1264,7 @@ namespace Hecton8.World
             cursor[0] = cursor[0] + 1;
             SpawnValidationTelemetryEntry entry = default;
             entry.LastTargetAUP = request.TargetAUP;
-            entry.Frame = unchecked((uint)Time.frameCount);
+            entry.Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             entry.ValidatedCount = 1;
             entry.FailedIntersectionCount = (request.ValidationResultFlags & SpawnValidationFlags.FailedGeometryIntersection) != 0u ? 1 : 0;
             entry.DearLieResolvedCount = (request.ValidationResultFlags & SpawnValidationFlags.ResolvedDearLie) != 0u ? 1 : 0;

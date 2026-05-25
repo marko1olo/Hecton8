@@ -136,7 +136,9 @@ After the ColdTick Burst solve, `PersistentWorldRegistry.ReconcileFaunaHibernati
 
 ## Hibernated Predation
 
-Sector-local predation is resolved during record reconciliation. If a saved large predator record and a saved non-predator fauna record share the same hibernated sector, a deterministic combat score is computed:
+Sector-local predation is resolved during record reconciliation.
+
+If saved large predator and non-predator fauna records share the same hibernated sector, deterministic combat score is computed:
 
 ```text
 

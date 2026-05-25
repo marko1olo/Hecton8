@@ -139,7 +139,7 @@ namespace Hecton8.Physics
         public static bool TryGetLatestKccVelocityFloat3(uint maxFrameAge, out float3 velocity)
         {
             velocity = float3.zero;
-            uint currentFrame = unchecked((uint)SystemDispatcher.CurrentFrameIndex);
+            uint currentFrame = SystemDispatcher.CurrentFrameId;
             if (!CoreDeterminismSignals.TryGetLatestKccVelocity(out KccVelocitySignal signal) ||
                 signal.Sequence == 0u ||
                 !IsKccVelocityFresh(in signal, currentFrame, maxFrameAge) ||

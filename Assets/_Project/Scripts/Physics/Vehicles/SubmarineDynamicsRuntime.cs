@@ -15,6 +15,8 @@ namespace Hecton8.Physics.Vehicles
 {
     public sealed partial class SubmarineDynamicsRuntime : MonoBehaviour, IFixedTickable, IPostFixedTickable, ILateFrameTickable, ISlowTickable, IVehicleCommandSignalListener, IGlobalRegistryHotSwapListener
     {
+        private static int s_x001DirectSignalPushDropCount_SubmarineDynamicsRuntime;
+
         private const int MockSignalCapacity = 64;
         private const int SurvivalMockSignalCapacity = 8;
         private const long MaxCsvOverrideBytes = 4096L;
@@ -292,7 +294,7 @@ namespace Hecton8.Physics.Vehicles
             signal.FillRatio01 = math.saturate(signal.WaterMassKg / 4000f);
             signal.Frame = frame;
             signal.Flags = 1;
-            if (!SignalBus<MockFloodSignal>.TryPush(in signal))
+            if (!SignalBus<MockFloodSignal>.TryPushTracked(in signal, ref s_x001DirectSignalPushDropCount_SubmarineDynamicsRuntime))
                 IncrementDroppedSignalCount();
         }
 
@@ -1997,7 +1999,7 @@ namespace Hecton8.Physics.Vehicles
                 ping.SourceId = CavitationSourceId;
                 ping.Channel = AcousticPingSignal.ChannelMetalStress;
                 ping.Flags = 0;
-                if (!SignalBus<AcousticPingSignal>.TryPush(in ping))
+                if (!SignalBus<AcousticPingSignal>.TryPushTracked(in ping, ref s_x001DirectSignalPushDropCount_SubmarineDynamicsRuntime))
                     IncrementDroppedSignalCount();
             }
         }

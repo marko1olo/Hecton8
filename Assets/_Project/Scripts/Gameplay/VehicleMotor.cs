@@ -21,6 +21,7 @@ namespace Hecton8.Gameplay
     [AddComponentMenu("Hecton8/Gameplay/Transport/Vehicle Motor")]
     public sealed class VehicleMotor : MonoBehaviour, IOriginShiftListener, ILateFrameTickable, IPostFixedTickable, IGlobalRegistryHotSwapListener
     {
+        private static int s_x001VehicleMotorSignalPushDropCount;
         [StructLayout(LayoutKind.Explicit, Size = SubmarineStateSizeBytes)]
         internal struct SubmarineState
         {
@@ -1086,7 +1087,7 @@ namespace Hecton8.Gameplay
                 PositionAup = wakeAup,
                 SourceFlags = VehicleWakeSourceFlag
             };
-            SignalBus<WakeGeneratedSignal>.TryPush(in signal);
+            SignalBus<WakeGeneratedSignal>.TryPushTracked(in signal, ref s_x001VehicleMotorSignalPushDropCount);
         }
 
         private void TryEmitWakeSiltDecal(Vector3 emitterPosition, Vector3 wakeVelocity, float speedMetersPerSecond)

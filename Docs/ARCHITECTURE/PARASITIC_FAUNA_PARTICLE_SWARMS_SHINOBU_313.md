@@ -14,7 +14,8 @@ Owner: SHINOBU_313 / VFX presentation.
 
 - `ExtractParasiteTargetsJob` scores the staged candidates and `SelectTopParasiteTargetsJob` ranks the top 16 by that score before localizing AUP targets by subtracting camera `double3` AUP before the float cast.
 
-- Camera AUP comes only from cached `IPlayerRuntimeContext.TryGetPlayerPoseSnapshot`; the runtime no longer reconstructs camera AUP from scene `Transform` state or a local origin shadow, and active compute requires a resolved `renderCamera`.
+- Camera AUP comes only from cached `IPlayerRuntimeContext.TryGetPlayerPoseSnapshot`.
+- Runtime no longer reconstructs camera AUP from scene `Transform` state or local origin shadow; active compute requires resolved `renderCamera`.
 
 - Top targets are staged as `ParasiteTargetDTO[16]` and uploaded through a ping-pong `GraphicsBuffer.LockBufferForWrite` pair.
 

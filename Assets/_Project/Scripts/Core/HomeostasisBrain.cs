@@ -116,6 +116,7 @@ namespace Hecton8.Core
     /// </summary>
     public static partial class HomeostasisBrain
     {
+        private static int s_x001HomeostasisBrainSignalPushDropCount;
         private const int FrameTimeWindow = ScalabilityContract.HomeostasisFrameTimeWindow;
         private const int BlackBoxCapacity = ScalabilityContract.HomeostasisBlackBoxCapacity;
         private const int TelemetryCadenceFrames = ScalabilityContract.HomeostasisTelemetryCadenceFrames;
@@ -821,7 +822,7 @@ namespace Hecton8.Core
             signal.PressureLevel = _currentPressureLevel;
             signal.FoveatedPressureTier = foveatedPressureTier;
             signal.Flags = flags;
-            SignalBus<SystemHealthSignal>.TryPush(in signal);
+            SignalBus<SystemHealthSignal>.TryPushTracked(in signal, ref s_x001HomeostasisBrainSignalPushDropCount);
         }
 
         private static void PublishFrameTimeSignal(
@@ -848,7 +849,7 @@ namespace Hecton8.Core
             signal.Flags = unchecked((byte)(flags & 0xFF));
             signal.Reserved = 0;
             signal.Sequence = _frameTimeSignalSequence++;
-            SignalBus<FrameTimeSignal>.TryPush(in signal);
+            SignalBus<FrameTimeSignal>.TryPushTracked(in signal, ref s_x001HomeostasisBrainSignalPushDropCount);
         }
 
         private static void PublishKillSwitchSignal(int frame, ulong previousMask, byte previousLevel, ushort flags)
@@ -861,7 +862,7 @@ namespace Hecton8.Core
             signal.PreviousLevel = previousLevel;
             signal.CurrentLevel = _currentPressureLevel;
             signal.Flags = flags;
-            SignalBus<KillSwitchSignal>.TryPush(in signal);
+            SignalBus<KillSwitchSignal>.TryPushTracked(in signal, ref s_x001HomeostasisBrainSignalPushDropCount);
         }
 
         private static void PublishLegacySystemHealthIndexSignal(int frame)
@@ -875,7 +876,7 @@ namespace Hecton8.Core
                 ? SystemHealthIndexSignal.StateCritical
                 : (_currentPressureLevel > 0 ? SystemHealthIndexSignal.StateWarning : SystemHealthIndexSignal.StateStable);
             signal.Flags = _currentPressureLevel >= 3 ? SystemHealthIndexSignal.FlagAdrenaline : (byte)0;
-            SignalBus<SystemHealthIndexSignal>.TryPush(in signal);
+            SignalBus<SystemHealthIndexSignal>.TryPushTracked(in signal, ref s_x001HomeostasisBrainSignalPushDropCount);
         }
 
         private static void WriteBlackBox(

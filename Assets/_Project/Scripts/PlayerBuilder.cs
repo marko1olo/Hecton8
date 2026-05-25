@@ -56,6 +56,7 @@ namespace Hecton8.Building
     [DisallowMultipleComponent]
     public sealed class PlayerBuilder : PlayerTool, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
+        private static int s_x001PlayerBuilderSignalPushDropCount;
         public enum BuildReadiness
         {
             Offline = 0,
@@ -167,7 +168,7 @@ namespace Hecton8.Building
         private float _builderGhostValidationQuality;
         private float _builderGhostValidationMinSdf;
         private uint _builderGhostValidationSolidCornerCount;
-        private RaycastHit _hit;
+        private InteractionSurfaceHit _hit;
         private const float StructuralPlacementGridMeters = 4f;
         private const float StructuralPlacementGridInv = 0.25f;
         private const float StructuralRotationStepDegrees = 90f;
@@ -1075,7 +1076,7 @@ namespace Hecton8.Building
         /// ZERO GC:
         ///   • SHINOBU_217: socket candidates now resolve through template/AUP math.
         ///   • TryGetComponent → zero GC.
-        ///   • Struct Ray, RaycastHit, Vector3, Quaternion — stack.
+        ///   • Struct Ray, InteractionSurfaceHit, Vector3, Quaternion — stack.
         ///   • Nikakih List, LINQ, lyambd, new.
         /// </summary>
         private Vector3 ResolveActivePreviewScale()
@@ -1506,15 +1507,15 @@ namespace Hecton8.Building
                 return;
 
             SignalBus<ConstructionPreviewSignal>.Configure(
-                expectedCapacity: 4,
-                maxFrameSignals: 8,
-                lowTierFrameSignals: 8,
+                expectedCapacity: ConstructionPreviewSignal.ExpectedCapacity,
+                maxFrameSignals: ConstructionPreviewSignal.MaxFrameSignals,
+                lowTierFrameSignals: ConstructionPreviewSignal.LowTierFrameSignals,
                 laneHash: ConstructionPreviewSignal.LaneHash);
             SignalBus<ConstructionPreviewSignal>.EnsureInitialized();
             SignalBus<FloraExclusionSignal>.Configure(
-                expectedCapacity: 4,
-                maxFrameSignals: 8,
-                lowTierFrameSignals: 8,
+                expectedCapacity: FloraExclusionSignal.ExpectedCapacity,
+                maxFrameSignals: FloraExclusionSignal.MaxFrameSignals,
+                lowTierFrameSignals: FloraExclusionSignal.LowTierFrameSignals,
                 laneHash: FloraExclusionSignal.LaneHash);
             SignalBus<FloraExclusionSignal>.EnsureInitialized();
             s_ConstructionSignalLanesInitialized = true;
@@ -3749,7 +3750,7 @@ namespace Hecton8.Building
                 signal.Flags |= ConstructionPreviewSignal.FlagSocketSnap;
             if (signal.DearLieDampen > 0.0001f)
                 signal.Flags |= ConstructionPreviewSignal.FlagDearLieActive;
-            SignalBus<ConstructionPreviewSignal>.TryPush(in signal);
+            SignalBus<ConstructionPreviewSignal>.TryPushTracked(in signal, ref s_x001PlayerBuilderSignalPushDropCount);
         }
 
         private void UpdatePlacementValidationState()
@@ -4072,7 +4073,7 @@ namespace Hecton8.Building
             }
 
             Ray ray = playerCamera.ViewportPointToRay(ViewportCenter);
-            if (!TryGetBuildHit(ray, HectonLayerMasks.ConstructionSurfaceLayerMask, out RaycastHit hit))
+            if (!TryGetBuildHit(ray, HectonLayerMasks.ConstructionSurfaceLayerMask, out InteractionSurfaceHit hit))
             {
                 NotifyBuildBlocked("NO MODULE TARGET");
                 return;
@@ -4105,7 +4106,7 @@ namespace Hecton8.Building
                 return null;
 
             Ray ray = playerCamera.ViewportPointToRay(ViewportCenter);
-            if (!TryGetBuildHit(ray, HectonLayerMasks.ConstructionSurfaceLayerMask, out RaycastHit hit))
+            if (!TryGetBuildHit(ray, HectonLayerMasks.ConstructionSurfaceLayerMask, out InteractionSurfaceHit hit))
                 return null;
 
             return TryResolveTargetModule(hit.collider, out BaseModule module) ? module : null;
@@ -4160,7 +4161,7 @@ namespace Hecton8.Building
             return deconstructionSystem.EnqueueDeconstruction(in request);
         }
 
-        private bool TryGetBuildHit(Ray ray, LayerMask mask, out RaycastHit hit)
+        private bool TryGetBuildHit(Ray ray, LayerMask mask, out InteractionSurfaceHit hit)
         {
             hit = default;
             IInteractionSignalService interactionService = _cachedInteractionSignalService;
@@ -4183,7 +4184,7 @@ namespace Hecton8.Building
             if (_buildRayRequesterId == 0UL)
                 _buildRayRequesterId = EntityId.ToULong(gameObject.GetEntityId()) ^ 0x4255494C44524159UL;
 
-            return interactionService.TryRaycastPrimary(
+            return interactionService.TryResolvePrimarySurfaceHit(
                 _buildRayRequesterId,
                 ray.origin,
                 new Vector3(direction.x, direction.y, direction.z),
@@ -4231,7 +4232,7 @@ namespace Hecton8.Building
             clunk.SourceId = sourceLow != 0u ? sourceLow : moduleHash;
             clunk.Channel = AcousticPingSignal.ChannelMetalStress;
             clunk.Flags = 0;
-            SignalBus<AcousticPingSignal>.TryPush(in clunk);
+            SignalBus<AcousticPingSignal>.TryPushTracked(in clunk, ref s_x001PlayerBuilderSignalPushDropCount);
 
             FloraExclusionSignal flora = default;
             flora.CenterAup = centerAup;
@@ -4243,7 +4244,7 @@ namespace Hecton8.Building
             flora.Flags = 0;
             flora._pad0 = 0;
             flora._pad1 = 0u;
-            SignalBus<FloraExclusionSignal>.TryPush(in flora);
+            SignalBus<FloraExclusionSignal>.TryPushTracked(in flora, ref s_x001PlayerBuilderSignalPushDropCount);
         }
 
         private uint CaptureShinobuFrameId()

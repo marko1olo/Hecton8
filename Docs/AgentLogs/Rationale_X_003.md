@@ -568,3 +568,83 @@ Solution: Converted only the VRAM budget read route in `WorldChunkResidencyManag
 Rejected Alternatives: Dumping addressable acquire/release methods into `IAssetLifecyclePressureSink`, converting handles to weak `object` payloads, or adding SignalBus request/response for synchronous asset ownership. Those would blur ownership, lose type safety, or make lifetime ordering nondeterministic.
 Scalability potential: Low keeps current streaming safety. Middle/High/Ultra can later split pressure telemetry from addressable lifetime control without corrupting ownership.
 Hardware Impact: Runtime 0 microseconds claimed. The residual concrete route is deliberately recorded; hiding it would create a false green graph.
+
+## Decision 070 - Localization Presentation Contract Burn-Down
+
+Problem: Localization presentation consumers in HUD, PDA, audio-log, interaction, boot, pause, movement, and item paths still stored or cast concrete `LocalizationManager` or read `GlobalRegistry.Localization` for text expansion, hull-stress corruption, madness preview, PDA corrosion, and transient language override operations.
+Solution: Added narrow localization contracts in Core.Contracts and exposed matching `GlobalRegistry` routes: `ILocalizationTextExpansionReadModel`, `ILocalizationLanguageControl`, `ILocalizationStressPresentationReadModel`, `ILocalizationMadnessPresentationReadModel`, `IPdaCorrosionPresentationSink`, `ILocalizationTransientOverrideSink`, `ILocalizationStressHudRefreshSink`, and deterministic `LocalizationMadnessHash`. `LocalizationManager` remains the owner; consumers depend on the narrow interfaces.
+Rejected Alternatives: Moving `LocalizationManager` into contracts, preserving concrete casts because they are UI-local, using SignalBus for synchronous text lookup, or returning managed strings where existing span routes exist. Those either poison the contract assembly, preserve source-owner coupling, misuse the broadcast lane, or add allocation pressure.
+Scalability potential: Low keeps existing text/span behavior and corruption math. Middle keeps HUD/PDA/audio-log independent from localization owner churn. High/Ultra can expand localization madness presentation or language policy without recompiling consumers that only need the read-model/sink surface.
+Hardware Impact: Runtime 0 microseconds claimed; no profiler sample. Static broad concrete-cast findings are 979 after Loop 50, down from 992 at Loop 48 and 1151 at Loop 37; critical source using/FQN, direct-player, and AI/Physics/Physiology lanes remain zero.
+
+## Decision 071 - AI Player Health Concrete Route Removal
+
+Problem: `FaunaBrain` and `EnvironmentalHazard` still had direct fallback paths to concrete `HectonPlayerHealth` through transform/component lookup. The scanner reported direct-player coupling zero earlier because the critical lane was narrow, but the source pattern was still a real backdoor against the no concrete player-cast contract.
+Solution: Added `CombatDamageRuntime.TryResolveRegisteredTarget(Transform, out int, out Transform)` as a narrow public wrapper over the existing registered-target resolver. `FaunaBrain` now resolves damage targets through the combat registry and `IDamageReceiver`. `EnvironmentalHazard` no longer searches the transform hierarchy for concrete player health; it uses cached/runtime-context health routes only.
+Rejected Alternatives: Interface-to-concrete casts, per-hit scene hierarchy search, duplicating health state in fauna, or routing immediate damage through SignalBus request/response. Those preserve compile coupling, add hot-path lookup, create a second owner, or misuse broadcast semantics.
+Scalability potential: Low keeps damage routing deterministic and cheap. Middle/High/Ultra can change player health implementation behind `IDamageReceiver` and combat registration without recompiling fauna/physics-like hazards.
+Hardware Impact: Runtime microseconds not claimed. Static proof after Loop 50: direct player concrete coupling 0, AI/Physics/Physiology direct player coupling 0, AI/Physics/Physiology concrete casts 0.
+
+## Decision 072 - EnvironmentalStrain LateFrame Hot Lookup Cut
+
+Problem: `EnvironmentalStrainManager.LateFrameTick()` still polled `GlobalRegistry.EnvironmentalStrain` to suppress duplicate instances. That is not simulation math, but it is a registry lookup inside a hot dispatcher callback.
+Solution: Removed the registry poll from `LateFrameTick`; pending duplicate instances now destroy themselves directly after the duplicate flag is set by the owner path.
+Rejected Alternatives: Keeping the per-frame registry equality check, adding another hot-swap signal for a local duplicate flag, or suppressing the scanner row. The local flag already holds the fact; extra registry traffic and scanner suppression are unnecessary.
+Scalability potential: Low removes one hot dispatcher registry read. Middle/High/Ultra keep environmental strain authority unchanged while making the callback route cleaner.
+Hardware Impact: Exact microseconds unmeasured. Static proof after Loop 50: hot-path lookup findings 0; remaining hot-path registry mutation notes are three self-unregister lanes, not lookup/search rows.
+
+## Decision 073 - Invalid UTF-8 Files Held As Residual Debt
+
+Problem: `CorporateOrderSystem.cs` still has a concrete localization route suitable for the new contracts, but `apply_patch` failed with an invalid UTF-8 byte sequence. `SaveManager.cs` has the earlier VRAM residual for the same reason. Editing these files with shell/Python byte rewrites would violate the safe edit protocol and risks corrupting non-UTF source.
+Solution: Leave both files unchanged in this pass and record the residual debt explicitly. Future cleanup requires an encoding-normalization pass owned by the integration lane before semantic edits.
+Rejected Alternatives: Blind byte rewriting, shell redirection, Python write scripts, or claiming the routes are gone. Those risk data loss or false evidence.
+Scalability potential: Low/Middle/High/Ultra are unaffected at runtime by this non-edit. The project still needs encoding normalization to keep future contract burn-down deterministic.
+Hardware Impact: Runtime 0 microseconds. Residual is source hygiene and compile-wall debt, not a performance claim.
+
+## Decision 074 - Beacon Network Service Boundary
+
+Problem: `BeaconDeployerTool` and `SargassumMicroFaunaBoids` cached concrete `BeaconNetworkSystem` and the nested `BeaconSnapshot` type. That was source-level owner knowledge in tool/world consumers and blocked a future split of beacon storage/runtime internals from beacon readers.
+Solution: Added `BeaconNetworkSnapshot` and `IBeaconNetworkService` in Core.Contracts, implemented the route on `BeaconNetworkSystem`, exposed `GlobalRegistry.BeaconNetworkService`, and converted the tool plus Sargassum formation consumer to interface storage, typed hot-swap casts, and contract snapshots. Concrete `BeaconNetworkSystem` remains for bootstrap/owner registration and `BeaconRuntime.NotifyRuntimeDestroyed`.
+Rejected Alternatives: A separate duplicate registry slot for the interface, moving `BeaconRuntime` or the full `BeaconNetworkSystem` into contracts, using SignalBus request/response for deploy/retract reads, or converting labels to `FixedString` inside this slice. Duplicate slots create stale hot-swap state; behavior owners do not belong in contracts; SignalBus is broadcast, not synchronous command response; label storage migration touches save/UI and needs its own pass.
+Scalability potential: Low keeps the existing bounded snapshot copy and deploy/retract behavior. Middle/High/Ultra can change beacon placement, lighting, persistence, or formation-selection internals without recompiling tool/world consumers that only need the service contract.
+Hardware Impact: Runtime 0 microseconds claimed; no profiler sample. Static proof after Loop 51: broad concrete-cast findings 979->973 in this continuation and 1151->973 since Loop 37; critical source `using` 0; critical FQN 0; hot-path lookup 0; direct player concrete coupling 0; AI/Physics/Physiology concrete casts 0.
+
+## Decision 075 - Submarine Atmosphere Room Contract Route
+
+Problem: Construction, power, gameplay, fluid, structural, equipment, and tool paths were reading or mutating room atmosphere through concrete `SubmarineAtmosphereSystem`. That keeps submarine room state coupled to the owner MonoBehaviour even when the consumer only needs deterministic room pressure/oxygen/fire/flood DTO-like scalars or a narrow mutation command.
+Solution: Added `ISubmarineAtmosphereRoomReadModel`, `ISubmarineAtmosphereRoomMutationSink`, and `ComponentReferenceUtility.ResolveParentService<T>` in Core.Contracts. `SubmarineAtmosphereSystem` implements the mutation sink and exposes read-only room state through the same owner. Consumers with safe UTF-8 source were moved to interface fields, locals, and parent-service resolution.
+Rejected Alternatives: Moving the room atmosphere owner into contracts, adding reflection/object escape hatches, converting room mutations into SignalBus request/response, or byte-rewriting invalid UTF-8 files. Owner movement pollutes contracts; reflection/object hides debt; SignalBus does not own synchronous mutation semantics; byte rewrites risk corrupting source.
+Scalability potential: Low keeps current room-state math and bounded parent-walk service lookup. Middle/High/Ultra can replace submarine atmosphere internals, room graph policy, or presentation detail without recompiling consumers that depend only on read/mutation contracts.
+Hardware Impact: Runtime 0 microseconds claimed; no profiler sample. Static proof is part of Loop 51: broad concrete-cast findings 973, critical source `using` 0, critical FQN 0, hot-path lookup 0. Residual debt is explicit: `BaseModule.cs` still needs this conversion after encoding normalization.
+
+## Decision 076 - Tool Trial Beacon Smoke Uses Service Contract
+
+Problem: `ToolTrialRangeRuntimeSmokeTester` was development-only, but it still serialized and scene-scanned concrete `BeaconNetworkSystem`. Leaving dev smoke code as a concrete consumer keeps stale examples of the wrong route and lets future tests re-normalize concrete owner access.
+Solution: Replace the serialized concrete field with a `MonoBehaviour` provider plus cached `IBeaconNetworkService`, keeping `FormerlySerializedAs("beaconNetwork")` so existing authored smoke references survive. Auto-resolve now checks the provider, `GlobalRegistry.BeaconNetworkService`, then a dev-only interface scene scan.
+Rejected Alternatives: Leaving it because it is behind `UNITY_EDITOR || DEVELOPMENT_BUILD`, or using concrete `BeaconNetworkSystem` only for scene find. Dev code still teaches and compiles against the owner; concrete scene find preserves the source dependency.
+Scalability potential: Low keeps the same smoke assertion. Middle/High/Ultra can change beacon internals without updating the smoke harness as long as the service contract holds.
+Hardware Impact: Runtime 0 microseconds claimed; this path is editor/development smoke only. Static grep over Beacon tool/world/smoke consumers shows no `BeaconNetworkSystem` or nested `BeaconSnapshot` references outside the owner/bootstrap/runtime-notification lanes.
+
+## Decision 077 - Construction Logistics And Habitat Graph Contract Route
+
+Problem: Construction-side consumers still cached or serialized concrete `ConstructionManager` for module enumeration, catalog reads, module registration/clearing, habitat acoustic graph access, and parasite-spread graph decisions. That made UI, tools, flora, audio, mod runtime, and smoke code know the construction owner class instead of the route they consume.
+Solution: Widened `ILogisticsService` with existing logistics owner operations, widened `IHabitatGraphService` with acoustic graph access, and added `IConstructionParasiteGraphService` for parasite-root graph reads/notifications. `ConstructionManager` remains the owner; consumers cache interfaces from provider fields, environment context, or `GlobalRegistry` contract routes. `GlobalRegistry.ConstructionParasiteGraph` maps to the logistics owner without a second stale slot.
+Rejected Alternatives: Moving `ConstructionManager` into Core.Contracts, leaving concrete casts with comments, adding SignalBus request/response for synchronous module enumeration, or duplicating construction state in UI/flora/audio. Those pollute contracts, fake the audit, misuse broadcast semantics, or create a second owner.
+Scalability potential: Low keeps module reads and graph queries on existing bounded owner data. Middle/High/Ultra can change construction manager internals, habitat graph representation, or parasite spread policy without recompiling consumers that only need logistics/habitat/parasite contracts.
+Hardware Impact: Runtime 0 microseconds claimed; no profiler sample. Static broad concrete-cast findings dropped from Loop 51's 973 to 969 after the construction contract slice, while critical source using/FQN, direct-player, and AI/Physics/Physiology lanes stayed zero.
+
+## Decision 078 - Vehicle Docking Physics State Event Boundary
+
+Problem: `VehicleDockingModule` imported `Hecton8.Physics` to call `PhysicsForceRouter`, `GlobalPhysicsStateManager` dock connection methods, and submarine-fluid concrete mass injection. That tied a construction/vehicle docking component to the physics implementation and fluid vehicle owner class.
+Solution: Routed velocity/force application through existing `IPhysicsService`; added `IPhysicsStateEventService` for kinematic impact and dock connection ownership events; added `IDockedExternalMassSink` for the submarine-fluid external mass sink. `GlobalPhysicsStateManager` implements the state-event service and `SubmarineFluidDynamics` implements the mass sink. `VehicleDockingModule` now resolves only contracts and has no `Hecton8.Physics` import or concrete physics-state reference.
+Rejected Alternatives: Keeping the physics import because the calls are narrow, moving physics state manager methods into vehicle code, using reflection/object casts, or broadcasting synchronous dock mass through SignalBus. Those preserve compile-wall coupling, duplicate authority, hide type debt, or use the wrong lane for immediate owner state.
+Scalability potential: Low keeps current docking behavior and bounded parent-service resolution. Middle/High/Ultra can change physics event aggregation, dock impact telemetry, or submarine fluid internals without recompiling the docking module.
+Hardware Impact: Runtime 0 microseconds claimed; no profiler sample. Static proof after the final Loop 52 pass: concrete cast findings 968, critical source using 0, critical FQN 0, hot-path lookup 0, direct-player 0, AI/Physics/Physiology concrete casts 0, runtime concrete sibling refs 96, cycles 0.
+
+## Decision 079 - Build Guard Held After Loop 52
+
+Problem: The source slice is static-clean by X_003 gates, but AGENTS.md forbids launching `dotnet build` while CPU is above 50% or compiler processes are active. The latest samples had active `csc`/`dotnet`, then CPU 97 with active compiler processes.
+Solution: Do not launch a compile. Keep the proof class at STATIC_SOURCE plus guarded compile eligibility checks. Record the absence of Unity import, Console, PlayMode, profiler, GC, and player-build evidence.
+Rejected Alternatives: Running build into compiler contention, killing unrelated compiler processes, or claiming the Loop 39/45 green Core builds cover the Loop 52 source edits. Those would violate the guard, sabotage other agents, or overstate proof.
+Scalability potential: Low/Middle/High/Ultra runtime behavior is unaffected by the guard decision. The architecture work remains staged for the next clean compile window.
+Hardware Impact: Runtime 0 microseconds claimed. Compile proof is pending; exact editor wall-clock savings are not claimed. Static blast-radius proof still shows selected cable/metabolism/AI cognition files do not reach UI/audio.

@@ -10,7 +10,7 @@
 
 ## Route
 
-- 1. Boot: `ModularEquipmentEngine` requests unmanaged Vault buffers for active equipment, published state, AUP samples, grid load requests, wear drain rates, equipment telemetry, flashlight telemetry, tuning, hardware specs, and integration counters.
+- 1. Boot: `ModularEquipmentEngine` requests unmanaged Vault buffers for equipment state, published state, AUP samples, grid requests, wear, telemetry, tuning, specs, counters.
 - 2. Simulation phase: `EquipmentStateIntegrationJob` integrates battery discharge, cold penalty, dry/wet thermal exchange, durability wear, depletion, and catastrophic overheat in Burst over unmanaged arrays.
 - 3. Signal route:
   - depletion and overheat use typed `SignalBus<T>` lanes;

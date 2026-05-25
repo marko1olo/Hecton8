@@ -973,12 +973,156 @@ Hardware Impact: 0 us measured. This adds the same cheap bound predicate already
 
 ## Decision 107 - Visual Hull Dent Signals Cannot Mutate Combat Health
 
-Problem: `SubmarineStructuralGrid.EnqueueHullImpactDecal()` used `CombatDamageSignal` as a historical VFX dent notification lane. `CombatDamageRuntime.DrainGlobalDamageSignals()` drains the same lane into authoritative LUT/CAS damage. If a dent signal's `TargetHash` matched a registered target, a visual-only impact could become real health damage.
+Problem: `SubmarineStructuralGrid.EnqueueHullImpactDecal()` used `CombatDamageSignal` as a historical VFX dent notification lane. `CombatDamageRuntime.DrainGlobalDamageSignals()` drains the same lane into authoritative LUT/CAS damage. If a dent signal's `TargetHash` matched a registered target, a visual-only impact could become real health damage. A second route existed in `SignalBusRuntime.TryCoalesceCombatDamage()`: visual-only and authoritative payloads with the same target/type/channel could be coalesced together, OR-ing flags and poisoning the authoritative signal before the central builder saw it.
 
-Solution: Added `CombatDamageSignal.VisualOnlyFlag`. The submarine dent producer now sets `DirectRuntimeFlag | VisualOnlyFlag`, and `CombatDamageRuntime.TryBuildCombatSignal()` rejects visual-only signals before constructing `CombatDamageRequest`. The VFX consumer path remains intact because `HullDentShaderController` still consumes `CombatDamageSignal` and projects accepted dents to `HullDeformedSignal`.
+Solution: Added `CombatDamageSignal.VisualOnlyFlag`. The submarine dent producer now sets `DirectRuntimeFlag | VisualOnlyFlag`, and `CombatDamageRuntime.TryBuildCombatSignal()` rejects visual-only signals before constructing `CombatDamageRequest`. `SignalBusRuntime.TryCoalesceCombatDamage()` now refuses to coalesce entries when `VisualOnlyFlag` parity differs, so presentation traffic cannot merge into authoritative damage. The VFX consumer path remains intact because `HullDentShaderController` still consumes `CombatDamageSignal` and projects accepted dents to `HullDeformedSignal`.
 
-Rejected Alternatives: Moving hull dent VFX to a new lane in one pass and risking missed existing consumers; checking `SourceHash == HullDentVisualSourceHash` inside combat runtime; zeroing magnitude and degrading dent visuals; leaving visual damage type `3u` as a tacit exception in central damage.
+Rejected Alternatives: Moving hull dent VFX to a new lane in one pass and risking missed existing consumers; checking `SourceHash == HullDentVisualSourceHash` inside combat runtime; relying only on central rejection while allowing coalescing flag contamination; zeroing magnitude and degrading dent visuals; leaving visual damage type `3u` as a tacit exception in central damage.
 
 Scalability potential: Low/Middle avoid accidental health mutation from presentation traffic while retaining cheap dent feedback. High/Ultra keep overkill dent visuals through typed projection without polluting combat truth.
 
-Hardware Impact: 0 us measured. Central damage ingress adds one flag check per global damage signal before existing magnitude/target work. The hot armor LUT and CAS apply math are unchanged. Build proof remains PENDING because CPU guard is blocked.
+Hardware Impact: 0 us measured. Central damage ingress adds one flag check per global damage signal before existing magnitude/target work; coalescing adds one flag-parity comparison in the existing same-target/type/channel match. The hot armor LUT and CAS apply math are unchanged. Build proof remains PENDING because CPU guard is blocked.
+
+## Decision 108 - Owner-Applied Combat Broadcasts Stay Visual-Only
+
+Problem: Three more producers used `CombatDamageSignal` as a broadcast lane even though they were not authoritative combat-health ingress. `PhysicalHandController.TryPublishKinematicVelocitySignal()` emits a VRHD velocity/haptic event, `DeployableSdfDrillRuntime.ApplyLeviathanDamage()` subtracts drill health before `PublishCombatDamage()`, and `PowerGrid.HandleFloodedShortCircuits()` sets node short-circuit state and consumes node potential before publishing its power short-circuit signal. Without an explicit visual-only guard, any matching registered `TargetHash` could enter central LUT/CAS and apply duplicate or wrong-channel health damage.
+
+Solution: Marked those three broadcasts with `CombatDamageSignal.VisualOnlyFlag` while preserving `DirectRuntimeFlag` for legacy consumers. Central `CombatDamageRuntime.TryBuildCombatSignal()` already rejects visual-only signals, and `SignalBusRuntime.TryCoalesceCombatDamage()` keeps visual-only and authoritative entries separate. The scanner now records `physicalHandVelocityUsesVisualOnlyFlag=true`, `deployableDrillSelfDamageBroadcastUsesVisualOnlyFlag=true`, and `powerShortCircuitBroadcastUsesVisualOnlyFlag=true`.
+
+Rejected Alternatives: Blocking every non-zero `CombatDamageSignal.Channel` in the central builder and accidentally dropping legitimate maelstrom/thermodynamic damage; converting three cross-domain systems to new lanes in one pass; leaving owner-applied broadcasts to rely on target-hash non-collision; deleting the broadcasts and breaking VFX, AI, audio, haptic, and diagnostic snapshot consumers.
+
+Scalability potential: Low/Middle avoid duplicate health mutation from already-applied owner state while keeping cheap presentation and telemetry broadcasts. High/Ultra keep richer signal-driven feedback without polluting combat truth.
+
+Hardware Impact: 0 us measured. Adds no new hot math; only existing visual-only rejection and coalescing parity checks apply. The change removes possible duplicate CAS work and owner-phase reconciliation churn when hashes collide. Build proof remains PENDING until CPU/compiler guard clears.
+
+## Decision 109 - Player Survival Snapshot Damage Signal Is Presentation Only
+
+Problem: `PlayerRuntimeContext.PublishSurvivalState()` stores the new `PlayerSurvivalRuntimeState` first, then computes integrity loss and publishes `CombatDamageSignal` through `PublishSurvivalDamageSignal()`. That signal used `PlayerTargetHash` and `DirectRuntimeFlag`, so a registered player target could receive a second central LUT/CAS subtraction after the survival owner had already changed the state.
+
+Solution: Marked the survival read-model broadcast with `CombatDamageSignal.VisualOnlyFlag` while preserving `DirectRuntimeFlag` for snapshot consumers. The central builder rejects it before `CombatDamageRequest` construction, and the coalescer cannot merge it into authoritative player damage because visual-only parity must match.
+
+Rejected Alternatives: Deleting the survival damage broadcast and breaking stress/audio/AI consumers that observe damage snapshots; routing the read-model delta through `CombatDamageRuntime` and making survival state subordinate to combat health; trusting tiny normalized deltas as harmless; relying on player invulnerability to mask duplicate damage.
+
+Scalability potential: Low/Middle avoid duplicate player health churn from read-model broadcasts. High/Ultra keep damage-reactive presentation driven by the signal lane without changing combat truth ownership.
+
+Hardware Impact: 0 us measured. No new hot math. Removes a possible duplicate player CAS packet and owner reconciliation path when `PlayerTargetHash` is registered. Build proof remains PENDING until CPU/compiler guard clears.
+
+## Decision 110 - Visual-Only Combat Signals Do Not Drive State Consumers
+
+Problem: Producer-side `VisualOnlyFlag` and central `CombatDamageRuntime` rejection prevented presentation traffic from mutating central LUT/CAS health, but secondary consumers still read `SignalBus<CombatDamageSignal>.GetFrameSnapshot()` directly. `VehicleComponentDamageRuntime`, `HabitatGraphManager`, and `DestructibleOrganicManager` could turn visual-only hull dents, owner-applied broadcasts, or survival read-model deltas into vehicle damage, habitat stress, or flora destruction.
+
+Solution: Added explicit visual-only skips before each state derivation route: vehicle damage gathering, habitat module stress from combat damage signals, and Dear Lie flora destruction staging. The visual/presentation lanes remain intact; only state-mutating consumers reject `VisualOnlyFlag`. The scanner now proves the three consumer guards in `combatSignalLaneSegregationProof`.
+
+Rejected Alternatives: Blocking all visual-only signals globally and breaking VFX/audio/haptic consumers; moving every historical consumer to a new signal lane in one pass; relying on target-hash non-collision; treating central runtime rejection as sufficient while direct consumers still derived state from the raw signal bus.
+
+Scalability potential: Low/Middle avoid duplicate or fake state changes from presentation traffic while keeping cheap feedback broadcasts. High/Ultra can keep richer visual-only damage reactions without contaminating combat truth, vehicle state, habitat stress, or flora destruction.
+
+Hardware Impact: 0 us measured. Adds one flag check per raw signal in three consumer loops. The change prevents avoidable downstream jobs, stress uploads, and destruction staging caused by presentation-only payloads; exact frame delta remains PENDING until profiler.
+
+## Decision 111 - Dear Lie Preflight Ignores Visual-Only Combat Traffic
+
+Problem: `DestructibleOrganicManager.ProcessDearLieDestructionSignals()` checked only raw `SignalBus<CombatDamageSignal>.GetFrameSnapshot().Length` before locking Dear Lie vault job buffers. After Loop 87, stage code skipped visual-only signals correctly, but a frame containing only visual-only traffic still paid the lock, counter clear, stage scan, and empty telemetry path.
+
+Solution: Added `HasAnyAuthoritativeDearLieDamageSignal()`. It scans the same capped signal range as staging and returns true only for non-`VisualOnlyFlag` payloads. The preflight now skips the Dear Lie job path when there is no authoritative damage and no mock burst.
+
+Rejected Alternatives: Leaving the waste because it is correctness-neutral; checking full uncapped signal length and diverging from stage semantics; filtering visual-only traffic globally and breaking presentation/AI/audio consumers.
+
+Scalability potential: Low/Middle avoid unnecessary native lock/stage churn on presentation-heavy frames. High/Ultra keep visual-only damage effects available without waking flora destruction when no authoritative flora damage exists.
+
+Hardware Impact: 0 us measured. Expected saving is small but concrete on visual-only frames: no Dear Lie vault lock, no counter clear, no stage scan, and no empty destruction scheduling path. Exact delta remains PENDING until profiler.
+
+## Decision 112 - Visual-Only Combat Signals Do Not Drive AI Or LOD Behavior
+
+Problem: After visual-only producer segregation, several non-health consumers still used raw `CombatDamageSignal` to change gameplay behavior: ecosystem flocking threats, predator mesofauna flee state, predator acoustic stimuli, and foveated tier-0 combat locks. A haptic, hull-dent, drill self-damage, power, or survival read-model broadcast could therefore change AI/LOD behavior even though it was not authoritative combat damage.
+
+Solution: Added `VisualOnlyFlag` skips in the four behavior consumers. Pure presentation consumers remain unfiltered because visual-only payloads are allowed to drive audio, decals, hull dent visuals, and other non-truth feedback.
+
+Rejected Alternatives: Filtering every consumer globally; leaving AI/foveated state driven by presentation-only traffic; deleting visual-only broadcasts and breaking feedback lanes; adding a second bus migration in this loop without owner proof.
+
+Scalability potential: Low/Middle avoid unnecessary AI panic, acoustic stimulus, flocking dispersal, and active-tier locks from presentation-only traffic. High/Ultra keep rich feedback while behavior remains tied to authoritative damage or dedicated presentation signals.
+
+Hardware Impact: 0 us measured. Adds one flag check in four consumer loops. Expected gain is avoidance of downstream AI/LOD work on visual-only-heavy frames; exact delta remains PENDING until profiler.
+
+## Decision 113 - Packed Combat Meta Preserves Fracture Status
+
+Problem: `CombatStatusBits.Fractured` is bit 9, but the packed combat metadata used `MetaStatusBitsMask = 0x1FF`, preserving only status bits 0..8. Any future `PackSignalMeta(..., CombatStatusBits.Fractured, ...)` route would silently drop fracture before the damage job could write status duration or result flags.
+
+Solution: Reallocated the 32-bit meta word without changing DTO size: damage type remains bits 0..7, status bits expand to bits 8..17 with mask `0x3FF`, weakspot tier becomes a one-bit field at bit 18, detail index remains bits 19..28, and damage class remains bits 29..31. This is valid because `CombatWeakspotTier` has only `None` and `Weakspot`; the old second weakspot bit was unused capacity.
+
+Rejected Alternatives: Leaving fracture to the 64-bit status-effects route only; expanding `CombatDamageRequest`; shrinking detail index below 10 bits and weakening the 1024-signal detail buffer contract; pretending the current absence of direct fracture `PackSignalMeta` call sites makes the encoder correct.
+
+Scalability potential: Low/Middle keep the same 32-byte request and 128-byte result layout while preserving fracture if a cheap direct impact route starts emitting it. High/Ultra keep richer status presentation without changing combat truth storage.
+
+Hardware Impact: 0 us measured. Runtime cost is unchanged: the same shifts and masks are used, only constants changed. Correctness gain is removal of a latent fracture-status drop in packed metadata.
+
+## Decision 114 - Combat Math LOD Is A Continuous Quality Wrapper
+
+Problem: `CombatMathLod` exposed a binary `Low/High` wrapper even though project doctrine rejects binary quality switches and combat runtime already owns `_requestedVisualQualityWeight01` as a continuous float. The binary wrapper was not a hot bug, but it was a bad public surface for future callers.
+
+Solution: Expanded `CombatMathLod` to `Low/Middle/High/Ultra` and changed `SetCombatMathLod()` to map the enum to a smoothed continuous `tier01`. The exact route remains `SetCombatVisualQualityWeight(float)`, so external systems can still provide arbitrary `GlobalQualityWeight` values.
+
+Rejected Alternatives: Deleting `SetCombatMathLod()` and breaking any future compatibility caller; keeping `Low/High`; adding binary branches inside jobs; changing gameplay truth ownership based on quality.
+
+Scalability potential: Low uses minimum visual feedback, Middle and High scale presentation budget gradually, Ultra reaches visual overkill weight. Damage truth, DTO layout, save identity, and central LUT/CAS ownership are unchanged.
+
+Hardware Impact: 0 us measured. This is a control-surface correction, not hot-path math. It prevents future callers from collapsing combat presentation scaling into a binary switch.
+
+## Decision 115 - Production Damage Drain Reuses Normalized Direction
+
+Problem: `ProcessDamageQueueJob.Execute()` normalized `signal.Direction` once for directional armor and then normalized the same vector again for front deflection. It also normalized `detail.ArmorNormal` immediately after assigning it from `armorSample.SurfaceNormal`, even though `EvaluateArmorPenetrationCore()` produces that normal through `ResolveArmorSurfaceNormal()` and `NormalizeArmorLookup()`.
+
+Solution: Compute `projectileDirection = ResolveExactDirection(signal.Direction)` once, use `armorSample.SurfaceNormal` directly for directional armor, and reuse `projectileDirection` as `attackDirection` for front deflection. This keeps damage math identical while removing duplicate rsqrt/dot setup from the production loop.
+
+Rejected Alternatives: Recomputing exact direction for each downstream use; storing another field in `ArmorPenetrationSample`; weakening front deflection by using an unnormalized signal direction; changing armor truth to a lower-fidelity fake.
+
+Scalability potential: Low/Middle save redundant scalar/vector math on every processed hit. High/Ultra spend the saved budget on deferred presentation while the LUT/CAS truth route remains unchanged.
+
+Hardware Impact: 0 us measured. Static cost removed per processed damage signal: one `ResolveExactDirection(signal.Direction)` call and one redundant `ResolveExactDirection(detail.ArmorNormal)` call. Profiler proof remains pending because build guard is blocked.
+
+## Decision 116 - Armor Local Projection Uses Quaternion Conjugate
+
+Problem: `EvaluateArmorPenetrationCore()` used `math.inverse(rotation)` to transform AUP delta into armor-local space. That is mathematically correct for arbitrary quaternions but expensive and unnecessary in this route because target rotations are normalized before entering the native snapshot.
+
+Solution: Replaced the per-hit inverse with `math.conjugate(rotation)`. `RefreshArmorTargetSnapshots()` writes `math.normalize(targetTransform.rotation)` for valid transforms and `quaternion.identity` for fallback, so the stored rotation is unit-length. For a unit quaternion `q`, `q^-1 = conjugate(q) / |q|^2 = conjugate(q)`, which preserves the same local projection without reciprocal length work.
+
+Rejected Alternatives: Keeping a generic inverse in the pellet hot path; normalizing again inside every hit evaluation; storing another inverse-rotation buffer and paying memory bandwidth; using Euler angles or inverse trig to derive attack angle.
+
+Scalability potential: Low/Middle remove needless quaternion inverse math from every armor hit while keeping exact normalized-rotation truth. High/Ultra can spend the saved budget on deferred impact presentation; DTO layout, AUP semantics, and LUT authority are unchanged.
+
+Hardware Impact: 0 us measured. Static hot-path work removed per armor hit: one quaternion inverse. Profiler/Burst disassembly proof remains pending because the build guard is blocked.
+
+## Decision 117 - Ballistics Primitive Projection Reuses Unit Rotation
+
+Problem: `BallisticsRuntime.TryIntersectPrimitive()` normalized `primitive.Rotation` once for a generic `math.inverse(...)`, then normalized the same rotation two more times for world normal reconstruction and AUP hit reconstruction. This sits in the combat ballistics primitive intersection route, so pellet/fragment batches paid avoidable quaternion work before the LUT/damage route even saw a hit.
+
+Solution: Normalize `primitive.Rotation` once into `rotation`, use `math.conjugate(rotation)` as the inverse for local origin/direction projection, and reuse `rotation` for `localNormal` and `localHit` expansion. `NormalizeOrIdentity()` returns a unit quaternion or identity, so the same unit-quaternion contract applies: `inverse(q) == conjugate(q)`.
+
+Rejected Alternatives: Keeping the generic inverse for defensive comfort; normalizing the same primitive rotation at every consumer; storing a second inverse-rotation field in `AABBPrimitiveDTO`; replacing primitive intersection with a visual fake and corrupting hit truth.
+
+Scalability potential: Low/Middle remove redundant quaternion math from primitive hit testing while preserving deterministic AUP hit positions. High/Ultra can spend the saved budget on richer impact VFX/audio after the hit truth is resolved.
+
+Hardware Impact: 0 us measured. Static work removed per primitive intersection after the early broad-phase checks: one generic quaternion inverse and two duplicate `NormalizeOrIdentity(primitive.Rotation)` calls. Profiler proof remains pending because the build guard is blocked.
+
+## Decision 118 - Vehicle Damage Mapping Uses Root Rotation Conjugate
+
+Problem: `VehicleComponentDamageRuntime.FixedTick()` requested a root pose through `TryReadAuthoritativeRootPose()`, which normalizes the root rotation or returns identity, then immediately computed `math.inverse(rootRotation)` before scheduling `MapVehicleDamageSignalsJob`. That is avoidable work on the vehicle damage signal mapping path.
+
+Solution: Replaced the root inverse with `math.conjugate(rootRotation)`. The owner of the unit-rotation contract is `TryReadAuthoritativeRootPose()`: cached snapshots are normalized, editor transform fallback is normalized, and non-editor fallback is identity. For unit `q`, `q^-1 == conjugate(q)`.
+
+Rejected Alternatives: Keeping a generic inverse in the vehicle damage hot path; normalizing again before scheduling the map job; adding a second inverse-root field to persisted vehicle damage state; moving vehicle damage mapping out of its owner phase.
+
+Scalability potential: Low/Middle remove unnecessary quaternion inverse work when mapping combat damage signals into vehicle grid local space. High/Ultra keep the same grid damage truth and can spend saved budget on richer hazard/damage presentation.
+
+Hardware Impact: 0 us measured. Static work removed per vehicle damage FixedTick: one quaternion inverse before `MapVehicleDamageSignalsJob`. Profiler proof remains pending because the build guard is blocked.
+
+## Decision 119 - Hull Dent Feedback Uses Unit Quaternion Conjugate
+
+Problem: The visual-only hull dent route had three generic Unity quaternion inverse calls: two in `SubmarineStructuralGrid` for local dent point/direction projection and one in `HullDentShaderController` for local shader dent placement. These are not health truth, but they are directly driven by damage feedback signals and can run on impact-heavy frames.
+
+Solution: Added `ConjugateUnitRotation(Quaternion)` helpers and replaced the `Quaternion.Inverse(transform.rotation)` calls in those local-projection paths. Unity `Transform.rotation` is unit-length, and both routes already finite-check the quaternion before use, so the inverse is the conjugate.
+
+Rejected Alternatives: Leaving the generic inverse because the lane is visual-only; moving hull dent projection to central combat truth; dropping dent local projection; normalizing every transform rotation again before visual projection.
+
+Scalability potential: Low/Middle keep cheap visual hull feedback without extra inverse math. High/Ultra keep the same dent fidelity and can spend the saved budget on richer decal/shader response.
+
+Hardware Impact: 0 us measured. Static work removed from visual damage feedback: three `Quaternion.Inverse` call sites across producer/projector routes. Profiler proof remains pending because the build guard is blocked.

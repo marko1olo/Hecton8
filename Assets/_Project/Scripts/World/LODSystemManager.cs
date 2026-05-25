@@ -72,7 +72,7 @@ namespace Hecton8.World
     /// </remarks>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-150)] // Run before gameplay systems
-    public sealed class LODSystemManager : MonoBehaviour, ITickable, ISaveable, IGlobalRegistryHotSwapListener
+    public sealed class LODSystemManager : MonoBehaviour, ITickable, ILateFrameTickable, ISaveable, IGlobalRegistryHotSwapListener
     {
         private const float CameraResolveRetryInterval = 1f;
         private const int MaxHotPathLODGroupsPerFrame = 64;
@@ -135,6 +135,7 @@ namespace Hecton8.World
         private float[] _lodGroupSquaredDistances;
 
         private bool _registered;
+        private bool _lateFrameRegistered;
         private bool _serviceRegistered;
         private bool _saveRegistered;
 
@@ -279,15 +280,22 @@ namespace Hecton8.World
                 return;
 
             _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
+            if (!_lateFrameRegistered)
+                _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregister()
         {
+            if (_lateFrameRegistered)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                _lateFrameRegistered = false;
+            }
+
             if (!_registered)
                 return;
 
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
-
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
             _registered = false;
         }
 
@@ -356,7 +364,7 @@ namespace Hecton8.World
                 _impostorSystem = GlobalRegistry.Impostors;
 
             if (_saveService == null)
-                _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+                _saveService = GlobalRegistry.Save;
         }
 
         private void ClearCachedRegistryServices()
@@ -403,6 +411,7 @@ namespace Hecton8.World
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
                     _dispatcher = currentService as ITickDispatcher;
+                    _registered = false;
                     TryRegister();
                     break;
                 case GlobalRegistryServiceSlot.DynamicResolutionRuntime:
@@ -457,7 +466,6 @@ namespace Hecton8.World
                 startTicks = System.Diagnostics.Stopwatch.GetTimestamp();
 
             CalculateDistanceSlice();
-            ApplyLODTransitions();
 
             if (_enablePerformanceMonitoring)
             {
@@ -465,6 +473,11 @@ namespace Hecton8.World
                 _lodSystemCPUTime = (endTicks - startTicks) / (float)System.Diagnostics.Stopwatch.Frequency * 1000f;
                 PublishLODPerformanceWarningIfNeeded(_lodSystemCPUTime);
             }
+        }
+
+        public void LateFrameTick()
+        {
+            ApplyLODTransitions();
         }
 
         private void AdvanceLodRuntimeClock(float deltaTime)

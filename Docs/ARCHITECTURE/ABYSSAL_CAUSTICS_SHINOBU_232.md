@@ -39,7 +39,7 @@ External facts are read through cached registry and Vault routes, then collapsed
 
 
 
-- Output: `BufferID.ShinobuCausticsParameters` as two `CausticsParametersDTO` slots: active index 0 and pending index 1. The shader sees one active 64-byte payload; the second slot is a CPU-side commit guard.
+- Output: `BufferID.ShinobuCausticsParameters` as two `CausticsParametersDTO` slots: active index 0 and pending index 1. The shader sees active 64-byte payload; the second slot is a CPU-side commit guard.
 
 
 
@@ -65,7 +65,9 @@ External facts are read through cached registry and Vault routes, then collapsed
 
 The weather/wave route is a cached Core service interface, not a sibling DTO Vault route.
 
-`AbyssalDeferredCausticsRuntime` caches `IWeatherService` during bootstrap/hot-swap and reads `WeatherRuntimeSnapshot` through `GetRuntimeSnapshot()` only when initialized. It collapses weather intensity, wind, state mask, and three `GerstnerWaveComponent` lanes before the Burst pointer kernel.
+`AbyssalDeferredCausticsRuntime` caches `IWeatherService` during bootstrap/hot-swap.
+
+It reads `WeatherRuntimeSnapshot` only after init, then collapses weather intensity, wind, state mask, and three `GerstnerWaveComponent` lanes.
 
 
 
@@ -85,8 +87,8 @@ Telemetry flags match the current route vocabulary.
 
 - Owner output/tuning/telemetry/profile lanes are cold-acquired once and guarded by `_vaultStateReady`.
 - Per-frame `Tick` skips duplicate owner-lane acquire probes while generation descriptors remain valid.
-- Failed required resolves clear the gate and fail closed until bootstrap, DataVault hot-swap, editor tuning, or explicit profile reload repairs the Vault state outside normal frame memory ownership.
-- The frame path now returns immediately when tuning, telemetry, telemetry cursor, or profile lanes fail to resolve, so optional producer lanes cannot drive a partial owner-state parameter kernel.
+- Failed required resolves clear the gate and fail closed until bootstrap, DataVault hot-swap, editor tuning, or explicit profile reload repairs the Vault state outside frame memory ownership.
+- The frame path returns immediately when tuning, telemetry, telemetry cursor, or profile lanes fail to resolve, so optional producer lanes cannot drive a partial owner-state parameter kernel.
 
 
 
@@ -104,7 +106,7 @@ Telemetry flags match the current route vocabulary.
 - `HectonDeferredCausticsFeature` injects a URP RenderGraph full-screen pass.
 - The pass binds private `_HectonDeferredCausticsSource` and `_HectonDeferredCausticsDepth` textures instead of rebinding URP-owned global color/depth names.
 - The active caustics CBuffer is imported with `renderGraph.ImportBuffer` and declared through `builder.UseBuffer(..., AccessFlags.Read)` before `RasterCommandBuffer.SetGlobalConstantBuffer` binds it inside the render function.
-- The shader reconstructs world position from the bound depth buffer, projects procedural Voronoi caustics mathematically, samples the documented World-owned cave SDF bridge for cave attenuation, and composites into camera color.
+- Shader reconstructs world position from bound depth, projects procedural Voronoi caustics, samples the World-owned cave SDF bridge, and composites into camera color.
 - No Unity Projector, light cookie, caustic atlas RenderTexture, or per-object redraw is part of this route.
 
 
@@ -144,7 +146,7 @@ XR fullscreen path:
 
 
 - Shader warmup is curated through `Assets/_Project/Art/Shaders/Variants/HectonDeferredCaustics.shadervariants` with GUID `232232232ca00147aa7d232232ca0014`.
-- `00_BOOTSTRAP.unity` serializes that SVC through `BootstrapController.shaderVariantCollections`; `BootstrapController.ApplySerializedShaderVariantCollections`, `GameBootstrapper.EnsureRuntimeInstance(GameObject)`, and the no-owner `GameBootstrapper.EnsureRuntimeInstance()` active-instance path transfer it to the runtime bootstrapper before any `BeginBootstrap()` path can start `MemoryPreWarm`.
+- `00_BOOTSTRAP.unity` serializes SVC through `BootstrapController.shaderVariantCollections`; `BootstrapController.ApplySerializedShaderVariantCollections`, `GameBootstrapper.EnsureRuntimeInstance(GameObject)`, and the no-owner `GameBootstrapper.EnsureRuntimeInstance()` active-instance path transfer it to the runtime bootstrapper before any `BeginBootstrap()` path can start `MemoryPreWarm`.
 - The handoff is skipped after bootstrap starts or completes.
 - `BootstrapController` admits this route only when the scene name exactly equals `00_BOOTSTRAP` with `System.StringComparison.Ordinal`; substring scene matches are rejected.
 - `GameBootstrapper.WarmConfiguredShaderVariantCollectionsAsync` calls `WarmUp()` during `MemoryPreWarm` before scene activation.
@@ -169,7 +171,9 @@ The fullscreen Voronoi helper keeps squared cell distance and remaps line intens
 
 
 
-The RenderGraph destination texture inherits the active camera color format and only strips depth, MSAA, mips, and auto-mips. This avoids fixed-format conversion risk while preserving the same fullscreen visual fake.
+RenderGraph destination inherits active camera color format and strips depth, MSAA, mips, and auto-mips.
+
+This avoids fixed-format conversion risk while preserving the fullscreen visual fake.
 
 
 
@@ -179,8 +183,8 @@ The RenderGraph destination texture inherits the active camera color format and 
 
 - Runtime persistent CPU memory is Vault-owned.
 - The runtime stores generation-handle descriptors and resolves phase-local `NativeArray` views only while writing or uploading.
-- The 64-byte parameter kernels are not submitted to Unity's JobSystem: SHINOBU_232 preserves the XML kernel names as unmanaged pointer carriers and cold-compiles Burst `FunctionPointer` entrypoints during service initialization.
-- If either pointer is unavailable, the runtime fails closed with `FaultBurstKernelUnavailable`, suppresses the pending GPU upload, and attempts a BlackBox dump; it does not execute a direct C# fallback.
+- SHINOBU_232 keeps 64-byte parameter kernels as unmanaged pointer carriers; cold init compiles Burst `FunctionPointer` entrypoints from XML kernel names.
+- Missing pointers set `FaultBurstKernelUnavailable`, suppress GPU upload, and try a BlackBox dump; no direct C# fallback executes.
 - There is no `IJob`, `job.Run`, scheduled `JobHandle`, or hidden completion fence for a one-DTO update.
 - The kernel carriers and entrypoints use `[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]` to match Task 14's extracted rollback-adjacent visual reproducibility requirement.
 - DTO layout is explicit and editor-audited through `UnsafeUtility.GetFieldOffset` in `AbyssalCausticsLayoutAudit`.
@@ -244,7 +248,7 @@ The interface is now only the registry identity marker for the caustics service 
 - The owner publishes only the currently active `GraphicsBuffer` plus frame index after a successful upload; pass recording reads that immutable render snapshot.
 - Editor-only tuning/profile bridges use `s_publishedRuntime`, which is assigned only after `GlobalRegistry.Caustics` ownership is proven.
 - The two 64-byte constant buffers are created during lifecycle/boot ownership setup.
-- `Tick` and `LateFrameTick` return immediately when `_isInitialized` or registry ownership is false; neither callback calls `InitializeService`, resolves dump paths, acquires Vault buffers, creates GPU buffers, or performs cold repair.
+- `Tick`/`LateFrameTick` return when uninitialized or non-owner; they do not initialize, resolve dump paths, acquire Vault/GPU buffers, or cold-repair.
 
 
 

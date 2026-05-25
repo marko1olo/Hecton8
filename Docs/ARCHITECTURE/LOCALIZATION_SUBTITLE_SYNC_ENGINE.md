@@ -51,7 +51,8 @@ Forbidden: gameplay truth, rollback Merkle state, inventory state, quest state, 
 
 - Legacy JSON parsing for key generation and CJK validation lives only in `Assets/_Project/Scripts/Editor/LocalizationEditorJsonTableParser.cs`; it is Editor-only tooling and is not a runtime localization authority.
 
-- The legacy string compatibility formatter is quarantined behind `string.Create` plus primitive `TryFormat`; numeric format suffixes are preserved, but the method still returns a managed string and is not zero-GC proof.
+- Legacy string compatibility formatter is quarantined behind `string.Create` plus primitive `TryFormat`.
+- Numeric format suffixes are preserved; method still returns managed string and is not zero-GC proof.
 
 - Fallback decode storage cap: `4096` glyphs.
 - Static 500-word paragraph audit path no longer truncates at old `1024` glyph ceiling.

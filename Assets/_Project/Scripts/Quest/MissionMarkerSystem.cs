@@ -312,7 +312,9 @@ namespace Hecton8.Quest
                     _markerCacheDirty = true;
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    RegisterRuntime();
+                    _registeredUpdatable = false;
+                    if (currentService != null)
+                        RegisterRuntime();
                     break;
             }
         }

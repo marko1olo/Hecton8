@@ -18,6 +18,7 @@ namespace Hecton8.Gameplay
     [AddComponentMenu("Hecton8/Gameplay/Sargassum Cut Responder")]
     public sealed class SargassumCutResponder : MonoBehaviour
     {
+        private static int s_x001SargassumCutResponderSignalPushDropCount;
         [Header("── Runtime Bindings ───────────────────")]
         [Tooltip("Legacy renderer list retained for prefab compatibility. Cut response is routed through SargassumCutManager global mask publishing.")]
         [SerializeField] private Renderer[] targetRenderers;
@@ -104,7 +105,7 @@ namespace Hecton8.Gameplay
                     Flags = DebrisSpawnSignal.FlagComputeShard,
                     Quantity = quantity
                 };
-                SignalBus<DebrisSpawnSignal>.TryPush(in debris);
+                SignalBus<DebrisSpawnSignal>.TryPushTracked(in debris, ref s_x001SargassumCutResponderSignalPushDropCount);
                 _nextDebrisFrame = frame + ResolveCooldownFrames(particleCooldown);
             }
 

@@ -96,7 +96,12 @@ Consumer phase: POST_SIMULATION (`IPostFixedTickable.PostFixedTick`).
 
 Cadence: fixed tick, continuously load-shed by `GlobalQualityWeight` through evaluation stride `12 -> 1`; `EvaluationOffset = SimulationFrame % stride` rotates ownership across fixed frames.
 
-Expected max events/reads per frame: 4096 state reads/writes at stride 1, roughly `ceil(active/stride)` evaluated state rows at lower quality, up to 8192 force packet rows, drain budget 8192.
+Expected max events/reads per frame:
+
+- 4096 state reads/writes at stride 1.
+- roughly `ceil(active/stride)` evaluated state rows at lower quality.
+- up to 8192 force packet rows.
+- drain budget 8192.
 
 GlobalQualityWeight behavior:
 
@@ -137,7 +142,11 @@ Telemetry fields: evaluated objects, sleeping objects, packets, non-finite count
 
 It also records sanitized current-frame last net force. Evaluated/force totals are current-frame only; force packet count comes from the padded counter.
 
-Black-box fields: 300-entry `BuoyancyTelemetryEntry` ring requests planned/generated-on-fault dumps to both `Docs/AgentLogs/Dump_FLUID_DYNAMICS.bin` and `Docs/AgentLogs/Dump_SHINOBU_158.bin` on NaN/non-finite detection. No existing artifact is implied unless a timestamped runtime trigger and output are linked.
+Black-box fields: 300-entry `BuoyancyTelemetryEntry` ring.
+
+On NaN/non-finite detection, planned/generated-on-fault dumps target `Docs/AgentLogs/Dump_FLUID_DYNAMICS.bin` and `Docs/AgentLogs/Dump_SHINOBU_158.bin`.
+
+No existing artifact is implied unless timestamped runtime trigger and output are linked.
 
 Profiler marker: pending; static implementation records compute micros through `Stopwatch` only.
 

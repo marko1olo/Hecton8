@@ -23,6 +23,8 @@ PLAYER_KINEMATICS = ROOT / "Assets" / "_Project" / "Scripts" / "Gameplay" / "Pla
 PLAYER_STATE = ROOT / "Assets" / "_Project" / "Scripts" / "Gameplay" / "HectonPlayerState.cs"
 PLAYER_MOVEMENT_CONTRACTS = ROOT / "Assets" / "_Project" / "Scripts" / "Core" / "Contracts" / "PlayerMovementContracts.cs"
 RAYCAST_BATCH_HELPER = ROOT / "Assets" / "_Project" / "Scripts" / "RaycastBatchHelper.cs"
+GLOBAL_REGISTRY_CONTRACTS = ROOT / "Assets" / "_Project" / "Scripts" / "Core" / "GlobalRegistryContracts.cs"
+EQUIPMENT_INTERACTION_HANDLER = ROOT / "Assets" / "_Project" / "Scripts" / "Interaction" / "EquipmentInteractionHandler.cs"
 PLAYER_NOISE = ROOT / "Assets" / "_Project" / "Scripts" / "Gameplay" / "PlayerNoiseEmitter.cs"
 PLAYER_ACTION = ROOT / "Assets" / "_Project" / "Scripts" / "Gameplay" / "PlayerActionController.cs"
 PLAYER_SWIM = ROOT / "Assets" / "_Project" / "Scripts" / "Gameplay" / "PlayerSwimPresentationController.cs"
@@ -45,6 +47,40 @@ VEHICLE_MOTOR = ROOT / "Assets" / "_Project" / "Scripts" / "Gameplay" / "Vehicle
 MOUNTABLE_TRANSPORT = ROOT / "Assets" / "_Project" / "Scripts" / "Gameplay" / "MountablePlayerTransport.cs"
 H8_MEMORY = ROOT / "Assets" / "_Project" / "Scripts" / "Core" / "Memory" / "H8Memory.cs"
 VAULT_MEMORY_CONTRACTS = ROOT / "Assets" / "_Project" / "Scripts" / "Core" / "Memory" / "VaultMemoryContracts.cs"
+
+TOOL_SURFACE_FILES = (
+    ROOT / "Assets" / "_Project" / "Scripts" / "PlayerTool.cs",
+    ROOT / "Assets" / "_Project" / "Scripts" / "BeaconDeployerTool.cs",
+    ROOT / "Assets" / "_Project" / "Scripts" / "EnvironmentalAnalyzerTool.cs",
+    ROOT / "Assets" / "_Project" / "Scripts" / "FlashlightTool.cs",
+    ROOT / "Assets" / "_Project" / "Scripts" / "HarpoonLauncherTool.cs",
+    ROOT / "Assets" / "_Project" / "Scripts" / "KnifeTool.cs",
+    ROOT / "Assets" / "_Project" / "Scripts" / "LogicSpannerTool.cs",
+    ROOT / "Assets" / "_Project" / "Scripts" / "PropulsionTool.cs",
+    ROOT / "Assets" / "_Project" / "Scripts" / "SalvageSamplerTool.cs",
+    ROOT / "Assets" / "_Project" / "Scripts" / "RepairTool.cs",
+    ROOT / "Assets" / "_Project" / "Scripts" / "StunPistolTool.cs",
+    ROOT / "Assets" / "_Project" / "Scripts" / "LaserCutter.cs",
+    ROOT / "Assets" / "_Project" / "Scripts" / "PlayerBuilder.cs",
+    ROOT / "Assets" / "_Project" / "Scripts" / "Construction" / "DeepDrillModule.cs",
+)
+
+KINEMATIC_SURFACE_FILES = (
+    ROOT / "Assets" / "_Project" / "Scripts" / "BuoyancyObject.cs",
+    ROOT / "Assets" / "_Project" / "Scripts" / "Gameplay" / "ContextualPhysicalIkRuntime.cs",
+    ROOT / "Assets" / "_Project" / "Scripts" / "Gameplay" / "VRSomaticProvider.cs",
+    ROOT / "Assets" / "_Project" / "Scripts" / "Gameplay" / "HectonPlayerEnvironmentHandler.cs",
+)
+
+INTERACTION_TARGET_FILES = (
+    ROOT / "Assets" / "_Project" / "Scripts" / "Core" / "InputDispatcher.cs",
+    ROOT / "Assets" / "_Project" / "Scripts" / "Interaction" / "IInteractable.cs",
+    ROOT / "Assets" / "_Project" / "Scripts" / "Interaction" / "InteractableRegistry.cs",
+    ROOT / "Assets" / "_Project" / "Scripts" / "Interaction" / "PlayerInteraction.cs",
+    ROOT / "Assets" / "_Project" / "Scripts" / "UI" / "InteractionUI.cs",
+    ROOT / "Assets" / "_Project" / "Scripts" / "HectonPlayerSpawner.cs",
+    ROOT / "Assets" / "_Project" / "Scripts" / "LaserCutter.cs",
+)
 
 PLAYER_TRIGGER_CALLBACK_FILES = (
     ROOT / "Assets" / "_Project" / "Scripts" / "Gameplay" / "SargassumPhysicsZone.cs",
@@ -135,6 +171,7 @@ PLAYER_BODY_FORCE_ROUTE = re.compile(
     r"(?:_playerRigidbody|playerRigidbody|playerContext\.PlayerRigidbody|_cachedPlayerRigidbody|playerBody)\b"
 )
 PLAYER_TRIGGER_CALLBACK = re.compile(r"\bOnTrigger(?:Enter|Stay|Exit)\s*\(")
+UNITY_COLLISION_DTO = re.compile(r"\bCollision\s+collision\b|\bContactPoint\b|\.GetContact\s*\(|\bQueueImpact\s*\(")
 
 TYPE_SIZES = {
     "long": 8,
@@ -461,6 +498,11 @@ def legacy_bridge_report() -> dict:
     spawner = read(PLAYER_SPAWNER)
     state = read(PLAYER_STATE)
     legacy_batch = read(RAYCAST_BATCH_HELPER)
+    interaction_contracts = read(GLOBAL_REGISTRY_CONTRACTS)
+    interaction_handler = read(EQUIPMENT_INTERACTION_HANDLER)
+    tool_surface_text = "\n".join(read(path) for path in TOOL_SURFACE_FILES)
+    kinematic_surface_text = "\n".join(read(path) for path in KINEMATIC_SURFACE_FILES)
+    interaction_target_text = "\n".join(read(path) for path in INTERACTION_TARGET_FILES)
     vehicle = read(VEHICLE_MOTOR)
     mountable = read(MOUNTABLE_TRANSPORT)
     memory_text = read(H8_MEMORY) + "\n" + read(VAULT_MEMORY_CONTRACTS)
@@ -472,6 +514,12 @@ def legacy_bridge_report() -> dict:
     movement_raycast_named_surface_symbols = len(re.findall(r"\b(?:TryEmitRaycastedFootstepAudio|raycasted|raycast material|foot-support raycast|casting .*?rays|Burst ray range)\b", movement, re.IGNORECASE))
     motor_repair_physx_wording = len(re.findall(r"\b(?:raycast lane|RaycastHit|RaycastCommand|CapsulecastCommand|SpherecastCommand)\b", motor))
     kinematics_default_physics_layer_symbols = len(re.findall(r"\bUnityEngine\.Physics\.DefaultRaycastLayers\b", kinematics))
+    interaction_target_legacy_symbols = len(re.findall(
+        r"\b(?:TryRaycastSpatial|raycastInterval|_raycastTimer|PerformRaycast|_raycastRequesterId|"
+        r"CacheRaycastRequesterId|StageDodRaycastRequest|ResolveCuttableRaycastMask|"
+        r"raycastOriginHeight|_rayOrigin|DefaultRaycastLayerMask)\b",
+        interaction_target_text,
+    ))
     return {
         "player_motor_capsule_sweep_bridge_symbol_count": motor_capsule_bridge_symbols,
         "player_motor_capsule_sweep_bridge_removed": motor_capsule_bridge_symbols == 0,
@@ -500,13 +548,47 @@ def legacy_bridge_report() -> dict:
         "player_spawner_raycast_hit_count": len(re.findall(r"\bRaycastHit\b", spawner)),
         "player_spawner_try_raycast_ground_count": len(re.findall(r"\bTryRaycastGround\b", spawner)),
         "player_spawner_uses_spawn_ground_hit": "private struct SpawnGroundHit" in spawner and "TryResolveGroundHit(out SpawnGroundHit hit)" in spawner,
+        "player_spawner_uses_ground_probe_origin": "groundProbeOriginHeight" in spawner and "_groundProbeOrigin" in spawner,
         "player_motor_raycast_hit_allocations": len(re.findall(r"AllocateMotorArray<\s*RaycastHit\s*>", state)),
         "player_motor_command_allocations": len(re.findall(r"AllocateMotorArray<\s*(?:RaycastCommand|CapsulecastCommand)\s*>", state)),
         "legacy_batch_query_result_arrays": len(re.findall(r"QueryResult\s*\[\s*\]", legacy_batch)) + len(re.findall(r"new\s+QueryResult\s*\[", legacy_batch)),
         "legacy_batch_physx_calls": len(re.findall(r"\bPhysics\s*\.\s*(?:Raycast|SphereCast|CapsuleCast|BoxCast|Linecast|Overlap|Check|ComputePenetration|SyncTransforms)", legacy_batch)),
+        "legacy_batch_unity_raycast_hit_count": len(re.findall(r"\bRaycastHit\b", legacy_batch)),
+        "interaction_surface_unity_raycast_hit_count": len(re.findall(r"\bRaycastHit\b", interaction_contracts + "\n" + interaction_handler + "\n" + tool_surface_text)),
+        "interaction_surface_legacy_method_count": len(re.findall(r"\b(?:TryRaycastPrimary|TryQueuePrimaryRaycast)\b", interaction_contracts + "\n" + interaction_handler + "\n" + tool_surface_text)),
+        "interaction_surface_uses_typed_hit": "public struct InteractionSurfaceHit" in interaction_contracts and "out InteractionSurfaceHit hit" in interaction_handler and "out InteractionSurfaceHit hit" in tool_surface_text,
+        "interaction_surface_vault_uses_typed_hit_dto": "VaultGenerationHandle<InteractionSurfaceHitDTO>" in interaction_handler and "NativeArray<InteractionSurfaceHitDTO>" in interaction_handler,
+        "kinematic_surface_hit_layout_64": "[StructLayout(LayoutKind.Explicit, Size = 64)]\n    public struct KinematicSurfaceHit" in interaction_contracts,
+        "kinematic_surface_unity_raycast_hit_count": len(re.findall(r"\bRaycastHit\b", kinematic_surface_text)),
+        "kinematic_surface_uses_typed_hit": "NativeArray<KinematicSurfaceHit>" in kinematic_surface_text and "VaultNativeArray<KinematicSurfaceHit>" in kinematic_surface_text,
+        "interaction_target_legacy_raycast_api_count": interaction_target_legacy_symbols,
+        "interaction_target_uses_spatial_target_contract": interaction_target_legacy_symbols == 0
+            and interaction_target_text.count("TryResolveSpatialTarget") >= 4
+            and "targetProbeInterval" in interaction_target_text
+            and "_targetProbeTimer" in interaction_target_text
+            and "ResolveHoveredTarget()" in interaction_target_text
+            and "_surfaceRequesterId" in interaction_target_text
+            and "ResolveCuttableSurfaceMask()" in interaction_target_text,
         "vehicle_motor_capsule_sweep_bridge_symbol_count": vehicle_capsule_bridge_symbols,
         "vehicle_motor_capsule_sweep_bridge_removed": vehicle_capsule_bridge_symbols == 0,
         "vehicle_motor_raycast_hit_symbol_count": len(re.findall(r"\bRaycastHit\b", vehicle)),
+    }
+
+
+def scan_unity_collision_dtos() -> dict:
+    entries = []
+    scripts_root = ROOT / "Assets" / "_Project" / "Scripts"
+    for path in sorted(scripts_root.rglob("*.cs")):
+        if "Editor" in path.parts:
+            continue
+        for line_no, line in enumerate(read(path).splitlines(), 1):
+            if UNITY_COLLISION_DTO.search(line):
+                entries.append({"path": rel(path), "line": line_no, "text": line.strip()})
+
+    return {
+        "unity_collision_dto_count": len(entries),
+        "unity_collision_dtos": entries,
+        "unity_collision_dto_route_removed": len(entries) == 0,
     }
 
 
@@ -846,6 +928,8 @@ def write_markdown(payload: dict) -> None:
         f"- External non-Editor Rigidbody force call count: {payload['rigidbody_writes']['external_force_call_count']}",
         f"- External player/rider Rigidbody pose fallback count: {payload['rigidbody_writes']['external_player_pose_assignment_count']}",
         "- Remaining velocity writes are central `PhysicsApplySystem` packet application or DTO/state assignments listed in JSON.",
+        f"- Unity `Collision`/`ContactPoint` DTO route count: {payload['unity_collision_dto']['unity_collision_dto_count']}",
+        f"- Unity collision DTO route removed: {payload['unity_collision_dto']['unity_collision_dto_route_removed']}",
         "",
         "## Legacy Player Sweep Bridge Result",
         f"- Player motor capsule sweep bridge removed: {payload['legacy_bridge']['player_motor_capsule_sweep_bridge_removed']}",
@@ -875,10 +959,21 @@ def write_markdown(payload: dict) -> None:
         f"- Player spawner `RaycastHit` symbol count: {payload['legacy_bridge']['player_spawner_raycast_hit_count']}",
         f"- Player spawner `TryRaycastGround` symbol count: {payload['legacy_bridge']['player_spawner_try_raycast_ground_count']}",
         f"- Player spawner uses spawn ground DTO: {payload['legacy_bridge']['player_spawner_uses_spawn_ground_hit']}",
+        f"- Player spawner uses ground-probe origin contract: {payload['legacy_bridge']['player_spawner_uses_ground_probe_origin']}",
         f"- Player motor `RaycastHit` native allocations: {payload['legacy_bridge']['player_motor_raycast_hit_allocations']}",
         f"- Player motor PhysX command native allocations: {payload['legacy_bridge']['player_motor_command_allocations']}",
         f"- Legacy batch helper `QueryResult[]` mirrors: {payload['legacy_bridge']['legacy_batch_query_result_arrays']}",
         f"- Legacy batch helper Unity Physics calls: {payload['legacy_bridge']['legacy_batch_physx_calls']}",
+        f"- Legacy batch helper Unity `RaycastHit` symbols: {payload['legacy_bridge']['legacy_batch_unity_raycast_hit_count']}",
+        f"- Tool interaction surface Unity `RaycastHit` symbols: {payload['legacy_bridge']['interaction_surface_unity_raycast_hit_count']}",
+        f"- Tool interaction legacy raycast method symbols: {payload['legacy_bridge']['interaction_surface_legacy_method_count']}",
+        f"- Tool interaction uses typed surface hit: {payload['legacy_bridge']['interaction_surface_uses_typed_hit']}",
+        f"- Tool interaction vault uses typed surface hit DTO: {payload['legacy_bridge']['interaction_surface_vault_uses_typed_hit_dto']}",
+        f"- Kinematic surface hit has explicit 64-byte layout: {payload['legacy_bridge']['kinematic_surface_hit_layout_64']}",
+        f"- Kinematic IK/VR/buoyancy Unity `RaycastHit` symbols: {payload['legacy_bridge']['kinematic_surface_unity_raycast_hit_count']}",
+        f"- Kinematic IK/VR/buoyancy uses typed surface hits: {payload['legacy_bridge']['kinematic_surface_uses_typed_hit']}",
+        f"- Interaction target legacy raycast API symbols: {payload['legacy_bridge']['interaction_target_legacy_raycast_api_count']}",
+        f"- Interaction target uses spatial-target contract: {payload['legacy_bridge']['interaction_target_uses_spatial_target_contract']}",
         f"- Vehicle motor capsule sweep bridge removed: {payload['legacy_bridge']['vehicle_motor_capsule_sweep_bridge_removed']}",
         f"- Vehicle motor capsule sweep bridge symbol count: {payload['legacy_bridge']['vehicle_motor_capsule_sweep_bridge_symbol_count']}",
         f"- Vehicle motor `RaycastHit` symbol count: {payload['legacy_bridge']['vehicle_motor_raycast_hit_symbol_count']}",
@@ -1050,6 +1145,7 @@ def main() -> int:
         "scoped_forbidden": scoped,
         "broad_forbidden": broad,
         "rigidbody_writes": scan_direct_rigidbody_writes(),
+        "unity_collision_dto": scan_unity_collision_dtos(),
         "legacy_bridge": legacy_bridge_report(),
         "player_split_authority": player_split_authority_report(),
         "owner_internal_authority": owner_internal_authority_report(),
@@ -1069,6 +1165,8 @@ def main() -> int:
         "external_rigidbody_velocity_assignment_count": payload["rigidbody_writes"]["external_velocity_assignment_count"],
         "external_rigidbody_force_call_count": payload["rigidbody_writes"]["external_force_call_count"],
         "external_player_pose_assignment_count": payload["rigidbody_writes"]["external_player_pose_assignment_count"],
+        "unity_collision_dto_count": payload["unity_collision_dto"]["unity_collision_dto_count"],
+        "unity_collision_dto_route_removed": payload["unity_collision_dto"]["unity_collision_dto_route_removed"],
         "player_motor_capsule_sweep_bridge_removed": payload["legacy_bridge"]["player_motor_capsule_sweep_bridge_removed"],
         "player_motor_capsule_sweep_bridge_symbol_count": payload["legacy_bridge"]["player_motor_capsule_sweep_bridge_symbol_count"],
         "player_motor_native_state_removed": payload["legacy_bridge"]["player_motor_native_state_removed"],
@@ -1093,8 +1191,19 @@ def main() -> int:
         "player_spawner_raycast_hit_count": payload["legacy_bridge"]["player_spawner_raycast_hit_count"],
         "player_spawner_try_raycast_ground_count": payload["legacy_bridge"]["player_spawner_try_raycast_ground_count"],
         "player_spawner_uses_spawn_ground_hit": payload["legacy_bridge"]["player_spawner_uses_spawn_ground_hit"],
+        "player_spawner_uses_ground_probe_origin": payload["legacy_bridge"]["player_spawner_uses_ground_probe_origin"],
         "legacy_batch_query_result_arrays": payload["legacy_bridge"]["legacy_batch_query_result_arrays"],
         "legacy_batch_physx_calls": payload["legacy_bridge"]["legacy_batch_physx_calls"],
+        "legacy_batch_unity_raycast_hit_count": payload["legacy_bridge"]["legacy_batch_unity_raycast_hit_count"],
+        "interaction_surface_unity_raycast_hit_count": payload["legacy_bridge"]["interaction_surface_unity_raycast_hit_count"],
+        "interaction_surface_legacy_method_count": payload["legacy_bridge"]["interaction_surface_legacy_method_count"],
+        "interaction_surface_uses_typed_hit": payload["legacy_bridge"]["interaction_surface_uses_typed_hit"],
+        "interaction_surface_vault_uses_typed_hit_dto": payload["legacy_bridge"]["interaction_surface_vault_uses_typed_hit_dto"],
+        "kinematic_surface_hit_layout_64": payload["legacy_bridge"]["kinematic_surface_hit_layout_64"],
+        "kinematic_surface_unity_raycast_hit_count": payload["legacy_bridge"]["kinematic_surface_unity_raycast_hit_count"],
+        "kinematic_surface_uses_typed_hit": payload["legacy_bridge"]["kinematic_surface_uses_typed_hit"],
+        "interaction_target_legacy_raycast_api_count": payload["legacy_bridge"]["interaction_target_legacy_raycast_api_count"],
+        "interaction_target_uses_spatial_target_contract": payload["legacy_bridge"]["interaction_target_uses_spatial_target_contract"],
         "vehicle_motor_capsule_sweep_bridge_removed": payload["legacy_bridge"]["vehicle_motor_capsule_sweep_bridge_removed"],
         "vehicle_motor_capsule_sweep_bridge_symbol_count": payload["legacy_bridge"]["vehicle_motor_capsule_sweep_bridge_symbol_count"],
         "vehicle_motor_raycast_hit_symbol_count": payload["legacy_bridge"]["vehicle_motor_raycast_hit_symbol_count"],

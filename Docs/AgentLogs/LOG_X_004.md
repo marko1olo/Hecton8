@@ -716,3 +716,12 @@ Exact Microseconds saved:
 - Proof: `RUNTIME_UI_STRING_FRAME_HITS=0`.
 - Proof: scoped `git diff --check` is clean except CRLF normalization warnings.
 - Build/Roslyn not launched: CPU gate is closed (`CPU=100`; no active compiler rows).
+## X_004 Log - Loop 47 APEX Runtime Phase-Edge Closure
+
+What was wrong -> Current-source helper-chain inspection still found hot-lane routes into presentation/resource side effects: DRS/diagnostic/GI/light-culling GPU resource work, diegetic panel/cockpit/HUD/sonar/pause/camera/dynamic-resolution visual commits, notification publication, LOD changes, sargassum/wreck/world residency/resource pooling, base spatial audio, fauna spawn/hydration, player tool pool/spawn/swap work, input haptic motor writes, and asset retry dispatch.
+
+What was done -> Rewrote 26 tracked runtime files. Hot `Tick`/`FixedTick`/`SlowTick`/`PreSimulationTick`/tool lanes now queue scalar, DTO, pending-bit, or fixed-array state. `LateFrameTick`, `Render`, or VISUAL_SYNC now owns GPU buffer creation/upload, shader/material/UI/audio/haptic writes, pool spawn/despawn, scene activation, render texture acquire/release, retry dispatch, and presentation state transitions. `InputDispatcher` now flushes haptic hardware output late; `AssetLifecycleGovernor` now pumps retry dispatch late.
+
+Cinematic Cheats used -> One-frame visual latency, dirty-bit scalar queues, fixed DTO buffers, GPU-side shader masks, previous-frame visual snapshots, and A/B/late-frame resource ownership. Simulation truth remains blind to render/audio/UI state.
+
+Exact Microseconds saved -> 73-166 us engineering estimate on dirty frames for i3/MX350-class hardware; not profiler-measured. Proof artifacts: `TARGET26_DIRECT_HOT_PRESENTATION_OR_GC_COUNT=0`; `TARGET26_HELPER_HOT_PRESENTATION_OR_GC_COUNT=0`; runtime upload/readback grep has no `SetData`, `UploadArraySetData`, `ReadPixels`, `GetData`, `LockBufferForWrite`, or `UnlockBufferAfterWrite` hits; UI/PDA/visor string frame scan reports `RUNTIME_UI_STRING_FRAME_HITS=0`; checked UI/VFX/Rendering/PDA/Visor C# trig/noise routes have no hits. Project-direct has one false positive in `PerformanceMonitor.Tick` from `Stopwatch.Stop()`. Full broad helper rerun timed out at 300 seconds after patching the observed runtime routes, so no fresh project-wide helper-clean claim is made. Build/Roslyn rerun is blocked by repo gate: `CPU=97`, active `csc` pid `52604`, active `dotnet` pid `54776`.

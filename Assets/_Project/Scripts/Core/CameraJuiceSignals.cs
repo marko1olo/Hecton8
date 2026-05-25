@@ -12,6 +12,8 @@ namespace Hecton8.Core
     /// </summary>
     public static class CameraJuiceSignals
     {
+        private static int s_x001DirectSignalPushDropCount_CameraJuiceSignals;
+
         private const int ImpactSignalCapacity = 128;
         private const int LowTierImpactSignalCapacity = 32;
 
@@ -52,7 +54,7 @@ namespace Hecton8.Core
                 Severity = severity
             };
 
-            if (SignalBus<CameraJuiceImpactSignal>.TryPush(in signal))
+            if (SignalBus<CameraJuiceImpactSignal>.TryPushTracked(in signal, ref s_x001DirectSignalPushDropCount_CameraJuiceSignals))
                 return true;
 
             IncrementDroppedImpactCount();

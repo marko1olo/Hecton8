@@ -81,7 +81,7 @@ namespace Hecton8.Core
                 InteractorHash = FoldEntityId(interactorEntityId),
                 Quantity = quantity,
                 YieldUnitCount = math.max(0, yieldUnitCount),
-                Frame = unchecked((uint)Time.frameCount),
+                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 Sequence = unchecked((uint)Interlocked.Increment(ref s_sequence)),
                 PollutionMilli = ResolveDiscardPollutionMilli(category, unitWeightKg),
                 Action = action,

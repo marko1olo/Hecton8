@@ -392,7 +392,7 @@ namespace Hecton8.Physics
 
         private void RefreshSampleCache()
         {
-            int frame = Time.frameCount;
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             uint shiftSequence = HectonFloatingOrigin.CurrentShiftSequence;
             if (_sampleCacheFrame == frame && _sampleCacheShiftSequence == shiftSequence)
                 return;
@@ -444,7 +444,7 @@ namespace Hecton8.Physics
 
         private static float ResolveFrameSampleTime()
         {
-            int frame = Time.frameCount;
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (_sharedSampleTimeFrame != frame)
             {
                 _sharedSampleTime = ResolveCurrentSampleClockSeconds();

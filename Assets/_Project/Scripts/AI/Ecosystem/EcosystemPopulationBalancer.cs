@@ -20,6 +20,7 @@ namespace Hecton8.AI.Ecosystem
     /// </summary>
     public sealed class EcosystemPopulationBalancer : MonoBehaviour, IColdTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
+        private static int s_x001EcosystemPopulationBalancerSignalPushDropCount;
         private const int TelemetryCapacity = HectonEcologyContract.PopulationTelemetryCapacity;
         private const int CounterCapacity = HectonEcologyContract.PopulationCounterCapacity;
         private const int CoefficientCapacity = HectonEcologyContract.PopulationCoefficientCapacity;
@@ -663,7 +664,7 @@ namespace Hecton8.AI.Ecosystem
                     Intensity01 = math.saturate(cullEvent.Intensity01),
                     Flags = EcologyDeathSignalFlag
                 };
-                SignalBus<EntityDeathSignal>.TryPush(in signal);
+                SignalBus<EntityDeathSignal>.TryPushTracked(in signal, ref s_x001EcosystemPopulationBalancerSignalPushDropCount);
             }
 
             bool invalidMath = counters.Length > EcosystemPopulationCounters.InvalidMathRecovered &&

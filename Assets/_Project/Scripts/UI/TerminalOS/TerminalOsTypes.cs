@@ -214,6 +214,11 @@ namespace Hecton8.UI
     [StructLayout(LayoutKind.Explicit, Size = 16)]
     public partial struct TerminalClickSignal : Hecton8.Core.Contracts.Signals.ISignal
     {
+        public const int ExpectedCapacity = TerminalOsConstants.MaxQueuedClicks;
+        public const int MaxFrameSignals = TerminalOsConstants.MaxQueuedClicks;
+        public const int LowTierFrameSignals = 16;
+        public const uint LaneHash = 0x54434C4Bu; // TCLK
+
         [FieldOffset(0)]
         public uint TerminalHash;
         [FieldOffset(4)]
@@ -225,6 +230,11 @@ namespace Hecton8.UI
     [StructLayout(LayoutKind.Explicit, Size = 16)]
     public partial struct TerminalCommandSignal : Hecton8.Core.Contracts.Signals.ISignal
     {
+        public const int ExpectedCapacity = TerminalOsConstants.MaxQueuedClicks;
+        public const int MaxFrameSignals = TerminalOsConstants.MaxQueuedClicks;
+        public const int LowTierFrameSignals = 16;
+        public const uint LaneHash = 0x54434D44u; // TCMD
+
         [FieldOffset(0)]
         public uint TerminalHash;
         [FieldOffset(4)]
@@ -276,6 +286,11 @@ namespace Hecton8.UI
     [StructLayout(LayoutKind.Explicit, Size = 32)]
     public partial struct TerminalUnlockedSignal : Hecton8.Core.Contracts.Signals.ISignal
     {
+        public const int ExpectedCapacity = TerminalOsConstants.TerminalCapacity;
+        public const int MaxFrameSignals = TerminalOsConstants.TerminalCapacity;
+        public const int LowTierFrameSignals = 8;
+        public const uint LaneHash = 0x5444554Eu; // TDUN
+
         [FieldOffset(0)] public uint PuzzleID;
         [FieldOffset(4)] public uint NodeHash;
         [FieldOffset(8)] public uint TerminalHash;

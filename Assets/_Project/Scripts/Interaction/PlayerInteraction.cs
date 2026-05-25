@@ -1,10 +1,10 @@
-﻿// ============================================================================
+// ============================================================================
 // HECTON-8 — PlayerInteraction.cs
 // Core player interaction component. Attach to the Player prefab root.
 // Runs throttled spatial target probes, manages hover state, dispatches interactions.
 //
 // PERFORMANCE NOTES:
-//   - Async raycasts throttled to 0.05s (20 checks/sec) — smooth hover, low CPU.
+//   - Spatial target probes throttled to 0.05s (20 checks/sec) - smooth hover, low CPU.
 //   - LayerMask MUST be set to 'Interactable' layer — no full-scene sweeps.
 //   - Zero GC allocations in Tick loop.
 //   - Uses the fixed InteractableRegistry spatial cache with QueryTriggerInteraction.Ignore.
@@ -13,11 +13,11 @@
 //
 // ARCHITECTURE:
 //   - Integrated with GameTickManager via ITickable — native Update() is PROHIBITED.
-//   - Async raycast tick (throttled) → updates _currentHovered from a late-frame result.
+//   - Spatial target probe tick (throttled) -> updates _currentHovered from the registry cache.
 //   - Input poll (every tick) → reads _currentHovered, fires Interact().
-//   - These two paths are fully decoupled: input is never gated by raycast timer.
+//   - These two paths are fully decoupled: input is never gated by the target probe timer.
 //   - UI State Guard: interaction input is blocked when any menu is open,
-//     but async raycasts continue so the hover prompt is refreshed immediately on close.
+//     but spatial target probes continue so the hover prompt is refreshed immediately on close.
 //
 // AUDIO FEEDBACK:
 //   - Hover transition → SpatialAudioManager.PlayStatic2D(hoverSound, 0.3f)
@@ -25,9 +25,9 @@
 //   - All clips are optional — null clips are silently skipped.
 //
 // REVISION NOTES:
-//   - raycastInterval reduced to 0.05f for zero-latency hover feel.
+//   - targetProbeInterval reduced to 0.05f for zero-latency hover feel.
 //   - interactableMask defaults to Nothing — MUST be configured in Inspector.
-//   - Debug.DrawRay persists for raycastInterval duration (continuous line).
+//   - Debug.DrawRay persists for targetProbeInterval duration (continuous line).
 //   - Hover events fire on every transition: clear→new, old→new, any→null.
 //   - Migrated from Update() to ITickable.Tick(float) via GameTickManager.
 //   - Added UI State Guard: interaction blocked while HectonFabricatorUI.IsMenuOpen.
@@ -36,7 +36,7 @@
 //   - [FIX] Registration tracking flag prevents double-register/unregister.
 //   - [REFACTOR] Deferred registration: OnEnable → attempt, Start → fallback,
 //     Debug.LogError only if Instance still null at Start.
-//   - [REFACTOR v3] Unity.Mathematics for raycast origin offset calculation.
+//   - [REFACTOR v3] Unity.Mathematics for target-probe origin offset calculation.
 //     float3 arithmetic replaces Vector3 operator+ (same perf, consistent style).
 // ============================================================================
 
@@ -57,6 +57,7 @@ namespace Hecton8.Interaction
     [AddComponentMenu("Hecton8/Player/Player Interaction")]
     public sealed class PlayerInteraction : MonoBehaviour, ITickable, IUpdatable, IGlobalRegistryHotSwapListener
     {
+        private static int s_x001PlayerInteractionSignalPushDropCount;
         private const uint PlayerInputSignalSourceHash = 0x504C494Eu;
         private const string DefaultLookTargetPrompt = "OPEN HATCH";
         private static readonly char[] s_promptScratch = new char[PlayerLookTargetPromptCache.MaxCharsPerPrompt];
@@ -65,15 +66,15 @@ namespace Hecton8.Interaction
         // SERIALIZED CONFIGURATION
         // ====================================================================
 
-        [Header("Raycast Settings")]
+        [Header("Target Probe Settings")]
 
         [SerializeField,
          Tooltip("Maximum interaction reach in meters.")]
         private float reachDistance = 3.5f;
 
         [SerializeField,
-         Tooltip("Seconds between raycast ticks. 0.05 = 20 checks/sec for smooth hover.")]
-        private float raycastInterval = 0.05f;
+         Tooltip("Seconds between registered spatial target probes. 0.05 = 20 checks/sec for smooth hover.")]
+        private float targetProbeInterval = 0.05f;
 
         [SerializeField,
          Tooltip("REQUIRED: Set to 'Interactable' layer. Never leave as Everything.")]
@@ -115,7 +116,7 @@ namespace Hecton8.Interaction
 
         private IInteractable _currentHovered;
         private IInventoryPickupSource _currentPickupSource;
-        private float         _raycastTimer;
+        private float         _targetProbeTimer;
         private Transform     _cameraTransform;
         private Hecton8.Interaction.PhysicalInteractionHandler _physicalInteractionHandler;
         private IAudioService _audioService;
@@ -172,7 +173,7 @@ namespace Hecton8.Interaction
             }
 
             _cameraTransform = playerCamera.transform;
-            _raycastTimer    = 0f;
+            _targetProbeTimer = 0f;
             _registeredToTickManager = false;
             _hotSwapListenerRegistered = false;
             TryGetComponent(out _physicalInteractionHandler);
@@ -384,7 +385,7 @@ namespace Hecton8.Interaction
         /// <summary>
         /// Main tick loop. Called by GameTickManager every frame.
         ///
-        /// Phase 1: Throttled raycast (20Hz) — target acquisition.
+                /// Phase 1: Throttled spatial target probe (20Hz) - target acquisition.
         ///          NOT blocked by UI state — hover prompt must be
         ///          visible the instant a menu closes.
         ///
@@ -401,12 +402,12 @@ namespace Hecton8.Interaction
             // ════════════════════════════════════════════════════
             // PHASE 1: THROTTLED RAYCAST — Target acquisition.
             // ════════════════════════════════════════════════════
-            _raycastTimer += deltaTime;
+            _targetProbeTimer += deltaTime;
 
-            if (_raycastTimer >= raycastInterval)
+            if (_targetProbeTimer >= targetProbeInterval)
             {
-                _raycastTimer = 0f;
-                PerformRaycast();
+                _targetProbeTimer = 0f;
+                ResolveHoveredTarget();
             }
         }
 
@@ -419,7 +420,7 @@ namespace Hecton8.Interaction
         // CORE RAYCAST — Zero GC. Struct-only. Layer-targeted.
         // ====================================================================
 
-        private void PerformRaycast()
+        private void ResolveHoveredTarget()
         {
             // ── Unity.Mathematics for offset calculation ──
             Unity.Mathematics.float3 camPos = _cameraTransform.position;
@@ -437,14 +438,14 @@ namespace Hecton8.Interaction
                 (Vector3)origin,
                 (Vector3)(camFwd * effectiveReach),
                 _currentHovered != null ? debugRayHitColor : debugRayMissColor,
-                raycastInterval,
+                targetProbeInterval,
                 false);
 #endif
 
             // USE GLOBAL CACHE — Zero Redundancy
             int resolvedInteractableMask = ResolveInteractableLayerMask();
             const QueryTriggerInteraction triggerMode = QueryTriggerInteraction.Ignore;
-            if (InteractableRegistry.TryRaycastSpatial(
+            if (InteractableRegistry.TryResolveSpatialTarget(
                     in _ray,
                     effectiveReach,
                     resolvedInteractableMask,
@@ -523,11 +524,11 @@ namespace Hecton8.Interaction
         {
             PlayerLookTargetSignal signal = default;
             signal.State = state;
-            signal.Frame = unchecked((uint)math.max(0, SystemDispatcher.CurrentFrameIndex));
+            signal.Frame = SystemDispatcher.CurrentFrameId;
 
             if (state == PlayerLookTargetSignalStates.Cleared || target == null)
             {
-                SignalBus<PlayerLookTargetSignal>.TryPush(in signal);
+                SignalBus<PlayerLookTargetSignal>.TryPushTracked(in signal, ref s_x001PlayerInteractionSignalPushDropCount);
                 return;
             }
 
@@ -546,7 +547,7 @@ namespace Hecton8.Interaction
             ReadOnlySpan<char> promptSpan = ResolvePromptSpan(target);
             signal.PromptHash = ComputePromptHash(promptSpan);
             PlayerLookTargetPromptCache.Store(signal.PromptHash, promptSpan);
-            SignalBus<PlayerLookTargetSignal>.TryPush(in signal);
+            SignalBus<PlayerLookTargetSignal>.TryPushTracked(in signal, ref s_x001PlayerInteractionSignalPushDropCount);
         }
 
         private static ReadOnlySpan<char> ResolvePromptSpan(IInteractable target)

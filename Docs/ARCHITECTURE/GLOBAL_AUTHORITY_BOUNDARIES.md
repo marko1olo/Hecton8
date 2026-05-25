@@ -73,7 +73,8 @@ Registry/DataVault route fixes:
 
 Recent loop additions:
 
-- Loop69 `ScannerDataMiningRouter`: instance DataVault access uses cached owner vault only. `GlobalRegistry.DataVault` is allowed only for cold cache/static settings helpers. Runtime replacement flows through hot-swap rebind after query/completion buffers unlock.
+- Loop69 `ScannerDataMiningRouter`: instance DataVault access uses cached owner vault only. `GlobalRegistry.DataVault` is cold cache/static settings only.
+- Runtime replacement flows through hot-swap rebind after query/completion buffers unlock.
 - Loop70 `HectonFloatingOrigin`: AUP tuner/static facades must not fall back from live owner cache to `GlobalRegistry.DataVault`. Registry fallback is allowed only when no floating-origin owner exists.
 - Loop71 combat runtime: ballistics, status effects, and armor penetration consume the combat-owned DataVault cache/hot-swap state. `?? GlobalRegistry.DataVault` is rejected in combat init/rebind paths.
 - Loop72 runtime fallback cleanup: MathGuard, static data stores, Babel dictionary, and SignalWarden crash dump must not use `?? GlobalRegistry` fallback routes.
@@ -151,6 +152,8 @@ Evidence boundary:
 - UI/Construction runtime `PlayerRuntimeContextService.ActiveRuntimeContext` and `LocalizationManager.ActiveRuntimeInstance` tails removed in loop157.
 - World/environment/AI Dispatcher unregister/re-register or lane-reset tails covered in loop158.
 - Project-wide `PlayerRuntimeContextService.ActiveRuntimeContext`, `LocalizationManager.ActiveRuntimeInstance`, `?? GlobalRegistry`, and `GlobalRegistry.TryGet` greps are zero after loop159; GI relay and weather fallbacks now resolve through cold owner-cache routes.
+- Loop160 covers 50 more Dispatcher replacement callbacks whose local `_registered*` flags could survive old lanes and skip current-lane registration; touched-file reset/rebind greps pass.
+- Loop161 closes 19 remaining scanner-confirmed Dispatcher/TickManager stale-registration tails; broad stale candidate scans now return 0.
 - Targeted greps pass; broad scans retain known false positives.
 - Loop130: old non-editor runtime register/probe grep zeroed.
 - Loop131: one duplicate include target tail removed.

@@ -286,7 +286,7 @@ namespace Hecton8.UI
                 States = states,
                 Telemetry = telemetry,
                 TelemetryCursor = telemetryCursor,
-                FrameIndex = (uint)math.max(0, Hecton8.Core.SystemDispatcher.CurrentFrameIndex)
+                FrameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId
             };
             compileJob.Run();
             long elapsedTicks = Stopwatch.GetTimestamp() - startTicks;
@@ -567,7 +567,7 @@ namespace Hecton8.UI
                     Inputs = inputs,
                     CameraAup = cameraAup,
                     TimeSeconds = Time.unscaledTime,
-                    FrameIndex = (uint)math.max(0, Hecton8.Core.SystemDispatcher.CurrentFrameIndex),
+                    FrameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                     ActiveTabHashID = _pdaProjectionActiveTabHash,
                     BootSequenceProgress01 = _pdaProjectionBoot01,
                     ScreenWidthMeters = math.max(0.01f, tuningRow.Params0.x),
@@ -1047,7 +1047,7 @@ namespace Hecton8.UI
             {
                 Magic = PdaProjectionBlackBoxMagic,
                 Version = PdaProjectionBlackBoxVersion,
-                FrameIndex = (uint)math.max(0, Hecton8.Core.SystemDispatcher.CurrentFrameIndex),
+                FrameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 Flags = flags,
                 TelemetryCapacity = telemetry.Length,
                 TelemetryCursor = cursor[0],

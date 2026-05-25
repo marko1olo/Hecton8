@@ -149,7 +149,8 @@ Metadata audit, 2026-05-23:
 
 - Assembly boundary scan on 2026-05-23 found no SHINOBU-owned runtime asmdef under `Assets/_Project/Scripts/Physics/Vehicles`; only `Hecton8.Physics.Vehicles.Editor.asmdef` exists and remains editor-only.
 - SHINOBU_333 did not add or modify runtime asmdef references.
-- The runtime files currently compile through the existing root `Hecton8.Core.asmdef`, so creating a separate vehicle runtime assembly is deferred to an integrator-owned boundary migration rather than forced from this lane.
+- Runtime files currently compile through existing root `Hecton8.Core.asmdef`.
+- Separate vehicle runtime assembly is deferred to integrator-owned boundary migration, not forced from this lane.
 
 Independent read-only hot-path audit, 2026-05-23:
 

@@ -1,8 +1,8 @@
-using Hecton8.Atmosphere;
 using Hecton8.Core;
 using Hecton8.Power;
 using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Hecton8.Construction
 {
@@ -40,7 +40,7 @@ namespace Hecton8.Construction
         [SerializeField, Range(0, 100)] private int chargePriority = 96;
         [Header("Thermal Loss")]
         [Tooltip("Optional atmosphere owner that receives battery efficiency losses as room heat.")]
-        [SerializeField] private SubmarineAtmosphereSystem atmosphereSystem;
+        [SerializeField, FormerlySerializedAs("atmosphereSystem")] private MonoBehaviour atmosphereSystemSource;
 
         [Header("Diagnostics")]
         [SerializeField] private bool _debugHasPower = true;
@@ -56,6 +56,7 @@ namespace Hecton8.Construction
         private bool _hasPower = true;
         private int _cachedRoomIndex = -1;
         private Transform _cachedTransform;
+        private ISubmarineAtmosphereRoomMutationSink _atmosphereSystem;
 
         /// <inheritdoc />
         public float PowerRating => _plannedGridPowerWatts;
@@ -186,16 +187,17 @@ namespace Hecton8.Construction
             if (_cachedTransform == null)
                 _cachedTransform = transform;
 
-            if (atmosphereSystem == null)
+            if (_atmosphereSystem == null || !_atmosphereSystem.IsAtmosphereRuntimeActive)
             {
-                if (!TryGetComponent(out atmosphereSystem))
-                    atmosphereSystem = GetComponentInParent<SubmarineAtmosphereSystem>();
+                _atmosphereSystem = atmosphereSystemSource as ISubmarineAtmosphereRoomMutationSink;
+                if (_atmosphereSystem == null || !_atmosphereSystem.IsAtmosphereRuntimeActive)
+                    _atmosphereSystem = ComponentReferenceUtility.ResolveParentService<ISubmarineAtmosphereRoomMutationSink>(this);
             }
 
-            if (_cachedRoomIndex >= 0 || atmosphereSystem == null || _cachedTransform == null)
+            if (_cachedRoomIndex >= 0 || _atmosphereSystem == null || _cachedTransform == null)
                 return;
 
-            _cachedRoomIndex = atmosphereSystem.ResolveNearestRoomIndexForWorldPosition(_cachedTransform.position);
+            _cachedRoomIndex = _atmosphereSystem.ResolveNearestRoomIndexForWorldPosition(_cachedTransform.position);
         }
 
         private float ResolvePendingHeatLossJoules(float currentStoredEnergyWattSeconds, float nextStoredEnergyWattSeconds, float plannedGridPowerWatts)
@@ -223,8 +225,8 @@ namespace Hecton8.Construction
                 return;
 
             CacheReferences();
-            if (atmosphereSystem != null && _cachedRoomIndex >= 0)
-                atmosphereSystem.InjectRoomHeatEnergyJoules(_cachedRoomIndex, _pendingHeatLossJoules);
+            if (_atmosphereSystem != null && _cachedRoomIndex >= 0)
+                _atmosphereSystem.InjectRoomHeatEnergyJoules(_cachedRoomIndex, _pendingHeatLossJoules);
 
             _pendingHeatLossJoules = 0f;
         }

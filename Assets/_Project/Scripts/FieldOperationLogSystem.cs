@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using Hecton8.Core;
 using Hecton8.SaveSystem;
 using UnityEngine;
@@ -26,19 +25,60 @@ namespace Hecton8.Gameplay
             }
         }
 
-        private struct FieldOperationRecord
+        private sealed class FieldOperationRecordSlot
         {
-            public string source;
-            public string title;
-            public string summary;
-            public string severity;
+            public readonly char[] Source = new char[MaxSourceChars];
+            public readonly char[] Title = new char[MaxTitleChars];
+            public readonly char[] Summary = new char[MaxSummaryChars];
+            public readonly char[] Severity = new char[MaxSeverityChars];
+            public int SourceLength;
+            public int TitleLength;
+            public int SummaryLength;
+            public int SeverityLength;
+
+            public ReadOnlySpan<char> SourceSpan => Source.AsSpan(0, SourceLength);
+            public ReadOnlySpan<char> TitleSpan => Title.AsSpan(0, TitleLength);
+            public ReadOnlySpan<char> SummarySpan => Summary.AsSpan(0, SummaryLength);
+            public ReadOnlySpan<char> SeveritySpan => Severity.AsSpan(0, SeverityLength);
+
+            public void Write(
+                ReadOnlySpan<char> source,
+                ReadOnlySpan<char> title,
+                ReadOnlySpan<char> summary,
+                ReadOnlySpan<char> severity)
+            {
+                SourceLength = CopyNormalized(source, DefaultSource.AsSpan(), Source);
+                TitleLength = CopyTruncated(title, Title);
+                SummaryLength = CopyNormalized(summary, DefaultSummary.AsSpan(), Summary);
+                SeverityLength = CopyNormalizedSeverity(severity, Severity);
+            }
+
+            public bool Matches(ReadOnlySpan<char> title, ReadOnlySpan<char> summary, ReadOnlySpan<char> severity)
+            {
+                return TitleSpan.SequenceEqual(title) &&
+                       SummarySpan.SequenceEqual(ResolveNormalizedSpan(summary, DefaultSummary.AsSpan())) &&
+                       SeveritySpan.SequenceEqual(ResolveSeveritySpan(severity));
+            }
+
+            public string CreateSourceString() => CreatePersistentString(Source, SourceLength);
+            public string CreateTitleString() => CreatePersistentString(Title, TitleLength);
+            public string CreateSummaryString() => CreatePersistentString(Summary, SummaryLength);
+            public string CreateSeverityString() => CreatePersistentString(Severity, SeverityLength);
         }
 
         [SerializeField] private int maxRecentEntries = 10;
         [SerializeField] private bool verboseLogging;
 
+        private const int MaxSourceChars = 48;
+        private const int MaxTitleChars = 96;
+        private const int MaxSummaryChars = 256;
+        private const int MaxSeverityChars = 8;
+        private const string DefaultSource = "FIELD";
+        private const string DefaultSummary = "Field operation archived.";
+        private const string DefaultSeverity = "INFO";
         private const string VerboseOperationRecordedMessage = "[FieldOps] Operation recorded.";
-        private readonly List<FieldOperationRecord> _recent = new List<FieldOperationRecord>(12);
+        private readonly FieldOperationRecordSlot[] _recent = new FieldOperationRecordSlot[FieldOperationLogDTO.MaxRecentEntries];
+        private int _recentCount;
         private bool _runtimeRegistered;
         private bool _saveRegistered;
         private bool _hotSwapRegistered;
@@ -47,7 +87,7 @@ namespace Hecton8.Gameplay
 
         public int SavePriority => 36;
         public int LoadPriority => 36;
-        public int RecentCount => _recent.Count;
+        public int RecentCount => _recentCount;
         public ServiceHeartbeatState HeartbeatState => _runtimeRegistered ? ServiceHeartbeatState.Ready : ServiceHeartbeatState.NotStarted;
         public bool IsServiceReady => _runtimeRegistered;
 
@@ -55,6 +95,7 @@ namespace Hecton8.Gameplay
 
         private void Awake()
         {
+            EnsureSlots();
             FieldOperationLogSystem registered = GlobalRegistry.FieldOperations;
             if (registered != null && registered != this)
             {
@@ -92,7 +133,11 @@ namespace Hecton8.Gameplay
 
         public static void RecordOperation(string source, string title, string summary, string severity = "INFO")
         {
-            s_activeRuntime?.Push(source, title, summary, severity);
+            s_activeRuntime?.Push(
+                AsSpanOrEmpty(source),
+                AsSpanOrEmpty(title),
+                AsSpanOrEmpty(summary),
+                AsSpanOrEmpty(severity));
         }
 
         public static void RecordOperation(string source, string title, in FixedCharBuffer summaryBuffer, string severity = "INFO")
@@ -101,7 +146,11 @@ namespace Hecton8.Gameplay
             if (instance == null)
                 return;
 
-            instance.Push(source, title, summaryBuffer.ToString(), severity);
+            instance.Push(
+                AsSpanOrEmpty(source),
+                AsSpanOrEmpty(title),
+                summaryBuffer.AsSpan(),
+                AsSpanOrEmpty(severity));
         }
 
         public static void RecordOperation(string source, in FixedCharBuffer titleBuffer, in FixedCharBuffer summaryBuffer, string severity = "INFO")
@@ -110,7 +159,11 @@ namespace Hecton8.Gameplay
             if (instance == null)
                 return;
 
-            instance.Push(source, titleBuffer.ToString(), summaryBuffer.ToString(), severity);
+            instance.Push(
+                AsSpanOrEmpty(source),
+                titleBuffer.AsSpan(),
+                summaryBuffer.AsSpan(),
+                AsSpanOrEmpty(severity));
         }
 
         public void OnServiceShutdown()
@@ -118,7 +171,7 @@ namespace Hecton8.Gameplay
             TryUnregisterSaveParticipant();
             TryUnregisterHotSwapListener();
             TryUnregisterRuntime();
-            _recent.Clear();
+            _recentCount = 0;
             LogChanged = null;
             _saveService = null;
         }
@@ -164,7 +217,7 @@ namespace Hecton8.Gameplay
             ISaveService saveService = _saveService;
             if (saveService == null)
             {
-                saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+                saveService = GlobalRegistry.Save;
                 _saveService = saveService;
             }
             if (saveService == null)
@@ -219,14 +272,18 @@ namespace Hecton8.Gameplay
 
         public int CopyRecentEntries(FieldOperationSnapshot[] buffer)
         {
-            if (buffer == null || buffer.Length == 0 || _recent.Count == 0)
+            if (buffer == null || buffer.Length == 0 || _recentCount == 0)
                 return 0;
 
-            int count = Mathf.Min(buffer.Length, _recent.Count);
+            int count = Mathf.Min(buffer.Length, _recentCount);
             for (int i = 0; i < count; i++)
             {
-                FieldOperationRecord record = _recent[i];
-                buffer[i] = new FieldOperationSnapshot(record.source, record.title, record.summary, record.severity);
+                FieldOperationRecordSlot record = _recent[i];
+                buffer[i] = new FieldOperationSnapshot(
+                    record.CreateSourceString(),
+                    record.CreateTitleString(),
+                    record.CreateSummaryString(),
+                    record.CreateSeverityString());
             }
 
             return count;
@@ -234,14 +291,18 @@ namespace Hecton8.Gameplay
 
         public bool TryGetLatestEntry(out FieldOperationSnapshot snapshot)
         {
-            if (_recent.Count <= 0)
+            if (_recentCount <= 0)
             {
                 snapshot = default;
                 return false;
             }
 
-            FieldOperationRecord record = _recent[0];
-            snapshot = new FieldOperationSnapshot(record.source, record.title, record.summary, record.severity);
+            FieldOperationRecordSlot record = _recent[0];
+            snapshot = new FieldOperationSnapshot(
+                record.CreateSourceString(),
+                record.CreateTitleString(),
+                record.CreateSummaryString(),
+                record.CreateSeverityString());
             return true;
         }
 
@@ -251,17 +312,17 @@ namespace Hecton8.Gameplay
                 return;
 
             data.fieldOperations.EnsureCapacity();
-            data.fieldOperations.recentCount = Mathf.Min(_recent.Count, FieldOperationLogDTO.MaxRecentEntries);
+            data.fieldOperations.recentCount = Mathf.Min(_recentCount, FieldOperationLogDTO.MaxRecentEntries);
 
             for (int i = 0; i < data.fieldOperations.recentCount; i++)
             {
-                FieldOperationRecord record = _recent[i];
+                FieldOperationRecordSlot record = _recent[i];
                 data.fieldOperations.recentEntries[i] = new FieldOperationEntryDTO
                 {
-                    source = record.source,
-                    title = record.title,
-                    summary = record.summary,
-                    severity = record.severity
+                    source = record.CreateSourceString(),
+                    title = record.CreateTitleString(),
+                    summary = record.CreateSummaryString(),
+                    severity = record.CreateSeverityString()
                 };
             }
 
@@ -271,7 +332,8 @@ namespace Hecton8.Gameplay
 
         public void LoadFromSaveData(SaveData data)
         {
-            _recent.Clear();
+            EnsureSlots();
+            _recentCount = 0;
 
             if (data == null)
                 return;
@@ -284,46 +346,54 @@ namespace Hecton8.Gameplay
                 if (string.IsNullOrWhiteSpace(entry.title))
                     continue;
 
-                _recent.Add(new FieldOperationRecord
-                {
-                    source = NormalizeSource(entry.source),
-                    title = entry.title.Trim(),
-                    summary = NormalizeSummary(entry.summary),
-                    severity = NormalizeSeverity(entry.severity)
-                });
+                if (_recentCount >= FieldOperationLogDTO.MaxRecentEntries)
+                    break;
+
+                _recent[_recentCount++].Write(
+                    AsSpanOrEmpty(entry.source),
+                    AsSpanOrEmpty(entry.title),
+                    AsSpanOrEmpty(entry.summary),
+                    AsSpanOrEmpty(entry.severity));
             }
 
             LogChanged?.Invoke();
         }
 
-        private void Push(string source, string title, string summary, string severity)
+        private void Push(
+            ReadOnlySpan<char> source,
+            ReadOnlySpan<char> title,
+            ReadOnlySpan<char> summary,
+            ReadOnlySpan<char> severity)
         {
-            if (string.IsNullOrWhiteSpace(title))
+            EnsureSlots();
+
+            if (IsWhiteSpace(title))
                 return;
 
-            FieldOperationRecord record = new FieldOperationRecord
-            {
-                source = NormalizeSource(source),
-                title = title.Trim(),
-                summary = NormalizeSummary(summary),
-                severity = NormalizeSeverity(severity)
-            };
+            ReadOnlySpan<char> normalizedSummary = ResolveNormalizedSpan(summary, DefaultSummary.AsSpan());
+            ReadOnlySpan<char> normalizedSeverity = ResolveSeveritySpan(severity);
 
-            if (_recent.Count > 0)
+            if (_recentCount > 0)
             {
-                FieldOperationRecord latest = _recent[0];
-                if (string.Equals(latest.title, record.title, StringComparison.Ordinal) &&
-                    string.Equals(latest.summary, record.summary, StringComparison.Ordinal) &&
-                    string.Equals(latest.severity, record.severity, StringComparison.Ordinal))
+                FieldOperationRecordSlot latest = _recent[0];
+                if (latest.TitleSpan.SequenceEqual(title) &&
+                    latest.SummarySpan.SequenceEqual(normalizedSummary) &&
+                    latest.SeveritySpan.SequenceEqual(normalizedSeverity))
                 {
                     return;
                 }
             }
 
-            _recent.Insert(0, record);
             int capacity = Mathf.Clamp(maxRecentEntries, 1, FieldOperationLogDTO.MaxRecentEntries);
-            if (_recent.Count > capacity)
-                _recent.RemoveRange(capacity, _recent.Count - capacity);
+            int insertIndex = Mathf.Min(_recentCount, capacity - 1);
+            FieldOperationRecordSlot target = _recent[insertIndex];
+            for (int i = insertIndex; i > 0; i--)
+                _recent[i] = _recent[i - 1];
+
+            _recent[0] = target;
+            _recent[0].Write(source, title, normalizedSummary, normalizedSeverity);
+            if (_recentCount < capacity)
+                _recentCount++;
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (verboseLogging)
@@ -333,26 +403,105 @@ namespace Hecton8.Gameplay
             LogChanged?.Invoke();
         }
 
-        private static string NormalizeSource(string source)
+        private void EnsureSlots()
         {
-            return string.IsNullOrWhiteSpace(source) ? "FIELD" : source.Trim().ToUpperInvariant();
+            for (int i = 0; i < _recent.Length; i++)
+            {
+                if (_recent[i] == null)
+                    _recent[i] = new FieldOperationRecordSlot();
+            }
         }
 
-        private static string NormalizeSummary(string summary)
+        private static ReadOnlySpan<char> AsSpanOrEmpty(string value)
         {
-            return string.IsNullOrWhiteSpace(summary) ? "Field operation archived." : summary.Trim();
+            return string.IsNullOrEmpty(value) ? ReadOnlySpan<char>.Empty : value.AsSpan();
         }
 
-        private static string NormalizeSeverity(string severity)
+        private static ReadOnlySpan<char> ResolveNormalizedSpan(ReadOnlySpan<char> value, ReadOnlySpan<char> fallback)
         {
-            if (string.IsNullOrWhiteSpace(severity))
-                return "INFO";
+            return IsWhiteSpace(value) ? fallback : value;
+        }
 
-            string normalized = severity.Trim().ToUpperInvariant();
-            if (normalized == "CRITICAL" || normalized == "WARN" || normalized == "WARNING" || normalized == "INFO")
-                return normalized == "WARNING" ? "WARN" : normalized;
+        private static ReadOnlySpan<char> ResolveSeveritySpan(ReadOnlySpan<char> severity)
+        {
+            if (IsWhiteSpace(severity))
+                return DefaultSeverity.AsSpan();
+            if (EqualsTrimmedAsciiIgnoreCase(severity, "CRITICAL"))
+                return "CRITICAL".AsSpan();
+            if (EqualsTrimmedAsciiIgnoreCase(severity, "WARN") || EqualsTrimmedAsciiIgnoreCase(severity, "WARNING"))
+                return "WARN".AsSpan();
+            if (EqualsTrimmedAsciiIgnoreCase(severity, "INFO"))
+                return DefaultSeverity.AsSpan();
 
-            return "INFO";
+            return DefaultSeverity.AsSpan();
+        }
+
+        private static int CopyNormalized(ReadOnlySpan<char> value, ReadOnlySpan<char> fallback, char[] destination)
+        {
+            return CopyTruncated(ResolveNormalizedSpan(value, fallback), destination);
+        }
+
+        private static int CopyNormalizedSeverity(ReadOnlySpan<char> severity, char[] destination)
+        {
+            return CopyTruncated(ResolveSeveritySpan(severity), destination);
+        }
+
+        private static int CopyTruncated(ReadOnlySpan<char> value, char[] destination)
+        {
+            if (destination == null || destination.Length == 0)
+                return 0;
+
+            int length = Mathf.Min(value.Length, destination.Length);
+            value.Slice(0, length).CopyTo(destination.AsSpan(0, length));
+            return length;
+        }
+
+        private static bool IsWhiteSpace(ReadOnlySpan<char> value)
+        {
+            if (value.Length == 0)
+                return true;
+
+            for (int i = 0; i < value.Length; i++)
+            {
+                if (!char.IsWhiteSpace(value[i]))
+                    return false;
+            }
+
+            return true;
+        }
+
+        private static string CreatePersistentString(char[] buffer, int length)
+        {
+            return buffer == null || length <= 0 ? string.Empty : new string(buffer, 0, length);
+        }
+
+        private static bool EqualsTrimmedAsciiIgnoreCase(ReadOnlySpan<char> value, string token)
+        {
+            int start = 0;
+            int end = value.Length - 1;
+            while (start <= end && char.IsWhiteSpace(value[start]))
+                start++;
+            while (end >= start && char.IsWhiteSpace(value[end]))
+                end--;
+
+            int length = end - start + 1;
+            if (length != token.Length)
+                return false;
+
+            for (int i = 0; i < length; i++)
+            {
+                if (ToUpperAscii(value[start + i]) != token[i])
+                    return false;
+            }
+
+            return true;
+        }
+
+        private static char ToUpperAscii(char value)
+        {
+            return value >= 'a' && value <= 'z'
+                ? (char)(value - ('a' - 'A'))
+                : value;
         }
     }
 }

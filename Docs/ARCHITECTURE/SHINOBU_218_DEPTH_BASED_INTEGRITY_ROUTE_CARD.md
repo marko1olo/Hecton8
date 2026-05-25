@@ -144,7 +144,9 @@ All `HullIntegrityTypes.cs` jobs now use deterministic Burst mode. This covers S
 
 Adjacent layout reflection cleanup:
 
-`HullIntegrityRuntime.ValidateLayouts()` keeps `UnsafeUtility.SizeOf<T>()` DTO size checks in every build. Exact reflection-backed field offset checks compile under `UNITY_EDITOR` only, removing player boot metadata traversal while retaining editor fail-fast offset proof.
+`HullIntegrityRuntime.ValidateLayouts()` keeps `UnsafeUtility.SizeOf<T>()` DTO size checks in every build.
+
+Exact reflection-backed field offset checks compile under `UNITY_EDITOR` only. Player boot avoids metadata traversal; editor retains fail-fast offset proof.
 
 Managed fields present: no
 
@@ -264,7 +266,9 @@ HectonEventBus is rejected because this is hot first-party gameplay.
 
 Per-renderer MaterialPropertyBlock traversal is rejected for standard geometry; the route uses a global structured buffer.
 
-SHINOBU_210 owns baked damage mesh state selection and intentionally keeps Stressed/Ruptured/Collapsed states reachable. SHINOBU_218 does not call that pressure-to-mesh resolver; pre-collapse structural deformation remains `BucklingScalar` plus the structural shader buffer.
+SHINOBU_210 owns baked damage mesh state selection and keeps Stressed/Ruptured/Collapsed states reachable.
+
+SHINOBU_218 does not call that pressure-to-mesh resolver. Pre-collapse deformation remains `BucklingScalar` plus structural shader buffer.
 
 Why this does not increase global monolith risk:
 

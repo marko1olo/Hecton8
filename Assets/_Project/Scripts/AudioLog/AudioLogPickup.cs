@@ -18,6 +18,7 @@ namespace Hecton8.Narrative
     [RequireComponent(typeof(Collider))]
     public sealed class AudioLogPickup : MonoBehaviour, IInteractable, IInteractableTextProvider, ILocalizationLanguageChangedListener, IGlobalRegistryHotSwapListener
     {
+        private static int s_x001AudioLogPickupSignalPushDropCount;
         private const uint WfcOutpostDatapadSourceHash = 0x57464341u; // WFCA
         private const byte WfcDatapadLootedFlag = (byte)WfcOutpostCellStateFlags.DatapadLooted;
         private const int MaxRegisteredPickupTemplates = 64;
@@ -323,7 +324,7 @@ namespace Hecton8.Narrative
                 SourceHash = WfcOutpostDatapadSourceHash,
                 Flags = 0
             };
-            SignalBus<WfcOutpostStateChangedSignal>.TryPush(in signal);
+            SignalBus<WfcOutpostStateChangedSignal>.TryPushTracked(in signal, ref s_x001AudioLogPickupSignalPushDropCount);
         }
 
 #if UNITY_EDITOR

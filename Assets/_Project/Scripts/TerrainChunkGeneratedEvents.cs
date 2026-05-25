@@ -6,6 +6,8 @@ namespace Hecton8.World
 {
     public static class TerrainChunkGeneratedEvents
     {
+        private static int s_x001DirectSignalPushDropCount_TerrainChunkGeneratedEvents;
+
         private const int Capacity = 32;
         private const int SurvivalCapacity = 4;
         private const uint LaneHash = 0x54434753u; // TCGS
@@ -40,7 +42,7 @@ namespace Hecton8.World
                 return false;
             }
 
-            if (!SignalBus<TerrainChunkGeneratedSignal>.TryPush(in signal))
+            if (!SignalBus<TerrainChunkGeneratedSignal>.TryPushTracked(in signal, ref s_x001DirectSignalPushDropCount_TerrainChunkGeneratedEvents))
             {
                 _rejectedCount++;
                 _lastRejectedTerrainHash = signal.TerrainEntityHash;

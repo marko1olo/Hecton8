@@ -106,7 +106,9 @@ Kernel order per fixed-step dispatch:
 3. `InjectAbyssalWakeTexture` runs when `GlobalQualityWeight` and budget pressure admit wake injection and a valid submarine wake payload exists.
 4. `InjectAbyssalVortexTexture` runs when `GlobalQualityWeight` and budget pressure admit vortex injection for queued large-body impulses.
 
-At minimum budget, wake, geyser, and vortex injection converge to zero contribution; the texture is overwritten with base curl only. Intermediate budgets blend injected contribution by the same continuous weight.
+At minimum budget, wake, geyser, and vortex injection converge to zero; texture is overwritten with base curl only.
+
+Intermediate budgets blend injected contribution by the same continuous weight.
 
 ## 3D Flow Volume Math
 

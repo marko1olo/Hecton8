@@ -1,4 +1,4 @@
-﻿# KCC APEX Audit X_005
+# KCC APEX Audit X_005
 
 ## Scoped PhysX Result
 - X_005 scoped forbidden call count: 0
@@ -12,6 +12,8 @@
 - External non-Editor Rigidbody force call count: 0
 - External player/rider Rigidbody pose fallback count: 0
 - Remaining velocity writes are central `PhysicsApplySystem` packet application or DTO/state assignments listed in JSON.
+- Unity `Collision`/`ContactPoint` DTO route count: 0
+- Unity collision DTO route removed: True
 
 ## Legacy Player Sweep Bridge Result
 - Player motor capsule sweep bridge removed: True
@@ -41,10 +43,21 @@
 - Player spawner `RaycastHit` symbol count: 0
 - Player spawner `TryRaycastGround` symbol count: 0
 - Player spawner uses spawn ground DTO: True
+- Player spawner uses ground-probe origin contract: True
 - Player motor `RaycastHit` native allocations: 0
 - Player motor PhysX command native allocations: 0
 - Legacy batch helper `QueryResult[]` mirrors: 0
 - Legacy batch helper Unity Physics calls: 0
+- Legacy batch helper Unity `RaycastHit` symbols: 0
+- Tool interaction surface Unity `RaycastHit` symbols: 0
+- Tool interaction legacy raycast method symbols: 0
+- Tool interaction uses typed surface hit: True
+- Tool interaction vault uses typed surface hit DTO: True
+- Kinematic surface hit has explicit 64-byte layout: True
+- Kinematic IK/VR/buoyancy Unity `RaycastHit` symbols: 0
+- Kinematic IK/VR/buoyancy uses typed surface hits: True
+- Interaction target legacy raycast API symbols: 0
+- Interaction target uses spatial-target contract: True
 - Vehicle motor capsule sweep bridge removed: True
 - Vehicle motor capsule sweep bridge symbol count: 0
 - Vehicle motor `RaycastHit` symbol count: 0

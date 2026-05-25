@@ -89,4 +89,6 @@ Debris is not simulated. Deterministic 2D curl noise scatters scrap matrices; sh
 
 ## Verification Pending
 
-Unity import, Burst compile, Play Mode, Frame Debugger, GCMonitor, and profiler captures are still pending. A local build was not launched while CPU load exceeded the project build gate.
+Pending proof: Unity import, Burst compile, Play Mode, Frame Debugger, GCMonitor, profiler captures.
+
+Local build was not launched while CPU load exceeded the project build gate.

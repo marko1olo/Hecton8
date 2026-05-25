@@ -1883,7 +1883,7 @@ namespace Hecton8.Atmosphere
             if (thunderClips == null || thunderClips.Length == 0)
                 return;
 
-            Hecton8.Core.IAudioService audioManager = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
+            Hecton8.Core.IAudioService audioManager = Hecton8.Core.GlobalRegistry.Audio;
             if (audioManager == null)
                 return;
 

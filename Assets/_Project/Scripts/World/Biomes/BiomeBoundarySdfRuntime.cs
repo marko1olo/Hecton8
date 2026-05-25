@@ -18,6 +18,7 @@ namespace Hecton8.World.Biomes
     [DefaultExecutionOrder(-4310)]
     public sealed class BiomeBoundarySdfRuntime : MonoBehaviour, ISlowTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener
     {
+        private static int s_x001BiomeBoundarySdfRuntimeSignalPushDropCount;
         internal static BiomeBoundarySdfRuntime ActiveRuntimeInstance { get; private set; }
 
         private const int BiomeHeatmapResolution = 256;
@@ -660,14 +661,14 @@ namespace Hecton8.World.Biomes
                 BlendFactor01 = math.saturate(result.BlendFactor01),
                 BoundaryDistanceMeters = math.max(0f, result.BoundaryDistanceMeters),
                 CellSizeMeters = math.max(0.5f, cellSizeMeters),
-                Frame = (uint)Time.frameCount,
+                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 BiomeA = result.BiomeA,
                 BiomeB = result.BiomeB,
                 SampleDiameter = result.SampleDiameter,
                 Flags = result.Flags
             };
 
-            SignalBus<BiomeGradientSignal>.TryPush(in signal);
+            SignalBus<BiomeGradientSignal>.TryPushTracked(in signal, ref s_x001BiomeBoundarySdfRuntimeSignalPushDropCount);
         }
 
         private static bool IsFiniteResult(in BiomeBoundarySdfResult result)

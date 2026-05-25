@@ -15,6 +15,7 @@ namespace Hecton8.Optimization
     [DefaultExecutionOrder(-8007)]
     public sealed class VRAMPressureMonitor : MonoBehaviour, ITickable, IUpdatable, IVramPressureReadModel, IVramPressureSampleSink, IVramPressureMipBiasSink, IGlobalRegistryHotSwapListener
     {
+        private static int s_x001VRAMPressureMonitorSignalPushDropCount;
         private const float BytesPerMegabyte = 1024f * 1024f;
         private const float DefaultWarningVramFraction = 1600f / 1800f;
         private const float DefaultRestoreFraction = 1.40f / 1.80f;
@@ -367,9 +368,9 @@ namespace Hecton8.Optimization
             int oldMipLimit = _activeMipLimit;
             QualitySettings.globalTextureMipmapLimit = targetMipLimit;
             _activeMipLimit = targetMipLimit;
-            SignalBus<ResolutionChangedSignal>.TryPush(new ResolutionChangedSignal
+            SignalBus<ResolutionChangedSignal>.TryPushTracked(new ResolutionChangedSignal
             {
-                Frame = unchecked((uint)Time.frameCount),
+                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 SourceHash = ResolutionChangeSourceHash,
                 OldMipLimit = oldMipLimit,
                 NewMipLimit = targetMipLimit,
@@ -378,7 +379,7 @@ namespace Hecton8.Optimization
                     ? ResolutionChangedSignal.ReasonVramRedline
                     : ResolutionChangedSignal.ReasonVramRecovered,
                 Flags = ResolutionChangedSignal.FlagTextureMipLimit
-            });
+            }, ref s_x001VRAMPressureMonitorSignalPushDropCount);
         }
 
         private void ApplyLodAggression()

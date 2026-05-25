@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -269,6 +269,7 @@ namespace Hecton8.Core.Determinism
     [DefaultExecutionOrder(-8900)]
     public sealed unsafe class LockstepStateValidator : MonoBehaviour, IPostFixedTickable, IGlobalRegistryHotSwapListener
     {
+        private static int s_x001LockstepStateValidatorSignalPushDropCount;
         private const int HashCadenceFrames = 300;
         private const int PrecisionHashCadenceFrames = 60;
         private const int HighStressHashCadenceFrames = 1200;
@@ -716,7 +717,7 @@ namespace Hecton8.Core.Determinism
             state.ActionsBitmask = ghost.ActionsBitmask;
             state.CurrentInputSchemeHash = ghost.CurrentInputSchemeHash;
             _lastAppliedInputActions = ghost.ActionsBitmask;
-            CoreDeterminismSignals.TryPublishInputOverride(in state, unchecked((uint)SystemDispatcher.CurrentFrameIndex));
+            CoreDeterminismSignals.TryPublishInputOverride(in state, SystemDispatcher.CurrentFrameId);
             return false;
         }
 
@@ -1158,7 +1159,7 @@ namespace Hecton8.Core.Determinism
             signal.MissingMask = BuildCategoryMask(arrayHashes, ArrayFlagMissing);
             signal.NonFiniteMask = BuildCategoryMask(arrayHashes, ArrayFlagNonFinite);
             signal.ReplayBlock = _lastReplayBlockSequence;
-            SignalBus<LockstepSnapshotSignal>.TryPush(in signal);
+            SignalBus<LockstepSnapshotSignal>.TryPushTracked(in signal, ref s_x001LockstepStateValidatorSignalPushDropCount);
         }
 
         private void RecordMasterHashHistory(
@@ -1256,7 +1257,7 @@ namespace Hecton8.Core.Determinism
             signal.Intensity01 = DesyncGlitchIntensity01;
             signal.DurationSeconds = DesyncGlitchDurationSeconds;
             signal.Reason = reason;
-            SignalBus<SystemGlitchSignal>.TryPush(in signal);
+            SignalBus<SystemGlitchSignal>.TryPushTracked(in signal, ref s_x001LockstepStateValidatorSignalPushDropCount);
             SystemDispatcher.RequestVisualStaticGlitch(DesyncGlitchDurationSeconds);
         }
 

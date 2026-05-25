@@ -48,14 +48,14 @@ namespace Hecton8.UI
         [Tooltip("Canvas group for fading.")]
         [SerializeField] private CanvasGroup canvasGroup;
 
-        [Header("â”€â”€ Raycast Settings â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
+        [Header("Target Probe Settings")]
         [Tooltip("Maximum interaction distance.")]
         [SerializeField] private float interactionRange = 4f;
 
         [Tooltip("Layers to check for interactables.")]
         [SerializeField] private LayerMask interactionMask = Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;
 
-        [Tooltip("Seconds between prompt ray probes. Kept short enough for UI feel, but not every render frame.")]
+        [Tooltip("Seconds between prompt spatial target probes. Kept short enough for UI feel, but not every render frame.")]
         [SerializeField, Range(0.016666668f, 0.2f)] private float promptProbeIntervalSeconds = 0.05f;
 
         [Header("â”€â”€ Prompt Templates â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
@@ -238,7 +238,7 @@ namespace Hecton8.UI
             }
 
             Ray ray = _mainCamera.ViewportPointToRay(CenterViewportPoint);
-            if (!InteractableRegistry.TryRaycastSpatial(
+            if (!InteractableRegistry.TryResolveSpatialTarget(
                     in ray,
                     interactionRange,
                     interactionMask.value,
@@ -872,10 +872,7 @@ namespace Hecton8.UI
 
         private string ResolveLocalizedExpanded(string key, string fallback)
         {
-            ILocalizationTextExpansionReadModel localization = _cachedLocalization;
-            return localization != null
-                ? localization.GetExpandedOrFallback(localization.ActiveLanguageId, key, fallback)
-                : fallback;
+            return fallback ?? string.Empty;
         }
 
         private void RegisterToTick()

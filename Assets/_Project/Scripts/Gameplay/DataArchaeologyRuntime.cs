@@ -281,6 +281,7 @@ namespace Hecton8.Gameplay
     [DisallowMultipleComponent]
     public sealed class DataArchaeologyRuntime : MonoBehaviour, ISaveable, IRenderable, ILateFrameTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener, IDisposable
     {
+        private int _signalPushDropCount;
         public const int MaxDiscoveryCount = DataArchaeologyDiscoveryBitMask.MaxDiscoveryCount;
         public const int DiscoveryWordCount = DataArchaeologyDiscoveryBitMask.WordCount;
         public const int DiscoveryByteCount = DataArchaeologyDiscoveryBitMask.ByteCount;
@@ -905,7 +906,7 @@ namespace Hecton8.Gameplay
         {
             _cachedLoreDatabase = GlobalRegistry.LoreDatabase;
             _dataVault = GlobalRegistry.DataVault;
-            _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+            _saveService = GlobalRegistry.Save;
         }
 
         private void TryRegisterRuntime()
@@ -922,7 +923,7 @@ namespace Hecton8.Gameplay
             if (!_registeredSave)
             {
                 if (_saveService == null)
-                    _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+                    _saveService = GlobalRegistry.Save;
 
                 if (_saveService == null)
                     return;
@@ -1196,8 +1197,8 @@ namespace Hecton8.Gameplay
             if (!TryResolveRuntimeAup(position, out AbsoluteUniversePosition aup))
                 return;
 
-            uint frame = unchecked((uint)SystemDispatcher.CurrentFrameIndex);
-            SignalBus<ScanCompleteSignal>.TryPush(new ScanCompleteSignal
+            uint frame = SystemDispatcher.CurrentFrameId;
+            SignalBus<ScanCompleteSignal>.TryPushTracked(new ScanCompleteSignal
             {
                 PositionAup = aup,
                 EntryHash = hash,
@@ -1205,15 +1206,15 @@ namespace Hecton8.Gameplay
                 SourceId = _scannerToolHash,
                 ReconKind = (byte)ScanEntryKind.Scannable,
                 Flags = 0
-            });
-            SignalBus<LoreFragmentScannedSignal>.TryPush(new LoreFragmentScannedSignal
+            }, ref _signalPushDropCount);
+            SignalBus<LoreFragmentScannedSignal>.TryPushTracked(new LoreFragmentScannedSignal
             {
                 Hash = hash,
                 Frame = frame,
                 SourceId = _scannerToolHash,
                 Flags = 0
-            });
-            SignalBus<ProgressionEventSignal>.TryPush(new ProgressionEventSignal
+            }, ref _signalPushDropCount);
+            SignalBus<ProgressionEventSignal>.TryPushTracked(new ProgressionEventSignal
             {
                 PositionAup = aup,
                 PoiHash = hash,
@@ -1221,8 +1222,8 @@ namespace Hecton8.Gameplay
                 Frame = frame,
                 Source = 2,
                 Flags = 0
-            });
-            SignalBus<BlueprintUnlockedSignal>.TryPush(new BlueprintUnlockedSignal
+            }, ref _signalPushDropCount);
+            SignalBus<BlueprintUnlockedSignal>.TryPushTracked(new BlueprintUnlockedSignal
             {
                 EntityHash = hash,
                 BlueprintHash = hash,
@@ -1230,8 +1231,8 @@ namespace Hecton8.Gameplay
                 Frame = frame,
                 Category = 0,
                 Flags = 0
-            });
-            SignalBus<HUDNotificationSignal>.TryPush(new HUDNotificationSignal
+            }, ref _signalPushDropCount);
+            SignalBus<HUDNotificationSignal>.TryPushTracked(new HUDNotificationSignal
             {
                 MessageHash = hash,
                 ContextHash = hash,
@@ -1239,7 +1240,7 @@ namespace Hecton8.Gameplay
                 Frame = frame,
                 Severity = HudSeverityInfo,
                 Flags = 0
-            });
+            }, ref _signalPushDropCount);
         }
 
         private static float ResolvePresentationQualityWeight01()
@@ -1296,17 +1297,17 @@ namespace Hecton8.Gameplay
             if (hash == 0u)
                 return;
 
-            SignalBus<ToolAcousticSignal>.TryPush(new ToolAcousticSignal
+            SignalBus<ToolAcousticSignal>.TryPushTracked(new ToolAcousticSignal
             {
                 ToolHash = _scannerToolHash,
                 TargetHash = hash,
                 Progress01 = math.saturate(progress01),
                 PitchScale = math.max(0.1f, pitchScale),
                 Intensity01 = math.saturate(intensity01),
-                Frame = unchecked((uint)SystemDispatcher.CurrentFrameIndex),
+                Frame = SystemDispatcher.CurrentFrameId,
                 State = ToolAcousticStateScanning,
                 Flags = 0
-            });
+            }, ref _signalPushDropCount);
         }
 
         private void RebaseRuntimePositions(float3 runtimeDelta)
@@ -1550,7 +1551,7 @@ namespace Hecton8.Gameplay
 
             telemetryRing[_telemetryCursor] = new DataArchaeologyTelemetryEntry
             {
-                Frame = unchecked((uint)SystemDispatcher.CurrentFrameIndex),
+                Frame = SystemDispatcher.CurrentFrameId,
                 Hash = hash,
                 Position = position,
                 Match01 = match01,

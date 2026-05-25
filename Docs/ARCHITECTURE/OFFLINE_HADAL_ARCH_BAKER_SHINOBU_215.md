@@ -30,7 +30,8 @@ Runtime receives immutable `.asset` meshes, a static prefab, an `LODGroup`, and 
 
 8. `DeterministicLodDecimationJob` creates seed-stable LOD1/LOD2.
 
-9. `HadalArchBakePipeline` exposes sync `Bake` and Forge-facing `BakeAsync`; `BakeAsync` polls `JobHandle.IsCompleted` across SDF, cavity, extraction, weld, and LOD phases before serializing LOD mesh assets and an optional static prefab.
+9. `HadalArchBakePipeline` exposes sync `Bake` and Forge-facing `BakeAsync`.
+10. `BakeAsync` polls `JobHandle.IsCompleted` across SDF, cavity, extraction, weld, and LOD phases before serializing LOD meshes and optional prefab.
 
 ## Vertex Layout
 

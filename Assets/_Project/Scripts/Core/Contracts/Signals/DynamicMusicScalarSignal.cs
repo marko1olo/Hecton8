@@ -13,6 +13,9 @@ namespace Hecton8.Core.Contracts.Signals
     [StructLayout(LayoutKind.Explicit, Size = DynamicMusicScalarSignalLayout.SignalStrideBytes)]
     public struct DynamicMusicScalarSignal : ISignal
     {
+        public const int ExpectedCapacity = 32;
+        public const int MaxFrameSignals = 64;
+        public const int LowTierFrameSignals = 64;
         public const uint LaneHash = 0x44594D55u; // DYMU
         public const uint SourceMusicDirectorHash = 0x4D444952u; // MDIR
         public const uint SourceAdaptiveStemHash = 0x41535445u; // ASTE

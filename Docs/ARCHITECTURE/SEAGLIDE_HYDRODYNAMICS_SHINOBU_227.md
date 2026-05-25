@@ -9,7 +9,8 @@ Authority:
 - Downstream Seaglide read helpers consume that cached snapshot.
 - Snapshot source: cached `HectonPlayerMovement` AUP/runtime/depth data.
 - It no longer calls `PlayerRuntimeContextService`.
-- Manta previous-AUP fallback rewinds velocity inside a local AUP frame using `AupPrecisionMath.LocalDeltaDouble`, then rehydrates absolute double3 for the request payload. It does not subtract displacement from absolute AUP directly.
+- Manta previous-AUP fallback rewinds velocity inside a local AUP frame via `AupPrecisionMath.LocalDeltaDouble`.
+- It rehydrates absolute double3 for the request payload; no direct absolute-AUP displacement subtraction.
 
 - `SeaglideHydrodynamicsRuntime` owns Vault buffers, SignalBus snapshot ingestion, Burst scheduling, telemetry, cold body binding, and 1000-record mock generation.
 - `SeaglideHydrodynamicsRuntime` does not auto-install through `RuntimeInitializeOnLoadMethod` or `AddComponent`.
@@ -69,7 +70,8 @@ Force route:
 - Cold pass pre-fills every Seaglide body-binding row with resolved player `RigidbodyIndex` and row-local `StateIndex`.
 - PostFixed drain resolves the pre-bound index only and fails closed with `FlagBodyBindingUnresolved` telemetry when binding is absent or stale.
 
-- Force drain scans the evaluated request window and consumes only rows with `FlagForceQueued`, finite force vectors, and nonzero target hashes. This keeps sparse valid rows reachable after skipped/invalid requests.
+- Force drain scans the evaluated request window and consumes rows with `FlagForceQueued`, finite force vectors, and nonzero target hashes.
+- Sparse valid rows remain reachable after skipped/invalid requests.
 
 Presentation signal route:
 

@@ -1,4 +1,4 @@
-﻿// ============================================================================
+// ============================================================================
 // HECTON-8 - LaserCutter.cs v2.2
 // Laser cutter - PlayerTool with thermal management.
 //
@@ -50,6 +50,9 @@ namespace Hecton8.Gameplay
     /// </summary>
     public static class LaserCutterEvents
     {
+        private static int s_x001DirectSignalPushDropCount_LaserCutter;
+
+        private static int s_x001LaserCutterSignalPushDropCount;
         private const int PendingEventCapacity = 16;
         private const int ListenerCapacity = 8;
         private const int SourceCapacity = 8;
@@ -374,7 +377,7 @@ namespace Hecton8.Gameplay
             if (_pendingEventCount >= PendingEventCapacity)
                 return false;
 
-            if (!SignalBus<LaserCutterEventPayloadSignal>.TryPush(in payload))
+            if (!SignalBus<LaserCutterEventPayloadSignal>.TryPushTracked(in payload, ref s_x001DirectSignalPushDropCount_LaserCutter))
                 return false;
 
             _pendingEventCount++;
@@ -389,7 +392,7 @@ namespace Hecton8.Gameplay
             for (int i = startIndex; i < payloads.Length; i++)
             {
                 LaserCutterEventPayloadSignal payload = payloads[i];
-                SignalBus<LaserCutterEventPayloadSignal>.TryPush(in payload);
+                SignalBus<LaserCutterEventPayloadSignal>.TryPushTracked(in payload, ref s_x001LaserCutterSignalPushDropCount);
             }
         }
     }
@@ -668,6 +671,7 @@ namespace Hecton8.Gameplay
     [DisallowMultipleComponent]
     public sealed class LaserCutter : PlayerTool, IToolModule, ILateFrameTickable, ILocalizationLanguageChangedListener, IGlobalRegistryHotSwapListener
     {
+        private static int s_x001LaserCutterSignalPushDropCount;
         private const string CutterCategory = "CUTTER";
         private const int RecoveryProgressMaxPercent = 100;
         private const float MaxRecoilImpulse = 12f;
@@ -719,39 +723,35 @@ namespace Hecton8.Gameplay
         private Quaternion _pendingWfcCutDecalRotation;
         private Vector3 _pendingWfcCutDecalScale;
 
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // ══════════════════════════════════════════════════════════
         //  EVENTS
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // ══════════════════════════════════════════════════════════
 
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-        //  INSPECTOR â€” LASER SETTINGS
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // ══════════════════════════════════════════════════════════
+        //  INSPECTOR — LASER SETTINGS
+        // ══════════════════════════════════════════════════════════
 
-        [Header("â”€â”€ Laser Settings â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
+        [Header("── Laser Settings ────────────────────────────")]
         [Tooltip("Maximum beam range (meters).")]
         [SerializeField] private float maxRange = 5f;
 
         [Tooltip("Base damage per second when cutting.")]
         [SerializeField] private float damagePerSecond = 25f;
 
-        [Tooltip("LayerMask for raycast targets.")]
+        [Tooltip("LayerMask for typed surface targets.")]
         [SerializeField] private LayerMask cuttableLayer = Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;
 
-        [Header("â”€â”€ Heat Management â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
-        [Tooltip("Seconds of continuous firing to reach overheat (heat 0â†’1).")]
+        [Header("── Heat Management ───────────────────────────")]
+        [Tooltip("Seconds of continuous firing to reach overheat (heat 0→1).")]
         [SerializeField] private float overheatTime = 5f;
 
-        [Tooltip("Heat units lost per second when NOT firing.\n" +
-                 "0.3 = full cooldown from max in ~3.3 seconds.")]
+        [Tooltip("Heat units lost per second when NOT firing.\n0.3 = full cooldown from max in ~3.3 seconds.")]
         [SerializeField] private float cooldownRate = 0.3f;
 
-        [Tooltip("Lockout duration after overheat (seconds).\n" +
-                 "Tool is completely disabled during this time.")]
+        [Tooltip("Lockout duration after overheat (seconds).\nTool is completely disabled during this time.")]
         [SerializeField] private float overheatLockoutTime = 2f;
 
-        [Tooltip("Bonus damage multiplier at maximum heat.\n" +
-                 "0.15 = 15% more damage when red-hot.\n" +
-                 "Risk/reward: more efficient but lockout is the cost.")]
+        [Tooltip("Bonus damage multiplier at maximum heat.\n0.15 = 15% more damage when red-hot.\nRisk/reward: more efficient but lockout is the cost.")]
         [Range(0f, 0.5f)]
         [SerializeField] private float heatDamageBonus = 0.15f;
 
@@ -764,17 +764,15 @@ namespace Hecton8.Gameplay
         [Tooltip("Thermal coupling scale that converts cutter damage units into seawater heat energy for localized boil anomalies.")]
         [SerializeField, Min(0f)] private float waterHeatCouplingScale = 250000f;
 
-        [Header("â”€â”€ Beam Visual â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
-        [Tooltip("Maximum jitter amplitude at full heat (meters).\n" +
-                 "Beam endpoint vibrates more as tool heats up.")]
+        [Header("── Beam Visual ───────────────────────────────")]
+        [Tooltip("Maximum jitter amplitude at full heat (meters).\nBeam endpoint vibrates more as tool heats up.")]
         [SerializeField] private float maxJitterAmplitude = 0.008f;
 
         [Tooltip("Jitter frequency (Hz). Higher = faster vibration.")]
         [SerializeField] private float jitterFrequency = 50f;
 
-        [Header("â”€â”€ Deconstruction â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
-        [Tooltip("Seconds of continuous cutting to fully deconstruct a module.\n" +
-                 "Progress resets if target changes or R/LKM released.")]
+        [Header("── Deconstruction ────────────────────────────")]
+        [Tooltip("Seconds of continuous cutting to fully deconstruct a module.\nProgress resets if target changes or R/LKM released.")]
         [SerializeField] private float deconstructThreshold = 3f;
         [Tooltip("Normalized spring load required before salvage recovery progress can move.")]
         [SerializeField, Range(0f, 1f)] private float heavySalvageRequiredTension01 = 0.42f;
@@ -785,7 +783,7 @@ namespace Hecton8.Gameplay
         [Tooltip("Retracts the cutter anchor slightly into the surface so the spring loads against the seam instead of hovering in open air.")]
         [SerializeField, Range(0f, 0.2f)] private float heavySalvageAnchorRetraction = 0.03f;
 
-        [Header("â”€â”€ Visual References â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
+        [Header("── Visual References ─────────────────────────")]
         [Tooltip("LineRenderer for beam visualization.")]
         [SerializeField] private LineRenderer laserLine;
 
@@ -798,7 +796,7 @@ namespace Hecton8.Gameplay
         [Tooltip("Maximum decal scale for completed WFC sealed-door cuts.")]
         [SerializeField, Range(0.05f, 1.25f)] private float wfcCutDecalMaxScale = 0.55f;
 
-        [Header("â”€â”€ Audio â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
+        [Header("── Audio ─────────────────────────────────────")]
         [Tooltip("Looping AudioSource for cutting sound.")]
         [SerializeField] private AudioSource cutAudio;
 
@@ -811,12 +809,12 @@ namespace Hecton8.Gameplay
         [Tooltip("Maximum pitch of cutting audio (at full heat).")]
         [SerializeField] private float maxPitch = 1.3f;
 
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // ══════════════════════════════════════════════════════════
         //  RUNTIME STATE
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // ══════════════════════════════════════════════════════════
 
-        /// <summary>Raycast result (reused, zero GC).</summary>
-        private RaycastHit _hitInfo;
+        /// <summary>Typed surface hit result (reused, zero GC).</summary>
+        private InteractionSurfaceHit _hitInfo;
 
         /// <summary>Cached diagnosis result (reused, zero GC).</summary>
         private CutterDiagnosis _cachedDiagnosis;
@@ -831,7 +829,7 @@ namespace Hecton8.Gameplay
         /// <summary>Was beam active last frame (for toggle VFX).</summary>
         private bool _wasFiringLastFrame;
 
-        // â”€â”€ Heat State â”€â”€
+        // ── Heat State ──
 
         /// <summary>
         /// Current heat level [0..1].
@@ -855,7 +853,7 @@ namespace Hecton8.Gameplay
         /// Prevents spamming the error sound every frame while locked.</summary>
         private bool _lockoutSoundPlayed;
 
-        // â”€â”€ Deconstruct State â”€â”€
+        // ── Deconstruct State ──
 
         /// <summary>Accumulated deconstruct progress (seconds).</summary>
         private float _deconstructProgress;
@@ -929,15 +927,15 @@ namespace Hecton8.Gameplay
         private int _cachedWfcDoorTargetId = -1;
         private IWfcDoorLaserCutTarget _cachedWfcDoor;
         private uint _cachedToolId;
-        private ulong _raycastRequesterId;
+        private ulong _surfaceRequesterId;
         private byte _toolStateFlags = IdleState;
 
-        // â”€â”€ Sparks cache â”€â”€
+        // ── Sparks cache ──
 
 
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // ══════════════════════════════════════════════════════════
         //  PUBLIC READ METHODS
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // ══════════════════════════════════════════════════════════
 
         /// <summary>
         /// Current heat level [0..1]. Read by HUD systems.
@@ -982,7 +980,7 @@ namespace Hecton8.Gameplay
             _telemetryBuffer.Append("Laser-assisted deconstruction queued for habitat rollback validation on target module.");
 
             FieldOperationLogSystem.RecordOperation(
-                ResolveLocalized(H8ToolLocHashes.LASER_CATEGORY, CutterCategory),
+                StableText(H8ToolLocHashes.LASER_CATEGORY, CutterCategory),
                 "MODULE RECOVERY QUEUED",
                 _telemetryBuffer,
                 "INFO");
@@ -990,15 +988,15 @@ namespace Hecton8.Gameplay
             return true;
         }
 
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // ══════════════════════════════════════════════════════════
 
         private void Awake()
         {
             EnsureLayerCache();
             CacheToolId();
-            CacheRaycastRequesterId();
+            CacheSurfaceRequesterId();
             CacheColdDependencies();
             RefreshCachedRuntimeOriginAup();
             EnsureDodRuntimesInitialized();
@@ -1193,7 +1191,7 @@ namespace Hecton8.Gameplay
             TryAssignCutAudioMixerRoute();
             LaserCutterEvents.RegisterSource(this, ResolveEventCutterId(), transform);
             CacheToolId();
-            CacheRaycastRequesterId();
+            CacheSurfaceRequesterId();
             EnsureDodRuntimesInitialized();
             ResetAllState();
             SetVisualsActive(false);
@@ -1235,9 +1233,9 @@ namespace Hecton8.Gameplay
             base.OnUnequip();
         }
 
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // ══════════════════════════════════════════════════════════
         //  TOOL ACTIONS
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // ══════════════════════════════════════════════════════════
 
         public override void UsePrimary(float deltaTime)
         {
@@ -1257,7 +1255,7 @@ namespace Hecton8.Gameplay
                 {
                     QueueOverheatLockoutCue();
                     _lockoutSoundPlayed = true;
-                    PublishWarningMessage(ResolveLocalized(H8ToolLocHashes.LASER_HUD_OVERHEAT_LOCKOUT, "LASER CUTTER - OVERHEAT LOCKOUT"));
+                    PublishWarningMessage(StableText(H8ToolLocHashes.LASER_HUD_OVERHEAT_LOCKOUT, "LASER CUTTER - OVERHEAT LOCKOUT"));
                 }
                 return;
             }
@@ -1268,7 +1266,7 @@ namespace Hecton8.Gameplay
             Activate();
             _isFiring = true;
             PublishBeamState(true);
-            StageDodRaycastRequest();
+            StageDodSurfaceRequest();
 
             bool didHit = ProbeCutHitForOwnerAction(out _hitInfo);
 
@@ -1368,7 +1366,7 @@ namespace Hecton8.Gameplay
 
             _secondaryLatched = true;
 
-            RaycastHit diagHit;
+            InteractionSurfaceHit diagHit;
             bool didHit = ProbeCutHitForOwnerAction(out diagHit);
 
             BuildDiagnosisFromHit(diagHit, didHit, out byte severity);
@@ -1379,7 +1377,7 @@ namespace Hecton8.Gameplay
             PublishDiagnosis();
             string severityText = ResolveDiagnosisSeverityText(severity);
             FieldOperationLogSystem.RecordOperation(
-                ResolveLocalized(H8ToolLocHashes.LASER_CATEGORY, CutterCategory),
+                StableText(H8ToolLocHashes.LASER_CATEGORY, CutterCategory),
                 _diagnosisHeadline,
                 _diagnosisSummary,
                 severityText);
@@ -1425,16 +1423,14 @@ namespace Hecton8.Gameplay
 
         public override string BuildLegacyOperationalSummaryString()
         {
-            _legacyOperationalBuffer.Clear();
-            WriteOperationalSummary(ref _legacyOperationalBuffer);
-            return BuildStringFromBuffer(in _legacyOperationalBuffer);
+            return CutterCategory;
         }
 
         public override void WriteOperationalSummary(ref FixedCharBuffer buffer)
         {
             if (_isLockedOut)
             {
-                buffer.Append(ResolveLocalized(H8ToolLocHashes.LASER_OPERATIONAL_LOCKOUT, "LASER CUTTER // LOCKOUT "));
+                buffer.Append(StableText(H8ToolLocHashes.LASER_OPERATIONAL_LOCKOUT, "LASER CUTTER // LOCKOUT "));
                 buffer.AppendInt((int)(_heatLevel * 100f));
                 buffer.Append("%");
                 return;
@@ -1443,7 +1439,7 @@ namespace Hecton8.Gameplay
             if (_cachedDeconstructModule != null)
             {
                 float progress = math.saturate(_deconstructProgress * math.rcp(math.max(0.01f, deconstructThreshold)));
-                buffer.Append(ResolveLocalized(H8ToolLocHashes.LASER_OPERATIONAL_RECOVERY, "LASER CUTTER // RECOVERY "));
+                buffer.Append(StableText(H8ToolLocHashes.LASER_OPERATIONAL_RECOVERY, "LASER CUTTER // RECOVERY "));
                 buffer.AppendInt((int)(progress * 100f));
                 buffer.Append("%");
                 return;
@@ -1451,40 +1447,38 @@ namespace Hecton8.Gameplay
 
             if (HasActiveDiagnosis() && _diagnosisHeadline.Length > 0)
             {
-                buffer.Append(ResolveLocalized(H8ToolLocHashes.LASER_OPERATIONAL_DIAGNOSIS, "LASER CUTTER // "));
+                buffer.Append(StableText(H8ToolLocHashes.LASER_OPERATIONAL_DIAGNOSIS, "LASER CUTTER // "));
                 buffer.Append(_diagnosisHeadline);
                 return;
             }
 
             if (_heatLevel > 0.01f)
             {
-                buffer.Append(ResolveLocalized(H8ToolLocHashes.LASER_OPERATIONAL_HEAT, "LASER CUTTER // HEAT "));
+                buffer.Append(StableText(H8ToolLocHashes.LASER_OPERATIONAL_HEAT, "LASER CUTTER // HEAT "));
                 buffer.AppendInt((int)(_heatLevel * 100f));
                 buffer.Append("%");
                 return;
             }
 
-            buffer.Append(ResolveLocalized(H8ToolLocHashes.LASER_OPERATIONAL_READY, "LASER CUTTER // READY"));
+            buffer.Append(StableText(H8ToolLocHashes.LASER_OPERATIONAL_READY, "LASER CUTTER // READY"));
         }
 
         public override string BuildLegacyOperationalDirectiveString()
         {
-            _legacyOperationalBuffer.Clear();
-            WriteOperationalDirective(ref _legacyOperationalBuffer);
-            return BuildStringFromBuffer(in _legacyOperationalBuffer);
+            return "Primary cuts. Secondary diagnoses and holds recovery mode on modules.";
         }
 
         public override void WriteOperationalDirective(ref FixedCharBuffer buffer)
         {
             if (_isLockedOut)
             {
-                AppendText(ref buffer, ResolveLocalized(H8ToolLocHashes.LASER_DIRECTIVE_LOCKOUT, "Wait for the core to cool before firing again."));
+                AppendText(ref buffer, StableText(H8ToolLocHashes.LASER_DIRECTIVE_LOCKOUT, "Wait for the core to cool before firing again."));
                 return;
             }
 
             if (_cachedDeconstructModule != null)
             {
-                AppendText(ref buffer, ResolveLocalized(H8ToolLocHashes.LASER_DIRECTIVE_RECOVERY, "Hold the beam steady to finish recovery on the locked module."));
+                AppendText(ref buffer, StableText(H8ToolLocHashes.LASER_DIRECTIVE_RECOVERY, "Hold the beam steady to finish recovery on the locked module."));
                 return;
             }
 
@@ -1496,16 +1490,16 @@ namespace Hecton8.Gameplay
 
             if (_heatLevel >= 0.75f)
             {
-                AppendText(ref buffer, ResolveLocalized(H8ToolLocHashes.LASER_DIRECTIVE_HOT, "Core is running hot. Finish the cut or vent heat before lockout."));
+                AppendText(ref buffer, StableText(H8ToolLocHashes.LASER_DIRECTIVE_HOT, "Core is running hot. Finish the cut or vent heat before lockout."));
                 return;
             }
 
-            AppendText(ref buffer, ResolveLocalized(H8ToolLocHashes.LASER_DIRECTIVE_READY, "Primary cuts. Secondary diagnoses and holds recovery mode on modules."));
+            AppendText(ref buffer, StableText(H8ToolLocHashes.LASER_DIRECTIVE_READY, "Primary cuts. Secondary diagnoses and holds recovery mode on modules."));
         }
 
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // ══════════════════════════════════════════════════════════
         //  HEAT MANAGEMENT
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // ══════════════════════════════════════════════════════════
 
         private void TriggerOverheatLockout()
         {
@@ -1517,11 +1511,11 @@ namespace Hecton8.Gameplay
             SetOverheatedState();
             SetVisualsActive(false);
             ResetDeconstructState();
-            PublishWarningMessage(ResolveLocalized(H8ToolLocHashes.LASER_HUD_CORE_OVERHEATED, "LASER CUTTER - CORE OVERHEATED"));
+            PublishWarningMessage(StableText(H8ToolLocHashes.LASER_HUD_CORE_OVERHEATED, "LASER CUTTER - CORE OVERHEATED"));
             FieldOperationLogSystem.RecordOperation(
-                ResolveLocalized(H8ToolLocHashes.LASER_CATEGORY, CutterCategory),
-                ResolveLocalized(H8ToolLocHashes.LASER_LOG_OVERHEAT_TITLE, "LASER CORE OVERHEATED"),
-                ResolveLocalized(H8ToolLocHashes.LASER_LOG_OVERHEAT_MESSAGE, "Cutter entered forced thermal lockout. Reduce sustained beam exposure before the next recovery pass."),
+                StableText(H8ToolLocHashes.LASER_CATEGORY, CutterCategory),
+                StableText(H8ToolLocHashes.LASER_LOG_OVERHEAT_TITLE, "LASER CORE OVERHEATED"),
+                StableText(H8ToolLocHashes.LASER_LOG_OVERHEAT_MESSAGE, "Cutter entered forced thermal lockout. Reduce sustained beam exposure before the next recovery pass."),
                 "CRITICAL");
         }
 
@@ -1551,7 +1545,7 @@ namespace Hecton8.Gameplay
                 _lockoutSoundPlayed = false;
                 ClearFlag(OverheatedState);
                 EnterCooldownState();
-                PublishInfoMessage(ResolveLocalized(H8ToolLocHashes.LASER_HUD_CORE_STABLE, "LASER CUTTER - CORE STABLE"));
+                PublishInfoMessage(StableText(H8ToolLocHashes.LASER_HUD_CORE_STABLE, "LASER CUTTER - CORE STABLE"));
                 heatChanged = true;
             }
 
@@ -1587,9 +1581,9 @@ namespace Hecton8.Gameplay
             }
         }
 
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // ══════════════════════════════════════════════════════════
         //  CUT DAMAGE
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // ══════════════════════════════════════════════════════════
 
         private bool TryResolveToolPose(out Vector3 origin, out Vector3 direction, out double3 originAup)
         {
@@ -1803,9 +1797,9 @@ namespace Hecton8.Gameplay
             waterHeatInjection.TryInjectLocalizedWaterHeat(samplePoint, direction, cutStrength, normalizedPower);
         }
 
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // ══════════════════════════════════════════════════════════
         //  DECONSTRUCT MODE
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // ══════════════════════════════════════════════════════════
 
         private void ProcessDeconstructMode(float deltaTime)
         {
@@ -1839,7 +1833,7 @@ namespace Hecton8.Gameplay
             {
                 if (!_deconstructBlockedReported)
                 {
-                    PublishWarningMessage(ResolveLocalized(H8ToolLocHashes.LASER_HUD_RECOVERY_NO_MODULE, "RECOVERY MODE - NO MODULE"));
+                    PublishWarningMessage(StableText(H8ToolLocHashes.LASER_HUD_RECOVERY_NO_MODULE, "RECOVERY MODE - NO MODULE"));
                     _deconstructBlockedReported = true;
                 }
                 ApplyCutDamage(deltaTime);
@@ -1851,7 +1845,7 @@ namespace Hecton8.Gameplay
                 SetCachedDeconstructionPreview(false);
                 if (!_deconstructBlockedReported)
                 {
-                    PublishWarningMessage(ResolveLocalized(H8ToolLocHashes.LASER_HUD_RECOVERY_MODULE_LOCKED, "RECOVERY MODE - MODULE LOCKED"));
+                    PublishWarningMessage(StableText(H8ToolLocHashes.LASER_HUD_RECOVERY_MODULE_LOCKED, "RECOVERY MODE - MODULE LOCKED"));
                     _deconstructBlockedReported = true;
                 }
                 ApplyCutDamage(deltaTime);
@@ -1908,7 +1902,7 @@ namespace Hecton8.Gameplay
                 BaseModule recoveredModule = _cachedDeconstructModule;
                 if (!TryResolveToolPose(out Vector3 toolOrigin, out Vector3 toolForward, out _))
                 {
-                    PublishWarningMessage(ResolveLocalized(H8ToolLocHashes.LASER_HUD_RECOVERY_MODULE_LOCKED, "RECOVERY MODE - MODULE LOCKED"));
+                    PublishWarningMessage(StableText(H8ToolLocHashes.LASER_HUD_RECOVERY_MODULE_LOCKED, "RECOVERY MODE - MODULE LOCKED"));
                     ResetDeconstructState();
                     return;
                 }
@@ -1921,7 +1915,7 @@ namespace Hecton8.Gameplay
                         GetRuntimeMaxRange(maxRange),
                         2))
                 {
-                    PublishWarningMessage(ResolveLocalized(H8ToolLocHashes.LASER_HUD_RECOVERY_MODULE_LOCKED, "RECOVERY MODE - MODULE LOCKED"));
+                    PublishWarningMessage(StableText(H8ToolLocHashes.LASER_HUD_RECOVERY_MODULE_LOCKED, "RECOVERY MODE - MODULE LOCKED"));
                     ResetDeconstructState();
                     return;
                 }
@@ -1932,7 +1926,7 @@ namespace Hecton8.Gameplay
                 _telemetryBuffer.Append("Laser-assisted deconstruction queued for habitat rollback validation on target module.");
 
                 FieldOperationLogSystem.RecordOperation(
-                    ResolveLocalized(H8ToolLocHashes.LASER_CATEGORY, CutterCategory),
+                    StableText(H8ToolLocHashes.LASER_CATEGORY, CutterCategory),
                     "MODULE RECOVERY QUEUED",
                     _telemetryBuffer,
                     "INFO");
@@ -2001,7 +1995,7 @@ namespace Hecton8.Gameplay
                 TargetAup = targetAup,
                 RayOriginAup = rayOriginAup,
                 TargetEntityId = unchecked((uint)EntityId.ToULong(module.gameObject.GetEntityId())),
-                RequesterEntityId = unchecked((uint)_raycastRequesterId),
+                RequesterEntityId = unchecked((uint)_surfaceRequesterId),
                 MaxDistance = Mathf.Max(0f, maxDistance),
                 RayDirection = new float3(rayDirection.x, rayDirection.y, rayDirection.z),
                 Frame = ResolveCurrentFrameId(),
@@ -2025,7 +2019,7 @@ namespace Hecton8.Gameplay
         private void ShowRecoveryProgressFeedback(float progress01)
         {
             int percent = math.clamp((int)(math.saturate(progress01) * 100f + 0.5f), 0, RecoveryProgressMaxPercent);
-            string template = ResolveLocalized(H8ToolLocHashes.LASER_RECOVERY_PROGRESS, "RECOVERY PROGRESS - {0}%");
+            string template = StableText(H8ToolLocHashes.LASER_RECOVERY_PROGRESS, "RECOVERY PROGRESS - {0}%");
 
             _recoveryFeedbackBuffer.Clear();
             if (!_recoveryFeedbackBuffer.AppendTemplate(template.AsSpan(), LocNumericArg.Int(percent)))
@@ -2056,11 +2050,6 @@ namespace Hecton8.Gameplay
         private static bool AppendText(ref FixedCharBuffer buffer, string value)
         {
             return string.IsNullOrEmpty(value) || buffer.Append(value);
-        }
-
-        private static string BuildStringFromBuffer(in FixedCharBuffer buffer)
-        {
-            return buffer.Length > 0 ? new string(buffer.Buffer, 0, buffer.Length) : string.Empty;
         }
 
         private void EnsurePlayerInventory()
@@ -2178,9 +2167,9 @@ namespace Hecton8.Gameplay
             return false;
         }
 
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // ══════════════════════════════════════════════════════════
         //  VISUALS
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // ══════════════════════════════════════════════════════════
 
         private void UpdateLaserLine(bool didHit)
         {
@@ -2245,7 +2234,7 @@ namespace Hecton8.Gameplay
                 _heatLevel,
                 ResolveCurrentNormalizedPower01(),
                 _cachedToolId,
-                unchecked((uint)_raycastRequesterId),
+                unchecked((uint)_surfaceRequesterId),
                 ResolveCurrentFrameId());
         }
 
@@ -2333,7 +2322,7 @@ namespace Hecton8.Gameplay
                 State = ToolAcousticSignal.StateLaserLoop,
                 Flags = ToolAcousticSignal.FlagLooping
             };
-            SignalBus<ToolAcousticSignal>.TryPush(in signal);
+            SignalBus<ToolAcousticSignal>.TryPushTracked(in signal, ref s_x001LaserCutterSignalPushDropCount);
         }
 
         private void PublishHeatMicroVibration(float normalizedPower)
@@ -2352,7 +2341,7 @@ namespace Hecton8.Gameplay
                 Channel = HapticRequest.ChannelMicroVibration,
                 Flags = HapticRequest.FlagMicroVibration
             };
-            SignalBus<HapticRequest>.TryPush(in request);
+            SignalBus<HapticRequest>.TryPushTracked(in request, ref s_x001LaserCutterSignalPushDropCount);
         }
 
         private void UpdateWfcCutDecalVisual(float progress01)
@@ -2410,9 +2399,9 @@ namespace Hecton8.Gameplay
                 wfcCutDecalRenderer.enabled = false;
         }
 
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // ══════════════════════════════════════════════════════════
         //  PRIVATE HELPERS
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // ══════════════════════════════════════════════════════════
 
         private void TryRegisterLateFrameTick()
         {
@@ -2516,15 +2505,15 @@ namespace Hecton8.Gameplay
             return ResolveEventCutterId();
         }
 
-        private void BuildDiagnosisFromHit(RaycastHit hit, bool didHit, out byte severity)
+        private void BuildDiagnosisFromHit(InteractionSurfaceHit hit, bool didHit, out byte severity)
         {
             _diagnosisHeadline.Clear();
             _diagnosisSummary.Clear();
 
             if (!didHit)
             {
-                _diagnosisHeadline.Append(ResolveLocalized(H8ToolLocHashes.LASER_HEADLINE_NO_TARGET, "NO CONTACT"));
-                _diagnosisSummary.Append(ResolveLocalized(H8ToolLocHashes.LASER_SUMMARY_NO_TARGET, "Beam is firing into open water. No thermal resonance detected."));
+                _diagnosisHeadline.Append(StableText(H8ToolLocHashes.LASER_HEADLINE_NO_TARGET, "NO CONTACT"));
+                _diagnosisSummary.Append(StableText(H8ToolLocHashes.LASER_SUMMARY_NO_TARGET, "Beam is firing into open water. No thermal resonance detected."));
                 severity = DiagnosisSeverityInfo;
                 return;
             }
@@ -2533,14 +2522,14 @@ namespace Hecton8.Gameplay
             {
                 if (module.CanDeconstruct())
                 {
-                    _diagnosisHeadline.Append(ResolveLocalized(H8ToolLocHashes.LASER_HEADLINE_MODULE_LOCKED, "MODULE SECURED"));
-                    _diagnosisSummary.Append(ResolveLocalized(H8ToolLocHashes.LASER_SUMMARY_MODULE_LOCKED, "Base module detected. Hold secondary beam to initialize salvage recovery."));
+                    _diagnosisHeadline.Append(StableText(H8ToolLocHashes.LASER_HEADLINE_MODULE_LOCKED, "MODULE SECURED"));
+                    _diagnosisSummary.Append(StableText(H8ToolLocHashes.LASER_SUMMARY_MODULE_LOCKED, "Base module detected. Hold secondary beam to initialize salvage recovery."));
                     severity = DiagnosisSeverityInfo;
                 }
                 else
                 {
-                    _diagnosisHeadline.Append(ResolveLocalized(H8ToolLocHashes.LASER_HEADLINE_MODULE_STABLE, "MODULE INTEGRITY HIGH"));
-                    _diagnosisSummary.Append(ResolveLocalized(H8ToolLocHashes.LASER_SUMMARY_MODULE_STABLE, "Module is active or structurally reinforced. Deconstruction impossible."));
+                    _diagnosisHeadline.Append(StableText(H8ToolLocHashes.LASER_HEADLINE_MODULE_STABLE, "MODULE INTEGRITY HIGH"));
+                    _diagnosisSummary.Append(StableText(H8ToolLocHashes.LASER_SUMMARY_MODULE_STABLE, "Module is active or structurally reinforced. Deconstruction impossible."));
                     severity = DiagnosisSeverityWarn;
                 }
                 return;
@@ -2548,25 +2537,25 @@ namespace Hecton8.Gameplay
 
             if (hit.collider != null)
             {
-                _diagnosisHeadline.Append(ResolveLocalized(H8ToolLocHashes.LASER_HEADLINE_CUTTABLE_CONTACT, "CUTTABLE CONTACT"));
-                _diagnosisSummary.Append(ResolveLocalized(H8ToolLocHashes.LASER_SUMMARY_CUTTABLE_CONTACT, "Target accepts thermal damage but is not recoverable as a base module."));
+                _diagnosisHeadline.Append(StableText(H8ToolLocHashes.LASER_HEADLINE_CUTTABLE_CONTACT, "CUTTABLE CONTACT"));
+                _diagnosisSummary.Append(StableText(H8ToolLocHashes.LASER_SUMMARY_CUTTABLE_CONTACT, "Target accepts thermal damage but is not recoverable as a base module."));
                 severity = DiagnosisSeverityInfo;
                 return;
             }
 
-            _diagnosisHeadline.Append(ResolveLocalized(H8ToolLocHashes.LASER_HEADLINE_INVALID_TARGET, "INVALID TARGET"));
-            _diagnosisSummary.Append(ResolveLocalized(H8ToolLocHashes.LASER_SUMMARY_INVALID_TARGET, "Target is inside beam range but does not respond to cutter operations."));
+            _diagnosisHeadline.Append(StableText(H8ToolLocHashes.LASER_HEADLINE_INVALID_TARGET, "INVALID TARGET"));
+            _diagnosisSummary.Append(StableText(H8ToolLocHashes.LASER_SUMMARY_INVALID_TARGET, "Target is inside beam range but does not respond to cutter operations."));
             severity = DiagnosisSeverityWarn;
         }
 
-        private bool ProbeCutHitForOwnerAction(out RaycastHit hit)
+        private bool ProbeCutHitForOwnerAction(out InteractionSurfaceHit hit)
         {
             IInteractionSignalService interactionService = _cachedInteractionService;
             if (interactionService != null &&
                 interactionService.IsInitialized &&
                 TryResolveToolPose(out Vector3 origin, out Vector3 direction, out _))
             {
-                return interactionService.TryRaycastPrimary(_raycastRequesterId, origin, direction, GetRuntimeMaxRange(maxRange), ResolveCuttableRaycastMask(), QueryTriggerInteraction.Ignore, out hit);
+                return interactionService.TryResolvePrimarySurfaceHit(_surfaceRequesterId, origin, direction, GetRuntimeMaxRange(maxRange), ResolveCuttableSurfaceMask(), QueryTriggerInteraction.Ignore, out hit);
             }
 
             hit = default;
@@ -2603,7 +2592,7 @@ namespace Hecton8.Gameplay
             interactionService.Publish(in boilSignal, _hitInfo.collider);
         }
 
-        private int ResolveCuttableRaycastMask()
+        private int ResolveCuttableSurfaceMask()
         {
             int mask = cuttableLayer.value;
             if (_WaterLayer >= 0)
@@ -2616,7 +2605,7 @@ namespace Hecton8.Gameplay
         private void PublishDiagnosis()
         {
             _telemetryBuffer.Clear();
-            _telemetryBuffer.Append(ResolveLocalized(H8ToolLocHashes.LASER_DIAG_MESSAGE, "LASER DIAG - "));
+            _telemetryBuffer.Append(StableText(H8ToolLocHashes.LASER_DIAG_MESSAGE, "LASER DIAG - "));
             _telemetryBuffer.Append(_diagnosisHeadline);
 
             if (_cachedDiagnosis.Severity >= DiagnosisSeverityWarn)
@@ -2689,7 +2678,7 @@ namespace Hecton8.Gameplay
             _laserSummaryNoTarget = ResolveBabelString(localization, H8ToolLocHashes.LASER_SUMMARY_NO_TARGET, "Beam is firing into open water. No thermal resonance detected.");
         }
 
-        private string ResolveLocalized(uint keyHash, string fallback)
+        private string StableText(uint keyHash, string fallback)
         {
             string cached = keyHash switch
             {
@@ -2730,12 +2719,7 @@ namespace Hecton8.Gameplay
 
         private static string ResolveBabelString(IBabelLocalization localization, uint keyHash, string fallback)
         {
-            return localization != null &&
-                   localization.TryGetLocalizedBuffer(keyHash, out char[] buffer, out int length) &&
-                   buffer != null &&
-                   length > 0
-                ? new string(buffer, 0, length)
-                : (fallback ?? string.Empty);
+            return fallback ?? string.Empty;
         }
 
         private void CacheToolId()
@@ -2744,12 +2728,12 @@ namespace Hecton8.Gameplay
             _cachedToolId = unchecked((uint)Animator.StringToHash(toolIdSource));
         }
 
-        private void CacheRaycastRequesterId()
+        private void CacheSurfaceRequesterId()
         {
-            _raycastRequesterId = EntityId.ToULong(gameObject.GetEntityId());
+            _surfaceRequesterId = EntityId.ToULong(gameObject.GetEntityId());
         }
 
-        private void StageDodRaycastRequest()
+        private void StageDodSurfaceRequest()
         {
             if (!TryResolveToolPose(out _, out Vector3 direction, out double3 originAup))
                 return;
@@ -2760,7 +2744,7 @@ namespace Hecton8.Gameplay
                 ResolveCurrentNormalizedPower01(),
                 GetRuntimeMaxRange(maxRange),
                 _cachedToolId,
-                unchecked((uint)_raycastRequesterId),
+                unchecked((uint)_surfaceRequesterId),
                 ResolveCurrentFrameId());
         }
 

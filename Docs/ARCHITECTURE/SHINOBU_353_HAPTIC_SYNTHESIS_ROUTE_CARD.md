@@ -63,7 +63,7 @@ Instrument:
 - but final PAL envelope needs its own narrow payload [x] existing Vault buffer: input haptic command buffer is PAL output,
 - not synthesis scratch/black-box storage [x] cold HectonEventBus hook: rejected because this is first-party hot gameplay presentation [x] direct hardware calls: rejected outside PAL
 
-- Why this does not increase global monolith risk: The route consumes existing typed signals, stores bounded native scratch/telemetry buffers, emits one narrow `HapticPulseSignal`, and keeps hardware ownership in `InputDispatcher`.
+- Monolith risk remains bounded: route consumes existing typed signals, stores bounded native scratch/telemetry, emits one narrow `HapticPulseSignal`, and keeps hardware ownership in `InputDispatcher`.
 - H-Phi impact expected: Static route clarity improves by moving haptic synthesis scratch and telemetry into named BufferIDs without adding gameplay authority.
 - Proof required before GREEN: Unity import, controller device verification, GCMonitor capture, Burst/profiler timing capture, and clean compile after the current external Combat/VFX/Construction build wall is resolved.
 - Reviewer: Integrator / Core Architecture Review disposition: YELLOW Reason: Static source and route-card evidence are present; runtime/profiler/player proof is not.

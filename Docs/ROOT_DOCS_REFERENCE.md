@@ -1,6 +1,6 @@
 ﻿# Root Docs Reference
 
-Date: 2026-05-24
+Date: 2026-05-25
 Status: PENDING VERIFICATION
 Owner: X_012 DOCUMENTATION_CLEANUP_AND_ACTUALIZATION_ENGINE
 Evidence class: STATIC_DOC / STATIC_FILESYSTEM / CLI_COMPILE where artifact cited
@@ -43,8 +43,8 @@ Pre-X_012 verbose root copies:
 Current local CLI compile slice:
 
 - `Docs/AgentLogs/Build_EXTERNAL_CODEX_hotpath_cleanup122_tick_registration.log` - last local zero-warning CLI PASS for `Hecton8.Editor.csproj --no-restore -m:1 /nr:false /p:UseSharedCompilation=false`.
-- `Docs/AgentLogs/Build_EXTERNAL_CODEX_hotpath_cleanup158_world_dispatcher_rebind.log` - latest CLI compile attempt; fails before C# with `NETSDK1004` missing `Temp/obj/Hecton8.Editor/project.assets.json`, 0 warnings, no `CS*`; latest retry blocked by `BUILD_GUARD cpu=100 compiler_count=2`. Runtime proof remains pending.
-- EXTERNAL_CODEX loop159 is source-gated with an environment build wall: non-editor raw `Debug.Log` is zero outside `H8Debug.cs`; targeted frost/render membership, dispatcher lane `Contains`, HectonVoxelVolume sonar DataVault poll, pure Environment/Ocean/PlayerSensory context getter, cadence/context Dispatcher/DataVault/service/player rebind, persistent-world Save/Player/Inventory owner-cache, UI/audio/construction Dispatcher rebind, UI/Construction singleton runtime, world/environment/AI Dispatcher rebind, project-wide `ActiveRuntimeContext`/`ActiveRuntimeInstance`, and project-wide `?? GlobalRegistry|GlobalRegistry.TryGet` greps are clean. Broad file-local no-hot-swap scans still include known split-line/static-driver/legacy-stub false positives.
+- `Docs/AgentLogs/Build_EXTERNAL_CODEX_hotpath_cleanup158_world_dispatcher_rebind.log` - latest CLI compile attempt; fails before C# with `NETSDK1004` missing `Temp/obj/Hecton8.Editor/project.assets.json`, 0 warnings, no `CS*`; latest retry blocked by `BUILD_GUARD cpu=100 compiler_count=0`. Runtime proof remains pending.
+- EXTERNAL_CODEX loop162 is source-gated with an environment build wall: non-editor raw `Debug.Log` is zero outside `H8Debug.cs`; targeted frost/render membership, dispatcher lane `Contains`, HectonVoxelVolume sonar DataVault poll, pure Environment/Ocean/PlayerSensory context getter, cadence/context Dispatcher/DataVault/service/player rebind, persistent-world Save/Player/Inventory owner-cache, UI/audio/construction Dispatcher rebind, UI/Construction singleton runtime, world/environment/AI Dispatcher rebind, project-wide `ActiveRuntimeContext`/`ActiveRuntimeInstance`, project-wide `?? GlobalRegistry|GlobalRegistry.TryGet`, loop160 touched-file Dispatcher stale-registration greps, loop161 broad Dispatcher/TickManager stale candidate scans, and loop162 selected frame-authority/Biolum owner-cache greps are clean.
 
 Superseded reports were moved to:
 

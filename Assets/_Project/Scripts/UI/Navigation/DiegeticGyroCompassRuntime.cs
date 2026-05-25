@@ -81,6 +81,7 @@ namespace Hecton8.UI.Navigation
 
     public static class DiegeticCompassSignals
     {
+        private static int s_x001DiegeticGyroCompassRuntimeSignalPushDropCount;
         private const uint CompassCalibrationLaneHash = 0xC06A5511u;
         private const uint CompassAnomalyLaneHash = 0xC06A5512u;
 
@@ -111,7 +112,7 @@ namespace Hecton8.UI.Navigation
                 CalibrationQuality01 = SanitizeUnit01(quality01),
                 Flags = 1
             };
-            SignalBus<CompassCalibratedSignal>.TryPush(in signal);
+            SignalBus<CompassCalibratedSignal>.TryPushTracked(in signal, ref s_x001DiegeticGyroCompassRuntimeSignalPushDropCount);
         }
 
         /// <summary>
@@ -134,7 +135,7 @@ namespace Hecton8.UI.Navigation
                 Frame = frame,
                 Flags = 1
             };
-            SignalBus<AnomalyProximitySignal>.TryPush(in signal);
+            SignalBus<AnomalyProximitySignal>.TryPushTracked(in signal, ref s_x001DiegeticGyroCompassRuntimeSignalPushDropCount);
         }
 
         private static AbsoluteUniversePosition SanitizeAup(in AbsoluteUniversePosition sourceAup)

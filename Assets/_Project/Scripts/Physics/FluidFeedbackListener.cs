@@ -25,6 +25,8 @@ namespace Hecton8.Physics
     /// </summary>
     public static class FluidFeedbackEvents
     {
+        private static int s_x001DirectSignalPushDropCount_FluidFeedbackListener;
+
         private const int ListenerCapacity = 16;
         private const int PendingEventCapacity = 64;
 
@@ -190,7 +192,7 @@ namespace Hecton8.Physics
                 return false;
 
             EnsureInitialized();
-            return SignalBus<SplashEvent>.TryPush(in splashEvent);
+            return SignalBus<SplashEvent>.TryPushTracked(in splashEvent, ref s_x001DirectSignalPushDropCount_FluidFeedbackListener);
         }
 
         private static void DispatchToListeners(in SplashEvent splashEvent)
@@ -209,7 +211,7 @@ namespace Hecton8.Physics
             for (int i = startIndex; i < snapshot.Length; i++)
             {
                 SplashEvent splashEvent = snapshot[i];
-                if (!SignalBus<SplashEvent>.TryPush(in splashEvent))
+                if (!SignalBus<SplashEvent>.TryPushTracked(in splashEvent, ref s_x001DirectSignalPushDropCount_FluidFeedbackListener))
                 {
                     ReportOverflowOncePerSnapshot();
                     return;

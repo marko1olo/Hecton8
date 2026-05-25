@@ -44,6 +44,15 @@ namespace Hecton8.Core
             return true;
         }
 
+        public bool Append(char value)
+        {
+            if (_buffer == null || _cursor >= _buffer.Length)
+                return false;
+
+            _buffer[_cursor++] = value;
+            return true;
+        }
+
         public bool Append(in FixedCharBuffer other)
         {
             return Append(other.AsSpan());

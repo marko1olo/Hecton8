@@ -46,7 +46,8 @@ Quality does not change DTO layout, action hash identity, save identity, or auth
 
 ## Verification Boundaries
 
-- Runtime csc proof: narrow Unity csc response plus the three same-asmdef SHINOBU_312 anxiety runtime inputs returned exit 0 after the branchless guard polish; artifact remains `Library/Bee/artifacts/1900b0aEDbg.dag/SHINOBU_302_Hecton8.AI.Cognition.Test.dll` at 90112 bytes.
+- Runtime csc proof: narrow Unity csc response plus three same-asmdef SHINOBU_312 anxiety inputs returned exit 0 after branchless guard polish.
+- Artifact: `Library/Bee/artifacts/1900b0aEDbg.dag/SHINOBU_302_Hecton8.AI.Cognition.Test.dll`, 90112 bytes.
 - Editor csc proof: pending CPU/compiler gate. Generated `Hecton8.AI.Cognition.Editor.rsp` includes all six editor inputs and no `Hecton8.Core.ref.dll`.
 - Data Monolith readiness: `static_data.h8bin` exists in current X_012 scan.
 - Route-specific boot proof remains pending.
@@ -76,4 +77,6 @@ Per-agent copy: `Docs/Reports/SHINOBU_302_AI_OPTIMIZATION_REPORT.json`. The shar
 
 Scanner strips comments/strings before method-body scan. Roslyn is intentionally not added.
 
-Assembly route: runtime `Hecton8.AI.Cognition` depends on Core Contracts/Memory plus Burst/Collections/Jobs/Mathematics only. Editor tooling resolves the latest Vault through the Core.Memory editor diagnostic route and does not reference direct `Hecton8.Core`.
+Assembly route: runtime `Hecton8.AI.Cognition` depends only on Core Contracts/Memory plus Burst/Collections/Jobs/Mathematics.
+
+Editor tooling resolves latest Vault through Core.Memory diagnostics and does not reference direct `Hecton8.Core`.

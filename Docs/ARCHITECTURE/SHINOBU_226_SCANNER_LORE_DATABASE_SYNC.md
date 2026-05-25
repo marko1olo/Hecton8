@@ -8,7 +8,8 @@ Runtime route:
 
 - Scanner ray origin/forward are sourced from cached `PlayerRuntimePoseSnapshot`; active acquisition fails closed without that pose snapshot or a finite non-zero forward vector.
 
-- Lore row publication reads AUP from the spatial owner via `WorldSpatialHashGrid.TryGetAbsolutePosition`; missing or non-finite spatial AUP fails closed by clearing the row hash instead of synthesizing a runtime-origin fallback.
+- Lore row publication reads AUP from `WorldSpatialHashGrid.TryGetAbsolutePosition`.
+- Missing or non-finite spatial AUP fails closed by clearing row hash; no runtime-origin fallback is synthesized.
 
 - Scan target acquisition runs as Burst deterministic jobs over `ScannerSpatialEntityDTO`, metadata, SDF occlusion zones, and spatial hash buckets.
 
@@ -24,7 +25,8 @@ Runtime route:
 
 - Loop 15: `ScannerTool`, `PDAEncyclopediaStreamer`, and `ScannableTarget` cache non-owning Vault views after cold/owner refresh; hot readers no longer resolve scanner/PDA/lore handles.
 
-- Loop 15 signal route: `ToolAcousticSignal`, `ScanCompleteSignal`, and `ResourceDepletionDeltaSignal` publish through direct `SignalBus<T>.Push`. `AcousticPingSignal`, `ScannerToolActiveSignal`, `AnomalySignal`, and `CrashTelemetrySignal` remain explicit `GlobalSignals` bridge lanes until latest/dequeue consumers are migrated.
+- Loop 15 signal route: `ToolAcousticSignal`, `ScanCompleteSignal`, and `ResourceDepletionDeltaSignal` publish through direct `SignalBus<T>.Push`.
+- `AcousticPingSignal`, `ScannerToolActiveSignal`, `AnomalySignal`, and `CrashTelemetrySignal` remain explicit `GlobalSignals` bridge lanes until latest/dequeue consumers migrate.
 
 - Loop 16: `PdaH8lrLoreStore` no longer re-resolves Vault mirror handle per readable span. Cached pointer checks `IDataVault.TryGetBufferGeneration`; generation mismatch fails closed.
 
@@ -38,7 +40,8 @@ Runtime route:
 
 - Loop 18 correction: scanner quality tier telemetry initializes to `Unknown` and no longer polls `GlobalRegistry.ScalabilityTier`; scanner presentation cost remains controlled by continuous `GlobalQualityWeight` curves.
 
-- `ScannerTool` scientific black box and `PDAEncyclopediaStreamer` native state retain pointer-free `VaultGenerationHandle<T>` descriptors only. PDA still resolves method-local views; router hot ticks use the cached non-owning view snapshot described above.
+- `ScannerTool` black box and `PDAEncyclopediaStreamer` native state retain pointer-free `VaultGenerationHandle<T>` descriptors only.
+- PDA resolves method-local views; router hot ticks use cached non-owning view snapshot described above.
 
 - Editor-only live debugging reads the same Vault rows in `OnDrawGizmos` and draws AUP-local blue/yellow/green wire spheres without runtime debug GameObjects or text labels.
 
@@ -81,7 +84,7 @@ Verification surface:
 
 - `ScannerLoreDatabaseSyncTunerWindow` exposes Vault mask/telemetry readout and direct Unlock All / Lock All writes to `ScannerEncyclopediaStateDTO`.
 
-- Runtime source scan for `ScannerDataMiningRouter.cs` returns 0 hits for Unity frame/time/random reads, direct Transform pose reads, raw job completion, legacy Vault handles, hot managed collection/parser patterns, and `Pack=1`.
+- Runtime source scan for `ScannerDataMiningRouter.cs` returns 0 hits for Unity frame/time/random, direct Transform pose, raw job completion, legacy Vault handles, hot managed collections/parsers, and `Pack=1`.
 
 - Scanner/PDA bridge scan returns 0 hits for `Time.frameCount` after routing frame stamps through dispatcher frame state.
 
@@ -89,7 +92,8 @@ Verification surface:
 
 - PDA same-frame job scan returns 0 hits for `IJob`, `BurstCompile`, `.Execute()`, `Unity.Jobs`, `Unity.Burst`, `_mockLookupResultHandle`, and `MockLookupResultBufferId`.
 
-- Loop 11 scan returns 0 hits for `string.Format`, `string.Create`, `.Split`, LINQ/list/array conversion patterns, `foreach`, removed prefixed-string builders, old module/pickup summary helpers, and `RaiseEntryDiscovered("`. Remaining discovery calls are uint overloads only.
+- Loop 11 scan returns 0 hits for removed string/list/LINQ/foreach builders, old summary helpers, and `RaiseEntryDiscovered("`.
+- Remaining discovery calls are uint overloads only.
 
 - Loop 12 scan returns 0 hits for `ComputeLowerAsciiPrefixedFnvHash`, `AppendLowerAsciiFnv`, `FoldAsciiLower`, `ItemEntryPrefix`, `ModuleEntryPrefix`, `item.PersistentId`, `data.PersistentId`, `scannable.EntryCategory`, and `RaiseEntryDiscovered("` in the scanner/PDA sync slice.
 
@@ -114,7 +118,8 @@ Verification surface:
   - Router teardown force-completion no longer appears in runtime source.
   - Scientific occlusion ownership no longer traverses Transform hierarchy.
 
-- Handoff: `WorldSpatialHashGrid.TryScheduleFarUnload` and `BuildAcousticDensityMap` still poll `GlobalRegistry.Player` from recurring world maintenance. That debt is outside SHINOBU_226 ownership; scanner use of the spatial grid is limited to the pure AUP accessor.
+- Handoff: `WorldSpatialHashGrid.TryScheduleFarUnload` and `BuildAcousticDensityMap` still poll `GlobalRegistry.Player` from recurring world maintenance.
+- Debt is outside SHINOBU_226; scanner spatial-grid use is limited to pure AUP accessor.
 
 - `dotnet build Hecton8.Core.csproj --no-restore -v:minimal` was attempted only after CPU gate opened; it is blocked by unrelated dependency-wall errors.
 - Generated csproj coverage does not include the router/editor/PDA files, so Unity import remains the required proof path for those files.

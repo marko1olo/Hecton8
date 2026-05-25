@@ -354,9 +354,11 @@ namespace Hecton8.UI
                 return;
             }
 
-            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && isActiveAndEnabled)
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
-                RegisterToTickManager();
+                _registeredToTickManager = false;
+                if (currentService != null && isActiveAndEnabled)
+                    RegisterToTickManager();
             }
         }
 

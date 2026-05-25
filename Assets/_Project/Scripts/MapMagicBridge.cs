@@ -466,7 +466,7 @@ namespace Hecton8.Core
                 CacheRevision = 0,
                 TerrainPosition = (float3)terrain.transform.position,
                 TerrainSize = (float3)terrainData.size,
-                Frame = (uint)Time.frameCount,
+                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 Flags = 1
             };
 

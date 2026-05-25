@@ -24,9 +24,11 @@ Review disposition: YELLOW / STATIC_SOURCE_ONLY.
 
 Owner: `Hecton8.Atmosphere.BaseAtmosphereLogisticsRuntime`
 
-First 20 Minutes route impact: removes the base-survival blocker where air quality is a global scalar. Early habitat corridors can now expose local oxygen, carbon dioxide, toxin, and heat gradients.
+First 20 Minutes route impact: removes global-scalar air quality blocker.
 
-Compile-wall boundary: owned BaseAtmosphereLogistics runtime/gizmo/jobs/types import Core, Core.Contracts/Signals, Core.Memory, Unity Collections/Jobs/Math/Engine only; they do not import sibling gameplay, construction, world, physics, AI, vehicle, habitat, tool, or power namespaces.
+Early habitat corridors can expose local oxygen, carbon dioxide, toxin, and heat gradients.
+
+Compile-wall boundary: owned BaseAtmosphereLogistics runtime/gizmo/jobs/types import Core, Core.Contracts/Signals, Core.Memory, Unity Collections/Jobs/Math/Engine only; they do not import gameplay, construction, world, physics, AI, vehicle, habitat, tool, or power namespaces.
 
 ## Fact Routes
 
@@ -42,14 +44,15 @@ Compile-wall boundary: owned BaseAtmosphereLogistics runtime/gizmo/jobs/types im
 
 - Jacobi contract: diffusion uses `(neighborGasSum + currentGas) / max(sumConductance + 1, 0.0001)` and then applies continuous alpha from tuning/quality cadence; it is not in-place Gauss-Seidel.
 
-- Conservation correction: quantization residuals are distributed across already-quantized back-buffer cells per gas channel after the expected/actual integer totals are known; no single cell is used as a permanent rounding sink.
+- Conservation correction distributes quantization residuals across already-quantized back-buffer cells per gas channel after expected/actual integer totals are known.
+- No single cell becomes a permanent rounding sink.
 
 - Source/sink truth: consumers, toxic sources, and vents in Vault buffers `71508..71510`.
 
 - Reactor input: `SignalBus<ReactorDamageSignal>`, unmanaged 64-byte payload, configured capacity 64, minimum-quality frame cap 8. Contract source is `Assets/_Project/Scripts/Core/Contracts/Signals/ReactorDamageSignal.cs`; Atmosphere owns consumption, not payload authority.
 - Existing inputs: `SignalBus<FluidIncursionSignal>`, `SignalBus<PlayerBaseEnterSignal>`, `SignalBus<PlayerBaseExitSignal>`.
 
-- Legacy oxygen bridge: `HabitatIntegrityManager` public global O2 reads route to `BaseAtmosphereLogisticsRuntime.TryGetGlobalOxygenSnapshot`; its old aggregate fields are fallback-only and stop receiving module contributions once the runtime snapshot is valid.
+- Legacy oxygen bridge: `HabitatIntegrityManager` public global O2 reads route to `BaseAtmosphereLogisticsRuntime.TryGetGlobalOxygenSnapshot`; its aggregate fields are fallback-only and stop receiving module contributions once the runtime snapshot is valid.
 
 - Cold tuning input: `Docs/Atmosphere/gas_diffusion_profiles.csv`, parsed from `ReadOnlySpan<byte>` into profile rows with numeric IDs or lowercase FNV-1a module-name hashes.
 
@@ -137,7 +140,9 @@ Compile-wall boundary: owned BaseAtmosphereLogistics runtime/gizmo/jobs/types im
 
 `YELLOW`: route shape is documented; source-level checks are STATIC_SOURCE orientation only.
 
-One legal `dotnet build Hecton8.Core.csproj` attempt failed on unrelated external dependency errors outside SHINOBU_221 files. `GREEN` requires clean compile/import, Play Mode, GCMonitor, profiler, and scene proof after that wall clears.
+One legal `dotnet build Hecton8.Core.csproj` attempt failed on unrelated external dependency errors outside SHINOBU_221 files.
+
+`GREEN` requires clean compile/import, Play Mode, GCMonitor, profiler, and scene proof after that wall clears.
 
 ## R43 Route-Card Fields
 
@@ -161,7 +166,8 @@ One legal `dotnet build Hecton8.Core.csproj` attempt failed on unrelated externa
 
 | Producer/consumer phase | `PreSimulation` signal ingest and `Simulation` atmosphere solver jobs -> `PostSimulation` telemetry/fault readback and `VisualSync` shader scalar publication |
 
-| Cadence/capacity | Fixed gas cadence; visual scalar publish only after solver output; 1000 cells; 2500 graph links; 5000 CSR rows; 128 consumers; 128 toxic sources; 64 vents; 300 telemetry entries |
+| Cadence | Fixed gas cadence; visual scalar publish after solver output |
+| Capacity | 1000 cells; 2500 graph links; 5000 CSR rows; 128 consumers; 128 toxic sources; 64 vents; 300 telemetry entries |
 
 | Overflow/failure | CSR/source overflow clamps to bounded Vault rows and sets flags; empty graph, non-finite gas, or Vault lock failure fail closed and preserve bounded fallback behavior |
 

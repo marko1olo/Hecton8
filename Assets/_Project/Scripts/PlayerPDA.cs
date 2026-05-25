@@ -2234,7 +2234,11 @@ namespace Hecton8.UI
             }
 
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                _registered = false;
+                _registeredLateFrame = false;
                 EvaluateTickRegistration();
+            }
         }
 
         private void CachePlayerRuntimeContext(IPlayerRuntimeContext playerRuntimeContext)

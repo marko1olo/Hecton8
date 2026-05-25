@@ -65,9 +65,13 @@ Loop 21 donor reference cleanup:
 - Backing HDRP/Postprocessing packages are absent from `manifest.json`, `packages-lock.json`, and physical `Packages/`.
 - Selected active Crest4 donor remains URP-scoped.
 
-Loop 21 generated-report cleanup: stale `Assets/profilermarkers.csv(.meta)` moved to `Docs/Archive/Crest_Version_Quarantine/Assets/`. The archived CSV still preserves Crest profiler rows as forensic evidence, but it is no longer Unity-visible active project input.
+Loop 21 cleanup moved stale `Assets/profilermarkers.csv(.meta)` to `Docs/Archive/Crest_Version_Quarantine/Assets/`.
 
-The scanner also fails if active Crest donor asmdefs or Crest bridge asmdefs become auto-referenced. This keeps Crest opt-in at the assembly importer level, not only at the direct-reference level.
+Archived CSV preserves Crest profiler rows as forensic evidence, but no longer acts as Unity-visible active project input.
+
+Scanner also fails if active Crest donor asmdefs or Crest bridge asmdefs become auto-referenced.
+
+This keeps Crest opt-in at assembly importer level, not only direct-reference level.
 
 `ProjectSettings/ProjectSettings.asset` still carries Standalone `CREST_OCEAN` and `CREST_URP` scripting defines.
 
@@ -105,7 +109,9 @@ Forward route: `Hecton8.Environment.Fluids.Contracts` owns the strict unmanaged 
 
 ## Vault Lanes
 
-SHINOBU_260 owns local numeric Vault IDs after a sub-agent audit proved the older `ShinobuOcean*` names are already owned by `ShinobuOceanSurfaceAtmosphereRuntime` with incompatible element types. No core enum edit was required.
+SHINOBU_260 owns local numeric Vault IDs after audit.
+
+Older `ShinobuOcean*` names belong to `ShinobuOceanSurfaceAtmosphereRuntime` with incompatible element types. No core enum edit required.
 
 - Requests: `(BufferID)72960` `OceanSampleRequestDTO[50000]`
 - Results: `(BufferID)72961` `OceanSampleResultDTO[50000]`
@@ -154,11 +160,15 @@ The shared first-party base formerly named `HectonCrestOceanKinematics` is now `
 - Crest-specific first-party type name is removed.
 - No scene remap: class is abstract base, not attached component.
 
-`HectonCrestOceanDepthCacheBootstrap` no longer falls back to `Crest.OceanRenderer.Instance`. It still belongs to World/depth-cache integration for broader lifecycle ownership, but the Crest singleton recovery path is removed from this quarantine bridge.
+`HectonCrestOceanDepthCacheBootstrap` no longer falls back to `Crest.OceanRenderer.Instance`.
+
+The bridge remains World/depth-cache integration; Crest singleton recovery is removed.
 
 `Ocean_Crest.prefab` no longer carries the quarantined Crest5 adapter MonoBehaviour.
 
-Exact scans found no remaining `Crest5KinematicsAdapter`, script GUID `51fcb9de0aa92b842be404fec8bf21d4`, or component fileID `4153056372701123456` in active prefabs/scenes/assets. This prefab format lacks `m_RootGameObject`; raw-YAML proof is component-list removal plus GUID/fileID absence.
+Exact scans found no active `Crest5KinematicsAdapter`, script GUID `51fcb9de0aa92b842be404fec8bf21d4`, or component fileID `4153056372701123456`.
+
+Prefab proof: component-list removal plus GUID/fileID absence; this format lacks `m_RootGameObject`.
 
 `Player.prefab` no longer carries direct `Crest::Crest.UnderwaterRenderer`.
 
@@ -289,5 +299,6 @@ No-Python proof:
 - `Hecton8.Core.csproj` no longer compiles `Assets/_Project/Scripts/Plugins/Crest/CrestDepthCacheDebugger.cs` or `CrestFoamDebugger.cs`; PowerShell reports `NO_BROAD_CSPROJ_BRIDGE_SOURCE_HITS`.
 - `Tools/test_memory_budget_check.py` no longer points at `Packages/com.waveharmonic.crest`; the HDR parser fixture is active `Assets/ScifiFacility/Textures/sky_hdr.hdr`.
 - `Tools/Crest_Dependency_Scanner.py` now includes `generated_project_bridge_source_in_broad_project`; `Tools/Crest_Quarantine_Polish_Audit.py` gates the same condition through `generated_first_party_projects_do_not_compile_bridge_sources` and `dependency_scanner_blocks_bridge_source_in_broad_project`.
-- `Ocean_Crest.prefab`, `Assets/_Project/Data/Ocean/*.asset`, and `Assets/_Project/crest/*.asset` keep selected Crest4 donor bindings. They are active donor route evidence and have baseline backups; this loop does not raw-edit selected donor prefab/settings YAML.
+- `Ocean_Crest.prefab`, `Assets/_Project/Data/Ocean/*.asset`, and `Assets/_Project/crest/*.asset` keep selected Crest4 donor bindings.
+- They are active donor evidence with backups; this loop does not raw-edit selected donor prefab/settings YAML.
 - `ARCHITECTURE_OPTIMIZATION_REPORT.json` and `CREST_QUARANTINE_POLISH_AUDIT.json` were not regenerated because `.py` execution was forbidden. Source gates updated; report regeneration waits for Python deadlock clearance.

@@ -3,8 +3,9 @@
 
 
 - Status: partial enforcement pass.
-- Last recorded static scan text reported zero `StructLayout(...Pack=...)` parameters under `Assets/_Project/Scripts`; rerun and link an artifact path, command/tool, timestamp, environment, and output before treating that count as current proof.
-- Core DTO explicit-layout coverage was expanded for Bridge, input, black-box, foveated telemetry, simulation-bucketing records, weather current metadata, queue payloads, content authority Vault records, global telemetry events, dispatcher telemetry/state records
+- Last static scan text reported zero `StructLayout(...Pack=...)` under `Assets/_Project/Scripts`.
+- Current proof requires rerun artifact path, command/tool, timestamp, environment, and output.
+- Core DTO explicit-layout coverage now includes Bridge, input, black-box, foveated telemetry, simulation buckets, weather metadata, queue payloads, content Vault records, global telemetry, and dispatcher records.
 - Core runtime snapshots:
   - brine/power/UI/player context;
   - acoustic AUP and object-batch render payloads;
@@ -206,7 +207,7 @@
 
 
 
-- Signal payload fence debt: STATIC_SOURCE orientation only; last recorded source-visible scan text reported 0 ISignal layout/size violations. Link a full scan tuple before using it as current proof.
+- Signal payload fence debt: STATIC_SOURCE orientation only; last recorded source-visible scan text reported 0 ISignal layout/size violations. Link a full scan tuple before using it as proof.
 
 
 
@@ -232,7 +233,7 @@
 
 
 
-- Known ABI exception: Core `InputStateDTO` remains 24 bytes because rollback/netcode contracts currently hard-code `InputStateDTO` offsets at 24-byte boundaries. It is explicit and aligned, but not yet 32-byte quantized.
+- Known ABI exception: Core `InputStateDTO` remains 24 bytes because rollback/netcode contracts hard-code `InputStateDTO` offsets at 24-byte boundaries. It is explicit and aligned, but not yet 32-byte quantized.
 
 
 

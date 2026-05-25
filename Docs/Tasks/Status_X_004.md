@@ -214,3 +214,17 @@ Status: APEX PHASE-EDGE UI/AUDIO/VISOR CLOSURE APPLIED ACROSS 20 tracked runtime
 - [x] Loop 46 UI string gate: `RUNTIME_UI_STRING_FRAME_BODIES=108`; `RUNTIME_UI_STRING_FRAME_HITS=0`.
 - [x] Loop 46 scoped diff gate: `git diff --check` for the 20 current files is clean except CRLF normalization warnings.
 - [ ] Loop 46 build/Roslyn rerun: blocked by repo gate (`CPU=100`; no active compiler rows). Rule forbids launching `dotnet` while CPU >50 even when compiler rows are empty.
+
+## Continuation - APEX Phase-Edge Runtime Closure
+
+- [x] Loop 47: Current-source 26-file phase-edge closure | Miss found: `BilateralDrs`, Architect Eye, interior GI/light culling, diegetic panel, cockpit, suit HUD, sonar compass, pause menu, camera juice, dynamic resolution, base integrity, world readability, LOD, sargassum cut/collapse/global drag, wreck generation, persistent world, resource distribution, world chunk residency, base module audio, fauna hydration/spawn, player tool swaps/spawns, input haptics, and asset retry dispatch still had hot-lane routes into GPU/audio/UI/pool/scene/resource presentation. Patched hot methods to queue scalar/DTO/pending bits; `LateFrameTick`, `Render`, or VISUAL_SYNC now owns Unity API commits. Estimate: 73-166 us shifted/avoided on dirty frames, not profiler-measured.
+- [x] Loop 47 tracked rewrite count: scoped current X_004 diff reports `26 files changed`, `1196 insertions`, `310 deletions`.
+- [x] Loop 47 target direct/helper gate: `TARGET26_PARSED_FILES=26`; `TARGET26_METHODS=3185`; `TARGET26_HOT_BODIES=73`; `TARGET26_DIRECT_HOT_PRESENTATION_OR_GC_COUNT=0`; `TARGET26_HELPER_HOT_PRESENTATION_OR_GC_COUNT=0`.
+- [x] Loop 47 upload/readback gate: runtime `rg "SetData\\(|UploadArraySetData\\(|ReadPixels\\(|GetData\\(|LockBufferForWrite\\(|UnlockBufferAfterWrite\\(" Assets/_Project/Scripts -g "*.cs" -g "!**/Editor/**" -g "!**/Dev/**"` returns no hits.
+- [x] Loop 47 UI/PDA/visor string gate: `RUNTIME_UI_STRING_FRAME_FILES=169`; `RUNTIME_UI_STRING_FRAME_BODIES=101`; `RUNTIME_UI_STRING_FRAME_HITS=0`.
+- [x] Loop 47 CPU trig presentation gate: no C# `math.sin`, `math.cos`, `math.sincos`, `Mathf.Sin`, `Mathf.Cos`, `System.Math.Sin`, `System.Math.Cos`, or `noise.cnoise` hits in checked UI/VFX/Rendering/PDA/Visor routes.
+- [x] Loop 47 project direct gate: `PROJECT_DIRECT_CANDIDATE_FILES=401`; `PROJECT_DIRECT_HOT_BODIES=599`; `PROJECT_DIRECT_HOT_PRESENTATION_OR_GC_COUNT=1`, only `PerformanceMonitor.Tick` false-positive from `Stopwatch.Stop()`.
+- [x] Loop 47 broad helper triage: first broad helper pass found 3 routes; `.Editor.cs` wave tuner was scanner noise, and runtime routes `InputDispatcher.Tick -> DrainToolHaptics` and `AssetLifecycleGovernor.SlowTick -> PumpRetries` were patched to `LateFrameTick`. Refined target gate is green.
+- [ ] Loop 47 broad helper full rerun: refined whole-project helper pass timed out at 300 seconds after the patches, so no fresh project-wide helper-clean claim is made from that run.
+- [x] Loop 47 scoped diff gate: `git diff --check` for the 26 current files is clean except CRLF normalization warnings.
+- [ ] Loop 47 build/Roslyn rerun: blocked by repo gate (`CPU=97`; active `csc` pid `52604`; active `dotnet` pid `54776`). Rule forbids launching `dotnet build` while CPU >50 or compiler rows exist.

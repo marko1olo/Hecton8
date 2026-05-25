@@ -684,6 +684,9 @@ namespace Hecton8.UI
         private bool _pendingRuntimeCanvasRefresh = true;
         private bool _forceResolveOnSlowTick = true;
         private bool _pendingDepthSignalRefresh = true;
+        private bool _pendingStencilSuppressionApply;
+        private bool _reactiveLateFrameSolveRequested;
+        private float _queuedReactiveDeltaTime;
         private readonly char[] _oxygenGaugeValueBuffer = new char[ZeroGCFormatter.HudMetricBufferCapacity]; // COLD ALLOC: char[64] - O2 gauge numeric buffer - owner: SuitHUDV4CanvasOverlay
         private readonly char[] _healthGaugeValueBuffer = new char[ZeroGCFormatter.HudMetricBufferCapacity]; // COLD ALLOC: char[64] - health gauge numeric buffer - owner: SuitHUDV4CanvasOverlay
         private readonly char[] _powerGaugeValueBuffer = new char[ZeroGCFormatter.HudMetricBufferCapacity]; // COLD ALLOC: char[64] - power gauge numeric buffer - owner: SuitHUDV4CanvasOverlay
@@ -1534,11 +1537,11 @@ namespace Hecton8.UI
         {
             if (IsStencilRenderGraphSuppressedRuntime())
             {
-                ApplyStencilRenderGraphSuppressionIfNeeded();
+                QueueStencilSuppressionApply();
                 return;
             }
 
-            RunReactiveLateFrameSolve(deltaTime);
+            QueueReactiveLateFrameSolve(deltaTime);
         }
 
         private void RunReactiveLateFrameSolve(float deltaTime)
@@ -1595,7 +1598,7 @@ namespace Hecton8.UI
         {
             if (IsStencilRenderGraphSuppressedRuntime())
             {
-                ApplyStencilRenderGraphSuppressionIfNeeded();
+                QueueStencilSuppressionApply();
                 return;
             }
 
@@ -1645,8 +1648,15 @@ namespace Hecton8.UI
         {
             if (IsStencilRenderGraphSuppressedRuntime())
             {
+                _pendingStencilSuppressionApply = false;
                 ApplyStencilRenderGraphSuppressionIfNeeded();
                 return;
+            }
+
+            if (_pendingStencilSuppressionApply)
+            {
+                _pendingStencilSuppressionApply = false;
+                ApplyStencilRenderGraphSuppressionIfNeeded();
             }
 
             ProcessPendingRuntimeCanvasRefresh();
@@ -1655,7 +1665,12 @@ namespace Hecton8.UI
                 return;
 
             ConsumeDepthChangedSignals();
-            RunReactiveLateFrameSolve(SystemDispatcher.CurrentFrameUnscaledDeltaTime);
+            float reactiveDeltaTime = _reactiveLateFrameSolveRequested
+                ? _queuedReactiveDeltaTime
+                : SystemDispatcher.CurrentFrameUnscaledDeltaTime;
+            _reactiveLateFrameSolveRequested = false;
+            _queuedReactiveDeltaTime = 0f;
+            RunReactiveLateFrameSolve(reactiveDeltaTime);
 
             if (renderPath == RenderPath.ProjectionSource && targetCanvas != null)
                 UpdateProjectionCanvasPose(targetCanvas.transform as RectTransform, ResolveUiReferenceResolution());
@@ -7349,7 +7364,7 @@ namespace Hecton8.UI
 
             if (IsStencilRenderGraphSuppressedRuntime())
             {
-                ApplyStencilRenderGraphSuppressionIfNeeded();
+                QueueStencilSuppressionApply();
                 return;
             }
 
@@ -7374,6 +7389,19 @@ namespace Hecton8.UI
                 return;
 
             _slowTickRegistered = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.UI);
+        }
+
+        private void QueueStencilSuppressionApply()
+        {
+            _pendingStencilSuppressionApply = true;
+            if (!_lateFrameTickRegistered && Application.isPlaying && GlobalRegistry.Dispatcher != null)
+                _lateFrameTickRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+        }
+
+        private void QueueReactiveLateFrameSolve(float deltaTime)
+        {
+            _reactiveLateFrameSolveRequested = true;
+            _queuedReactiveDeltaTime = math.max(_queuedReactiveDeltaTime, math.max(0f, deltaTime));
         }
 
         private static float SmoothStep01(float value)

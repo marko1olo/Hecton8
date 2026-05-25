@@ -19,6 +19,9 @@ namespace Hecton8.Construction
     [StructLayout(LayoutKind.Explicit, Size = ConstructionSignalLayout.PreviewStrideBytes)]
     public struct ConstructionPreviewSignal : ISignal
     {
+        public const int ExpectedCapacity = 4;
+        public const int MaxFrameSignals = 8;
+        public const int LowTierFrameSignals = 8;
         public const uint LaneHash = 0x43505256u; // CPRV
         public const byte FlagActive = 1 << 0;
         public const byte FlagFallbackPreview = 1 << 1;
@@ -50,6 +53,9 @@ namespace Hecton8.Construction
     [StructLayout(LayoutKind.Explicit, Size = ConstructionSignalLayout.FloraExclusionStrideBytes)]
     public struct FloraExclusionSignal : ISignal
     {
+        public const int ExpectedCapacity = 4;
+        public const int MaxFrameSignals = 8;
+        public const int LowTierFrameSignals = 8;
         public const uint LaneHash = 0x46455843u; // FEXC
         public const byte OperationApply = 1;
 

@@ -564,7 +564,7 @@ namespace Hecton8.Modding
 
         private void RefreshColdRegistryDependencies()
         {
-            _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+            _saveService = GlobalRegistry.Save;
         }
 
         private void TryRegisterHotSwapListener()

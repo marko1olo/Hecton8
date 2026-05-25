@@ -64,7 +64,7 @@ Coral growth ownership:
 
 
 - All persistent coral data is requested from `GlobalDataVault` through local `BufferID` values `71390..71409`.
-- The generator writes `CoralBranchDTO` records, camera-relative `float4x4` render matrices, `SyncPulseDTO` pulse records, `CapsuleColliderDTO` proxy records, `CoralGpuSwayDTO` shader scalars, `CoralHzbTileDTO` CPU HZB tiles, a self-audit record, and a 300-frame telemetry ring.
+- Generator writes `CoralBranchDTO`, camera-relative render matrices, `SyncPulseDTO`, `CapsuleColliderDTO`, `CoralGpuSwayDTO`, `CoralHzbTileDTO`, self-audit record, and telemetry ring.
 - Dispatcher timing overwrites are finite-checked before entering the ring.
 - Runtime generation creates no `GameObject` and does not call `Instantiate`.
 

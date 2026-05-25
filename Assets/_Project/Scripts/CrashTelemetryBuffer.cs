@@ -4,6 +4,7 @@ using System.Runtime.InteropServices;
 using System.Collections.Generic;
 using System.Threading;
 using Hecton8.Bootstrap;
+using Hecton8.Core.Memory;
 using Hecton8.Gameplay;
 using Hecton8.Physics;
 using Hecton8.Systems.AI;
@@ -65,6 +66,9 @@ namespace Hecton8.Core
         private const int BlackBoxExportSuppressedCounterMax = 1024;
         private const long PersistentMemoryBudgetBytes = 262144L;
         private const string MemoryBudgetOwnerName = "CrashTelemetryBuffer";
+        private const BufferID RingBufferId = BufferID.CrashTelemetryRing;
+        private const BufferID ExportSnapshotBufferId = BufferID.CrashTelemetryExportSnapshot;
+        private const BufferID ExportScratchBufferId = BufferID.CrashTelemetryExportScratch;
         private static readonly string[] _FrameTimeCandidates =
         {
             "CPU Total Frame Time",
@@ -271,8 +275,61 @@ namespace Hecton8.Core
             public float ReservedMemoryMb;
         }
 
-        private NativeArray<TelemetryEntry> _ringBuffer;
-        private NativeArray<TelemetryEntry> _exportSnapshot;
+        private struct VaultArray<T> where T : struct
+        {
+            private IDataVault _vault;
+            private VaultGenerationHandle<T> _handle;
+
+            public static VaultArray<T> Create(IDataVault vault, VaultGenerationHandle<T> handle)
+            {
+                return new VaultArray<T>
+                {
+                    _vault = vault,
+                    _handle = handle
+                };
+            }
+
+            public VaultGenerationHandle<T> Handle => _handle;
+            public bool HasHandle => _handle.BufferID != 0u && _handle.Generation != 0u;
+
+            public bool IsCreated => TryResolve(out NativeArray<T> buffer) && buffer.IsCreated;
+
+            public int Length => TryResolve(out NativeArray<T> buffer) && buffer.IsCreated ? buffer.Length : 0;
+
+            public T this[int index]
+            {
+                get
+                {
+                    if (!TryResolve(out NativeArray<T> buffer) || !buffer.IsCreated || index < 0 || index >= buffer.Length)
+                        return default;
+
+                    return buffer[index];
+                }
+                set
+                {
+                    if (TryResolve(out NativeArray<T> buffer) && buffer.IsCreated && index >= 0 && index < buffer.Length)
+                        buffer[index] = value;
+                }
+            }
+
+            public bool TryResolve(out NativeArray<T> buffer)
+            {
+                buffer = default;
+                return _vault != null &&
+                       HasHandle &&
+                       _vault.TryResolveHandle(in _handle, out buffer) &&
+                       buffer.IsCreated;
+            }
+
+            public static implicit operator NativeArray<T>(VaultArray<T> view)
+            {
+                return view.TryResolve(out NativeArray<T> buffer) ? buffer : default;
+            }
+        }
+
+        private IDataVault _dataVault;
+        private VaultArray<TelemetryEntry> _ringBuffer;
+        private VaultArray<TelemetryEntry> _exportSnapshot;
         private Transform _playerTransform;
         private Rigidbody _playerRigidbody;
         private HectonPlayerMovement _playerMovement;
@@ -304,7 +361,7 @@ namespace Hecton8.Core
         private string _crashTelemetryPath;
         private FileStream _liveTelemetryStream;
         private FileStream _crashTelemetryStream;
-        private NativeArray<byte> _exportScratch;
+        private VaultArray<byte> _exportScratch;
         private LiveTelemetryRecord _pendingLiveTelemetryRecord;
         // COLD ALLOC: object[1] - live telemetry file write/dispose gate - owner: CrashTelemetryBuffer
         private readonly object _liveTelemetryFileGate = new object();
@@ -1181,7 +1238,7 @@ namespace Hecton8.Core
                         Volatile.Read(ref _pendingAudioBufferUnderruns));
                 }
 
-                uint frameIndex = unchecked((uint)Time.frameCount);
+                uint frameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId;
                 int writeIndex = ReserveTelemetryWriteIndex();
 
                 TelemetryEntry entry = default;
@@ -1268,7 +1325,7 @@ namespace Hecton8.Core
 
         private void WriteBootstrapPhaseDuration(BootstrapStepToken step, double elapsedMilliseconds, bool isPerfWarning)
         {
-            uint frameIndex = unchecked((uint)Time.frameCount);
+            uint frameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             int writeIndex = ReserveTelemetryWriteIndex();
             OriginShiftEventData shiftEvent = HectonFloatingOrigin.LastShiftEvent;
 
@@ -1303,7 +1360,7 @@ namespace Hecton8.Core
                 return;
 
             _nextOriginShiftTelemetryTime = now + OriginShiftTelemetryIntervalSeconds;
-            uint frameIndex = unchecked((uint)Time.frameCount);
+            uint frameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             int writeIndex = ReserveTelemetryWriteIndex();
 
             TelemetryEntry entry = default;
@@ -1326,7 +1383,7 @@ namespace Hecton8.Core
 
         private void WriteBusCongestionTelemetry(uint queueHash, int pendingCount, int entityCount)
         {
-            uint frameIndex = unchecked((uint)Time.frameCount);
+            uint frameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             int writeIndex = ReserveTelemetryWriteIndex();
             OriginShiftEventData shiftEvent = HectonFloatingOrigin.LastShiftEvent;
 
@@ -1351,7 +1408,7 @@ namespace Hecton8.Core
 
         private void WriteSignalLaneTelemetry(uint laneHash, int queuedBeforeFlush, int snapshotCount, int droppedCount)
         {
-            uint frameIndex = unchecked((uint)Time.frameCount);
+            uint frameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             int writeIndex = ReserveTelemetryWriteIndex();
             OriginShiftEventData shiftEvent = HectonFloatingOrigin.LastShiftEvent;
             uint errorFlags = droppedCount > 0 ? (uint)ErrorBits.BusCongestionWarning : 0u;
@@ -1402,7 +1459,7 @@ namespace Hecton8.Core
 
         private void WriteHullDentTelemetry(uint dentBufferHash, int activeHullDents, uint packedFlags)
         {
-            uint frameIndex = unchecked((uint)Time.frameCount);
+            uint frameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             int writeIndex = ReserveTelemetryWriteIndex();
             OriginShiftEventData shiftEvent = HectonFloatingOrigin.LastShiftEvent;
 
@@ -1457,7 +1514,7 @@ namespace Hecton8.Core
 
         private void WriteJobAdmissionTelemetry(byte lane, uint jobHash, float estimatedCostMs, float remainingBudgetMs, int criticalDebtFrames, byte flags)
         {
-            uint frameIndex = unchecked((uint)Time.frameCount);
+            uint frameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             int writeIndex = ReserveTelemetryWriteIndex();
             OriginShiftEventData shiftEvent = HectonFloatingOrigin.LastShiftEvent;
 
@@ -1481,7 +1538,7 @@ namespace Hecton8.Core
 
         private void WriteJobAdmissionLaneTelemetry(byte lane, float budgetMs, float refillMs, int criticalDebtFrames, uint killSwitchMask)
         {
-            uint frameIndex = unchecked((uint)Time.frameCount);
+            uint frameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             int writeIndex = ReserveTelemetryWriteIndex();
             OriginShiftEventData shiftEvent = HectonFloatingOrigin.LastShiftEvent;
 
@@ -1505,7 +1562,7 @@ namespace Hecton8.Core
 
         private void WriteJobAdmissionCostTelemetry(int slotIndex, uint jobHash, float ewmaCostMs, int costSlotCount, float overflowEwmaCostMs)
         {
-            uint frameIndex = unchecked((uint)Time.frameCount);
+            uint frameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             int writeIndex = ReserveTelemetryWriteIndex();
             OriginShiftEventData shiftEvent = HectonFloatingOrigin.LastShiftEvent;
 
@@ -1529,7 +1586,7 @@ namespace Hecton8.Core
 
         private void WriteKineticAnomalyTelemetry(Vector3 runtimePosition, Vector3 deltaVelocity, float accelerationMetersPerSecondSq)
         {
-            uint frameIndex = unchecked((uint)Time.frameCount);
+            uint frameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             int writeIndex = ReserveTelemetryWriteIndex();
             OriginShiftEventData shiftEvent = HectonFloatingOrigin.LastShiftEvent;
             float3 absolutePosition = ToAbsoluteUniversePosition(runtimePosition);
@@ -1559,7 +1616,7 @@ namespace Hecton8.Core
 
         private void WriteActiveImpostorTelemetry(int activeImpostors, int qualityFlags, uint contextHash)
         {
-            uint frameIndex = unchecked((uint)Time.frameCount);
+            uint frameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             int writeIndex = ReserveTelemetryWriteIndex();
             OriginShiftEventData shiftEvent = HectonFloatingOrigin.LastShiftEvent;
 
@@ -1583,7 +1640,7 @@ namespace Hecton8.Core
 
         private void WriteNanPhysicsRecoveryTelemetry(Vector3 invalidRuntimePosition, Vector3 recoveredRuntimePosition)
         {
-            uint frameIndex = unchecked((uint)Time.frameCount);
+            uint frameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             int writeIndex = ReserveTelemetryWriteIndex();
             OriginShiftEventData shiftEvent = HectonFloatingOrigin.LastShiftEvent;
             float3 recoveredAup = ToAbsoluteUniversePosition(recoveredRuntimePosition);
@@ -1619,7 +1676,7 @@ namespace Hecton8.Core
 
         private void WriteLateFrameLoadSheddingTelemetry(uint queueHash, int remainingDispatchBudget)
         {
-            uint frameIndex = unchecked((uint)Time.frameCount);
+            uint frameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             int writeIndex = ReserveTelemetryWriteIndex();
             OriginShiftEventData shiftEvent = HectonFloatingOrigin.LastShiftEvent;
 
@@ -1643,7 +1700,7 @@ namespace Hecton8.Core
 
         private void WriteSimulationBucketTelemetry(SimulationBucketFrameState frameState)
         {
-            uint frameIndex = unchecked((uint)Time.frameCount);
+            uint frameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             int writeIndex = ReserveTelemetryWriteIndex();
             OriginShiftEventData shiftEvent = HectonFloatingOrigin.LastShiftEvent;
             float activeLoadMs = math.isfinite(frameState.ActiveBucketLoadMs)
@@ -1681,7 +1738,7 @@ namespace Hecton8.Core
 
         private void WriteCriticalPerformanceSpikeTelemetry(uint laneHash, double elapsedMilliseconds, uint stackHash)
         {
-            uint frameIndex = unchecked((uint)Time.frameCount);
+            uint frameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             int writeIndex = ReserveTelemetryWriteIndex();
             OriginShiftEventData shiftEvent = HectonFloatingOrigin.LastShiftEvent;
 
@@ -1707,7 +1764,7 @@ namespace Hecton8.Core
 
         private void WriteLatencyCrimeTelemetry(int pendingContinuationCount, float latencyMs)
         {
-            uint frameIndex = unchecked((uint)Time.frameCount);
+            uint frameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             int writeIndex = ReserveTelemetryWriteIndex();
             OriginShiftEventData shiftEvent = HectonFloatingOrigin.LastShiftEvent;
 
@@ -1732,7 +1789,7 @@ namespace Hecton8.Core
 
         private void WriteStreamingBackpressureTelemetry(float debt01, double latencyEwmaMs, double oldestPendingMs, int pendingLoads)
         {
-            uint frameIndex = unchecked((uint)Time.frameCount);
+            uint frameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             int writeIndex = ReserveTelemetryWriteIndex();
             OriginShiftEventData shiftEvent = HectonFloatingOrigin.LastShiftEvent;
 
@@ -1758,7 +1815,7 @@ namespace Hecton8.Core
 
         private void WriteNativeFragmentationRiskTelemetry(uint allocationHash, int reallocationCount, long bytes)
         {
-            uint frameIndex = unchecked((uint)Time.frameCount);
+            uint frameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             int writeIndex = ReserveTelemetryWriteIndex();
             OriginShiftEventData shiftEvent = HectonFloatingOrigin.LastShiftEvent;
 
@@ -1782,7 +1839,7 @@ namespace Hecton8.Core
 
         private void WriteStaleBufferCrimeTelemetry(uint allocationHash, int retentionFrames, long bytes)
         {
-            uint frameIndex = unchecked((uint)Time.frameCount);
+            uint frameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             int writeIndex = ReserveTelemetryWriteIndex();
             OriginShiftEventData shiftEvent = HectonFloatingOrigin.LastShiftEvent;
 
@@ -1806,7 +1863,7 @@ namespace Hecton8.Core
 
         private void WriteNativeTransientLeakTelemetry(uint allocationHash, int retentionFrames, long bytes)
         {
-            uint frameIndex = unchecked((uint)Time.frameCount);
+            uint frameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             int writeIndex = ReserveTelemetryWriteIndex();
             OriginShiftEventData shiftEvent = HectonFloatingOrigin.LastShiftEvent;
 
@@ -1830,7 +1887,7 @@ namespace Hecton8.Core
 
         private void WriteBlackBoxExportFaultTelemetry(int failureCount)
         {
-            uint frameIndex = unchecked((uint)Time.frameCount);
+            uint frameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             int writeIndex = ReserveTelemetryWriteIndex();
             OriginShiftEventData shiftEvent = HectonFloatingOrigin.LastShiftEvent;
 
@@ -1854,7 +1911,7 @@ namespace Hecton8.Core
 
         private void WriteBlackBoxExportDroppedTelemetry(int droppedCount)
         {
-            uint frameIndex = unchecked((uint)Time.frameCount);
+            uint frameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             int writeIndex = ReserveTelemetryWriteIndex();
             OriginShiftEventData shiftEvent = HectonFloatingOrigin.LastShiftEvent;
 
@@ -1878,7 +1935,7 @@ namespace Hecton8.Core
 
         private void WriteBlackBoxExportSuppressedTelemetry(int suppressedCount)
         {
-            uint frameIndex = unchecked((uint)Time.frameCount);
+            uint frameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             int writeIndex = ReserveTelemetryWriteIndex();
             OriginShiftEventData shiftEvent = HectonFloatingOrigin.LastShiftEvent;
 
@@ -1902,7 +1959,7 @@ namespace Hecton8.Core
 
         private void WriteAudioOverflowDropTelemetry(int overflowDropCount, int bufferedFrames, int writableFrames)
         {
-            uint frameIndex = unchecked((uint)Time.frameCount);
+            uint frameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             int writeIndex = ReserveTelemetryWriteIndex();
             OriginShiftEventData shiftEvent = HectonFloatingOrigin.LastShiftEvent;
 
@@ -1929,7 +1986,7 @@ namespace Hecton8.Core
             int sdfSampleTimeMicroseconds,
             int audioBufferUnderruns)
         {
-            uint frameIndex = unchecked((uint)Time.frameCount);
+            uint frameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             int writeIndex = ReserveTelemetryWriteIndex();
             OriginShiftEventData shiftEvent = HectonFloatingOrigin.LastShiftEvent;
 
@@ -1959,7 +2016,7 @@ namespace Hecton8.Core
             uint recentStepMaskLow,
             uint recentStepMaskHigh)
         {
-            uint frameIndex = unchecked((uint)Time.frameCount);
+            uint frameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             int writeIndex = ReserveTelemetryWriteIndex();
 
             TelemetryEntry entry = default;
@@ -1982,7 +2039,7 @@ namespace Hecton8.Core
 
         private void WriteRuntimeWatchdogStallTelemetry(uint lane, uint counter)
         {
-            uint frameIndex = unchecked((uint)Time.frameCount);
+            uint frameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             int writeIndex = ReserveTelemetryWriteIndex();
 
             TelemetryEntry entry = default;
@@ -2005,7 +2062,7 @@ namespace Hecton8.Core
 
         private void WriteCriticalMemoryPressureTelemetry(long reservedBytes, long physicalBytes, double usageRatio)
         {
-            uint frameIndex = unchecked((uint)Time.frameCount);
+            uint frameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             int writeIndex = ReserveTelemetryWriteIndex();
 
             TelemetryEntry entry = default;
@@ -2032,7 +2089,7 @@ namespace Hecton8.Core
             long deltaBytes,
             uint contextHash)
         {
-            uint frameIndex = unchecked((uint)Time.frameCount);
+            uint frameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             int writeIndex = ReserveTelemetryWriteIndex();
 
             TelemetryEntry entry = default;
@@ -2055,7 +2112,7 @@ namespace Hecton8.Core
 
         private void WritePeakStressEventTelemetry(float stress01, float o2DrainMultiplier, uint peakEventCount)
         {
-            uint frameIndex = unchecked((uint)Time.frameCount);
+            uint frameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             int writeIndex = ReserveTelemetryWriteIndex();
             OriginShiftEventData shiftEvent = HectonFloatingOrigin.LastShiftEvent;
             float safeStress = math.isfinite(stress01) ? math.saturate(stress01) : 0f;
@@ -2081,7 +2138,7 @@ namespace Hecton8.Core
 
         private void WritePhysiologyNanTelemetry(float stress01, float o2DrainMultiplier, uint contextHash)
         {
-            uint frameIndex = unchecked((uint)Time.frameCount);
+            uint frameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             int writeIndex = ReserveTelemetryWriteIndex();
             OriginShiftEventData shiftEvent = HectonFloatingOrigin.LastShiftEvent;
             float safeStress = math.isfinite(stress01) ? math.saturate(stress01) : 0f;
@@ -2107,7 +2164,7 @@ namespace Hecton8.Core
 
         private void WriteAupJitterCorrectionTelemetry(Vector3 runtimePosition, float correctionMeters)
         {
-            uint frameIndex = unchecked((uint)Time.frameCount);
+            uint frameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             int writeIndex = ReserveTelemetryWriteIndex();
             OriginShiftEventData shiftEvent = HectonFloatingOrigin.LastShiftEvent;
 
@@ -2131,7 +2188,7 @@ namespace Hecton8.Core
 
         private void WriteAupMaxDriftErrorTelemetry(Vector3 runtimePosition, float maxDriftErrorMeters)
         {
-            uint frameIndex = unchecked((uint)Time.frameCount);
+            uint frameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             int writeIndex = ReserveTelemetryWriteIndex();
             OriginShiftEventData shiftEvent = HectonFloatingOrigin.LastShiftEvent;
             float safeMaxDriftError = math.isfinite(maxDriftErrorMeters) ? math.max(0f, maxDriftErrorMeters) : float.MaxValue;
@@ -2156,7 +2213,7 @@ namespace Hecton8.Core
 
         private void WriteTimeDilationTelemetry(float scalar, double tickOverheadMilliseconds)
         {
-            uint frameIndex = unchecked((uint)Time.frameCount);
+            uint frameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             int writeIndex = ReserveTelemetryWriteIndex();
             OriginShiftEventData shiftEvent = HectonFloatingOrigin.LastShiftEvent;
             float safeScalar = math.isfinite(scalar) ? math.max(0f, scalar) : 1f;
@@ -2228,6 +2285,26 @@ namespace Hecton8.Core
             return ((uint)step << 24) | wholeMilliseconds;
         }
 
+        private IDataVault CacheCrashVaultCold(IDataVault vault)
+        {
+            if (!ReferenceEquals(_dataVault, vault))
+                _dataVault = vault;
+
+            return _dataVault;
+        }
+
+        private void ReleaseCrashVaultArray<T>(ref VaultArray<T> array) where T : struct
+        {
+            IDataVault vault = _dataVault;
+            if (vault != null && array.HasHandle)
+            {
+                VaultGenerationHandle<T> handle = array.Handle;
+                vault.ReleaseBuffer(in handle);
+            }
+
+            array = default;
+        }
+
         private void InitializeBuffers()
         {
             if (_ringBuffer.IsCreated)
@@ -2246,29 +2323,49 @@ namespace Hecton8.Core
                 return;
             }
 
-            // COLD ALLOC: NativeArray<TelemetryEntry>[1024] - lockless telemetry ring buffer - owner: CrashTelemetryBuffer
-            _ringBuffer = new NativeArray<TelemetryEntry>(RingCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            NativeMemorySentinel.RegisterNativeArray(
-                _ringBuffer,
-                nameof(CrashTelemetryBuffer),
-                nameof(_ringBuffer),
-                NativeAllocationLifetime.Session);
+            IDataVault vault = CacheCrashVaultCold(GlobalRegistry.DataVault);
+            if (vault == null)
+            {
+                enabled = false;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                H8Debug.LogError("CrashTelemetryBuffer requires GlobalDataVault before telemetry buffers can be initialized.");
+#endif
+                return;
+            }
 
-            // COLD ALLOC: NativeArray<TelemetryEntry>[1000] - pre-crash binary export snapshot staging buffer - owner: CrashTelemetryBuffer
-            _exportSnapshot = new NativeArray<TelemetryEntry>(ExportSnapshotEntries, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            NativeMemorySentinel.RegisterNativeArray(
-                _exportSnapshot,
-                nameof(CrashTelemetryBuffer),
-                nameof(_exportSnapshot),
-                NativeAllocationLifetime.Session);
+            _ringBuffer = VaultArray<TelemetryEntry>.Create(
+                vault,
+                vault.EnsureGenerationHandle<TelemetryEntry>(
+                    RingBufferId,
+                    RingCapacity,
+                    SystemID.CoreDiagnostics,
+                    NativeArrayOptions.ClearMemory));
+            _exportSnapshot = VaultArray<TelemetryEntry>.Create(
+                vault,
+                vault.EnsureGenerationHandle<TelemetryEntry>(
+                    ExportSnapshotBufferId,
+                    ExportSnapshotEntries,
+                    SystemID.CoreDiagnostics,
+                    NativeArrayOptions.ClearMemory));
+            _exportScratch = VaultArray<byte>.Create(
+                vault,
+                vault.EnsureGenerationHandle<byte>(
+                    ExportScratchBufferId,
+                    ExportScratchSizeBytes,
+                    SystemID.CoreDiagnostics,
+                    NativeArrayOptions.ClearMemory));
 
-            // COLD ALLOC: NativeArray<byte>[64016] - binary export scratch for 16B header + 1000 x 64B entries - owner: CrashTelemetryBuffer
-            _exportScratch = new NativeArray<byte>(ExportScratchSizeBytes, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            NativeMemorySentinel.RegisterNativeArray(
-                _exportScratch,
-                nameof(CrashTelemetryBuffer),
-                nameof(_exportScratch),
-                NativeAllocationLifetime.Session);
+            if (!_ringBuffer.IsCreated || !_exportSnapshot.IsCreated || !_exportScratch.IsCreated)
+            {
+                ReleaseCrashVaultArray(ref _ringBuffer);
+                ReleaseCrashVaultArray(ref _exportSnapshot);
+                ReleaseCrashVaultArray(ref _exportScratch);
+                enabled = false;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                H8Debug.LogError("CrashTelemetryBuffer failed to acquire DataVault telemetry buffers.");
+#endif
+                return;
+            }
 
             _liveTelemetryPath = HectonPersistentPathPolicy.CombineFile(LiveTelemetryFileName);
             _crashTelemetryPath = HectonPersistentPathPolicy.CombineFile(CrashTelemetryFileName);
@@ -2292,27 +2389,9 @@ namespace Hecton8.Core
             DisposeCrashTelemetryFile();
             DisposeLiveTelemetryFile();
 
-            if (_ringBuffer.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_ringBuffer);
-                _ringBuffer.Dispose();
-            }
-
-            if (_exportSnapshot.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_exportSnapshot);
-                _exportSnapshot.Dispose();
-            }
-
-            if (_exportScratch.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_exportScratch);
-                _exportScratch.Dispose();
-            }
-
-            _ringBuffer = default;
-            _exportSnapshot = default;
-            _exportScratch = default;
+            ReleaseCrashVaultArray(ref _ringBuffer);
+            ReleaseCrashVaultArray(ref _exportSnapshot);
+            ReleaseCrashVaultArray(ref _exportScratch);
             _liveTelemetryPath = null;
             _crashTelemetryPath = null;
             Volatile.Write(ref _liveTelemetryWriteState, LiveTelemetryStateIdle);
@@ -2532,7 +2611,7 @@ namespace Hecton8.Core
         private void CacheRegistryPresenceCold()
         {
             Volatile.Write(ref _fluidRuntimePresent, GlobalRegistry.FluidSurfaceCurrent != null ? 1 : 0);
-            Volatile.Write(ref _saveServicePresent, Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance != null ? 1 : 0);
+            Volatile.Write(ref _saveServicePresent, GlobalRegistry.Save != null ? 1 : 0);
             Volatile.Write(ref _thermodynamicsRuntimePresent, GlobalRegistry.Thermodynamics != null ? 1 : 0);
         }
 
@@ -2568,6 +2647,14 @@ namespace Hecton8.Core
                     break;
                 case GlobalRegistryServiceSlot.ThermodynamicsRuntime:
                     Volatile.Write(ref _thermodynamicsRuntimePresent, currentService is AbyssalThermalManager ? 1 : 0);
+                    break;
+                case GlobalRegistryServiceSlot.DataVault:
+                    if (ReferenceEquals(_dataVault, currentService))
+                        break;
+
+                    DisposeBuffers();
+                    CacheCrashVaultCold(currentService as IDataVault);
+                    InitializeBuffers();
                     break;
             }
         }
@@ -2863,7 +2950,7 @@ namespace Hecton8.Core
             if (!_ringBuffer.IsCreated)
                 return;
 
-            uint frameIndex = unchecked((uint)Time.frameCount);
+            uint frameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             int writeIndex = ReserveTelemetryWriteIndex();
             OriginShiftEventData shiftEvent = HectonFloatingOrigin.LastShiftEvent;
 
@@ -3196,7 +3283,7 @@ namespace Hecton8.Core
             bool exportQueued = false;
             try
             {
-                int currentFrame = Time.frameCount;
+                int currentFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
                 bool shouldBypassCooldown = bypassCooldown || (exportFlags & ExportCooldownBypassMask) != 0u;
                 if (!shouldBypassCooldown && currentFrame - _lastExportFrame < ExportCooldownFrames)
                 {
@@ -3212,8 +3299,11 @@ namespace Hecton8.Core
 
                     Volatile.Write(ref _pendingExportSnapshotCount, snapshotCount);
                     Volatile.Write(ref _pendingExportFrame, currentFrame);
+                    int exportBytes = BuildExportScratch(snapshotCount);
+                    if (exportBytes <= 0)
+                        return;
 
-                    Volatile.Write(ref _pendingExportBytes, 0);
+                    Volatile.Write(ref _pendingExportBytes, exportBytes);
                     exportQueued = QueueBackgroundExport();
                     if (!exportQueued)
                         ClearPendingExportState();
@@ -3246,7 +3336,11 @@ namespace Hecton8.Core
 
                 Volatile.Write(ref _pendingExportSnapshotCount, snapshotCount);
                 Volatile.Write(ref _pendingExportFrame, GetCrashSafeExportFrame());
-                Volatile.Write(ref _pendingExportBytes, 0);
+                int exportBytes = BuildExportScratch(snapshotCount);
+                if (exportBytes <= 0)
+                    return;
+
+                Volatile.Write(ref _pendingExportBytes, exportBytes);
                 GlobalTelemetryBus.RequestEmergencyFlushAsync();
                 exportQueued = QueueBackgroundExport();
             }
@@ -3265,7 +3359,9 @@ namespace Hecton8.Core
 
         private int SnapshotRecentEntries(ExportReason exportReason)
         {
-            if (!_ringBuffer.IsCreated || !_exportSnapshot.IsCreated)
+            NativeArray<TelemetryEntry> ringBuffer = _ringBuffer;
+            NativeArray<TelemetryEntry> exportSnapshot = _exportSnapshot;
+            if (!ringBuffer.IsCreated || !exportSnapshot.IsCreated)
                 return 0;
 
             long writeCursor = Volatile.Read(ref _writeCursor);
@@ -3281,12 +3377,12 @@ namespace Hecton8.Core
 
             unsafe
             {
-                byte* sourceBase = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(_ringBuffer);
-                byte* destinationBase = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(_exportSnapshot);
+                byte* sourceBase = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(ringBuffer);
+                byte* destinationBase = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(exportSnapshot);
                 int firstCopyCount = math.min(entryCount, RingCapacity - sourceStart);
                 int firstCopyBytes = firstCopyCount * TelemetryEntrySizeBytes;
                 int totalCopyBytes = entryCount * TelemetryEntrySizeBytes;
-                int destinationBytes = _exportSnapshot.Length * TelemetryEntrySizeBytes;
+                int destinationBytes = exportSnapshot.Length * TelemetryEntrySizeBytes;
 
                 if (!UnsafeMemoryCopyGuard.TryMemCpy(
                         destinationBase,
@@ -3316,7 +3412,9 @@ namespace Hecton8.Core
 
         private int BuildExportScratch(int snapshotCount)
         {
-            if (snapshotCount <= 0 || !_exportScratch.IsCreated || !_exportSnapshot.IsCreated)
+            NativeArray<byte> exportScratch = _exportScratch;
+            NativeArray<TelemetryEntry> exportSnapshot = _exportSnapshot;
+            if (snapshotCount <= 0 || !exportScratch.IsCreated || !exportSnapshot.IsCreated)
                 return 0;
 
             unsafe
@@ -3329,10 +3427,10 @@ namespace Hecton8.Core
                 int entryBytes = snapshotCount * TelemetryEntrySizeBytes;
                 int totalBytes = CrashExportHeaderSizeBytes + entryBytes;
 
-                byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(_exportScratch);
+                byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(exportScratch);
                 UnsafeUtility.CopyStructureToPtr(ref header, destination);
-                void* snapshotPtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(_exportSnapshot);
-                int destinationBytes = _exportScratch.Length - CrashExportHeaderSizeBytes;
+                void* snapshotPtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(exportSnapshot);
+                int destinationBytes = exportScratch.Length - CrashExportHeaderSizeBytes;
                 if (!UnsafeMemoryCopyGuard.TryMemCpy(
                         destination + CrashExportHeaderSizeBytes,
                         destinationBytes,
@@ -3341,6 +3439,20 @@ namespace Hecton8.Core
                 {
                     UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(CrashTelemetryBuffer));
                     return 0;
+                }
+
+                fixed (byte* managedDestination = _crashExportFileScratch)
+                {
+                    UnsafeUtility.MemClear(managedDestination, ExportScratchSizeBytes);
+                    if (!UnsafeMemoryCopyGuard.TryMemCpy(
+                            managedDestination,
+                            ExportScratchSizeBytes,
+                            destination,
+                            totalBytes))
+                    {
+                        UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(CrashTelemetryBuffer));
+                        return 0;
+                    }
                 }
 
                 return totalBytes;
@@ -3387,32 +3499,9 @@ namespace Hecton8.Core
             {
                 lock (_crashTelemetryFileGate)
                 {
-                    if (!_exportScratch.IsCreated)
-                        return false;
-
                     int exportBytes = Volatile.Read(ref _pendingExportBytes);
-                    if (exportBytes <= 0)
-                    {
-                        exportBytes = BuildExportScratch(Volatile.Read(ref _pendingExportSnapshotCount));
-                        Volatile.Write(ref _pendingExportBytes, exportBytes);
-                    }
-
                     if (_crashTelemetryStream == null || exportBytes <= 0)
                         return false;
-
-                    unsafe
-                    {
-                        fixed (byte* destination = _crashExportFileScratch)
-                        {
-                            UnsafeUtility.MemClear(destination, ExportScratchSizeBytes);
-                            void* exportPtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(_exportScratch);
-                            if (!UnsafeMemoryCopyGuard.TryMemCpy(destination, ExportScratchSizeBytes, exportPtr, exportBytes))
-                            {
-                                UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(CrashTelemetryBuffer));
-                                return false;
-                            }
-                        }
-                    }
 
                     _crashTelemetryStream.Position = 0L;
                     _crashTelemetryStream.Write(_crashExportFileScratch, 0, ExportScratchSizeBytes);

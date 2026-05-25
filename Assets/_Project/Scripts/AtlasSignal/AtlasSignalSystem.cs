@@ -591,7 +591,7 @@ namespace Hecton8.AtlasSignal
             _narrativeDiscoveryReadModel = GlobalRegistry.NarrativeDiscoveryReadModel;
             _audioLogs = GlobalRegistry.AudioLogRuntime;
             _localization = Hecton8.Core.GlobalRegistry.LocalizationText;
-            _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+            _saveService = Hecton8.Core.GlobalRegistry.Save;
         }
 
         private void ClearRuntimeDependencies()
@@ -672,7 +672,7 @@ namespace Hecton8.AtlasSignal
                 return;
 
             if (_saveService == null)
-                _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+                _saveService = Hecton8.Core.GlobalRegistry.Save;
             if (_saveService == null)
                 return;
 

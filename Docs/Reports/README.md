@@ -11,8 +11,8 @@ Evidence class: STATIC_DOC / CLI_COMPILE where artifact cited
 
 - Archived root/architecture report set: `Docs/_Archive/Reports_X_012_2026-05-23/`
 - Latest local zero-warning CLI compile slice: `Docs/AgentLogs/Build_EXTERNAL_CODEX_hotpath_cleanup122_tick_registration.log` (`Hecton8.Editor.csproj --no-restore -m:1 /nr:false /p:UseSharedCompilation=false`, 0 `: warning ` / 0 `: error ` text matches, CLI_COMPILE only).
-- Latest CLI compile attempt: `Docs/AgentLogs/Build_EXTERNAL_CODEX_hotpath_cleanup158_world_dispatcher_rebind.log`; fails before C# with `NETSDK1004` missing project.assets, 0 warnings, no `CS*`; latest retry blocked by `BUILD_GUARD cpu=100 compiler_count=2`. Runtime proof remains pending.
-- Latest source-gated cleanup: EXTERNAL_CODEX loop159 removes project-wide singleton owner routes and `?? GlobalRegistry|GlobalRegistry.TryGet` fallback tails after loop158 world/environment/AI Dispatcher cleanup; targeted hot-swap and owner-cache greps pass; compile remains blocked by missing project.assets before C# diagnostics.
+- Latest CLI compile attempt: `Docs/AgentLogs/Build_EXTERNAL_CODEX_hotpath_cleanup158_world_dispatcher_rebind.log`; fails before C# with `NETSDK1004` missing project.assets, 0 warnings, no `CS*`; latest retry blocked by `BUILD_GUARD cpu=100 compiler_count=0`. Runtime proof remains pending.
+- Latest source-gated cleanup: EXTERNAL_CODEX loop162 rewrites 29 source files for frame-authority and biolum owner-cache cleanup; selected `Time.frameCount` grep returns 0, Biolum manager/tick/bucketer registry reads are cold-cache only, scoped `diff --check` passes with LF warnings only; compile remains blocked by missing project.assets / active build guard before C# diagnostics.
 - Archived sanitization report: `Docs/_Archive/Reports_X_012_2026-05-23/2026-05-21_DOCUMENTATION_SANITIZATION_REPORT.md`
 - Current X_012 documentation scan artifacts: `DOCUMENTATION_CORPUS_INVENTORY_X_012.json`, `DOCUMENTATION_OPTIMIZATION_REPORT_X_012.json`, `DOC_STRUCTURE_VALIDATION_X_012.json`
 - Current X_012 binary-payload concision artifact: `BINARY_PAYLOAD_LEDGER_CONCISION_X_012.json`
@@ -31,6 +31,8 @@ Evidence class: STATIC_DOC / CLI_COMPILE where artifact cited
 - Current X_012 33-word density artifact: `ARCHITECTURE_33WORD_DENSITY_AUDIT_X_012.json`
 - Current X_012 32-word density artifact: `ARCHITECTURE_32WORD_DENSITY_AUDIT_X_012.json`
 - Current X_012 31-word density artifact: `ARCHITECTURE_31WORD_DENSITY_AUDIT_X_012.json`
+- Current X_012 30-word density artifact: `ARCHITECTURE_30WORD_DENSITY_AUDIT_X_012.json`
+- Current X_012 29-word density artifact: `ARCHITECTURE_29WORD_DENSITY_AUDIT_X_012.json`
 - Archived terrain report compatibility stub: `Docs/_Archive/Reports_X_012_2026-05-23/TERRAIN_AND_BIOME_REALITY_MAP.md`; canonical terrain contract is `Docs/ARCHITECTURE/FLOODED_TERRESTRIAL_GEOGRAPHY.md`
 
 ## Archived Reports

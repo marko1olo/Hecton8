@@ -92,7 +92,8 @@ The validator parses C# source as the authority:
 
 
 
-- The struct/field parser is now a lightweight syntax-tree scanner: it strips comments, walks balanced C# attribute blocks, matches declaration bodies by braces, and extracts `StructLayoutAttribute`/`FieldOffsetAttribute` calls from attribute lists.
+- Struct/field parser is a lightweight syntax-tree scanner.
+- It strips comments, walks balanced C# attribute blocks, matches declaration bodies by braces, and extracts layout/offset attributes.
 - It accepts namespaced and `global::` attribute forms.
 - It accepts combined lists: `[Serializable, StructLayout(...)]`, `[NonSerialized, FieldOffset(...)]`.
 - It accepts extra attributes between layout markers and declarations.

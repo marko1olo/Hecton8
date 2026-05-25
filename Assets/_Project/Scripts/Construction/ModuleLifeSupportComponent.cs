@@ -1,4 +1,5 @@
 using System;
+using Hecton8.Core;
 using Hecton8.Gameplay;
 using Unity.Mathematics;
 using UnityEngine;
@@ -389,40 +390,29 @@ namespace Hecton8.Construction
             _co2Level = normalizedLevel * _co2Capacity;
         }
 
-        public string BuildAirReserveSummary()
+        public bool TryBuildAirReserveSummary(ref FixedCharBuffer buffer)
         {
-            return BuildPercentSummary(
+            return TryBuildPercentSummary(
+                ref buffer,
                 AirReserveSummaryPrefix,
                 math.clamp((int)math.round(AirReserveNormalized * 100f), 0, 999),
                 AirReserveSummarySuffix);
         }
 
-        public string BuildCo2CriticalSummary()
+        public bool TryBuildCo2CriticalSummary(ref FixedCharBuffer buffer)
         {
-            return BuildPercentSummary(
+            return TryBuildPercentSummary(
+                ref buffer,
                 Co2CriticalSummaryPrefix,
                 math.clamp((int)math.round(Co2Normalized * 100f), 0, 999),
                 Co2CriticalSummarySuffix);
         }
 
-        private static string BuildPercentSummary(string prefix, int percent, string suffix)
+        private static bool TryBuildPercentSummary(ref FixedCharBuffer buffer, string prefix, int percent, string suffix)
         {
-            int digitCount = percent >= 100
-                ? 3
-                : percent >= 10
-                    ? 2
-                    : 1;
-            return string.Create(
-                prefix.Length + digitCount + suffix.Length,
-                (Prefix: prefix, Percent: percent, Suffix: suffix),
-                (span, state) =>
-                {
-                    state.Prefix.AsSpan().CopyTo(span);
-                    int cursor = state.Prefix.Length;
-                    state.Percent.TryFormat(span.Slice(cursor), out int written);
-                    cursor += written;
-                    state.Suffix.AsSpan().CopyTo(span.Slice(cursor));
-                });
+            return buffer.Append(prefix.AsSpan()) &&
+                   buffer.AppendInt(percent) &&
+                   buffer.Append(suffix.AsSpan());
         }
 
         private float ResolveAirRefillScale()

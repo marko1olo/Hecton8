@@ -128,6 +128,10 @@ namespace Hecton8.Power
 
     public sealed unsafe class ShinobuLogisticsRouter : IDisposable
     {
+
+        private static int s_x001DirectSignalPushDropCount_ShinobuLogisticsRouter;
+
+        private static int s_x001ShinobuLogisticsRouterSignalPushDropCount;
         public const int MaxNodes = 1000;
         public const int MaxDirectedEdges = WfcOutpostGridConstants.MaxDirectedEdges;
         public const int MaxAdjacencyEntries = MaxDirectedEdges * 2;
@@ -1512,7 +1516,7 @@ namespace Hecton8.Power
                     Priority = 90,
                     Flags = 1 << 2
                 };
-                SignalBus<BrownoutSignal>.TryPush(in signal);
+                SignalBus<BrownoutSignal>.TryPushTracked(in signal, ref s_x001ShinobuLogisticsRouterSignalPushDropCount);
             }
         }
 
@@ -1653,7 +1657,7 @@ namespace Hecton8.Power
                 FlowRate01 = math.saturate(pressureDeltaKpa * 0.001f),
                 Flags = 1
             };
-            return SignalBus<FluidIncursionSignal>.TryPush(in incursion);
+            return SignalBus<FluidIncursionSignal>.TryPushTracked(in incursion, ref s_x001DirectSignalPushDropCount_ShinobuLogisticsRouter);
         }
 
 #if UNITY_EDITOR

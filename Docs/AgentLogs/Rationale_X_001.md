@@ -525,3 +525,73 @@ Scalability potential: Low tier gets deterministic refusal and owner-visible dro
 Hardware Impact: 0us verified runtime saving; no Unity profiler/GCMonitor capture was run. Static expected effect on i3/MX350-class hardware is less hidden native queue pressure and more useful 300-frame state when reactor/fluid/combat/fabrication/equipment/inventory bursts exceed fixed budgets.
 
 Verification: runtime statement-level `TryEnqueueBounded(...)` scan outside Core/Signals/Editor/Tests/ModdingAPI is 0. Runtime hot-route scan for `GlobalSignals.Publish/Push/TryDequeue/*Writer`, `SignalBus<T>.Push`, first-party `HectonEventBus.Publish/Subscribe/Unsubscribe`, and `ThreadSafeCommandQueue.Enqueue` outside allowed zones is 0. Core signal DTO banned-field scan is 0. Touched-file brace delta is 0. Build was not launched because the latest guard reported CPU 100 percent with 0 compiler processes.
+
+## 2026-05-25 - Main Thread TryPush Refusal Tracking
+
+Problem: Main-thread `SignalBus<T>.TryPush(...)` producers were bounded by lane capacity, finite guards, and load-shed counters, but many selected owner call sites still discarded the bool. Under a 5000-signal burst, the native lane would not allocate, but the owner black-box/status path would not know which domain lost presentation/gameplay-adjacent facts. The obsolete `GlobalSignals` facade also ignored typed-lane refusal internally despite being compile-time banned for new code.
+
+Solution: Added `SignalBus<T>.TryPushTracked(in T, ref int)` so selected owners can pass a local `int` drop counter without delegates, strings, dictionaries, or heap sidecars. Converted 177 selected main-thread owner push sites across movement, seismic, fauna, drone fleet, inventory, anomaly, prologue, construction, scanner, kinematics, save, volcanic, ecosystem, radiation, loot, and mining owners. Added `SignalBridgeState.LegacyPublishDropCount` plus `TryPushLegacy` so obsolete facade drops are counted. Fixed the mechanical DroneFleet native heap fallout by restoring `heap.TryPush` and incrementing the same owner counter on heap refusal.
+
+Rejected Alternatives: Raising capacities was rejected because it spends memory to hide overload. Adding managed logs or maps for refused pushes was rejected because hot route proof must stay zero-GC. Depending only on `SignalBus<T>.DroppedLastFlush` was rejected because producer owners need local evidence without querying global state. Converting every remaining project `TryPush` in one blind pass was rejected because some files contain multiple top-level owners and need targeted route-card handling.
+
+Scalability potential: Low tier gets deterministic refusal with owner-local counters and no native queue growth. Middle tier keeps current gameplay/presentation behavior while exposing refused facts to local diagnostics. High and Ultra can raise explicit owner capacities or attach richer visual consumers, but gameplay truth, DTO layout, save identity, and authority route stay unchanged.
+
+Hardware Impact: 0us verified runtime saving; no Unity profiler/GCMonitor capture was run. Static expected effect on i3/MX350-class hardware is better refusal visibility during player, fauna, seismic, inventory, scanner, world streaming, and save/anomaly bursts with no heap allocation and no `GlobalSignals` relapse.
+
+Verification: `Docs/Reports/SIGNAL_MAIN_THREAD_TRYPUSH_REFUSAL_TRACKING_X_001.md` records 25 code files touched, 177 `SignalBus<T>.TryPushTracked(...)` call sites, 0 bad tracked receivers, changed-file brace delta 0, runtime legacy hot-route/`SignalBus<T>.Push`/first-party `HectonEventBus`/`ThreadSafeCommandQueue.Enqueue` scans 0 outside allowed zones, and scoped core signal payload/contract banned-field scan 0. Build was not launched because CPU guard reported `CPU=99 compiler_count=0`.
+
+## 2026-05-25 - Producer Edge TryPush Refusal Closure
+
+Problem: The generic typed lanes rejected overflow deterministically, but many selected external runtime producers still discarded the bool from `SignalBus<T>.TryPush(...)`. During a 5000-signal burst this does not allocate, but it hides refusal at the owner edge. That weakens black-box analysis for first-20 route blockers such as base breach, impact spam, tool feedback, PDA/visor/audio warnings, resource collection, and world streaming bursts.
+
+Solution: Patched 70 runtime files. Converted selected one-line producer statements to `SignalBus<T>.TryPushTracked(..., ref ownerDropCounter)` and inserted file-qualified `private static int s_x001...SignalPushDropCount` fields in the owning top-level classes. Manually fixed the three helper-class fallout cases: `SystemDispatcher` versus `GlobalRenderContext`, `PhysicsEventBus`, and `LaserCutterEvents`.
+
+Rejected Alternatives: Raising lane capacities was rejected because it spends native memory to hide overload. Adding managed logs or dictionaries was rejected because hot-route proof must stay zero-GC. Blindly rewriting multiline `new Signal { ... }` calls was rejected because initializer shape and bool-handled semantics need manual inspection.
+
+Scalability potential: Low tier gets fixed-capacity refusal with producer-local evidence and no queue growth. Middle tier keeps current signal behavior while diagnostics can identify which owner hit overload. High and Ultra can raise explicit owner/lane capacities or attach richer visual consumers without changing DTO layout, save identity, or authority route.
+
+Hardware Impact: 0us verified runtime saving; no Unity profiler/GCMonitor capture was run. Static expected effect on i3/MX350-class hardware is better refusal evidence under physics/tool/AI/world/UI/power/resource bursts, with no heap allocation and no `GlobalSignals` relapse.
+
+Verification: `Docs/Reports/SIGNAL_PRODUCER_EDGE_TRYPUSH_REFUSAL_CLOSURE_X_001.md` records 70 files patched, 346 total `TryPushTracked` call sites, 75 remaining external statement-level direct `TryPush` call sites, 0 owner-counter containment misses, 0 runtime legacy hot-route hits outside allowed zones, brace-delta regression count 0, signal DTO banned-field scan 0, and `git diff --check` with LF-to-CRLF warnings only. Build was not launched because guard reported CPU 100 percent with active `dotnet`/`csc` processes.
+
+## 2026-05-25 - TryPush Zero Remainder Closure
+
+Problem: The previous producer-edge pass deliberately left 75 residual external `SignalBus<T>.TryPush(...)` statements, mostly multiline object initializer calls and late residual simple producers. The lanes were bounded, but owners still discarded the bool. In a 5000-signal burst this would not allocate, but it would hide which producer lost facts.
+
+Solution: Converted all 75 residual external statement-level producers to `SignalBus<T>.TryPushTracked(...)` and added owner-local static drop counters. Simple `in signal` producers were handled mechanically with containment verification. Multiline object-initializer producers were converted to tracked calls without introducing local managed sidecars. The one mechanical owner miss in `QuestDagResolverRuntime.cs` was corrected by placing the counter in `QuestDagDebugApi`, the actual owner of the debug force-complete producer.
+
+Rejected Alternatives: Raising capacities was rejected because it hides overload and spends native memory. Adding managed logs, dictionaries, or string event names was rejected because the route must stay zero-GC under storm. Leaving object-initializer producers untouched was rejected because they were still statement-level owner edges discarding overload refusal.
+
+Scalability potential: Low tier gets bounded native lanes with producer-local refusal evidence and no heap growth. Middle tier keeps current gameplay/presentation behavior while diagnostics can identify overload owners. High and Ultra may raise explicit capacities or add richer visual consumers through route cards, but DTO layout, gameplay truth ownership, save identity, and authority route remain unchanged.
+
+Hardware Impact: 0us verified runtime saving; no Unity profiler/GCMonitor capture was run. Static expected effect on i3/MX350-class hardware is improved overload forensics for crafting, combat, fauna, GPR/acoustic, PDA, VRAM, quest debug, headless QA, visor, construction, power, and world-light signal storms without additional managed allocation or `GlobalSignals` relapse.
+
+Verification: External statement-level direct `SignalBus<T>.TryPush(...)` scan is 0. `SignalBus<T>.TryPushTracked(...)` total is 422. Bad tracked receiver scan is 0. Owner-counter containment scan is 0. Runtime hot-route scan for external `GlobalSignals.Publish/Push/TryDequeue/*Writer`, `SignalBus<T>.Push`, first-party `HectonEventBus.Publish/Subscribe/Unsubscribe`, and `ThreadSafeCommandQueue.Enqueue` is 0. Runtime `ISignal` DTO scan covers 287 structs with 0 banned managed/string/native-container fields. Code-aware brace delta is 0. `git diff --check` reports LF-to-CRLF warnings only. Build skipped by guard: CPU 100 percent, active `csc` PID 39508 and `dotnet` PID 32980.
+
+## 2026-05-25 - DTO Contract And Direct TryPush Closure
+
+Problem: Several multi-owner or boot-sensitive typed lanes still depended on local `Configure(...)` call order. If a producer called `TryPush` before the domain owner configured the lane, `SignalBus<T>` could initialize the native storage with generic defaults, then reject the later true contract as a late reconfigure. Separately, bool-return direct `SignalBus<T>.TryPush(...)` wrapper edges were bounded but not uniformly counted through the tracked surface.
+
+Solution: Added DTO-owned capacity/hash constants and `SignalLanePolicyCache<T>` cold default entries for 41 lanes across music, construction, seaglide, core health/presentation, seismic/environment, inventory/economy, tool kinematics, and Terminal OS. Rewired selected configure call sites to consume DTO constants. Added `SignalBus<T>.DirectTrackedDropTotal` and no-ref `TryPushTracked(in T)` for direct/bool-return edges, then converted 66 external runtime `TryPush(...)` calls across 35 files to `TryPushTracked(...)`.
+
+Rejected Alternatives: Reintroducing central Core lifecycle prewarm for these lanes was rejected because it restores `GlobalSignals` as a route owner. Reflection or managed per-type registries were rejected because they add cold complexity and possible allocation. Leaving bool-return direct `TryPush` wrappers was rejected because overload refusal would stay split between lane telemetry and ad-hoc caller handling.
+
+Scalability potential: Low tier now gets deterministic DTO-owned capacities before the first native allocation and direct-edge refusal counts without heap sidecars. Middle tier keeps current behavior with stable telemetry hashes. High and Ultra can raise explicit DTO capacities or attach richer visual consumers, but gameplay truth ownership, DTO layout, save identity, and authority route remain unchanged.
+
+Hardware Impact: 0us verified runtime saving; Unity profiler/GCMonitor was not run. Static expected effect on i3/MX350-class hardware is prevention of generic-default lane initialization and clearer refusal accounting under 5000-signal bursts, with no managed allocations and no queue growth beyond configured native budgets.
+
+Verification: `Docs/Reports/SIGNAL_DTO_CONTRACT_AND_DIRECT_TRYPUSH_CLOSURE_X_001.md` records 54 runtime/code files touched, 41 DTO contracts, 66 direct TryPush conversions, `HOT_ROUTE_HITS=0`, `DTO_BANNED_FIELD_HITS=0`, `SELECTED_MAGIC_CONFIGURE_HITS=0`, `BRACE_DELTA_HITS=0`, 487 total `TryPushTracked(...)` call sites, and 65 no-ref direct tracked call sites. `git diff --check` reports LF-to-CRLF warnings only. Build was not launched because the final guard reported CPU 41.9 percent with active `csc` PID 50660 and `dotnet` PID 54776.
+
+## 2026-05-25 - Owner-Counter TryPush Closure
+
+Problem: The no-ref `SignalBus<T>.TryPushTracked(in T)` overload created a generic direct-edge refusal counter. It closed raw direct `TryPush`, but it was still weaker than owner-local evidence: a refused signal could be counted on the lane while the producer owner had no local black-box counter to correlate with its own frame state.
+
+Solution: Converted 65 external runtime no-ref tracked calls across 35 files to the existing `TryPushTracked(in T, ref int ownerDroppedSignalCount)` overload and added 35 owner-local static counters. Removed `DirectTrackedDropTotal`, `_directTrackedDropTotal`, and the no-ref `TryPushTracked(in T)` overload from `SignalBus<T>`.
+
+Rejected Alternatives: Keeping both overloads was rejected because producers would keep drifting to the lower-proof generic counter. Adding managed logs or string route names was rejected by Zero-GC and signal payload mandates. Raising lane capacities was rejected because it hides storm shape instead of proving bounded refusal.
+
+Scalability potential: Low tier gets fixed native admission plus owner-local refusal evidence with no heap sidecars. Middle keeps current gameplay/presentation behavior with better overload forensics. High and Ultra can buy visual overkill by explicit capacity/consumer route changes, but gameplay truth ownership, DTO layout, and save identity remain unchanged.
+
+Hardware Impact: 0us verified runtime saving; Unity profiler/GCMonitor was not run. Static expected effect on i3/MX350-class hardware is clearer producer-local fault evidence during collision, flood, acoustic, UI, inventory, tether, terrain, and vehicle signal storms without allocating or growing native queues.
+
+Verification: `Docs/Reports/SIGNAL_OWNER_COUNTER_TRYPUSH_CLOSURE_X_001.md` records 36 runtime/code files touched, 65 owner-tracked direct calls, 35 owner counter fields, `NO_REF_TRYPUSH_TRACKED_HITS=0`, removed generic direct counter hits 0, `OWNER_COUNTER_DECL_REF_MISSING=0`, `OWNER_COUNTER_DECL_UNUSED=0`, `HOT_ROUTE_HITS=0`, `DTO_BANNED_FIELD_HITS=0`, and `BRACE_DELTA_HITS=0`. `git diff --check` reports LF-to-CRLF warnings only. Build was not launched because the final guard reported CPU 99.4 percent with active `csc` PID 56252 and `dotnet` PID 54420.

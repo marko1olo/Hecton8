@@ -358,6 +358,12 @@ namespace Hecton8.UI
             return math.lerp(nearest, trilinear, ResolveWorkCurve(QualityWeight));
         }
 
+        private static float ResolveWorkCurve(float quality)
+        {
+            float t = math.saturate((math.saturate(quality) - 0.1f) * math.rcp(0.9f));
+            return t * t * (3f - 2f * t);
+        }
+
         private float DecodeAt(int x, int y, int z)
         {
             int index = x + GridDimensions.x * (y + GridDimensions.y * z);
@@ -543,13 +549,16 @@ namespace Hecton8.UI
         private GraphicsBuffer _pointBufferA;
         private GraphicsBuffer _pointBufferB;
         private GraphicsBuffer _argsBuffer;
-        private GraphicsBuffer _shaderGlobalsBuffer;
+        private GraphicsBuffer _shaderGlobalsBufferA;
+        private GraphicsBuffer _shaderGlobalsBufferB;
+        private GraphicsBuffer _activeShaderGlobalsBuffer;
         private Bounds _drawBounds;
         private JobHandle _scanHandle;
         private JobHandle _fadeHandle;
         private int _scanJobScheduled;
         private int _fadeJobScheduled;
         private int _pointBufferReadSlot;
+        private int _shaderGlobalsWriteIndex;
         private int _registeredLateFrame;
         private int _registeredRenderable;
         private int _registeredPingListener;
@@ -654,7 +663,10 @@ namespace Hecton8.UI
             ReleaseGraphicsBuffer(ref _pointBufferA);
             ReleaseGraphicsBuffer(ref _pointBufferB);
             ReleaseGraphicsBuffer(ref _argsBuffer);
-            ReleaseGraphicsBuffer(ref _shaderGlobalsBuffer);
+            ReleaseGraphicsBuffer(ref _shaderGlobalsBufferA);
+            ReleaseGraphicsBuffer(ref _shaderGlobalsBufferB);
+            _activeShaderGlobalsBuffer = null;
+            _shaderGlobalsWriteIndex = 0;
 
             ReleaseVaultBuffers(_dataVault);
             _dataVault = null;
@@ -671,10 +683,10 @@ namespace Hecton8.UI
         {
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
+                _registeredLateFrame = 0;
                 if (currentService == null || !isActiveAndEnabled)
                     return;
 
-                TryUnregisterLateFrameTickable();
                 TryRegisterLateFrameTickable();
                 return;
             }
@@ -750,7 +762,7 @@ namespace Hecton8.UI
                 TryScheduleFadeJob(deltaTime);
 
             GraphicsBuffer readPointBuffer = ResolveReadPointBuffer();
-            if (_activePointCount <= 0 || readPointBuffer == null || _argsBuffer == null || _shaderGlobalsBuffer == null)
+            if (_activePointCount <= 0 || readPointBuffer == null || _argsBuffer == null || _activeShaderGlobalsBuffer == null)
                 return;
 
             Material material = ResolveRenderMaterial();
@@ -759,7 +771,7 @@ namespace Hecton8.UI
 
             UploadShaderGlobals();
             Shader.SetGlobalBuffer(SonarPointsId, readPointBuffer);
-            Shader.SetGlobalConstantBuffer(SonarGlobalsId, _shaderGlobalsBuffer, 0, UnsafeUtility.SizeOf<TopographicalSonarShaderGlobalsDTO>());
+            Shader.SetGlobalConstantBuffer(SonarGlobalsId, _activeShaderGlobalsBuffer, 0, UnsafeUtility.SizeOf<TopographicalSonarShaderGlobalsDTO>());
             UnityEngine.Graphics.DrawProceduralIndirect(
                 material,
                 _drawBounds,
@@ -938,8 +950,15 @@ namespace Hecton8.UI
                 _pointBufferB = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<SonarPointDTO>(TopographicalSonarConstants.MaxRays);
             if (_argsBuffer == null)
                 _argsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.IndirectArguments, GraphicsBuffer.UsageFlags.LockBufferForWrite, 1, UnsafeUtility.SizeOf<SonarProceduralArgsDTO>());
-            if (_shaderGlobalsBuffer == null && SystemInfo.supportsSetConstantBuffer)
-                _shaderGlobalsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Constant, GraphicsBuffer.UsageFlags.LockBufferForWrite, 1, UnsafeUtility.SizeOf<TopographicalSonarShaderGlobalsDTO>());
+            if (SystemInfo.supportsSetConstantBuffer)
+            {
+                if (_shaderGlobalsBufferA == null)
+                    _shaderGlobalsBufferA = new GraphicsBuffer(GraphicsBuffer.Target.Constant, GraphicsBuffer.UsageFlags.LockBufferForWrite, 1, UnsafeUtility.SizeOf<TopographicalSonarShaderGlobalsDTO>());
+                if (_shaderGlobalsBufferB == null)
+                    _shaderGlobalsBufferB = new GraphicsBuffer(GraphicsBuffer.Target.Constant, GraphicsBuffer.UsageFlags.LockBufferForWrite, 1, UnsafeUtility.SizeOf<TopographicalSonarShaderGlobalsDTO>());
+                if (_activeShaderGlobalsBuffer == null)
+                    _activeShaderGlobalsBuffer = _shaderGlobalsBufferA;
+            }
 
             ResolveRenderMaterial();
             UpdateIndirectArgsBuffer(0u);
@@ -1168,7 +1187,7 @@ namespace Hecton8.UI
                 CameraAupX = _lastCameraAup.x,
                 CameraAupY = _lastCameraAup.y,
                 CameraAupZ = _lastCameraAup.z,
-                Frame = (uint)math.max(0, Hecton8.Core.SystemDispatcher.CurrentFrameIndex),
+                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 Sequence = _sequence,
                 RequestedRayCount = ResolveRayCount(quality),
                 ActivePointCount = _activePointCount,
@@ -1470,7 +1489,8 @@ namespace Hecton8.UI
 
         private void UploadShaderGlobals()
         {
-            if (_shaderGlobalsBuffer == null)
+            GraphicsBuffer shaderGlobalsWriteBuffer = (_shaderGlobalsWriteIndex & 1) == 0 ? _shaderGlobalsBufferA : _shaderGlobalsBufferB;
+            if (shaderGlobalsWriteBuffer == null || !shaderGlobalsWriteBuffer.IsValid())
                 return;
 
             Transform cameraTransform = renderCamera != null ? renderCamera.transform : transform;
@@ -1492,9 +1512,11 @@ namespace Hecton8.UI
                 vaultGlobals[0] = globals;
 
             NativeArray<TopographicalSonarShaderGlobalsDTO> mapped =
-                _shaderGlobalsBuffer.LockBufferForWrite<TopographicalSonarShaderGlobalsDTO>(0, 1);
+                shaderGlobalsWriteBuffer.LockBufferForWrite<TopographicalSonarShaderGlobalsDTO>(0, 1);
             mapped[0] = globals;
-            _shaderGlobalsBuffer.UnlockBufferAfterWrite<TopographicalSonarShaderGlobalsDTO>(1);
+            shaderGlobalsWriteBuffer.UnlockBufferAfterWrite<TopographicalSonarShaderGlobalsDTO>(1);
+            _activeShaderGlobalsBuffer = shaderGlobalsWriteBuffer;
+            _shaderGlobalsWriteIndex ^= 1;
         }
 
         private unsafe bool DumpBlackBox(NativeArray<TopographicalSonarTelemetryEntry> telemetry)

@@ -518,7 +518,7 @@ namespace Hecton8.Modding
             ModdedGameMaskSignal signal = default;
             signal.ModdedGameMask = _modCount > 0 ? 1u : 0u;
             signal.ActiveModCount = unchecked((uint)math.max(0, _modCount));
-            signal.Frame = unchecked((uint)math.max(0, Time.frameCount));
+            signal.Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             signal.SourceHash = MemorySentinelModMaskSourceHash;
             signal.Flags = flags;
             SignalBus<ModdedGameMaskSignal>.TryPush(in signal);

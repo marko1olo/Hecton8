@@ -22,6 +22,8 @@ namespace Hecton8.UI
     [DisallowMultipleComponent]
     public unsafe sealed partial class TerminalOsRuntime : MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
+        private static int s_x001DirectSignalPushDropCount_TerminalOsRuntime;
+
         private const int ActiveRuntimeCapacity = 4;
         private const int MaxQualityResolution = 512;
         private const int MinQualityResolution = 256;
@@ -60,9 +62,6 @@ namespace Hecton8.UI
         private const BufferID DecryptionTerminalsBufferId = BufferID.TerminalDecryptionTerminals;
         private const BufferID DecryptionKnobInputBufferId = BufferID.TerminalDecryptionKnobInput;
         private const BufferID DecryptionTelemetryRingBufferId = BufferID.TerminalDecryptionTelemetryRing;
-        private const uint TerminalClickLaneHash = 0x54434C4Bu; // TCLK
-        private const uint TerminalCommandLaneHash = 0x54434D44u; // TCMD
-        private const uint TerminalUnlockedLaneHash = 0x5444554Eu; // TDUN
         private static TerminalOsRuntime s_activeRuntime0;
         private static TerminalOsRuntime s_activeRuntime1;
         private static TerminalOsRuntime s_activeRuntime2;
@@ -148,7 +147,9 @@ namespace Hecton8.UI
         private GraphicsBuffer _stateBuffer1;
         private GraphicsBuffer _screenCommandBuffer;
         private GraphicsBuffer _glyphUvBuffer;
-        private GraphicsBuffer _dirtyIndexBuffer;
+        private GraphicsBuffer _dirtyIndexBufferA;
+        private GraphicsBuffer _dirtyIndexBufferB;
+        private GraphicsBuffer _activeDirtyIndexBuffer;
         private GraphicsBuffer _panelInstanceBuffer;
         private GraphicsBuffer _decryptionPuzzleBuffer0;
         private GraphicsBuffer _decryptionPuzzleBuffer1;
@@ -170,6 +171,7 @@ namespace Hecton8.UI
         private bool _graphicsResourcesReady;
         private bool _layoutUploadDirty;
         private bool _glyphUploadDirty;
+        private int _dirtyIndexUploadBufferIndex;
         private bool _bindingsDirty;
         private bool _panelInstanceUploadDirty;
         private bool _decryptionBufferUploadDirty;
@@ -308,7 +310,7 @@ namespace Hecton8.UI
             if (!math.all(math.isfinite(signal.LocalUv)))
                 return false;
 
-            return SignalBus<TerminalClickSignal>.TryPush(in signal);
+            return SignalBus<TerminalClickSignal>.TryPushTracked(in signal, ref s_x001DirectSignalPushDropCount_TerminalOsRuntime);
         }
 
         public void SetAttentionCamera(Camera camera)
@@ -1175,22 +1177,22 @@ namespace Hecton8.UI
         private static void ConfigureSignalLanes()
         {
             SignalBus<TerminalClickSignal>.Configure(
-                TerminalOsConstants.MaxQueuedClicks,
-                TerminalOsConstants.MaxQueuedClicks,
-                16,
-                TerminalClickLaneHash);
+                TerminalClickSignal.ExpectedCapacity,
+                TerminalClickSignal.MaxFrameSignals,
+                TerminalClickSignal.LowTierFrameSignals,
+                TerminalClickSignal.LaneHash);
             SignalBus<TerminalClickSignal>.EnsureInitialized();
             SignalBus<TerminalCommandSignal>.Configure(
-                TerminalOsConstants.MaxQueuedClicks,
-                TerminalOsConstants.MaxQueuedClicks,
-                16,
-                TerminalCommandLaneHash);
+                TerminalCommandSignal.ExpectedCapacity,
+                TerminalCommandSignal.MaxFrameSignals,
+                TerminalCommandSignal.LowTierFrameSignals,
+                TerminalCommandSignal.LaneHash);
             SignalBus<TerminalCommandSignal>.EnsureInitialized();
             SignalBus<TerminalUnlockedSignal>.Configure(
-                TerminalOsConstants.TerminalCapacity,
-                TerminalOsConstants.TerminalCapacity,
-                8,
-                TerminalUnlockedLaneHash);
+                TerminalUnlockedSignal.ExpectedCapacity,
+                TerminalUnlockedSignal.MaxFrameSignals,
+                TerminalUnlockedSignal.LowTierFrameSignals,
+                TerminalUnlockedSignal.LaneHash);
             SignalBus<TerminalUnlockedSignal>.EnsureInitialized();
             SignalBus<InteractionUiSignal>.EnsureInitialized();
         }
@@ -1476,8 +1478,12 @@ namespace Hecton8.UI
                 _screenCommandBuffer = CreateStructuredLockBuffer<ScreenCommandDTO>(_terminalCount);
             if (_glyphUvBuffer == null)
                 _glyphUvBuffer = CreateStructuredLockBuffer<float4>(TerminalOsConstants.GlyphCount);
-            if (_dirtyIndexBuffer == null)
-                _dirtyIndexBuffer = CreateStructuredLockBuffer<int>(_terminalCount);
+            if (_dirtyIndexBufferA == null)
+                _dirtyIndexBufferA = CreateStructuredLockBuffer<int>(_terminalCount);
+            if (_dirtyIndexBufferB == null)
+                _dirtyIndexBufferB = CreateStructuredLockBuffer<int>(_terminalCount);
+            if (_activeDirtyIndexBuffer == null)
+                _activeDirtyIndexBuffer = _dirtyIndexBufferA;
             if (_panelInstanceBuffer == null)
                 _panelInstanceBuffer = CreateStructuredLockBuffer<TerminalPanelInstanceDTO>(_terminalCount);
             EnsureTerminalProjectionGraphicsResources();
@@ -1508,7 +1514,9 @@ namespace Hecton8.UI
                                       _stateBuffer1 != null &&
                                       _screenCommandBuffer != null &&
                                       _glyphUvBuffer != null &&
-                                      _dirtyIndexBuffer != null &&
+                                      _dirtyIndexBufferA != null &&
+                                      _dirtyIndexBufferB != null &&
+                                      _activeDirtyIndexBuffer != null &&
                                       _panelInstanceBuffer != null &&
                                       TerminalProjectionGraphicsReady() &&
                                       _decryptionPuzzleBuffer0 != null &&
@@ -1750,12 +1758,13 @@ namespace Hecton8.UI
 
         private bool UploadDirtyIndices(int dirtyCount)
         {
-            if (_dirtyIndexBuffer == null ||
+            GraphicsBuffer dirtyIndexWriteBuffer = (_dirtyIndexUploadBufferIndex & 1) == 0 ? _dirtyIndexBufferA : _dirtyIndexBufferB;
+            if (dirtyIndexWriteBuffer == null ||
                 !TryOpenVaultBuffer(ref _dirtyIndicesHandle, out NativeArray<int> dirtyIndices))
                 return false;
 
             bool copied = false;
-            NativeArray<int> mapped = _dirtyIndexBuffer.LockBufferForWrite<int>(0, dirtyCount);
+            NativeArray<int> mapped = dirtyIndexWriteBuffer.LockBufferForWrite<int>(0, dirtyCount);
             try
             {
                 void* sourcePtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(dirtyIndices);
@@ -1768,7 +1777,13 @@ namespace Hecton8.UI
             }
             finally
             {
-                _dirtyIndexBuffer.UnlockBufferAfterWrite<int>(dirtyCount);
+                dirtyIndexWriteBuffer.UnlockBufferAfterWrite<int>(dirtyCount);
+            }
+
+            if (copied)
+            {
+                _activeDirtyIndexBuffer = dirtyIndexWriteBuffer;
+                _dirtyIndexUploadBufferIndex ^= 1;
             }
 
             return copied;
@@ -1999,7 +2014,7 @@ namespace Hecton8.UI
             terminalBlitCompute.SetTexture(_blitKernel, TerminalTextureArrayId, _terminalTextureArray);
             terminalBlitCompute.SetBuffer(_blitKernel, TerminalStatesId, stateBuffer);
             terminalBlitCompute.SetBuffer(_blitKernel, ScreenCommandsId, _screenCommandBuffer);
-            terminalBlitCompute.SetBuffer(_blitKernel, DirtyTerminalIndicesId, _dirtyIndexBuffer);
+            terminalBlitCompute.SetBuffer(_blitKernel, DirtyTerminalIndicesId, _activeDirtyIndexBuffer);
             terminalBlitCompute.SetBuffer(_blitKernel, GlyphUvsId, _glyphUvBuffer);
             if (fontSdfAtlas != null)
                 terminalBlitCompute.SetTexture(_blitKernel, FontSdfAtlasId, fontSdfAtlas);
@@ -3525,7 +3540,7 @@ namespace Hecton8.UI
             if (!_decryptionDumpBackpressureReported)
             {
                 _decryptionDumpBackpressureReported = true;
-                GlobalTelemetryBus.PublishPerformanceWarning(DecryptionDumpBackpressureHash, TerminalUnlockedLaneHash, 1f);
+                GlobalTelemetryBus.PublishPerformanceWarning(DecryptionDumpBackpressureHash, TerminalUnlockedSignal.LaneHash, 1f);
             }
         }
 
@@ -3578,7 +3593,10 @@ namespace Hecton8.UI
             ReleaseBuffer(ref _stateBuffer1);
             ReleaseBuffer(ref _screenCommandBuffer);
             ReleaseBuffer(ref _glyphUvBuffer);
-            ReleaseBuffer(ref _dirtyIndexBuffer);
+            ReleaseBuffer(ref _dirtyIndexBufferA);
+            ReleaseBuffer(ref _dirtyIndexBufferB);
+            _activeDirtyIndexBuffer = null;
+            _dirtyIndexUploadBufferIndex = 0;
             ReleaseBuffer(ref _panelInstanceBuffer);
             DisposeTerminalProjectionGraphicsResources();
             ReleaseBuffer(ref _decryptionPuzzleBuffer0);

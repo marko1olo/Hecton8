@@ -23,7 +23,8 @@ Runtime path:
 - PDA streamer uses the pure span path.
 - Deterministic Vault mock slab is final CI/editor fallback when no real binary source resolves.
 
-- The active UTF-8 source pointer is cached per entry after the first H8LR/Babel/Vault lookup. Per-frame reveal work reuses the cached unmanaged pointer and byte length instead of re-querying source indexes.
+- Active UTF-8 source pointer is cached per entry after first H8LR/Babel/Vault lookup.
+- Per-frame reveal reuses cached unmanaged pointer and byte length instead of re-querying source indexes.
 
 - The hot path does not call JSON, `Encoding.GetString`, `TMP_Text.text`, or string concatenation. UTF-8 is decoded into a pooled `CharBufferPool.EncyclopediaLease` page and submitted with `TMP_Text.SetCharArray`.
 
@@ -33,11 +34,11 @@ Runtime path:
 
 - Unlock state is `EncyclopediaStateDTO`: exactly 128 bytes in Vault buffer `(BufferID)70560`, with four raw `ulong` masks for 256 dense unlock bits plus AUP/revision metadata.
 
-- Metadata, runtime state, CSV scratch, a Burst lookup result slot, a 64-byte typewriter DTO, H8LR mirror bytes, and a 300-frame telemetry ring are stored in adjacent Vault buffers `(BufferID)70561..70570`.
+- Adjacent Vault buffers `(BufferID)70561..70570`: metadata, runtime state, CSV scratch, Burst lookup slot, 64-byte typewriter DTO, H8LR mirror bytes, telemetry ring.
 
 - Contract AUP values are copied immediately into owner-local `PdaAup48` primitive fields. The PDA runtime no longer names `Hecton8.World.AbsoluteUniversePosition` directly; distance math uses `HectonPhysicsContract.AupSectorSizeMetersInt` and clamp rails.
 
-- Editor-time validation now checks all PDA transfer rows: 128-byte state, 128-byte runtime, 64-byte metadata, 64-byte telemetry, 64-byte typewriter, 48-byte local AUP copy, 16-byte H8LR header, and 16-byte H8LR record.
+- Editor-time validation checks PDA transfer rows: 128-byte state/runtime, 64-byte metadata/telemetry/typewriter, 48-byte local AUP copy, 16-byte H8LR header/record.
 
 - Editor x-ray facades and CSV ingest bridges compile only inside `#if UNITY_EDITOR`.
 - Examples: `EditorTrySnapshot()`, `EditorTryWriteRawUtf8Hex()`, `TryIngestLoreMetadataCsvFromProject()`, `TryIngestLoreMetadataCsv()`.
@@ -57,7 +58,7 @@ Scalability:
 
 - Low hardware streams small chunks; high/ultra reveals larger chunks without changing the data contract.
 
-- Discovery distance tokens subtract player AUP from stored discovery AUP through `PdaAup48`, clamp impossible sector deltas, cast the localized delta to `float3`, and format into the active `Span<char>`.
+- Discovery distance tokens subtract player AUP from stored discovery AUP via `PdaAup48`, clamp impossible deltas, cast to `float3`, and format into active `Span<char>`.
 
 Telemetry:
 

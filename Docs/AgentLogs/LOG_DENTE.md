@@ -1314,3 +1314,121 @@ Residual risk:
 - Env JSON bot config storage is still prototype-only; production needs encrypted DB-backed configs, tenant auth and webhook-secret rotation.
 - Official outpatient medical-card `025/у` exact generation remains open pending source-verified field mapping.
 - Web bundle chunk warning remains open.
+
+## 2026-05-25 - Loop 38 - Outpatient Medical Card 025/u
+
+What was wrong:
+- DENTE had extracts/copy/release paperwork but no dedicated 025/у outpatient card.
+- Generic extract output could not honestly be treated as the official 274n outpatient card.
+- Medical-card issue needed signed-source/date/period blockers and visible Russian operator confirmations.
+
+What was done:
+- Added `outpatient_medical_card_025u` to shared metadata, source URLs, DB enum and migration.
+- Added typed 025/у payload schema for clinic, patient, card, diagnosis, specialist visit, dental clinical row, event, X-ray dose, epicrisis and confirmation facts.
+- Added renderer and issue blockers for missing payload, missing clinical rows, unsigned source visits, invalid dates and out-of-period source visits.
+- Added doctor-facing Russian payload editor and Communications/Telegram medical-document workflow entry for `Карта 025/у`.
+- Updated README, document-generation rules and Telegram bot plan with implemented 025/у behavior and the ЕГИСЗ/УКЭП limitation.
+
+Cinematic Cheats used:
+- No Unity/render simulation. Product equivalent: typed official-form payload instead of free-text heuristic generation; inactive document editors remain unmounted, so weak clinic PCs do not pay for all forms at once.
+
+Exact Microseconds saved:
+- 0 us Unity runtime.
+- Browser/runtime savings not measured. Expected browser work is lower than hidden-form rendering because only selected structured document editor mounts.
+- API overhead is bounded by selected source visits and payload rows; no profiler claim.
+
+Evidence:
+- `npm run typecheck -w @dental/shared` passed.
+- `npm run typecheck -w @dental/api` passed.
+- `npm run typecheck -w @dental/web` passed.
+- `npm run build` passed; residual Vite warning: `assets/index-CwFm35PI.js` 676.25 kB.
+- `npm run smoke:documents-catalog` passed with 31 rendered kinds.
+- `npm run smoke:document-payloads` passed.
+- `npm run smoke:document-guards` passed.
+- `npm run smoke:document-issue-chains` passed.
+- `npm run smoke:document-payload-ui-source` passed.
+- `npm run smoke:document-legal-confirmations` passed.
+- `npm run smoke:telegram-bot` passed.
+- `npm run smoke:telegram-control-ui-source` passed.
+- `npm run smoke:api-text-encoding` passed with `mojibakeHits:0`.
+- `npm run smoke:russian-fallback-source` passed.
+- `npm run smoke:db-runtime-contract` passed.
+- Mobile smoke passed on `http://127.0.0.1:5173/#documents` at 390 px with overflow 0.
+
+Residual risk:
+- 025/у is source-anchored HTML/PDF generation, not ЕГИСЗ/MIS electronic exchange or УКЭП signing.
+- Other 274n outpatient forms remain unimplemented until separate typed mappings are added.
+- Web chunk size warning remains open.
+
+## 2026-05-25 - Loop 39 - 025/u Draft Recovery And Claims Cleanup
+
+What was wrong:
+- The new 025/u editor was official-form oriented but fragile for real operators: refresh/navigation could discard a long medical draft.
+- Storing that draft in existing global UI preferences would pollute preference storage with clinical content.
+- Documentation overclaimed KND XML/XSD readiness beyond implemented proof.
+
+What was done:
+- Added `dental-crm:document-payload-drafts:v1`, a scoped 025/u draft store keyed by document kind, patient and visit.
+- Restored only 025/u editor fields after reload and capped local entries to 60.
+- Kept signed-source/274n/third-party confirmations out of the draft and reset them on hydrate.
+- Added source smokes for draft helpers and UI preference smokes that reject 025/u clinical fields in global preferences.
+- Updated README, document-generation rules and UX principles with the local-draft behavior and KND XML validation limitation.
+
+Cinematic Cheats used:
+- Product equivalent: cheap active-form local recovery instead of mounting all form editors or adding premature server draft infrastructure. The expensive/legal truth still comes from signed source visits at issue time.
+
+Exact Microseconds saved:
+- 0 us Unity runtime.
+- Browser cost is a bounded localStorage read/write for the active 025/u form only. No measured frame-time claim.
+- Rework avoided: real doctor text survives reload without converting preferences into a clinical data store.
+
+Evidence:
+- `npm run typecheck -w @dental/web` passed.
+- `npm run build -w @dental/web` passed; residual Vite warning: `assets/index-DlM45n0F.js` 683.60 kB.
+- `npm run build` passed for shared, api and web.
+- `npm run smoke:document-payload-ui-source` passed.
+- `npm run smoke:ui-preferences` passed with `forbiddenClinicalKeyCount:16`.
+- `npm run smoke:document-payloads` passed.
+- `npm run smoke:documents-catalog` passed with 31 rendered kinds.
+- `npm run smoke:api-text-encoding` passed with `mojibakeHits:0`.
+- `npm run smoke:russian-fallback-source` passed.
+- Mobile Documents smoke passed on `http://127.0.0.1:5173/#documents` at 390 px with overflow 0.
+- CDP browser reload smoke selected 025/u, typed `TEST-025-DRAFT`, verified local draft storage, reloaded, and confirmed the value restored with overflow 0.
+
+Residual risk:
+- Local draft recovery is browser-local, not encrypted synced clinical storage.
+- KND XML still needs real XSD validation and source checksum automation before official electronic submission claims.
+- Web chunk size warning remains open.
+## 2026-05-25 - Loop 40 - KND XML Structural Preflight
+
+What was wrong:
+- `/api/documents/:id/tax-xml` froze source facts and archived first export, but the XML builder had no final internal structural preflight before handing bytes to snapshot storage.
+- Documentation correctly stopped claiming official XSD validation, but the implementation still lacked a cheap DENTE-side guard against malformed tags, wrong patient flag, wrong sums or technical placeholders.
+
+What was done:
+- Added `validateKnd1151156XmlDraft` in `apps/api/src/documents/taxXml.ts`.
+- Preflight checks XML declaration, `Файл`/`Документ`/`СведРасхУсл` balance, `КНД="1184043"`, `ВерсФорм="5.01"`, `КодНО`, `ОтчГод`, `НомерСвед`, `НомКорр="0"`, `ПрПациент`, payer/patient node rules, service-code sums, placeholder tokens and mojibake markers.
+- Expanded `scripts/smoke-tax-knd-xml.mjs` to guard preflight source markers and runtime self/non-self XML structure.
+- Updated `README.md` and `docs/12-document-generation-forms.md` to state internal DENTE preflight without calling it official XSD/ЭДО validation.
+
+Cinematic Cheats used:
+- None. This is document/export integrity, not visual simulation.
+
+Exact Microseconds saved:
+- 0 us Unity runtime.
+- No browser runtime saved.
+- API adds one bounded string preflight on manual tax XML export; no hot-path profiler claim.
+
+Verification:
+- `npm run typecheck -w @dental/api` passed.
+- `npm run build -w @dental/api` passed.
+- `npm run build` passed; residual Vite chunk warning remains at 683.60 kB.
+- `npm run smoke:tax-knd-xml` passed after full build.
+- `npm run smoke:api-text-encoding` passed with `mojibakeHits:0`.
+- `npm run smoke:documents-catalog` passed with `renderedCount:31`.
+- `npm run smoke:document-payloads` passed.
+- `npm run smoke:russian-fallback-source` passed.
+
+Residual risk:
+- Internal preflight is not FNS XSD validation.
+- No XSD checksum pinning, KEP signature, ТКС/ЭДО submission or receipt lifecycle yet.

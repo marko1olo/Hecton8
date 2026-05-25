@@ -1460,9 +1460,105 @@ Verification: AST pass OK; marker grep confirmed the resolver and scanner proof 
 Compile: not run yet. Build guard still needs a fresh CPU/compiler clearance sample before launching `dotnet build`.
 
 2026-05-25 Loop 84 - Visual-only CombatDamageSignal segregation.
-Wrong: `SubmarineStructuralGrid.EnqueueHullImpactDecal()` published a visual hull dent through `CombatDamageSignal`, while `CombatDamageRuntime.DrainGlobalDamageSignals()` consumed the same lane as authoritative damage. A matching registered `TargetHash` could turn presentation traffic into real LUT/CAS health mutation.
-Done: added `CombatDamageSignal.VisualOnlyFlag`, marked the submarine hull dent producer with `DirectRuntimeFlag | VisualOnlyFlag`, and made `CombatDamageRuntime.TryBuildCombatSignal()` reject visual-only signals before constructing `CombatDamageRequest`. Existing visual projection remains: `HullDentShaderController` consumes the signal and publishes `HullDeformedSignal`.
+Wrong: `SubmarineStructuralGrid.EnqueueHullImpactDecal()` published a visual hull dent through `CombatDamageSignal`, while `CombatDamageRuntime.DrainGlobalDamageSignals()` consumed the same lane as authoritative damage. A matching registered `TargetHash` could turn presentation traffic into real LUT/CAS health mutation. `SignalBusRuntime.TryCoalesceCombatDamage()` could also merge visual-only and authoritative payloads with the same target/type/channel and OR the flags.
+Done: added `CombatDamageSignal.VisualOnlyFlag`, marked the submarine hull dent producer with `DirectRuntimeFlag | VisualOnlyFlag`, made `CombatDamageRuntime.TryBuildCombatSignal()` reject visual-only signals before constructing `CombatDamageRequest`, and made `SignalBusRuntime.TryCoalesceCombatDamage()` keep visual-only and authoritative entries separate. Existing visual projection remains: `HullDentShaderController` consumes the signal and publishes `HullDeformedSignal`.
 Cinematic Cheats used: kept hull dent as a presentation fake, explicitly separated from damage truth.
-Exact Microseconds saved: 0 us measured. Adds one flag check before central damage build; armor LUT/CAS hot math unchanged. Correctness gain is removal of a visual-to-health mutation route.
-Verification: AST pass OK; marker grep confirmed `VisualOnlyFlag`, central rejection, and submarine producer flag. `python Tools\OOP_Hitbox_Scanner.py` passed in ~117.5s; JSON query confirmed `combatSignalLaneSegregationProof.verdict=PASS`, `visualOnlyFlagDeclared=true`, `centralBuilderRejectsVisualOnlySignals=true`, `submarineHullDentUsesVisualOnlyFlag=true`, typed visual projection true, ingress bounds `PASS`, branchless LUT `PASS`, CAS 100-pellet proof `PASS_STATIC_SOURCE`, combat trig `0`, combat angle API `0`, and project `acos/asin` inventory `0`. Scoped `git diff --check` passed clean.
-Compile: not run. Guard sample was CPU `100%`, so project rule forbids `dotnet build`.
+Exact Microseconds saved: 0 us measured. Adds one flag check before central damage build and one flag-parity comparison inside existing coalescing match; armor LUT/CAS hot math unchanged. Correctness gain is removal of visual-to-health mutation and coalescing flag contamination routes.
+Verification: AST pass OK; marker grep confirmed `VisualOnlyFlag`, central rejection, submarine producer flag, and `TryCoalesceCombatDamage` parity separation. `python Tools\OOP_Hitbox_Scanner.py` passed in ~100.3s after coalescing hardening; JSON query confirmed `combatSignalLaneSegregationProof.verdict=PASS`, `visualOnlyFlagDeclared=true`, `centralBuilderRejectsVisualOnlySignals=true`, `submarineHullDentUsesVisualOnlyFlag=true`, `signalBusCoalescingKeepsVisualOnlySeparate=true`, typed visual projection true, ingress bounds `PASS`, branchless LUT `PASS`, CAS 100-pellet proof `PASS_STATIC_SOURCE`, combat trig `0`, combat angle API `0`, and project `acos/asin` inventory `0`. Scoped `git diff --check` passed clean before this log correction.
+Compile: not run. Guard sample was CPU `100%` with active `csc` PID `51868` and `dotnet` PID `48928`, so project rule forbids `dotnet build`.
+
+2026-05-25 Loop 85 - Owner-applied CombatDamageSignal visual-only guard.
+Wrong: `PhysicalHandController.TryPublishKinematicVelocitySignal()` published a VRHD velocity/haptic event as authoritative `CombatDamageSignal`; `DeployableSdfDrillRuntime.ApplyLeviathanDamage()` subtracted drill health before `PublishCombatDamage()` and then broadcast the same damage; `PowerGrid.HandleFloodedShortCircuits()` set short-circuit state and consumed node potential before publishing a power-channel combat signal. Any registered target-hash collision could convert those broadcasts into central LUT/CAS health subtraction.
+Done: marked all three producers with `CombatDamageSignal.DirectRuntimeFlag | CombatDamageSignal.VisualOnlyFlag`. Existing VFX, haptic, AI, audio, and diagnostic consumers still see the snapshots, while `CombatDamageRuntime.TryBuildCombatSignal()` rejects them and `SignalBusRuntime.TryCoalesceCombatDamage()` keeps visual-only entries separate from authoritative damage.
+Cinematic Cheats used: kept owner-applied and haptic feedback as signal-driven presentation fakes, not combat truth.
+Exact Microseconds saved: 0 us measured. Hot armor LUT/CAS math unchanged; potential duplicate CAS and owner reconciliation work is removed when hashes collide.
+Verification: AST pass OK; scoped `git diff --check` passed with line-ending warnings only; `python Tools\OOP_Hitbox_Scanner.py` passed in ~69.1s after scanner proof correction. JSON query confirmed `combatSignalLaneSegregationProof.verdict=PASS`, `physicalHandVelocityUsesVisualOnlyFlag=true`, `deployableDrillSelfDamageBroadcastUsesVisualOnlyFlag=true`, `powerShortCircuitBroadcastUsesVisualOnlyFlag=true`, `signalBusCoalescingKeepsVisualOnlySeparate=true`, ingress bounds `PASS`, branchless LUT `PASS`, CAS 100-pellet proof `PASS_STATIC_SOURCE`, combat trig `0`, combat angle API `0`, and project `acos/asin` inventory `0`.
+Compile: not run yet. Build requires fresh CPU/compiler guard clearance.
+
+2026-05-25 Loop 90 - Packed meta fracture preservation.
+Wrong: `CombatDamageRuntime.PackSignalMeta()` used `MetaStatusBitsMask = 0x1FF`, so `CombatStatusBits.Fractured` at bit 9 was outside the packed status field and would be silently dropped by any direct packed-meta fracture route.
+Done: changed packed-meta allocation to status bits `8..17` with mask `0x3FF`, weakspot bit `18` with mask `0x1`, detail index `19..28`, and damage class `29..31`. `CombatWeakspotTier` has only `None` and `Weakspot`, so no DTO or request size changed.
+Cinematic Cheats used: none; this is combat truth metadata correctness.
+Exact Microseconds saved: 0 us measured. Runtime instruction class is unchanged: same shifts/masks, different constants. Correctness gain is preserved fracture status without widening `CombatDamageRequest`.
+Verification: AST pass OK; scoped `git diff --check` passed with line-ending warnings only; `python Tools\OOP_Hitbox_Scanner.py` passed in ~155.6s. JSON query confirmed `packedMetaProof.verdict=PASS`, `fracturedPreservedByPackSignalMeta=true`, lane segregation `PASS`, branchless LUT `PASS`, CAS 100-pellet proof `PASS_STATIC_SOURCE`, combat trig `0`, combat angle API `0`, and project `acos/asin` inventory `0`. Python packed-bit model round-tripped damage type `0x80`, fracture `0x200`, weakspot `1`, detail `1023`, and class `7`.
+Compile: not run. Latest guard sample was CPU `54%` with active `dotnet` PID `53492` and `VBCSCompiler` PID `45336`, so project rule forbids `dotnet build`.
+
+2026-05-25 Loop 91 - Continuous combat quality wrapper.
+Wrong: `CombatMathLod` exposed only `Low/High`, which is a binary quality switch on a runtime that already owns continuous `_requestedVisualQualityWeight01`.
+Done: expanded the enum to `Low/Middle/High/Ultra` and mapped it through a smooth continuous tier weight. The exact float API `SetCombatVisualQualityWeight(float)` remains the primary route.
+Cinematic Cheats used: continuous quality now buys presentation fidelity gradually; combat truth and DTO layouts are unchanged.
+Exact Microseconds saved: 0 us measured. This is a public control-surface fix, not a hot-path optimization.
+Verification: AST pass OK; scoped `git diff --check` passed with line-ending warnings only; `python Tools\OOP_Hitbox_Scanner.py` passed in ~197.4s. JSON query confirmed `combatQualityWeightProof.verdict=PASS`, tier samples Low `0`, Middle `0.259259`, High `0.740741`, Ultra `1`, packed-meta proof `PASS`, lane segregation `PASS`, branchless LUT `PASS`, combat trig `0`, combat angle API `0`, and project `acos/asin` inventory `0`.
+Compile: not run. Latest guard sample was CPU `100%` with active `dotnet` PID `54944`, so project rule forbids `dotnet build`.
+
+2026-05-25 Loop 92 - Production direction normalization deduplication.
+Wrong: `ProcessDamageQueueJob.Execute()` normalized `signal.Direction` twice and normalized `detail.ArmorNormal` after it was already replaced by `armorSample.SurfaceNormal`.
+Done: `projectileDirection` is computed once, `armorNormal` uses `armorSample.SurfaceNormal`, and front deflection reuses `projectileDirection`.
+Cinematic Cheats used: none; this keeps combat truth identical and removes duplicate math.
+Exact Microseconds saved: 0 us measured. Static work removed per processed hit: one repeated projectile-direction normalize and one redundant armor-normal normalize. Profiler proof pending.
+Verification: AST pass OK; scoped `git diff --check` passed with line-ending warnings only; `python Tools\OOP_Hitbox_Scanner.py` passed in ~121.8s. JSON query confirmed `productionDirectionReuseProof.verdict=PASS`, `resolveExactDirectionSignalDirectionCallsInDamageLoop=1`, quality proof `PASS`, packed-meta proof `PASS`, branchless LUT `PASS`, CAS proof `PASS_STATIC_SOURCE`, combat trig `0`, combat angle API `0`, and project `acos/asin` inventory `0`.
+Compile: not run. Latest guard sample was CPU `97%` with active `dotnet` PID `54944`, so project rule forbids `dotnet build`.
+
+2026-05-25 Loop 89 - Visual-only behavior consumer guards.
+Wrong: Raw `CombatDamageSignal` consumers in ecosystem flocking, predator cognition, predator acoustic SDF, and foveated simulation could change behavior from `VisualOnlyFlag` traffic. That meant haptic/VFX/snapshot broadcasts could generate flocking threats, predator flee state, acoustic stimuli, or tier-0 combat locks.
+Done: added `VisualOnlyFlag` skips in `ShinobuEcosystemBalancer.CaptureFlockingThreatSignals()`, `PredatorCognitionDomain.ProcessMesofaunaDamageSignals()`, `PredatorCognitionDomain.AcousticSdf.AppendCombatDamageAcousticSignals()`, and `FoveatedSimulationManager.ApplyCombatDamageSignals()`. Pure presentation consumers remain unfiltered.
+Cinematic Cheats used: kept visual-only traffic for presentation, but stopped it from changing AI/LOD behavior.
+Exact Microseconds saved: 0 us measured. Expected saving on visual-only-heavy frames is avoided AI/flocking/acoustic/foveated work.
+Verification: AST pass OK; scoped `git diff --check` passed with line-ending warnings only; `python Tools\OOP_Hitbox_Scanner.py` passed in ~128.6s. JSON query confirmed `combatSignalLaneSegregationProof.verdict=PASS`, four behavior consumer guards true, Dear Lie preflight proof true, state consumer guards true, ingress bounds `PASS`, branchless LUT `PASS`, CAS 100-pellet proof `PASS_STATIC_SOURCE`, combat trig `0`, combat angle API `0`, and project `acos/asin` inventory `0`.
+Compile: not run yet. Build requires fresh CPU/compiler guard clearance.
+
+2026-05-25 Loop 88 - Dear Lie visual-only preflight skip.
+Wrong: `DestructibleOrganicManager.ProcessDearLieDestructionSignals()` used raw combat signal count as a preflight. A frame with only `VisualOnlyFlag` traffic entered Dear Lie vault locking and staging, then produced no authoritative destruction events after Loop 87 filtering.
+Done: added `HasAnyAuthoritativeDearLieDamageSignal()` and changed the preflight to skip the Dear Lie job path unless a non-visual-only signal or mock burst exists. The helper scans the same capped range as staging.
+Cinematic Cheats used: kept visual-only damage as presentation feedback, but prevented it from waking flora destruction work.
+Exact Microseconds saved: 0 us measured. Expected saving on visual-only-only frames: no Dear Lie vault lock, no counter clear, no stage scan, and no empty destruction path.
+Verification: AST pass OK; scoped `git diff --check` passed with line-ending warnings only; `python Tools\OOP_Hitbox_Scanner.py` passed in ~122s. JSON query confirmed `combatSignalLaneSegregationProof.verdict=PASS`, `dearLiePreflightIgnoresVisualOnlySignals=true`, vehicle/habitat/Dear Lie consumer guards true, ingress bounds `PASS`, branchless LUT `PASS`, CAS 100-pellet proof `PASS_STATIC_SOURCE`, combat trig `0`, combat angle API `0`, and project `acos/asin` inventory `0`.
+Compile: not run yet. Build requires fresh CPU/compiler guard clearance.
+
+2026-05-25 Loop 87 - Visual-only state consumer guards.
+Wrong: After producer-side `VisualOnlyFlag` marking and central runtime rejection, raw `SignalBus<CombatDamageSignal>` consumers could still derive real secondary state from presentation-only payloads. Vehicle component damage, habitat module stress, and Dear Lie flora destruction were the state-mutating routes that needed explicit consumer-side filters.
+Done: `VehicleComponentDamageRuntime.GatherCombatDamageSignals()` skips `CombatDamageSignal.VisualOnlyFlag`; `HabitatGraphManager.ConsumeModuleStressSignals()` skips `CoreCombatDamageSignal.VisualOnlyFlag`; `DestructibleOrganicManager.StageDearLieDamageEvents()` and its editor gizmo damage sample skip `CombatDamageSignal.VisualOnlyFlag`. `Tools/OOP_Hitbox_Scanner.py` now proves all three consumer guards.
+Cinematic Cheats used: kept visual-only traffic as presentation feedback, but blocked it from becoming vehicle damage, habitat stress, or flora destruction.
+Exact Microseconds saved: 0 us measured. The added work is one flag check per raw signal in three consumer loops; expected benefit is avoiding downstream state jobs and destruction/stress churn from presentation-only signals.
+Verification: AST pass OK; scoped `git diff --check` passed with line-ending warnings only; first scanner run exposed a stale Habitat proof marker, which was corrected to the actual `ConsumeModuleStressSignals` route. Final `python Tools\OOP_Hitbox_Scanner.py` passed in ~113s. JSON query confirmed `combatSignalLaneSegregationProof.verdict=PASS`, `vehicleComponentDamageSkipsVisualOnlySignals=true`, `habitatGraphStressSkipsVisualOnlySignals=true`, `dearLieDamageSkipsVisualOnlySignals=true`, central visual-only rejection true, coalescing separation true, ingress bounds `PASS`, branchless LUT `PASS`, CAS 100-pellet proof `PASS_STATIC_SOURCE`, combat trig `0`, combat angle API `0`, and project `acos/asin` inventory `0`.
+Compile: not run yet. Build requires fresh CPU/compiler guard clearance.
+
+2026-05-25 Loop 86 - Player survival snapshot visual-only guard.
+Wrong: `PlayerRuntimeContext.PublishSurvivalState()` writes the new survival snapshot, then publishes a `CombatDamageSignal` with `PlayerTargetHash` and `DirectRuntimeFlag`. A registered player combat target could receive a second central LUT/CAS subtraction from a read-model damage broadcast.
+Done: marked `PublishSurvivalDamageSignal()` with `CombatDamageSignal.DirectRuntimeFlag | CombatDamageSignal.VisualOnlyFlag`. Snapshot consumers still receive the damage event, but central combat rejects it and visual-only coalescing separation prevents merge with authoritative damage.
+Cinematic Cheats used: kept the survival damage event as presentation/telemetry feedback, not combat truth.
+Exact Microseconds saved: 0 us measured. Hot armor LUT/CAS math unchanged; possible duplicate player CAS/reconciliation work is removed when `PlayerTargetHash` is registered.
+Verification: AST pass OK; local marker grep confirmed `VisualOnlyFlag` in `PlayerRuntimeContext`; `python Tools\OOP_Hitbox_Scanner.py` passed in ~84.5s. JSON query confirmed `combatSignalLaneSegregationProof.verdict=PASS`, `playerRuntimeSurvivalDamageUsesVisualOnlyFlag=true`, physical-hand visual-only true, deployable-drill visual-only true, power-short-circuit visual-only true, coalescing separation true, ingress bounds `PASS`, branchless LUT `PASS`, CAS 100-pellet proof `PASS_STATIC_SOURCE`, combat trig `0`, combat angle API `0`, and project `acos/asin` inventory `0`.
+Compile: not run yet. Build requires fresh CPU/compiler guard clearance.
+
+2026-05-25 Loop 93 - Armor local projection inverse removal.
+Wrong: `EvaluateArmorPenetrationCore()` computed `math.inverse(rotation)` per armor hit to move AUP delta into target-local space. The rotation snapshot is already unit-normalized by `RefreshArmorTargetSnapshots()`, so a generic inverse paid unnecessary reciprocal/quaternion work in the pellet path.
+Done: replaced the inverse with `math.conjugate(rotation)`. For unit quaternion `q`, `q^-1 = conjugate(q) / |q|^2 = conjugate(q)`, so the local projection is equivalent under the existing snapshot contract.
+Cinematic Cheats used: none; this preserves combat truth and removes redundant math.
+Exact Microseconds saved: 0 us measured. Static hot-path work removed per armor hit: one quaternion inverse. Profiler/Burst disassembly proof pending.
+Verification: AST pass OK; scoped `git diff --check` passed with line-ending warnings only; JSON proof assert passed; `python Tools\OOP_Hitbox_Scanner.py` passed in ~120.4s. JSON query confirmed `armorRotationInverseProof.verdict=PASS`, `perHitInverseCalls=0`, production direction reuse `PASS`, quality proof `PASS`, packed-meta proof `PASS`, branchless LUT `PASS`, CAS proof `PASS_STATIC_SOURCE`, combat trig `0`, combat angle API `0`, and project `acos/asin` inventory `0`.
+Compile: not run. Latest guard sample was CPU `62%`; project rule forbids `dotnet build` while CPU is above `50%`.
+
+2026-05-25 Loop 94 - Ballistics primitive rotation reuse.
+Wrong: `BallisticsRuntime.TryIntersectPrimitive()` normalized `primitive.Rotation` three times and computed a generic quaternion inverse during combat primitive hit testing.
+Done: normalized the primitive rotation once, used `math.conjugate(rotation)` for local projection, and reused the same normalized rotation for world normal and AUP hit reconstruction.
+Cinematic Cheats used: none; hit geometry and AUP truth are preserved.
+Exact Microseconds saved: 0 us measured. Static work removed per primitive intersection after broad-phase gates: one quaternion inverse and two duplicate quaternion normalizations. Profiler proof pending.
+Verification: AST pass OK; `python Tools\OOP_Hitbox_Scanner.py` passed in ~83.5s; JSON proof assert passed. Report confirms `ballisticsPrimitiveRotationProof.verdict=PASS`, `tryIntersectPrimitiveInverseCalls=0`, `tryIntersectPrimitiveRotationNormalizes=1`, armor rotation inverse proof `PASS`, production direction reuse `PASS`, branchless LUT `PASS`, CAS proof `PASS_STATIC_SOURCE`, combat trig `0`, combat angle API `0`, and project `acos/asin` inventory `0`. Scoped `git diff --check` passed with line-ending warnings only.
+Compile: not run. Latest guard sample was CPU `82%` with active `csc` and `dotnet` processes; project rule forbids `dotnet build`.
+
+2026-05-25 Loop 95 - Vehicle damage root rotation inverse removal.
+Wrong: `VehicleComponentDamageRuntime.FixedTick()` computed `math.inverse(rootRotation)` even though `TryReadAuthoritativeRootPose()` returns a normalized root rotation or identity.
+Done: replaced the root inverse with `math.conjugate(rootRotation)` before scheduling `MapVehicleDamageSignalsJob`.
+Cinematic Cheats used: none; vehicle damage grid mapping truth is preserved.
+Exact Microseconds saved: 0 us measured. Static work removed per vehicle damage tick: one quaternion inverse. Profiler proof pending.
+Verification: AST pass OK; `python Tools\OOP_Hitbox_Scanner.py` passed in ~145.5s; JSON proof assert passed. Report confirms `vehicleDamageRootRotationProof.verdict=PASS`, `fixedTickRootInverseCalls=0`, ballistics primitive proof `PASS`, armor rotation inverse proof `PASS`, branchless LUT `PASS`, combat trig `0`, combat angle API `0`, and project `acos/asin` inventory `0`. Scoped `git diff --check` passed with line-ending warnings only.
+Compile: not run. Latest guard sample was CPU `93%`; project rule forbids `dotnet build` while CPU is above `50%`.
+
+2026-05-25 Loop 96 - Hull dent visual rotation inverse removal.
+Wrong: Visual-only hull dent projection used `Quaternion.Inverse` in the dent producer and shader projector, paying generic inverse work on damage-feedback frames.
+Done: added explicit `ConjugateUnitRotation()` helpers in `SubmarineStructuralGrid` and `HullDentShaderController`, then used them for local point/direction projection from unit `Transform.rotation`.
+Cinematic Cheats used: kept hull dent as visual-only feedback, explicitly not combat health truth.
+Exact Microseconds saved: 0 us measured. Static work removed: three `Quaternion.Inverse` call sites across hull dent feedback projection.
+Verification: AST pass OK; `python Tools\OOP_Hitbox_Scanner.py` passed in ~143.4s; JSON proof assert passed. Report confirms `hullDentVisualRotationProof.verdict=PASS`, `submarineStructuralGridQuaternionInverseCalls=0`, `hullDentShaderQuaternionInverseCalls=0`, vehicle root rotation proof `PASS`, ballistics primitive proof `PASS`, armor inverse proof `PASS`, combat trig `0`, combat angle API `0`, and project `acos/asin` inventory `0`. Scoped `git diff --check` passed with line-ending warnings only.
+Compile: not run. Latest guard sample was CPU `100%`; project rule forbids `dotnet build` while CPU is above `50%`.

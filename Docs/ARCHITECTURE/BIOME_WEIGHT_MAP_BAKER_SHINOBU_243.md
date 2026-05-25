@@ -62,7 +62,7 @@ Preview graph:
 
 - Timing proof uses that same single-fence graph.
 - The bake report records one measured `jobChain` timing and marks stage breakdown as `not_isolated_single_fence`; it does not claim fake mock/normal/weight stage timings without profiler instrumentation.
-- Failure-only cleanup fences complete outstanding scheduled jobs before TempJob disposal if an exception interrupts a bake/preview before the readback fence; they are not a normal hot-path scheduling boundary.
+- Failure-only cleanup fences complete outstanding scheduled jobs before TempJob disposal if an exception interrupts a bake/preview before the readback fence; they are not a hot-path scheduling boundary.
 
 Black-box dump emission is isolated behind `TryDumpBlackBox`.
 
@@ -81,7 +81,7 @@ Noise route:
 - Precision rule: local-delta math; seam continuity preserved.
 - Rejected route: absolute AUP cast to `float`.
 
-The math helper exposes no zero-origin `double3` noise overloads. Callers must provide both `sampleAup` and `originAup`; this prevents future editor bake extensions from bypassing the sector-local AUP anchor.
+The math helper exposes no zero-origin `double3` noise overloads. Callers must provide both `sampleAup` and `originAup`; this prevents editor bake extensions from bypassing the sector-local AUP anchor.
 
 ## Quality Route
 

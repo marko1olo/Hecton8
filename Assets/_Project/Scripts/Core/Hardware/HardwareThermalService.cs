@@ -26,6 +26,7 @@ namespace Hecton8.Core.Hardware
         IGlobalRegistryHotSwapListener,
         IGlobalRegistryHotSwapRefListener
     {
+        private static int s_x001HardwareThermalServiceSignalPushDropCount;
         private const int BlackBoxFrameCount = 300;
         private const short UnknownTemperatureTenthsCelsius = short.MinValue;
         private const byte UnknownBatteryStatus = 0;
@@ -193,7 +194,7 @@ namespace Hecton8.Core.Hardware
 
         public void Tick(float deltaTime)
         {
-            WriteBlackBox(unchecked((uint)Time.frameCount));
+            WriteBlackBox(Hecton8.Core.SystemDispatcher.CurrentFrameId);
         }
 
         private void Awake()
@@ -283,7 +284,7 @@ namespace Hecton8.Core.Hardware
             if (TryResolveThermalSeverity(out NativeArray<byte> thermalSeverity))
                 thermalSeverity[0] = _severity;
 
-            uint frame = unchecked((uint)Time.frameCount);
+            uint frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             ApplyThermalPoliciesCold(frame);
             PublishSignalsCold(frame, previousSeverity);
             PublishTelemetryCold();
@@ -551,7 +552,7 @@ namespace Hecton8.Core.Hardware
                     Severity = _severity,
                     Flags = (byte)(critical ? 1 : 0)
                 };
-                SignalBus<HUDNotificationSignal>.TryPush(in warning);
+                SignalBus<HUDNotificationSignal>.TryPushTracked(in warning, ref s_x001HardwareThermalServiceSignalPushDropCount);
             }
 
             bool transientLowTierOverride = throttling || hapticMute;
@@ -615,7 +616,7 @@ namespace Hecton8.Core.Hardware
                     BatteryPercent = _batteryPercent,
                     ActionMask = _lastActionMask
                 };
-                SignalBus<ThermalStateChangedSignal>.TryPush(in thermalSignal);
+                SignalBus<ThermalStateChangedSignal>.TryPushTracked(in thermalSignal, ref s_x001HardwareThermalServiceSignalPushDropCount);
             }
 
             BatteryLevelSignal batterySignal = new BatteryLevelSignal
@@ -628,7 +629,7 @@ namespace Hecton8.Core.Hardware
                 Flags = (byte)(_hapticMuteApplied ? 1 : 0),
                 ActionMask = _lastActionMask
             };
-            SignalBus<BatteryLevelSignal>.TryPush(in batterySignal);
+            SignalBus<BatteryLevelSignal>.TryPushTracked(in batterySignal, ref s_x001HardwareThermalServiceSignalPushDropCount);
         }
 
         private void PublishTelemetryCold()
@@ -919,6 +920,13 @@ namespace Hecton8.Core.Hardware
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
                 _dispatcher = currentService as SystemDispatcher;
+                _registeredFrameTick = false;
+                _registeredFrostTick = false;
+                if (currentService != null && isActiveAndEnabled && _serviceRegistered)
+                {
+                    TryRegisterFrameTick();
+                    TryRegisterFrostTick();
+                }
                 return;
             }
 

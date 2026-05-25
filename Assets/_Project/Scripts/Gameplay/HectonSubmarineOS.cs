@@ -1,5 +1,5 @@
-using Hecton8.Atmosphere;
 using Hecton8.Audio;
+using Hecton8.Atmosphere;
 using Hecton8.Construction;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
@@ -657,6 +657,7 @@ namespace Hecton8.Gameplay
     [AddComponentMenu("Hecton8/Gameplay/Submarine/Hecton Submarine OS")]
     public sealed class HectonSubmarineOS : MonoBehaviour, IUpdatable, ISlowTickable, IRenderable, IPowerGridTelemetryListener, IHighPressureEventListener, IFatalPressureImplosionEventListener, IDroneFleetSnapshotEventListener, ISonarPingEventListener, ISonarSnapshotEventListener, IGlobalRegistryHotSwapListener
     {
+        private static int s_x001HectonSubmarineOSSignalPushDropCount;
         private const float DefaultReferencePressureKPa = HectonSurvivalContract.KPaPerAtmosphere;
         private const float LowPowerThreshold01 = 0.20f;
         private const float LowPowerReleaseThreshold01 = 0.24f;
@@ -751,7 +752,7 @@ namespace Hecton8.Gameplay
         [SerializeField, Range(0f, 1f)] private float warningVolume = 0.55f;
 
         private SubmarineCoreDirector _submarineCore;
-        private SubmarineAtmosphereSystem _atmosphereSystem;
+        private ISubmarineAtmosphereRoomReadModel _atmosphereSystem;
         private SubmarineStationKeepingController _stationKeepingController;
         private IPowerGridService _powerGridService;
         private SpectrumSystem _spectrumRuntime;
@@ -1173,8 +1174,15 @@ namespace Hecton8.Gameplay
             {
                 case GlobalRegistryServiceSlot.Dispatcher:
                     _runtimeDispatcherReady = currentService != null;
-                    if (_runtimeDispatcherReady)
-                        TryStartRuntimeLifecycle();
+                    _registeredUpdatable = false;
+                    _registeredSlowTick = false;
+                    if (_runtimeDispatcherReady && isActiveAndEnabled)
+                    {
+                        if (_runtimeLifecycleStarted)
+                            TryRegister();
+                        else
+                            TryStartRuntimeLifecycle();
+                    }
                     break;
                 case GlobalRegistryServiceSlot.PowerGrid:
                     _powerGridService = currentService as IPowerGridService;
@@ -1249,8 +1257,8 @@ namespace Hecton8.Gameplay
 
         private void RefreshAtmosphereTelemetry()
         {
-            SubmarineAtmosphereSystem atmosphereSystem = _atmosphereSystem;
-            if (atmosphereSystem == null)
+            ISubmarineAtmosphereRoomReadModel atmosphereSystem = _atmosphereSystem;
+            if (atmosphereSystem == null || !atmosphereSystem.IsAtmosphereRuntimeActive)
             {
                 _oxygenNormalized = 1f;
                 _maxPressureKPa = DefaultReferencePressureKPa;
@@ -1286,7 +1294,7 @@ namespace Hecton8.Gameplay
             if (_submarineCore != null && _submarineCore.HullRigidbody != null && _submarineCore.IsTransportPlatformActive)
                 subsystemStatus |= SubsystemStatus.Engines;
 
-            if (_atmosphereSystem != null && !_lifeSupportCriticalActive)
+            if (_atmosphereSystem != null && _atmosphereSystem.IsAtmosphereRuntimeActive && !_lifeSupportCriticalActive)
                 subsystemStatus |= SubsystemStatus.LifeSupport;
 
             if (!_lowPowerModeActive)
@@ -1966,7 +1974,7 @@ namespace Hecton8.Gameplay
                 Priority = normalizedWarningId,
                 Flags = warningFlags
             };
-            SignalBus<VocalWarningSignal>.TryPush(in signal);
+            SignalBus<VocalWarningSignal>.TryPushTracked(in signal, ref s_x001HectonSubmarineOSSignalPushDropCount);
             AudioCaptionEvents.TryRaiseHash(captionHashId, transform.position, VwsCaptionDurationSeconds, intensity);
         }
 

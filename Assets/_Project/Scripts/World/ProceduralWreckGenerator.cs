@@ -942,7 +942,7 @@ namespace Hecton8.World
     /// Deterministic wave-function-collapse wreck generator operating in absolute-universe space.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class ProceduralWreckGenerator : MonoBehaviour, IProceduralGenerator, IUpdatable, ISlowTickable, IGlobalRegistryHotSwapListener
+    public sealed class ProceduralWreckGenerator : MonoBehaviour, IProceduralGenerator, IUpdatable, ISlowTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const int MaxModuleDefinitions = 16;
         private const byte UncollapsedModuleId = byte.MaxValue;
@@ -1241,6 +1241,7 @@ namespace Hecton8.World
         private int _pendingLootReadIndex;
         private int _pendingLootCount;
         private bool _registeredLootTick;
+        private bool _registeredLootLateFrame;
         private bool _registeredWreckSlowTick;
         private bool _initialized;
         private int _activeGridResolution;
@@ -1294,7 +1295,11 @@ namespace Hecton8.World
             {
                 return;
             }
+            TryRegisterLootTick();
+        }
 
+        public void LateFrameTick()
+        {
             FlushOneQueuedLootSpawn();
         }
 
@@ -2597,6 +2602,12 @@ namespace Hecton8.World
 
         private void TryUnregisterLootTick()
         {
+            if (_registeredLootLateFrame)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                _registeredLootLateFrame = false;
+            }
+
             if (!_registeredLootTick)
                 return;
 
@@ -2610,6 +2621,8 @@ namespace Hecton8.World
                 return;
 
             _registeredLootTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
+            if (!_registeredLootLateFrame)
+                _registeredLootLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
         }
 
         private void FlushOneQueuedLootSpawn()
@@ -3239,7 +3252,7 @@ namespace Hecton8.World
             int index = _telemetryCursor % _telemetryEntries.Length;
             _telemetryEntries[index] = new WreckTelemetryEntry
             {
-                FrameIndex = (uint)math.max(0, Time.frameCount),
+                FrameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 EventHash = eventHash,
                 Seed = _activeGenerationSeed,
                 Flags = flags,

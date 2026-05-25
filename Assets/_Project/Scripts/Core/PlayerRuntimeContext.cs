@@ -120,6 +120,7 @@ namespace Hecton8.Core
     /// </summary>
     public sealed class PlayerRuntimeContext
     {
+        private static int s_x001PlayerRuntimeContextSignalPushDropCount;
         private const float SurvivalDamageEpsilon = 0.0001f;
         private const float MinTransportSpeedMultiplier = 0.01f;
         private const uint PlayerTargetHash = 0x504C5952u;
@@ -293,13 +294,14 @@ namespace Hecton8.Core
                 DamageType = state.StatusMask,
                 TargetHash = PlayerTargetHash,
                 SourceHash = SurvivalSourceHash,
-                Frame = unchecked((uint)SystemDispatcher.CurrentFrameIndex),
+                Frame = SystemDispatcher.CurrentFrameId,
                 SourceId = 0,
                 TargetId = 0,
                 Channel = 0,
-                Flags = Hecton8.Core.Contracts.Signals.CombatDamageSignal.DirectRuntimeFlag
+                Flags = Hecton8.Core.Contracts.Signals.CombatDamageSignal.DirectRuntimeFlag |
+                        Hecton8.Core.Contracts.Signals.CombatDamageSignal.VisualOnlyFlag
             };
-            SignalBus<Hecton8.Core.Contracts.Signals.CombatDamageSignal>.TryPush(in signal);
+            SignalBus<Hecton8.Core.Contracts.Signals.CombatDamageSignal>.TryPushTracked(in signal, ref s_x001PlayerRuntimeContextSignalPushDropCount);
         }
 
         private static PlayerMovementRuntimeState SanitizeMovementState(

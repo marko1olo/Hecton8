@@ -30,7 +30,8 @@ Vault buffers:
 
 - `71389` `UpgradeVisualFlagsBuffer`: `UpgradeVisualStateDTO[64]`, VISUAL_SYNC shader flag, quality, glow, and extrusion lane.
 
-- `71410` `UpgradeToolModuleRulesBuffer`: `ToolUpgradeModuleRuleDTO[96]`, packed four-slot tool module rule rows. `71390..71409` are occupied by ProceduralCoral; `71480..71489` are occupied by Auxiliary, so `71410` is the nearest scanned free local owner ID.
+- `71410` `UpgradeToolModuleRulesBuffer`: `ToolUpgradeModuleRuleDTO[96]`, packed four-slot tool module rule rows.
+- `71390..71409` are ProceduralCoral; `71480..71489` are Auxiliary; `71410` is nearest scanned free local owner ID.
 
 - `71411` `SuitUpgradeTelemetryRingBuffer`: `SuitUpgradeTelemetryEntry[64] x 300`, suit blackbox mirror owned by `GlobalDataVault` through a pointer-free `VaultGenerationHandle`.
 
@@ -78,7 +79,8 @@ Rules:
 - `ToolState.UpgradeBitmask64` is the authoritative 64-bit runtime mask.
 - `ToolState.UpgradeBitmask` remains a low-32 compatibility mirror.
 
-- Vehicle upgrade bits use `VehicleUpgradeBits : ulong`; `VehicleUpgradeModule` and `SubmarineCoreDirector` compose installed transport masks as `ulong`. The legacy `VehicleUpgradesChangedSignal.UpgradeMask` remains low-32 only because that signal contract predates this matrix route.
+- Vehicle upgrade bits use `VehicleUpgradeBits : ulong`; `VehicleUpgradeModule` and `SubmarineCoreDirector` compose installed transport masks as `ulong`.
+- Legacy `VehicleUpgradesChangedSignal.UpgradeMask` remains low-32 because that signal predates this matrix route.
 
 - Upgrade-owned payload frame values use owner-local monotonic counters, not Unity `Time.frameCount`.
 

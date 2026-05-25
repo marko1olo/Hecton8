@@ -38,7 +38,7 @@ namespace Hecton8.Core.Diagnostics.Visuals
             if (count <= 0)
                 return;
 
-            uint frame = unchecked((uint)Time.frameCount);
+            uint frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             ReadOnlySpan<MemoryAddressShiftSignal> shifts = SignalBus<MemoryAddressShiftSignal>.GetFrameSnapshot();
             Vector3 size = new Vector3(wireSizeMeters, wireSizeMeters, wireSizeMeters);
             DrawLastPointerFault(vault as GlobalDataVault, aups, count, frame);

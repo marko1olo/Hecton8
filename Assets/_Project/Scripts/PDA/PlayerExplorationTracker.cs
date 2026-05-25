@@ -166,7 +166,7 @@ namespace Hecton8.PDA
         {
             InitializeExplorationMask();
             TryRegisterService();
-            _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+            _saveService = GlobalRegistry.Save;
             TryRegisterHotSwapListener();
             TryRegisterWithTickManager();
             TryRegisterWithSlowTickManager();
@@ -1873,7 +1873,7 @@ namespace Hecton8.PDA
                 return;
 
             _cartographyDumpedThisSession = true;
-            CartographyVault.TryDumpBlackBox(in buffers, Application.dataPath + "/..");
+            CartographyVault.TryDumpBlackBox(in buffers, Path.GetFullPath(Path.Combine(Application.dataPath, "..")));
         }
 
         public bool GenerateMockExplorationData()
@@ -2332,7 +2332,7 @@ namespace Hecton8.PDA
                 return;
 
             if (_saveService == null)
-                _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+                _saveService = GlobalRegistry.Save;
 
             if (_saveService == null)
                 return;

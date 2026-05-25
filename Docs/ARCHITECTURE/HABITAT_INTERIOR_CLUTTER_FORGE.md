@@ -36,7 +36,9 @@ Runtime contract:
 
 - Generated mesh vertex layout is 32 bytes: position float3 offset 0, normal float3 offset 12, uv0 float2 offset 24.
 
-- Generated mesh vertex-buffer setup routes through `InteriorClutterVertexLayoutValidator.ApplyVertexBufferParams`; descriptor records are written into a disposed Temp `NativeArray<VertexAttributeDescriptor>`, and mesh validation uses direct vertex-attribute accessors instead of array-returning mesh attribute reads.
+- Generated mesh vertex-buffer setup routes through `InteriorClutterVertexLayoutValidator.ApplyVertexBufferParams`.
+- Descriptor records use disposed Temp `NativeArray<VertexAttributeDescriptor>`.
+- Mesh validation uses direct vertex-attribute accessors instead of array-returning mesh attribute reads.
 
 - Source mesh extraction uses `Mesh.AcquireReadOnlyMeshData` byte streams and Burst extraction jobs; managed `Mesh.GetVertices(List<T>)` staging is not part of the extraction path.
 

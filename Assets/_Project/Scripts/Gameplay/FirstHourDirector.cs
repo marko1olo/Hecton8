@@ -1002,7 +1002,7 @@ namespace Hecton8.Gameplay
             _cachedAudioLogSystem = Hecton8.Core.GlobalRegistry.AudioLogRuntime;
             _cachedPlayerContext = Hecton8.Core.GlobalRegistry.Player;
             _cachedLocalization = Hecton8.Core.GlobalRegistry.LocalizationText;
-            _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+            _saveService = Hecton8.Core.GlobalRegistry.Save;
         }
 
         private void ClearCachedRuntimeServices()
@@ -1039,7 +1039,7 @@ namespace Hecton8.Gameplay
                 return;
 
             if (_saveService == null)
-                _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+                _saveService = Hecton8.Core.GlobalRegistry.Save;
 
             if (_saveService == null)
                 return;

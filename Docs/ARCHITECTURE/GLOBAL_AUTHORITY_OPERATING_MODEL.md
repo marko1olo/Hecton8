@@ -23,6 +23,7 @@ Compile evidence:
 - Loop157 handled UI/Construction singleton runtime tails.
 - Loop158 handled world/environment/AI Dispatcher tails.
 - Loop159 zeroed project-wide singleton owner-route and `?? GlobalRegistry|GlobalRegistry.TryGet` greps; GI relay/weather fallbacks are now explicit cold owner-cache routes.
+- Loop160 fixed 50 additional Dispatcher replacement callbacks by clearing local lane flags before current Dispatcher re-register.
 - Targeted hot-swap, Save-cache, singleton, and fallback-route greps pass; broad file-local scan still includes split-line/static-driver/legacy-stub false positives.
 - Build wall remains `NETSDK1004`/`MSB3491` before C# diagnostics.
 - Runtime proof: pending.

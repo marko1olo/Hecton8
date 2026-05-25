@@ -1401,7 +1401,7 @@ namespace Hecton8.Core.Content
 
             telemetry[cursor] = new ContentAuthorityTelemetryEntry
             {
-                Frame = unchecked((uint)SystemDispatcher.CurrentFrameIndex),
+                Frame = SystemDispatcher.CurrentFrameId,
                 Flags = flags,
                 PendingLoads = pendingLoadCount,
                 HologramsActive = _hologramsActive,

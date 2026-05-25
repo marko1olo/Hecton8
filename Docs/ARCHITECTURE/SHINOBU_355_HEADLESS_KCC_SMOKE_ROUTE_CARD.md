@@ -93,7 +93,8 @@ Total: 32 bytes, 8-byte alignment, no `Pack=1`, no properties.
 - Smoke tuning is sanitized once at job entry. `GlobalQualityWeight` continuously lerps the stress drive from 220 to 620 without changing DTO layout or authority route.
 - Resolved `NativeArray` lengths are asserted before scheduling phantom jobs. The runner passes the validated safe phantom count into initialization, simulation, and escape verification jobs.
 - CSV profile ingestion rejects integer overflow in the span parser and rejects out-of-range AUP, velocity, and input-bias fields before writing profile DTOs.
-- Black-box dumps use `H8KCC355` v1 binary header: version, entry count, entry struct size, oldest frame, newest frame, source hash. Telemetry rows are written oldest-to-newest after rotating the 300-frame circular ring.
+- Black-box dumps use `H8KCC355` v1 binary header: version, entry count, entry struct size, oldest/newest frame, source hash.
+- Telemetry rows write oldest-to-newest after rotating the 300-frame circular ring.
 - SceneView failure gizmo keeps absolute `double3` AUP in cold state.
 - It renders only `AUP - previousAUP` local deltas through `HydrodynamicKccMath.ResolveLocalFloat3`.
 - No absolute 100 km coordinate casts directly into debug `Vector3`.

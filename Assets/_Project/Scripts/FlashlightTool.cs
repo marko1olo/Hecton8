@@ -743,7 +743,7 @@ namespace Hecton8.Gameplay
             const QueryTriggerInteraction triggerMode = QueryTriggerInteraction.Collide;
             if (!cache.TryGet(ray, contextProbeRange, contextMask, triggerMode, out Hecton8.Physics.QueryResult qResult))
             {
-                if (!TryQueuePrimaryRaycast(ray.origin, ray.direction, contextProbeRange, contextMask.value, triggerMode, out RaycastHit hit))
+                if (!TryResolvePrimarySurfaceHit(ray.origin, ray.direction, contextProbeRange, contextMask.value, triggerMode, out InteractionSurfaceHit hit))
                     return false;
                 qResult = new Hecton8.Physics.QueryResult { hasHit = true, hit = hit };
                 cache.Set(ray, contextProbeRange, contextMask, triggerMode, qResult);
@@ -752,7 +752,7 @@ namespace Hecton8.Gameplay
             if (!qResult.hasHit) 
                 return false;
 
-            RaycastHit finalHit = qResult.hit;
+            InteractionSurfaceHit finalHit = qResult.hit;
 
             Collider collider = finalHit.collider;
             if (collider == null)

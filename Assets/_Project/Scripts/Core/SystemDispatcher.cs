@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
@@ -67,6 +67,7 @@ namespace Hecton8.Core
     [DefaultExecutionOrder(-9950)]
     public sealed class SystemDispatcher : MonoBehaviour, ITickDispatcher, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener
     {
+        private static int s_x001SystemDispatcherSignalPushDropCount;
         private const int LaneCount = 4;
         private const double FastTickIntervalSeconds = 1.0 / 60.0;
         private const double SlowTickIntervalSeconds = 0.1;
@@ -931,7 +932,7 @@ namespace Hecton8.Core
             signal.Frame = ReadPublishedDispatcherFrameId();
             signal.Severity = severity;
             signal.Flags = flags;
-            SignalBus<ComplianceViolationSignal>.TryPush(in signal);
+            SignalBus<ComplianceViolationSignal>.TryPushTracked(in signal, ref s_x001SystemDispatcherSignalPushDropCount);
         }
 
         internal static uint ReadPublishedDispatcherFrameId()
@@ -4646,7 +4647,7 @@ namespace Hecton8.Core
                 signal.Version = record.Generation;
                 signal.Flags = record.Flags;
                 signal.SystemId = record.SystemId;
-                SignalBus<MemoryAddressShiftSignal>.TryPush(in signal);
+                SignalBus<MemoryAddressShiftSignal>.TryPushTracked(in signal, ref s_x001SystemDispatcherSignalPushDropCount);
             }
 
             PublishVaultSovereigntyAddressShiftRecords(dataVault);
@@ -4693,7 +4694,7 @@ namespace Hecton8.Core
                 signal.SourceFrame = record.SourceFrame;
                 signal.SourceHash = record.SourceHash;
                 signal.CompactedCount = record.CompactedCount;
-                SignalBus<MemoryAddressShiftSignal>.TryPush(in signal);
+                SignalBus<MemoryAddressShiftSignal>.TryPushTracked(in signal, ref s_x001SystemDispatcherSignalPushDropCount);
             }
 
             shiftCount[0] = 0;
@@ -4714,7 +4715,7 @@ namespace Hecton8.Core
                 pressureSignal.Frame = frameId;
                 pressureSignal.Severity = vaultPressure01 >= 0.95f ? (byte)2 : (byte)1;
                 pressureSignal.Flags = 2;
-                SignalBus<MemoryPressureSignal>.TryPush(in pressureSignal);
+                SignalBus<MemoryPressureSignal>.TryPushTracked(in pressureSignal, ref s_x001SystemDispatcherSignalPushDropCount);
             }
 
             if (dataVault.HeapFragmentationRatio > 0f)
@@ -5216,7 +5217,7 @@ namespace Hecton8.Core
             signal.RebalanceSequence = frameState.RebalanceSequence;
             signal.ActiveSlowBucketCount = frameState.ActiveSlowBucketCount;
             signal.Flags = unchecked((byte)math.min(byte.MaxValue, frameState.FramePacingFlags));
-            SignalBus<SimulationBucketSyncSignal>.TryPush(in signal);
+            SignalBus<SimulationBucketSyncSignal>.TryPushTracked(in signal, ref s_x001SystemDispatcherSignalPushDropCount);
         }
 
         private static void FlushSimulationBucketVisualSync()
@@ -5266,7 +5267,7 @@ namespace Hecton8.Core
             warning.SlowBucketMask = frameState.SlowBucketMask;
             warning.RebalanceSequence = frameState.RebalanceSequence;
             warning.Severity = ResolveFramePacingSeverity(flags, currentFrameMs, warning.PreSimulationMs);
-            SignalBus<FramePacingWarningSignal>.TryPush(in warning);
+            SignalBus<FramePacingWarningSignal>.TryPushTracked(in warning, ref s_x001SystemDispatcherSignalPushDropCount);
             GlobalTelemetryBus.PublishPerformanceWarning(
                 _FramePacingWarningHash,
                 _SimulationBucketContextHash,
@@ -5723,7 +5724,7 @@ namespace Hecton8.Core
             pressureSignal.Frame = unchecked((uint)memoryPressureEvent.Frame);
             pressureSignal.Severity = 2;
             pressureSignal.Flags = 1;
-            SignalBus<MemoryPressureSignal>.TryPush(in pressureSignal);
+            SignalBus<MemoryPressureSignal>.TryPushTracked(in pressureSignal, ref s_x001SystemDispatcherSignalPushDropCount);
             IMacroDatabaseService macroDatabase = ResolveCachedMacroDatabase();
             macroDatabase?.NotifyCriticalMemoryPressure(
                 memoryPressureEvent.ReservedMemoryBytes,
@@ -6719,6 +6720,7 @@ namespace Hecton8.Core
     /// </summary>
     public static class GlobalRenderContext
     {
+        private static int s_x001SystemDispatcherSignalPushDropCount;
         private static Camera _currentCamera;
         private static ScriptableRenderContext _currentContext;
 
@@ -6765,7 +6767,7 @@ namespace Hecton8.Core
             positionSignal.Frame = frame;
             positionSignal.Forward = (float3)forward;
             positionSignal.Flags = 1;
-            SignalBus<Hecton8.Core.Contracts.Signals.CameraPositionSignal>.TryPush(in positionSignal);
+            SignalBus<Hecton8.Core.Contracts.Signals.CameraPositionSignal>.TryPushTracked(in positionSignal, ref s_x001SystemDispatcherSignalPushDropCount);
 
             Hecton8.Core.Contracts.Signals.CameraFrustumSignal frustumSignal = default;
             frustumSignal.Position = (float3)position;
@@ -6776,7 +6778,7 @@ namespace Hecton8.Core
             frustumSignal.FarClipMeters = camera.farClipPlane;
             frustumSignal.Frame = frame;
             frustumSignal.Flags = 1;
-            SignalBus<Hecton8.Core.Contracts.Signals.CameraFrustumSignal>.TryPush(in frustumSignal);
+            SignalBus<Hecton8.Core.Contracts.Signals.CameraFrustumSignal>.TryPushTracked(in frustumSignal, ref s_x001SystemDispatcherSignalPushDropCount);
         }
 
         internal static void Clear()

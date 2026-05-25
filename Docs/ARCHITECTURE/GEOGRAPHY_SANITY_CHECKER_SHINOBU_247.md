@@ -69,7 +69,9 @@ Output route:
 - `WarningInvalidSectorPayload` marks present-but-invalid master data.
 - CI can distinguish missing upstream data from corrupted upstream data.
 
-Full-world anomaly output streams sector rows into the temporary anomaly file and then copies those rows into the final JSON report. The pipeline does not retain one world-sized anomaly `StringBuilder`.
+Full-world anomaly output streams sector rows into the temporary anomaly file, then copies rows into final JSON report.
+
+The pipeline does not retain one world-sized anomaly `StringBuilder`.
 
 - SceneView anomaly overlay reloads the report through a bounded stream.
 - Record cap: `4096`.
@@ -123,7 +125,9 @@ Sector `.h8bin` scalar lanes are validated before Burst jobs consume them.
 - Entity rule masks: non-zero and limited to `RuleCheckFloating`, `RuleCheckBuried`, `RuleCheckCrushDepth`.
 - Unsupported masks fail closed.
 
-Floating, buried, and connectivity Burst kernels repeat the scalar-domain fence at execution time: non-finite, zero-radius, negative-clearance, negative tolerance, and negative recoverability lanes fatal-mark the row before SDF/height clearance math runs.
+Floating, buried, and connectivity Burst kernels repeat the scalar-domain fence at execution time.
+
+Non-finite, zero-radius, negative-clearance, negative-tolerance, and negative-recoverability lanes fatal-mark the row before SDF/height clearance math runs.
 
 - The loader uses a three-state result: `Missing`, `Loaded`, or `Invalid`.
 - Only `Missing` may use deterministic mock fallback, and only when the window setting allows it.
@@ -179,7 +183,9 @@ Every math job uses:
 - Deterministic mock fallback schedules full generated capacity.
 - Reason: mock producer fills entire staging range.
 
-Connectivity flood-fill depends on seed payload generation/loading only. It runs independently of the entity anomaly chain and is joined with crush-depth/entity validation through `JobHandle.CombineDependencies` before the single offline terminal readback.
+Connectivity flood-fill depends only on seed payload generation/loading.
+
+It runs independently of entity anomaly chain and joins crush-depth/entity validation through `JobHandle.CombineDependencies` before single offline terminal readback.
 
 ## AUP And Quality
 
@@ -246,7 +252,8 @@ Numeric report formatting:
 
 - Float and double report lanes use stack `Span<char>` with `TryFormat("R", InvariantCulture)` and append characters directly into the report builder.
 - Non-finite values and impossible formatting failures write JSON `null`; they do not allocate round-trip numeric strings.
-- The fixed-width `serializationMilliseconds` patch slot also uses stack `TryFormat("R", InvariantCulture)` and direct ASCII byte fill. Impossible formatting writes a fixed zero field; it does not call `ToString` or `Encoding.GetBytes`.
+- Fixed-width `serializationMilliseconds` patch slot uses stack `TryFormat("R", InvariantCulture)` and direct ASCII byte fill.
+- Impossible formatting writes fixed zero field; it does not call `ToString` or `Encoding.GetBytes`.
 - `GEOGRAPHY_SANITY_DIAGNOSTIC.log` appends key/value fields directly and routes float/double values through the same stack-span numeric formatter instead of line-level string concatenation.
 
 ## Deviation Register

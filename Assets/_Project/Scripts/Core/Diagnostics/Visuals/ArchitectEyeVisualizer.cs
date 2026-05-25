@@ -183,6 +183,9 @@ namespace Hecton8.Core.Diagnostics.Visuals
         private int _bufferQuadCapacity;
         private int _gpuWriteBufferIndex;
         private int _frontCount;
+        private int _pendingUploadCount;
+        private int _pendingUploadCapacity;
+        private bool _pendingGpuUpload;
         private bool _slowRegistered;
         private bool _renderRegistered;
         private bool _hotSwapRegistered;
@@ -452,7 +455,6 @@ namespace Hecton8.Core.Diagnostics.Visuals
 
             long beginTicks = Stopwatch.GetTimestamp();
             int quadCapacity = ResolveQuadCapacity();
-            EnsureBufferCapacity(quadCapacity);
             bool openedQuads = OpenOrAcquireVaultBuffer(
                 vault,
                 ref _quadInstancesHandle,
@@ -515,7 +517,7 @@ namespace Hecton8.Core.Diagnostics.Visuals
             float buildMicroseconds = ElapsedMicroseconds(beginTicks);
             state.Flags = _rawStpDebug ? StateFlagRawStp : 0u;
             state.Flags |= nonFiniteCount > 0 ? StateFlagNonFinite : 0u;
-            state.LastFrame = unchecked((uint)Mathf.Max(0, Time.frameCount));
+            state.LastFrame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             state.LastQuadCount = count;
             state.LastBuildMicroseconds = NonNegativeFinite(buildMicroseconds);
             state.LastHealth01 = SaturateFinite(health01);
@@ -528,7 +530,7 @@ namespace Hecton8.Core.Diagnostics.Visuals
             RecordBlackBox(blackBox, ref state, count, laneCount, signalPressure, vault.CapacityPressure01, fragmentation01, health01, frameTimeMs, nonFiniteCount, killSwitchMask, lastFaultPosition, gasCo201, gasO201, stpScale01);
             stateBuffer[0] = state;
 
-            Upload(quads, count);
+            QueueVisualUpload(count, quadCapacity);
             if (nonFiniteCount > 0 && !_dumpWrittenThisFault)
             {
                 DumpBlackBox(blackBox);
@@ -544,6 +546,8 @@ namespace Hecton8.Core.Diagnostics.Visuals
         {
             if (!IsDiagnosticsRuntimeAllowed())
                 return;
+
+            FlushQueuedVisualUpload();
 
             Keyboard keyboard = Keyboard.current;
             if (keyboard != null && keyboard.f12Key.wasPressedThisFrame)
@@ -1242,7 +1246,7 @@ namespace Hecton8.Core.Diagnostics.Visuals
 
             blackBox[index] = new ArchitectEyeBlackBoxEntry
             {
-                Frame = unchecked((uint)Mathf.Max(0, Time.frameCount)),
+                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 QuadCount = (ushort)math.min(ushort.MaxValue, math.max(0, quadCount)),
                 SignalLaneCount = (ushort)math.min(ushort.MaxValue, math.max(0, laneCount)),
                 SignalPressure01 = SaturateFinite(signalPressure01),
@@ -1270,6 +1274,36 @@ namespace Hecton8.Core.Diagnostics.Visuals
             {
                 UploadInternal(quads, count);
             }
+        }
+
+        private void QueueVisualUpload(int count, int capacity)
+        {
+            _pendingUploadCount = math.max(0, count);
+            _pendingUploadCapacity = math.clamp(capacity, 512, 32768);
+            _pendingGpuUpload = true;
+        }
+
+        private void FlushQueuedVisualUpload()
+        {
+            if (!_pendingGpuUpload)
+                return;
+
+            IDataVault vault = _dataVault;
+            if (vault == null ||
+                !TryOpenVaultBuffer(
+                    vault,
+                    in _quadInstancesHandle,
+                    BufferID.ArchitectEyeQuadInstances,
+                    _pendingUploadCapacity,
+                    out NativeArray<ArchitectEyeQuadInstance> quads))
+            {
+                return;
+            }
+
+            EnsureResources();
+            EnsureBufferCapacity(_pendingUploadCapacity);
+            Upload(quads, _pendingUploadCount);
+            _pendingGpuUpload = false;
         }
 
         private unsafe void UploadInternal(NativeArray<ArchitectEyeQuadInstance> quads, int count)

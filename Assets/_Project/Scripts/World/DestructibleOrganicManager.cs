@@ -81,6 +81,9 @@ namespace Hecton8.World
     [DefaultExecutionOrder(-120)] // Manager order must stay ahead of gameplay consumers that read/wire destruction state.
     public sealed class DestructibleOrganicManager : MonoBehaviour, ITickable, ISlowTickable, ILateFrameTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener, IOrganicToolHitService
     {
+        private static int s_x001DirectSignalPushDropCount_DestructibleOrganicManager;
+
+        private static int s_x001DestructibleOrganicManagerSignalPushDropCount;
         private static DestructibleOrganicManager _activeRuntimeInstance;
 
         private const int DefaultTrackedDestroyedCapacity = 2048;
@@ -1661,7 +1664,7 @@ namespace Hecton8.World
                 return;
             }
 
-            if (SignalBus<CombatDamageSignal>.GetFrameSnapshot().Length == 0 && !dearLieGenerateMockDamageBurst)
+            if (!HasAnyAuthoritativeDearLieDamageSignal() && !dearLieGenerateMockDamageBurst)
             {
                 RecordDearLieTelemetry(Time.frameCount, 0, 0, 0, 0, 0, 0, 0f, 0u, 0);
                 return;
@@ -1694,6 +1697,19 @@ namespace Hecton8.World
             _dearLieJobScheduleFrame = Time.frameCount;
             _dearLieJobStartTimeSeconds = Time.realtimeSinceStartupAsDouble;
             _dearLieJobScheduled = true;
+        }
+
+        private static bool HasAnyAuthoritativeDearLieDamageSignal()
+        {
+            ReadOnlySpan<CombatDamageSignal> signals = SignalBus<CombatDamageSignal>.GetFrameSnapshot();
+            int signalCount = math.min(signals.Length, DearLieMaxDamageSignalsPerFrame);
+            for (int i = 0; i < signalCount; i++)
+            {
+                if ((signals[i].Flags & CombatDamageSignal.VisualOnlyFlag) == 0)
+                    return true;
+            }
+
+            return false;
         }
 
         private void ClearDearLieCounters()
@@ -1787,6 +1803,9 @@ namespace Hecton8.World
             for (int i = 0; i < signalCount && writeCount < DearLieMaxDamageSignalsPerFrame; i++)
             {
                 CombatDamageSignal signal = signals[i];
+                if ((signal.Flags & CombatDamageSignal.VisualOnlyFlag) != 0)
+                    continue;
+
                 if (!TryBuildDearLieEvent(in signal, out FloraDestructionEventDTO dearLieEvent, ref nanRejectCount))
                 {
                     rejectedCount++;
@@ -1932,7 +1951,7 @@ namespace Hecton8.World
                 CellSizeMeters = DearLieSpatialCellSizeMeters,
                 QueryRadiusMeters = ResolveDearLieQueryRadius(),
                 GlobalQualityWeight = qualityWeight,
-                Frame = unchecked((uint)Time.frameCount),
+                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 LaneSalt = underwater ? 0xA2680002u : 0xA2680001u
             };
             return resolveJob.Schedule(damageCount, 1, buildHandle);
@@ -2024,7 +2043,7 @@ namespace Hecton8.World
                 Flags = DebrisSpawnSignal.FlagComputeShard,
                 Quantity = result.VfxQuantity
             };
-            return SignalBus<DebrisSpawnSignal>.TryPush(in signal);
+            return SignalBus<DebrisSpawnSignal>.TryPushTracked(in signal, ref s_x001DirectSignalPushDropCount_DestructibleOrganicManager);
         }
 
         private void QueueDearLieRegeneration(uint instanceUid, bool underwater, int activeIndex, Vector3 runtimePosition, float restoreTimeSeconds, in Matrix4x4 originalMatrix)
@@ -4223,7 +4242,7 @@ namespace Hecton8.World
                 Flags = DebrisSpawnSignal.FlagComputeShard,
                 Quantity = 0
             };
-            SignalBus<DebrisSpawnSignal>.TryPush(in signal);
+            SignalBus<DebrisSpawnSignal>.TryPushTracked(in signal, ref s_x001DestructibleOrganicManagerSignalPushDropCount);
         }
 
         private void QueueYieldEvent(
@@ -6470,6 +6489,9 @@ namespace Hecton8.World
             int sampleCount = math.min(signals.Length, DearLieMaxDamageSignalsPerFrame);
             for (int i = 0; i < sampleCount; i++)
             {
+                if ((signals[i].Flags & CombatDamageSignal.VisualOnlyFlag) != 0)
+                    continue;
+
                 int nanRejectCount = 0;
                 if (!TryBuildDearLieEvent(in signals[i], out FloraDestructionEventDTO eventDto, ref nanRejectCount))
                     continue;

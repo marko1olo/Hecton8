@@ -119,6 +119,11 @@ namespace Hecton8.Physics
     [StructLayout(LayoutKind.Explicit, Size = SeaglideHydrodynamicsConstants.RequestSignalBytes)]
     public struct SeaglidePropulsionRequestSignal : ISignal
     {
+        public const int ExpectedCapacity = 8;
+        public const int MaxFrameSignals = 16;
+        public const int LowTierFrameSignals = 4;
+        public const uint LaneHash = 0xFED3F51Du; // FNV32("SeaglidePropulsionRequestSignal")
+
         [FieldOffset(0)] public SeaglidePropulsionRequestDTO Request;
         [FieldOffset(128)] public float3 Velocity;
         [FieldOffset(140)] public float BatteryLevel;

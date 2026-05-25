@@ -13,13 +13,13 @@ namespace Hecton8.Interaction
     public interface IInteractable
     {
         /// <summary>
-        /// Called once when the player's raycast first hits this object.
+        /// Called once when the player's spatial target probe first resolves this object.
         /// Use for highlight activation, UI prompts, audio cues.
         /// </summary>
         void OnHoverStart();
 
         /// <summary>
-        /// Called once when the player's raycast leaves this object.
+        /// Called once when the player's spatial target probe leaves this object.
         /// Use for highlight deactivation, hiding UI prompts.
         /// </summary>
         void OnHoverEnd();

@@ -698,7 +698,7 @@ namespace Hecton8.Core.Data
 
             ring[index] = new H8StaticDataTelemetryEntry
             {
-                FrameIndex = (uint)Mathf.Max(0, Time.frameCount),
+                FrameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 StateHash = stateHash,
                 LastRequestedHash = requestedHash,
                 LookupCount = IsOpen ? _header.LookupCount : 0u,
@@ -728,7 +728,7 @@ namespace Hecton8.Core.Data
             }
 
             uint safeOffset = offset >= 0L && offset <= uint.MaxValue ? (uint)offset : H8CacheBTree.NotFound;
-            uint frameIndex = (uint)Mathf.Max(0, Time.frameCount);
+            uint frameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             BTreeTelemetryAccumulatorDTO accumulator = accumulatorBuffer[0];
             H8CacheBTree.AccumulateTelemetry(
                 ref accumulator,

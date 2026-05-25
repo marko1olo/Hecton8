@@ -12,6 +12,7 @@ namespace Hecton8.Core.Bridge
     [CreateAssetMenu(fileName = "H8InputMappingFacade", menuName = "Hecton-8/Bridge/Input Mapping Facade")]
     public sealed class H8InputMappingFacade : ScriptableObject
     {
+        private static int s_x001H8InputMappingFacadeSignalPushDropCount;
         [Serializable]
         public sealed class Binding
         {
@@ -154,11 +155,11 @@ namespace Hecton8.Core.Bridge
                 OffsetBytes = -1,
                 OldValue = 0f,
                 NewValue = bindingCount > 0 ? bindingCount : 0f,
-                Frame = unchecked((uint)Time.frameCount),
+                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 BufferId = (ushort)BufferID.BridgeInputFacadeBindings,
                 Flags = 0
             };
-            SignalBus<DataVaultUpdateSignal>.TryPush(in signal);
+            SignalBus<DataVaultUpdateSignal>.TryPushTracked(in signal, ref s_x001H8InputMappingFacadeSignalPushDropCount);
         }
 
         private void Reset()

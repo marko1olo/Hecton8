@@ -260,15 +260,18 @@ namespace Hecton8.Core
             object previousService,
             object currentService)
         {
-            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher ||
-                currentService == null ||
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
+                return;
+
+            _registeredToDispatcher = false;
+
+            if (currentService == null ||
                 !_serviceRegistered ||
                 !isActiveAndEnabled)
             {
                 return;
             }
 
-            UnregisterDispatcherLanes();
             TryRegisterDispatcherLanes();
         }
 

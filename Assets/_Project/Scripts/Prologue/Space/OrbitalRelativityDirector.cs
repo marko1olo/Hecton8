@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
@@ -23,6 +23,7 @@ namespace Hecton8.Prologue.Space
     [DefaultExecutionOrder(-8600)]
     public sealed class OrbitalRelativityDirector : MonoBehaviour, IOrbitalDirector, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener, IDisposable
     {
+        private int _signalPushDropCount;
         private const int TelemetryCapacity = 300;
         private const int ControlDrainLimit = 8;
         private const uint SourceHash = PrologueSignalSourceHashes.OrbitalRelativityDirector;
@@ -671,10 +672,10 @@ namespace Hecton8.Prologue.Space
                 turbulence.Intensity01 = turbulence01;
                 turbulence.Debt01 = _reentryHeat01;
                 turbulence.DurationSeconds = cameraJuiceIntervalSeconds;
-                turbulence.Frame = unchecked((uint)Time.frameCount);
+                turbulence.Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
                 turbulence.SourceHash = SourceHash;
                 turbulence.Sequence = _sequence;
-                SignalBus<StreamingTurbulenceSignal>.TryPush(in turbulence);
+                SignalBus<StreamingTurbulenceSignal>.TryPushTracked(in turbulence, ref _signalPushDropCount);
             }
 
             if (reentry && _audioTimer <= 0f)
@@ -711,7 +712,7 @@ namespace Hecton8.Prologue.Space
             if (_cloudWhiteout01 > 0.001f)
                 signal.Flags |= AtmosphericReentrySignal.FlagWhiteoutRequested;
 
-            SignalBus<AtmosphericReentrySignal>.TryPush(in signal);
+            SignalBus<AtmosphericReentrySignal>.TryPushTracked(in signal, ref _signalPushDropCount);
         }
 
         private void PublishPlasmaAudio()
@@ -724,7 +725,7 @@ namespace Hecton8.Prologue.Space
             signal.SourceId = PlasmaRoarHash;
             signal.Channel = AcousticPingSignal.ChannelActiveSonar;
             signal.Flags = AcousticPingSignal.FlagActiveSonar;
-            SignalBus<AcousticPingSignal>.TryPush(in signal);
+            SignalBus<AcousticPingSignal>.TryPushTracked(in signal, ref _signalPushDropCount);
         }
 
         private void PublishHaptics()
@@ -735,9 +736,9 @@ namespace Hecton8.Prologue.Space
             signal.DurationSeconds = math.max(0.05f, hapticIntervalSeconds * 1.5f);
             signal.Frequency01 = math.saturate(0.45f + _reentryHeat01 * 0.55f);
             signal.SourceHash = SourceHash;
-            signal.Frame = unchecked((uint)Time.frameCount);
+            signal.Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             signal.Channel = HapticRequest.ChannelVehicleCritical;
-            SignalBus<HapticRequest>.TryPush(in signal);
+            SignalBus<HapticRequest>.TryPushTracked(in signal, ref _signalPushDropCount);
 
             ToolHapticsRuntime.TryEnqueueSinusoidalCommand(
                 intensity,
@@ -752,13 +753,13 @@ namespace Hecton8.Prologue.Space
         {
             PrologueCompleteSignal signal = default;
             signal.CapsuleAup = _originAup;
-            signal.Frame = unchecked((uint)Time.frameCount);
+            signal.Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             signal.SourceHash = SourceHash;
             signal.Sequence = unchecked((ushort)_sequence);
             signal.WhiteoutHoldSeconds = math.max(0.1f, signalIntervalSeconds * 4f);
             signal.Flags = PrologueCompleteSignal.FlagForceWhiteout;
             signal.Phase = PrologueCompleteSignal.PhaseOceanHandoff;
-            SignalBus<PrologueCompleteSignal>.TryPush(in signal);
+            SignalBus<PrologueCompleteSignal>.TryPushTracked(in signal, ref _signalPushDropCount);
             PublishSplashdownFluidImpulse();
         }
 
@@ -770,10 +771,10 @@ namespace Hecton8.Prologue.Space
             impulse.Vector = direction * SplashdownFluidImpulseStrengthMetersPerSecond;
             impulse.Radius = SplashdownFluidImpulseRadiusMeters;
             impulse.Lifetime = SplashdownFluidImpulseLifetimeSeconds;
-            impulse.Frame = unchecked((uint)Time.frameCount);
+            impulse.Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             impulse.SourceHash = SourceHash;
             impulse.Flags = 2u;
-            SignalBus<FluidImpulseSignal>.TryPush(in impulse);
+            SignalBus<FluidImpulseSignal>.TryPushTracked(in impulse, ref _signalPushDropCount);
         }
 
         private float3 ResolveSplashdownImpulseDirection()
@@ -796,9 +797,9 @@ namespace Hecton8.Prologue.Space
             signal.SystemHash = SourceHash;
             signal.AnomalyHash = anomalyHash;
             signal.Scalar = IsFinite(_distanceMeters) ? (float)math.min(math.abs(_distanceMeters), float.MaxValue) : -1f;
-            signal.Frame = unchecked((uint)Time.frameCount);
+            signal.Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             signal.Severity = severity;
-            SignalBus<TelemetryAnomalySignal>.TryPush(in signal);
+            SignalBus<TelemetryAnomalySignal>.TryPushTracked(in signal, ref _signalPushDropCount);
         }
 
         private void AbortReentry(uint anomalyHash, byte reason)
@@ -910,7 +911,7 @@ namespace Hecton8.Prologue.Space
             OrbitalTelemetryEntry entry = default;
             entry.UniverseVelocity = _universeVelocity;
             entry.PlanetDistanceMeters = _distanceMeters;
-            entry.Frame = unchecked((uint)Time.frameCount);
+            entry.Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             entry.StateHash = HashState(_universeVelocity, _distanceMeters, _reentryHeat01, _cloudWhiteout01);
             entry.ReentryHeat01 = _reentryHeat01;
             entry.CloudWhiteout01 = _cloudWhiteout01;

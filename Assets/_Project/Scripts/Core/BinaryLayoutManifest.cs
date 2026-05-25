@@ -15,6 +15,7 @@ namespace Hecton8.Core
     /// </summary>
     public static class BinaryLayoutManifest
     {
+        private static int s_x001BinaryLayoutManifestSignalPushDropCount;
         public static readonly bool IsLittleEndian = BitConverter.IsLittleEndian;
 
         private const uint LayoutRuleHash = 0x424C5954u; // BLYT
@@ -1015,11 +1016,11 @@ namespace Hecton8.Core
                 RuleHash = LayoutRuleHash,
                 SystemHash = LayoutSystemHash,
                 ContextHash = contextHash,
-                Frame = (uint)Mathf.Max(0, Time.frameCount),
+                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 Severity = 3,
                 Flags = 1
             };
-            SignalBus<ComplianceViolationSignal>.TryPush(in signal);
+            SignalBus<ComplianceViolationSignal>.TryPushTracked(in signal, ref s_x001BinaryLayoutManifestSignalPushDropCount);
         }
 
         private static void DumpFailure(string structName, int expected, int observed, uint contextHash)

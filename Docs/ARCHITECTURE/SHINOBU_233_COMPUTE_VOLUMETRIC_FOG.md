@@ -45,7 +45,7 @@ Runtime route:
 
 - `_HectonMarineSnowFogDensityTex` and `_AbyssalFlowFieldTexture` are legacy shader-global bridge inputs.
 - They are sampled once into an owner-local bridge snapshot after compute-kernel binding succeeds, then `RecordRenderGraph` consumes that immutable snapshot instead of polling global shader state again.
-- They are treated as previous-frame presentation inputs; this route does not claim same-frame RenderGraph producer dependency until the upstream owners publish graph `TextureHandle`s through a shared resource contract.
+- They are previous-frame presentation inputs. Same-frame RenderGraph producer dependency remains unclaimed until upstream owners publish graph `TextureHandle`s through shared resource contract.
 - External RTHandle wrappers are separated from fallback wrappers so invalid bridge inputs cannot poison fallback binding, and frame CBuffer upload happens only after final fallback resource resolution.
 
 

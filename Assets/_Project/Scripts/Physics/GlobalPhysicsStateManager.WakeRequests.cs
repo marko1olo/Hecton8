@@ -7,11 +7,13 @@ namespace Hecton8.Physics
 {
     public sealed partial class GlobalPhysicsStateManager
     {
+        private static int s_x001DirectSignalPushDropCount_GlobalPhysicsStateManager_WakeRequests;
+
         private const int PhysicsWakeRequestFlushLimit = 16;
 
         private bool QueuePhysicsWakeRequest(in WakeRequestSignal request)
         {
-            return SignalBus<WakeRequestSignal>.TryPush(in request);
+            return SignalBus<WakeRequestSignal>.TryPushTracked(in request, ref s_x001DirectSignalPushDropCount_GlobalPhysicsStateManager_WakeRequests);
         }
 
         private void FlushPhysicsWakeRequests()
