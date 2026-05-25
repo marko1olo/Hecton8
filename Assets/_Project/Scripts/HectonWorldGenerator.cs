@@ -1077,47 +1077,143 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
 
     void EnsureLUTs()
     {
-        if (_lutsReady) return;
-        _westLUT  = BakeLUT(slopes.westCurve);
-        _eastLUT  = BakeLUT(slopes.eastCurve);
-        _biomeLUT = BakeLUT(biomes.biomeRemapCurve);
-        RegisterTrackedNativeArray(_westLUT, nameof(_westLUT));
-        RegisterTrackedNativeArray(_eastLUT, nameof(_eastLUT));
-        RegisterTrackedNativeArray(_biomeLUT, nameof(_biomeLUT));
-        _lutsReady = true;
+        if (_lutsReady && TryResolveLutViews(out _, out _, out _))
+            return;
+
+        DisposeLUTs();
+
+        IDataVault vault = CacheWorldGeneratorVaultCold(GlobalRegistry.DataVault);
+        if (vault == null)
+            return;
+
+        bool westReady = EnsureLutBuffer(vault, WestSlopeLutBufferId, slopes.westCurve, ref _westLutHandle);
+        bool eastReady = EnsureLutBuffer(vault, EastSlopeLutBufferId, slopes.eastCurve, ref _eastLutHandle);
+        bool biomeReady = EnsureLutBuffer(vault, BiomeLutBufferId, biomes.biomeRemapCurve, ref _biomeLutHandle);
+        _lutsReady = westReady && eastReady && biomeReady && TryResolveLutViews(out _, out _, out _);
+        if (!_lutsReady)
+            DisposeLUTs();
     }
 
     void DisposeLUTs()
     {
         if (!_lutsReady) return;
-        DisposeTrackedNativeArray(ref _westLUT);
-        DisposeTrackedNativeArray(ref _eastLUT);
-        DisposeTrackedNativeArray(ref _biomeLUT);
+        ReleaseLutHandle(ref _westLutHandle);
+        ReleaseLutHandle(ref _eastLutHandle);
+        ReleaseLutHandle(ref _biomeLutHandle);
         _lutsReady = false;
     }
 
     void DisposeLUTs(JobHandle dependency)
     {
         if (!_lutsReady) return;
-        bool scheduledDisposal = false;
-        JobHandle disposeHandle = dependency;
-        DisposeTrackedNativeArray(ref _westLUT, ref disposeHandle, ref scheduledDisposal);
-        DisposeTrackedNativeArray(ref _eastLUT, ref disposeHandle, ref scheduledDisposal);
-        DisposeTrackedNativeArray(ref _biomeLUT, ref disposeHandle, ref scheduledDisposal);
-        _lutsReady = false;
-        if (scheduledDisposal)
-            JobHandle.ScheduleBatchedJobs();
+        JobHandle releaseDependency = dependency;
+        DispatcherJobSwap.TryComplete(ref releaseDependency, forceComplete: true);
+        DisposeLUTs();
     }
 
-    NativeArray<float> BakeLUT(AnimationCurve curve)
+    private IDataVault CacheWorldGeneratorVaultCold(IDataVault vault)
     {
-        var lut = new NativeArray<float>(LUT_RES, DataVaultExemptWorldGenerationLutAllocator);
+        if (!ReferenceEquals(_worldGeneratorVault, vault))
+            _worldGeneratorVault = vault;
+
+        return _worldGeneratorVault;
+    }
+
+    private static bool EnsureLutBuffer(
+        IDataVault vault,
+        BufferID bufferId,
+        AnimationCurve curve,
+        ref VaultGenerationHandle<float> handle)
+    {
+        handle = vault.EnsureGenerationHandle<float>(
+            bufferId,
+            LUT_RES,
+            WorldGeneratorVaultOwner,
+            NativeArrayOptions.UninitializedMemory);
+
+        if (!vault.TryAcquireWriteLock(in handle, WorldGeneratorVaultOwner, out NativeArray<float> lut) ||
+            !lut.IsCreated ||
+            lut.Length < LUT_RES)
+        {
+            return false;
+        }
+
+        try
+        {
+            FillLUT(lut, curve);
+            return true;
+        }
+        finally
+        {
+            vault.ReleaseWriteLock(in handle, WorldGeneratorVaultOwner);
+        }
+    }
+
+    private void ReleaseLutHandle(ref VaultGenerationHandle<float> handle)
+    {
+        IDataVault vault = _worldGeneratorVault;
+        if (vault != null && handle.BufferID != 0u)
+            vault.ReleaseBuffer(in handle);
+
+        handle = default;
+    }
+
+    private bool TryResolveLutViews(
+        out NativeArray<float> westLut,
+        out NativeArray<float> eastLut,
+        out NativeArray<float> biomeLut)
+    {
+        westLut = default;
+        eastLut = default;
+        biomeLut = default;
+        IDataVault vault = _worldGeneratorVault;
+        return vault != null &&
+               _westLutHandle.BufferID != 0u &&
+               _eastLutHandle.BufferID != 0u &&
+               _biomeLutHandle.BufferID != 0u &&
+               vault.TryResolveHandle(in _westLutHandle, out westLut) &&
+               westLut.IsCreated &&
+               westLut.Length >= LUT_RES &&
+               vault.TryResolveHandle(in _eastLutHandle, out eastLut) &&
+               eastLut.IsCreated &&
+               eastLut.Length >= LUT_RES &&
+               vault.TryResolveHandle(in _biomeLutHandle, out biomeLut) &&
+               biomeLut.IsCreated &&
+               biomeLut.Length >= LUT_RES;
+    }
+
+    private bool TryReadLut(
+        in VaultGenerationHandle<float> handle,
+        out NativeArray<float>.ReadOnly lut)
+    {
+        lut = default;
+        IDataVault vault = _worldGeneratorVault;
+        return vault != null &&
+               handle.BufferID != 0u &&
+               vault.TryReadOnlyHandle(in handle, out lut) &&
+               lut.Length >= LUT_RES;
+    }
+
+    private static NativeArray<float> BakeTemporaryLUT(AnimationCurve curve)
+    {
+        var lut = new NativeArray<float>(LUT_RES, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+        FillLUT(lut, curve);
+        return lut;
+    }
+
+    private static void FillLUT(NativeArray<float> lut, AnimationCurve curve)
+    {
         for (int i = 0; i < LUT_RES; i++)
         {
             float t = (float)i / (LUT_RES - 1);
             lut[i] = (curve != null && curve.length > 0) ? curve.Evaluate(t) : (1f - t);
         }
-        return lut;
+    }
+
+    private static float EvaluateCurve01(AnimationCurve curve, float t)
+    {
+        t = math.clamp(t, 0f, 1f);
+        return curve != null && curve.length > 0 ? curve.Evaluate(t) : (1f - t);
     }
 
     public void RefreshLUTs()
@@ -1469,6 +1565,10 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
         if (_pendingChunks.Count >= PendingChunkMaxCapacity)
             return;
 
+        EnsureLUTs();
+        if (!TryResolveLutViews(out NativeArray<float> westLut, out NativeArray<float> eastLut, out NativeArray<float> biomeLut))
+            return;
+
         float sp  = lod == 0 ? lod0Spacing : lod1Spacing;
         int   res = (int)math.ceil(chunkSize / sp) + 1;
         int   vc  = res * res;
@@ -1483,6 +1583,7 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
         var biomeV = new NativeArray<float>(vc,   Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
 
         var vertexJob = MakeVertexJob(res, res, org.x, org.y, sp, lod,
+                                       westLut, eastLut, biomeLut,
                                        verts, uvs, caveV, caveB, biomeV);
         JobHandle h1 = vertexJob.Schedule(vc, JOB_BATCH);
 

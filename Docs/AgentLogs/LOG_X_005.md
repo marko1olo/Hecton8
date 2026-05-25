@@ -1423,3 +1423,32 @@ Proof:
 - Strict whole-runtime forbidden scan: zero sync Unity Physics casts/overlaps/checks, zero PhysX command types/schedules, zero collision/trigger callbacks, zero `Physics.SyncTransforms`, zero `.ClosestPoint`, zero `GetContacts`, zero `GetContact`, and zero `SweepTest*`.
 - `git diff --check` passed for touched files with CRLF warnings only.
 - C# compile did not run after this pass: 10 build-gate attempts stayed blocked by CPU max `100`; attempts 5-10 also had 2 active compiler/runtime processes.
+
+## APEX Continuation - Collision-Damage Dead Route Cleanup - 2026-05-25
+
+What was wrong:
+- `MantaEmergencyWreck` still stored legacy `collisionDamage*` fields and residency cooldown state after the Unity `Collision` damage route was removed.
+- `SargassumCollapseChunk` still carried dead collision-snag helper code and a cold `SpatialQueryHit[8]` target buffer even though no active typed event owner calls it.
+
+What was done:
+- Removed Manta dead `collisionDamage*` authoring fields, cooldown timer, and residency cooldown field.
+- Preserved the only live Manta velocity clamp behavior under `bailoutVelocityCapMaxSpeed`.
+- Removed Sargassum dead snag probe fields/helpers: `TryConfigureSnag`, `LayerMatchesMask`, `ShouldStopSiltTrail`, `_cascadeImpactConsumed`, target/probe serialized fields, and `_snagContacts`.
+- Extended `Tools/KccApexAudit_X_005.py` and regenerated `Docs/Reports/KCC_APEX_AUDIT_X_005.*`.
+
+Cinematic cheats used:
+- No new simulation. Removed dead physical-damage/snag residue and left future presentation to typed SDF/spatial events.
+
+Exact microseconds saved:
+- Runtime frame us not claimed.
+- Removed one cold `SpatialQueryHit[8]` managed allocation path per Sargassum chunk instance.
+
+Verification:
+- `python -m py_compile Tools/KccApexAudit_X_005.py Tools/OOP_Kcc_Scanner_X_005.py`: passed.
+- `python Tools/KccApexAudit_X_005.py`: `manta_legacy_collision_damage_symbol_count = 0`, `sargassum_dead_collision_snag_symbol_count = 0`, `broad_forbidden_count = 0`, `scoped_forbidden_count = 0`.
+- `python Tools/OOP_Kcc_Scanner_X_005.py`: `finding_counts = {}`.
+- Strict whole-runtime non-Editor forbidden-symbol scan returned zero sync PhysX casts/overlaps/checks, command bridges, Unity collision/trigger callbacks, `ClosestPoint`, `GetContacts`, `GetContact`, and `SweepTest*`.
+- Targeted `git diff --check` passed.
+
+Compile gate:
+- Local build not launched after this pass. Gate sample had zero active compiler/runtime processes, but CPU samples were 91.2/96.9/87.1, above the 50% project rule.
