@@ -110,33 +110,33 @@
     "aiPhysicsPhysiologyConcreteFindings": [
       {
         "assembly": "Hecton8.Core",
-        "directPlayerCoupling": true,
+        "directPlayerCoupling": false,
         "domain": "Hecton8.AI",
-        "kind": "GetComponent",
-        "line": 6008,
+        "kind": "as",
+        "line": 6009,
         "path": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
-        "text": "HectonPlayerHealth playerHealth = target.GetComponentInParent<HectonPlayerHealth>();",
-        "type": "HectonPlayerHealth"
+        "text": "Component receiverComponent = damageReceiver as Component;",
+        "type": "Component"
       },
       {
         "assembly": "Hecton8.Core",
-        "directPlayerCoupling": true,
+        "directPlayerCoupling": false,
         "domain": "Hecton8.AI",
-        "kind": "GetComponent",
-        "line": 6068,
+        "kind": "as",
+        "line": 6070,
         "path": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
-        "text": "HectonPlayerHealth playerHealth = target.GetComponentInParent<HectonPlayerHealth>();",
-        "type": "HectonPlayerHealth"
+        "text": "Component receiverComponent = damageReceiver as Component;",
+        "type": "Component"
       }
     ],
-    "aiPhysicsPhysiologyDirectPlayerCouplingCount": 2,
+    "aiPhysicsPhysiologyDirectPlayerCouplingCount": 0,
     "byDomain": [
       {
         "count": 178,
         "domain": "Hecton8.Core"
       },
       {
-        "count": 173,
+        "count": 172,
         "domain": "Hecton8.Gameplay"
       },
       {
@@ -252,40 +252,9 @@
         "domain": "Hecton8.Inventory"
       }
     ],
-    "directPlayerCouplingCount": 3,
-    "directPlayerFindings": [
-      {
-        "assembly": "Hecton8.Core",
-        "directPlayerCoupling": true,
-        "domain": "Hecton8.AI",
-        "kind": "GetComponent",
-        "line": 6008,
-        "path": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
-        "text": "HectonPlayerHealth playerHealth = target.GetComponentInParent<HectonPlayerHealth>();",
-        "type": "HectonPlayerHealth"
-      },
-      {
-        "assembly": "Hecton8.Core",
-        "directPlayerCoupling": true,
-        "domain": "Hecton8.AI",
-        "kind": "GetComponent",
-        "line": 6068,
-        "path": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
-        "text": "HectonPlayerHealth playerHealth = target.GetComponentInParent<HectonPlayerHealth>();",
-        "type": "HectonPlayerHealth"
-      },
-      {
-        "assembly": "Hecton8.Core",
-        "directPlayerCoupling": true,
-        "domain": "Hecton8.Gameplay",
-        "kind": "GetComponent",
-        "line": 578,
-        "path": "Assets/_Project/Scripts/Gameplay/EnvironmentalHazard.cs",
-        "text": "playerHealth = _playerTransform.GetComponentInParent<HectonPlayerHealth>();",
-        "type": "HectonPlayerHealth"
-      }
-    ],
-    "findingCount": 982,
+    "directPlayerCouplingCount": 0,
+    "directPlayerFindings": [],
+    "findingCount": 981,
     "residualRisk": "Static pattern scan of runtime code; interface casts are excluded, concrete/service casts and GetComponent concrete lookups require owner review.",
     "topFindings": [
       {
@@ -2830,23 +2799,23 @@
       },
       {
         "assembly": "Hecton8.Core",
-        "directPlayerCoupling": true,
+        "directPlayerCoupling": false,
         "domain": "Hecton8.AI",
-        "kind": "GetComponent",
-        "line": 6008,
+        "kind": "as",
+        "line": 6009,
         "path": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
-        "text": "HectonPlayerHealth playerHealth = target.GetComponentInParent<HectonPlayerHealth>();",
-        "type": "HectonPlayerHealth"
+        "text": "Component receiverComponent = damageReceiver as Component;",
+        "type": "Component"
       },
       {
         "assembly": "Hecton8.Core",
-        "directPlayerCoupling": true,
+        "directPlayerCoupling": false,
         "domain": "Hecton8.AI",
-        "kind": "GetComponent",
-        "line": 6068,
+        "kind": "as",
+        "line": 6070,
         "path": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
-        "text": "HectonPlayerHealth playerHealth = target.GetComponentInParent<HectonPlayerHealth>();",
-        "type": "HectonPlayerHealth"
+        "text": "Component receiverComponent = damageReceiver as Component;",
+        "type": "Component"
       },
       {
         "assembly": "Hecton8.Core",
@@ -3250,16 +3219,6 @@
       },
       {
         "assembly": "Hecton8.Core",
-        "directPlayerCoupling": true,
-        "domain": "Hecton8.Gameplay",
-        "kind": "GetComponent",
-        "line": 578,
-        "path": "Assets/_Project/Scripts/Gameplay/EnvironmentalHazard.cs",
-        "text": "playerHealth = _playerTransform.GetComponentInParent<HectonPlayerHealth>();",
-        "type": "HectonPlayerHealth"
-      },
-      {
-        "assembly": "Hecton8.Core",
         "directPlayerCoupling": false,
         "domain": "Hecton8.Gameplay",
         "kind": "explicit",
@@ -3287,6 +3246,16 @@
         "path": "Assets/_Project/Scripts/Gameplay/FirstHourDirector.cs",
         "text": "if (IsFirstHourComplete) return;",
         "type": "IsFirstHourComplete"
+      },
+      {
+        "assembly": "Hecton8.Core",
+        "directPlayerCoupling": false,
+        "domain": "Hecton8.Gameplay",
+        "kind": "GetComponent",
+        "line": 202,
+        "path": "Assets/_Project/Scripts/Gameplay/Floater.cs",
+        "text": "_ownRigidbody = GetComponent<Rigidbody>();",
+        "type": "Rigidbody"
       }
     ]
   },
@@ -15681,10 +15650,26 @@
     "unresolvedFirstPartyReferences": []
   },
   "hotPathLookupDetection": {
-    "byAssembly": [],
-    "findingCount": 0,
+    "byAssembly": [
+      {
+        "assembly": "Hecton8.Core",
+        "count": 1
+      }
+    ],
+    "findingCount": 1,
     "residualRisk": "Method-scope static scan; each hit must be classified as cold registration, cached access, or true hot poll before edit.",
-    "topFindings": []
+    "topFindings": [
+      {
+        "assembly": "Hecton8.Core",
+        "domain": "Hecton8.World",
+        "kind": "GlobalRegistry",
+        "line": 162,
+        "method": "LateFrameTick",
+        "path": "Assets/_Project/Scripts/World/EnvironmentalStrainManager.cs",
+        "recommendation": "CACHE_IN_BOOTSTRAP_OR_DEPENDENCY_INJECTION",
+        "text": "if (GlobalRegistry.EnvironmentalStrain != this)"
+      }
+    ]
   },
   "hotPathRegistryMutationDetection": {
     "findingCount": 3,

@@ -493,3 +493,4 @@ Rule quote: "Physical simulation is allowed only when gameplay correctness break
 - Build gate rechecked after sector-stat cap extension: CPU 100% with active `dotnet.exe` and `csc.exe`. No build launched.
 - Sargassum stamp GraphicsBuffer resolver patched: cut-mask and damage-volume stamp write-buffer resolvers now return `null` when both double-buffered GraphicsBuffers are invalid, instead of returning an invalid B buffer. Scanner now gates `stamp_graphics_buffer_invalid_fail_closed=true` under the graphics stamp buffer proof.
 - OOP scanner rerun after invalid-buffer resolver patch: PASS_STATIC_WITH_BUDGETED_UNITY_MESH_UPLOAD_RESIDUAL, failed gates none.
+- Build not launched after invalid-buffer resolver patch: gate sampled CPU 59%, then 53% after wait, with zero active compiler/build processes. Project rule forbids dotnet build launch above 50% CPU.

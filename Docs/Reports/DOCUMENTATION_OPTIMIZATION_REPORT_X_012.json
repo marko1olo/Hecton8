@@ -1,13 +1,13 @@
 ﻿{
   "schema": "hecton8.documentation_actuality_scan.x012.v1",
-  "generatedUtc": "2026-05-25T00:19:56.434609+00:00",
+  "generatedUtc": "2026-05-25T00:24:52.543512+00:00",
   "repoRoot": "C:\\hades\\Hecton8",
   "scope": "repository root approved text anchors plus Docs/**/*.md/txt",
   "checks": {
     "activeFileCount": 592,
-    "activeWordCount": 540349,
+    "activeWordCount": 540383,
     "inventoryFileCount": 4838,
-    "inventoryWordCount": 33428901,
+    "inventoryWordCount": 33430107,
     "rootTextDocs": [
       "AGENTS.md",
       "BUILD_PLAYTEST_ISSUES.md",
@@ -33,11 +33,11 @@
     "sourceSyncPass": true,
     "wordReduction": {
       "method": "current active words plus X_012 archived report/root words minus concise replacement anchor words",
-      "activeWordCountAfter": 540349,
-      "reconstructedActiveWordCountBefore": 1197553,
-      "retiredActiveWords": 657204,
-      "reductionRatio": 0.5487890723834352,
-      "reductionPercent": 54.87890723834352,
+      "activeWordCountAfter": 540383,
+      "reconstructedActiveWordCountBefore": 1197571,
+      "retiredActiveWords": 657188,
+      "reductionRatio": 0.5487674634739819,
+      "reductionPercent": 54.87674634739819,
       "reductionPass": true,
       "archivedRootFiles": 2,
       "archivedReportFiles": 160,
@@ -45,13 +45,13 @@
       "archivedArchitectureDiffFiles": 2,
       "currentRootAnchorWords": 710,
       "currentBinaryPayloadLedgerWords": 154,
-      "currentActualityLedgerWords": 902,
-      "currentArchitectureReplacementWords": 1056,
-      "architectureRetiredWords": 117965
+      "currentActualityLedgerWords": 918,
+      "currentArchitectureReplacementWords": 1072,
+      "architectureRetiredWords": 117949
     },
     "architecture": {
       "activeArchitectureFileCount": 192,
-      "activeArchitectureWordCount": 164352,
+      "activeArchitectureWordCount": 164368,
       "markerHits": {
         "docGlobalRefreshMarkers": 0,
         "r51BoundaryBoilerplate": 0,

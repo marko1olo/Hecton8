@@ -56,11 +56,12 @@ Evidence class: STATIC_SOURCE. No Unity import, C# compile, runtime wiring, GC, 
 
 ## Hot-Path Lookup Findings
 
-- Polling/search findings: `0`
+- Polling/search findings: `1`
 - Registry mutation findings: `3`
 
 | Kind | Method | Assembly | Path |
 |---|---|---|---|
+| `GlobalRegistry` | `LateFrameTick` | `Hecton8.Core` | `Assets/_Project/Scripts/World/EnvironmentalStrainManager.cs:162` |
 
 ### Registry Mutation Notes
 
@@ -72,15 +73,15 @@ Evidence class: STATIC_SOURCE. No Unity import, C# compile, runtime wiring, GC, 
 
 ## Concrete Cast Findings
 
-- Findings: `982`
-- Direct player concrete coupling findings: `3`
+- Findings: `981`
+- Direct player concrete coupling findings: `0`
 - AI/Physics/Physiology concrete cast findings: `2`
-- AI/Physics/Physiology direct player concrete coupling findings: `2`
+- AI/Physics/Physiology direct player concrete coupling findings: `0`
 
 | Domain | Count |
 |---|---:|
 | `Hecton8.Core` | 178 |
-| `Hecton8.Gameplay` | 173 |
+| `Hecton8.Gameplay` | 172 |
 | `Hecton8.UI` | 162 |
 | `Hecton8.World` | 141 |
 | `Hecton8.Construction` | 33 |
@@ -155,20 +156,12 @@ Evidence class: STATIC_SOURCE. No Unity import, C# compile, runtime wiring, GC, 
 | `GetComponent` | `Rigidbody` | `Hecton8.Core` | `Assets/_Project/Scripts/Construction/VehicleDockingModule.cs:522` |
 | `GetComponent` | `Rigidbody` | `Hecton8.Core` | `Assets/_Project/Scripts/Construction/VehicleDockingModule.cs:616` |
 
-### Direct Player Concrete Findings
-
-| Domain | Kind | Type | Path |
-|---|---|---|---|
-| `Hecton8.AI` | `GetComponent` | `HectonPlayerHealth` | `Assets/_Project/Scripts/Fauna/FaunaBrain.cs:6008` |
-| `Hecton8.AI` | `GetComponent` | `HectonPlayerHealth` | `Assets/_Project/Scripts/Fauna/FaunaBrain.cs:6068` |
-| `Hecton8.Gameplay` | `GetComponent` | `HectonPlayerHealth` | `Assets/_Project/Scripts/Gameplay/EnvironmentalHazard.cs:578` |
-
 ### AI/Physics/Physiology Concrete Cast Findings
 
 | Domain | Kind | Type | Path |
 |---|---|---|---|
-| `Hecton8.AI` | `GetComponent` | `HectonPlayerHealth` | `Assets/_Project/Scripts/Fauna/FaunaBrain.cs:6008` |
-| `Hecton8.AI` | `GetComponent` | `HectonPlayerHealth` | `Assets/_Project/Scripts/Fauna/FaunaBrain.cs:6068` |
+| `Hecton8.AI` | `as` | `Component` | `Assets/_Project/Scripts/Fauna/FaunaBrain.cs:6009` |
+| `Hecton8.AI` | `as` | `Component` | `Assets/_Project/Scripts/Fauna/FaunaBrain.cs:6070` |
 
 ## Source Using Domain Audit
 

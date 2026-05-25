@@ -8254,11 +8254,11 @@
   {
     "path": "Docs/AgentLogs/CompileWall_X_003_Archaeology.md",
     "active": false,
-    "bytes": 17593,
-    "lastWriteUtc": "2026-05-24T23:48:22.684131+00:00",
+    "bytes": 17716,
+    "lastWriteUtc": "2026-05-25T00:20:02.812640+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 908,
+    "wordCount": 912,
     "topic": "# Compile Wall X_003 Static Archaeology",
     "references": [],
     "staleFlags": {
@@ -8267,7 +8267,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "b848c34044874627beb4fa0fa3b503df69f3a3b80adcfb09cca06bf868213b11"
+    "sha256": "98cc2e180e7c674e27dc83a785e48e95765aa84cd3f297fc1b3762678205ba15"
   },
   {
     "path": "Docs/AgentLogs/CompileWallX003Audit.md",
@@ -8709,11 +8709,11 @@
   {
     "path": "Docs/AgentLogs/LOG_X_005.md",
     "active": false,
-    "bytes": 114829,
-    "lastWriteUtc": "2026-05-25T00:11:38.384585+00:00",
+    "bytes": 114994,
+    "lastWriteUtc": "2026-05-25T00:21:33.855250+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 12798,
+    "wordCount": 12817,
     "topic": "# LOG_X_005",
     "references": [
       "Docs/Tasks/CURRENT_BATCH.md",
@@ -8737,16 +8737,16 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "04445386c10f369160c9be040152633afe2d9705ace94b0f1d50cf3bf692f5fd"
+    "sha256": "44cfe29f8d5d37f86b7b000455bf2a4e7b1e9d993ae65d76d9db22ae1bc976bc"
   },
   {
     "path": "Docs/AgentLogs/LOG_X_006.md",
     "active": false,
-    "bytes": 147755,
-    "lastWriteUtc": "2026-05-25T00:14:30.320643+00:00",
+    "bytes": 149145,
+    "lastWriteUtc": "2026-05-25T00:21:35.681894+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 18143,
+    "wordCount": 18320,
     "topic": "# LOG_X_006",
     "references": [],
     "staleFlags": {
@@ -8755,7 +8755,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "561a61857444c4d3d4d753b11811e5d6abf2aa5c81df1a9b8cf600ff283d8e8b"
+    "sha256": "5f458919295abd137c17cbcb472fd6bdb25e9ee0771736cb796013e2bfadd6b9"
   },
   {
     "path": "Docs/AgentLogs/LOG_X_007.md",
@@ -8792,11 +8792,11 @@
   {
     "path": "Docs/AgentLogs/LOG_X_008.md",
     "active": false,
-    "bytes": 150488,
-    "lastWriteUtc": "2026-05-25T00:12:17.706018+00:00",
+    "bytes": 152230,
+    "lastWriteUtc": "2026-05-25T00:21:42.189830+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 18069,
+    "wordCount": 18258,
     "topic": "# LOG_X_008 - COMBAT_DAMAGE_AND_ARMOR_LUT_OPTIMIZER",
     "references": [
       "Docs/Tasks/CURRENT_BATCH.md",
@@ -8813,7 +8813,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "839cb859770f0d312153038b36a81545121b7842730d92746af91489e7722f37"
+    "sha256": "2559d55e809d24a99818f60fc4755702aeafac5eaf8b845c981246eb5c7efea3"
   },
   {
     "path": "Docs/AgentLogs/LOG_X_009.md",
@@ -9339,11 +9339,11 @@
   {
     "path": "Docs/AgentLogs/Rationale_X_005.md",
     "active": false,
-    "bytes": 152436,
-    "lastWriteUtc": "2026-05-25T00:08:54.249656+00:00",
+    "bytes": 153837,
+    "lastWriteUtc": "2026-05-25T00:17:44.911508+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 19576,
+    "wordCount": 19761,
     "topic": "# Rationale_X_005",
     "references": [],
     "staleFlags": {
@@ -9352,16 +9352,16 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "31de4475b1e1ed04d30ec8dd19672a1c3be53f0130c3e46bc12de467940dac94"
+    "sha256": "69e70ee01c2d7d3f657cb60cb52725aff23fed1e29fd10f4d8609a66646fef2a"
   },
   {
     "path": "Docs/AgentLogs/Rationale_X_006.md",
     "active": false,
-    "bytes": 184116,
-    "lastWriteUtc": "2026-05-25T00:12:35.559680+00:00",
+    "bytes": 185674,
+    "lastWriteUtc": "2026-05-25T00:20:40.871351+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 24250,
+    "wordCount": 24441,
     "topic": "# Rationale_X_006",
     "references": [],
     "staleFlags": {
@@ -9370,7 +9370,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "3e420611d821258e10e0d9495914c6a966dcfc759b31b0370f9b4f7bd68bd792"
+    "sha256": "145426a1f702d93a8bba57586495e0336278c37d41d3b2485fc9986f07528a5d"
   },
   {
     "path": "Docs/AgentLogs/Rationale_X_007.md",
@@ -9400,11 +9400,11 @@
   {
     "path": "Docs/AgentLogs/Rationale_X_008.md",
     "active": false,
-    "bytes": 154942,
-    "lastWriteUtc": "2026-05-25T00:12:08.435675+00:00",
+    "bytes": 156552,
+    "lastWriteUtc": "2026-05-25T00:21:27.042573+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 19196,
+    "wordCount": 19388,
     "topic": "# Rationale_X_008 - COMBAT_DAMAGE_AND_ARMOR_LUT_OPTIMIZER",
     "references": [
       "Docs/ARCHITECTURE/X_008_COMBAT_ARMOR_LUT_ROUTE_CARD.md",
@@ -9416,7 +9416,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "6677a45d6a815b8f2f5d7b8f1debf03defc9ab80be24891cec71f7d07809be56"
+    "sha256": "06e992cf21917319cf0a0509dc070a71ccbd4d0d185e589ee6f2f5c669cfb2a4"
   },
   {
     "path": "Docs/AgentLogs/Rationale_X_009.md",
@@ -10906,11 +10906,11 @@
   {
     "path": "Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md",
     "active": true,
-    "bytes": 9578,
-    "lastWriteUtc": "2026-05-25T00:15:09.102205+00:00",
+    "bytes": 9746,
+    "lastWriteUtc": "2026-05-25T00:21:52.300252+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 902,
+    "wordCount": 918,
     "topic": "# HECTON-8 Documentation Actuality Ledger",
     "references": [
       "../_Archive/Architecture_X_012_APEX_2026-05-23/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.full.md",
@@ -10931,7 +10931,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "2c36e059c888f1a53a989d3472c08e00196b84969d7bd30b247a838ba154df24"
+    "sha256": "68dbc5748dcdb8cdc271889d0d29a3fd8215bb9ce945a14ad591828258ceaaa4"
   },
   {
     "path": "Docs/ARCHITECTURE/HECTON8_P0_FOUNDATION_PROOF_MATRIX.md",
@@ -107737,11 +107737,11 @@
   {
     "path": "Docs/README.md",
     "active": true,
-    "bytes": 15786,
-    "lastWriteUtc": "2026-05-25T00:15:09.094168+00:00",
+    "bytes": 16042,
+    "lastWriteUtc": "2026-05-25T00:21:52.298253+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 1126,
+    "wordCount": 1138,
     "topic": "# HECTON-8 Documentation Index",
     "references": [
       "AGENTS.md",
@@ -107821,7 +107821,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "4f9cc9363ab64cf0c91a565c283799413edea1a915c905f3bebc8faf03d77b05"
+    "sha256": "348146e3c018e626ae4071f6fc74983f7a52854153ab1005270cd0a55fa9af37"
   },
   {
     "path": "Docs/Reports/ASSEMBLY_DEPENDENCY_AUDIT_X003.md",
@@ -107862,10 +107862,10 @@
   {
     "path": "Docs/Reports/KCC_APEX_AUDIT_X_005.md",
     "active": true,
-    "bytes": 10479,
-    "lastWriteUtc": "2026-05-25T00:16:53.608801+00:00",
+    "bytes": 10482,
+    "lastWriteUtc": "2026-05-25T00:20:22.359531+00:00",
     "encodingReadAs": "utf-8-sig",
-    "utf8Sig": false,
+    "utf8Sig": true,
     "wordCount": 1407,
     "topic": "# KCC APEX Audit X_005",
     "references": [],
@@ -107875,7 +107875,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "d1460fb278e68c97731f85fee0bf64406bd28df436c928d3d0aa9e0ffec1d5d5"
+    "sha256": "8a3502febf6ab6aa3d3d3490c70afdb442fd152ea424d591c29f6cc87ef604a7"
   },
   {
     "path": "Docs/Reports/MATH_LOD_APEX_PROOF_X_007.md",
@@ -107898,11 +107898,11 @@
   {
     "path": "Docs/Reports/README.md",
     "active": true,
-    "bytes": 4812,
-    "lastWriteUtc": "2026-05-25T00:15:09.098187+00:00",
+    "bytes": 4901,
+    "lastWriteUtc": "2026-05-25T00:21:52.299252+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 329,
+    "wordCount": 335,
     "topic": "# Reports Index",
     "references": [
       "Docs/_Archive/Reports_X_012_2026-05-23/2026-05-21_DOCUMENTATION_SANITIZATION_REPORT.md",
@@ -107916,7 +107916,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "a9a7a0dc39e2548611fac3b99a22ecacaf5a443cafd9123629b3c0816220997f"
+    "sha256": "543f19fdd6650205b95f65c96d2c47208a7b360c0a8909b784f962bab411f19e"
   },
   {
     "path": "Docs/Reports/SHINOBU_107_StaticScan/SHINOBU_107_BURST_EXACT_ROUTE_AUDIT.md",
@@ -108262,10 +108262,10 @@
   {
     "path": "Docs/Reports/SIGNAL_REFUSAL_TELEMETRY_CLOSURE_X_001.md",
     "active": true,
-    "bytes": 3923,
-    "lastWriteUtc": "2026-05-25T00:15:37.152548+00:00",
+    "bytes": 3926,
+    "lastWriteUtc": "2026-05-25T00:20:22.369030+00:00",
     "encodingReadAs": "utf-8-sig",
-    "utf8Sig": false,
+    "utf8Sig": true,
     "wordCount": 453,
     "topic": "# SIGNAL_REFUSAL_TELEMETRY_CLOSURE_X_001",
     "references": [
@@ -108277,7 +108277,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "ebf7678783d6e509a45729906fd0306028bf91b04afbcef6033d178b90d8f7fd"
+    "sha256": "6e90ef3d1b2e6dd6b71b4e95d83a883399018bbe10ea2227f29cd138c0198e07"
   },
   {
     "path": "Docs/Reports/SIGNAL_REGISTERED_DISPATCH_AND_BOUNDED_PREWARM_X_001.md",
@@ -112899,11 +112899,11 @@
   {
     "path": "Docs/Tasks/Status_X_005.md",
     "active": false,
-    "bytes": 124989,
-    "lastWriteUtc": "2026-05-25T00:19:52.909828+00:00",
+    "bytes": 125035,
+    "lastWriteUtc": "2026-05-25T00:21:22.811810+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 13200,
+    "wordCount": 13204,
     "topic": "# Status_X_005",
     "references": [
       "Docs/Reports/KINEMATIC_COLLISION_LEDGER_X_005.md",
@@ -112919,16 +112919,16 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "eb9a62d2174b2bcfd13e9be500939956636bf599896d25227fc9e99356997b27"
+    "sha256": "3654af87d7d5909012865b30956f06c926143804d3b91a761c2d216b39e52190"
   },
   {
     "path": "Docs/Tasks/Status_X_006.md",
     "active": false,
-    "bytes": 111580,
-    "lastWriteUtc": "2026-05-25T00:19:31.693514+00:00",
+    "bytes": 112219,
+    "lastWriteUtc": "2026-05-25T00:23:51.685805+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 12417,
+    "wordCount": 12489,
     "topic": "# Status_X_006",
     "references": [
       "Docs/Tasks/CURRENT_BATCH.md",
@@ -112940,7 +112940,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "66dc8eb88c2f271d71424b3d73788896623f937d94288a066463c5079c0e80fd"
+    "sha256": "749137b4c82aed21cd01ccd102696c54178303f3ec5ae8ad191dae74ad8685cb"
   },
   {
     "path": "Docs/Tasks/Status_X_007.md",
@@ -112976,11 +112976,11 @@
   {
     "path": "Docs/Tasks/Status_X_008.md",
     "active": false,
-    "bytes": 108872,
-    "lastWriteUtc": "2026-05-25T00:11:59.958314+00:00",
+    "bytes": 110275,
+    "lastWriteUtc": "2026-05-25T00:21:11.908071+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 11961,
+    "wordCount": 12100,
     "topic": "# Status_X_008 - COMBAT_DAMAGE_AND_ARMOR_LUT_OPTIMIZER",
     "references": [
       "Status_X_008.md",
@@ -113003,7 +113003,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "b65686e4fd47df03aee90545c66fedad704acbde63886695057e9b9bd82d5b02"
+    "sha256": "5f4a94b67776184a9aea60f1ee14164b27ccf17e41727f91ade02c4444f0dcd9"
   },
   {
     "path": "Docs/Tasks/Status_X_009.md",

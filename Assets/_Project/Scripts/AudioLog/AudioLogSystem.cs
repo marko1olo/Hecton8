@@ -246,6 +246,8 @@ namespace Hecton8.Narrative
                     EnsureVaultBuffersCold();
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
+                    _registered = false;
+                    _lateFrameRegistered = false;
                     if (currentService != null && isActiveAndEnabled)
                     {
                         TryRegister();
