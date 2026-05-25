@@ -185,7 +185,7 @@ namespace Hecton8.Narrative.Campaign
             if (!_serviceRegistered)
                 return;
 
-            _saveService = GlobalRegistry.Save;
+            _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
             TryRegisterHotSwapListener();
             TryRegisterSaveService();
             PublishCachedVisualState(GlobalWorldStateSignal.ChangeKindLoad, (uint)Hecton8.Core.SystemDispatcher.CurrentFrameIndex);
@@ -197,7 +197,7 @@ namespace Hecton8.Narrative.Campaign
             if (_serviceRegistered)
             {
                 if (_saveService == null)
-                    _saveService = GlobalRegistry.Save;
+                    _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
                 TryRegisterHotSwapListener();
                 TryRegisterSaveService();
             }
@@ -442,7 +442,7 @@ namespace Hecton8.Narrative.Campaign
                 return;
 
             if (_saveService == null)
-                _saveService = GlobalRegistry.Save;
+                _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
 
             if (_saveService == null)
                 return;

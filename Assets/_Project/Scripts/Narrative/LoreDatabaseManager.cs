@@ -346,7 +346,7 @@ namespace Hecton8.Narrative
 
         private void CacheRegistryServicesCold()
         {
-            _saveService = GlobalRegistry.Save;
+            _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
             if (_dataVault == null)
                 _dataVault = GlobalRegistry.DataVault;
         }

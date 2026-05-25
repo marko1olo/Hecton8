@@ -1372,7 +1372,7 @@ namespace Hecton8.Gameplay
 
         private void RefreshColdRegistryReferences()
         {
-            _saveService = GlobalRegistry.Save;
+            _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
             _dataVault = GlobalRegistry.DataVault;
             _voxelSdfReadModel = GlobalRegistry.VoxelSonarSdf;
         }

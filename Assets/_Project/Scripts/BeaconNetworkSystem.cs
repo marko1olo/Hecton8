@@ -764,7 +764,7 @@ namespace Hecton8.Gameplay
         {
             _cachedObjectPool = GlobalRegistry.ObjectPoolService;
             _cachedLocalization = Hecton8.Core.GlobalRegistry.LocalizationText;
-            _cachedSaveService = GlobalRegistry.Save;
+            _cachedSaveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
         }
 
         private void TryRegisterHotSwapListener()

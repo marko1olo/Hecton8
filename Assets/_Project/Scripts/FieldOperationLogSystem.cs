@@ -164,7 +164,7 @@ namespace Hecton8.Gameplay
             ISaveService saveService = _saveService;
             if (saveService == null)
             {
-                saveService = GlobalRegistry.Save;
+                saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
                 _saveService = saveService;
             }
             if (saveService == null)

@@ -787,7 +787,7 @@ namespace Hecton8.AI
             if (_vegetationThreatBridge == null)
                 _vegetationThreatBridge = GlobalRegistry.VegetationThreat;
             if (_saveService == null)
-                _saveService = GlobalRegistry.Save;
+                _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -852,7 +852,7 @@ namespace Hecton8.AI
                 return;
 
             if (_saveService == null)
-                _saveService = GlobalRegistry.Save;
+                _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
             if (_saveService == null)
                 return;
 

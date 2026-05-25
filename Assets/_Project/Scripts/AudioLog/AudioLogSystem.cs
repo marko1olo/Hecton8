@@ -1334,7 +1334,7 @@ namespace Hecton8.Narrative
         {
             CacheAudioService(GlobalRegistry.Audio);
             _cachedPlayerContext = Hecton8.Core.GlobalRegistry.Player;
-            _cachedSaveService = GlobalRegistry.Save;
+            _cachedSaveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
             _dataVault = GlobalRegistry.DataVault;
         }
 
@@ -1350,7 +1350,7 @@ namespace Hecton8.Narrative
                 return;
 
             if (_cachedSaveService == null)
-                _cachedSaveService = GlobalRegistry.Save;
+                _cachedSaveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
 
             if (_cachedSaveService == null)
                 return;

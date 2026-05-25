@@ -387,7 +387,7 @@ namespace Hecton8.Construction
             _cachedObjectPool = GlobalRegistry.ObjectPoolService;
             _cachedPlayerInventoryService = GlobalRegistry.PlayerInventory;
             _cachedDataVault = GlobalRegistry.DataVault;
-            _cachedSaveService = GlobalRegistry.Save;
+            _cachedSaveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
         }
 
         private void ClearCachedRegistryServices()
