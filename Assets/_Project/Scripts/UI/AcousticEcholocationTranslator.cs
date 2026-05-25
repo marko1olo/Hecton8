@@ -145,7 +145,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Acoustic Echolocation Translator")]
-    public sealed class AcousticEcholocationTranslator : MonoBehaviour, ITickable, IUpdatable, ISonarPulseEventListener, ISonarPingEventListener, ISonarSnapshotEventListener, ILocalizationLanguageChangedListener, IAcousticEcholocationBarkListener, IPhysicsAcousticImpulseEventListener, IGlobalRegistryHotSwapListener
+    public sealed class AcousticEcholocationTranslator : MonoBehaviour, ILateFrameTickable, ISonarPulseEventListener, ISonarPingEventListener, ISonarSnapshotEventListener, ILocalizationLanguageChangedListener, IAcousticEcholocationBarkListener, IPhysicsAcousticImpulseEventListener, IGlobalRegistryHotSwapListener
     {
         private enum ContactClassification : byte
         {
@@ -275,8 +275,9 @@ namespace Hecton8.UI
         }
 
         /// <inheritdoc />
-        public void Tick(float dt)
+        public void LateFrameTick()
         {
+            float dt = Time.unscaledDeltaTime;
             if (_group == null)
             {
                 return;
@@ -1115,7 +1116,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Terminal Boot Sequence")]
-    public sealed class TerminalBootSequence : MonoBehaviour, ITickable, IUpdatable, ISonarPingEventListener
+    public sealed class TerminalBootSequence : MonoBehaviour, ILateFrameTickable, ISonarPingEventListener
     {
         private enum SequenceState : byte
         {
@@ -1176,8 +1177,9 @@ namespace Hecton8.UI
         }
 
         /// <inheritdoc />
-        public void Tick(float dt)
+        public void LateFrameTick()
         {
+            float dt = Time.unscaledDeltaTime;
             if (_consoleLabel == null || _overlayGroup == null || _state == SequenceState.Hidden)
                 return;
 
@@ -1490,7 +1492,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Audio Caption Overlay")]
-    public sealed class AudioCaptionOverlay : MonoBehaviour, ITickable, IUpdatable, IAudioCaptionEventListener, IGlobalRegistryHotSwapListener
+    public sealed class AudioCaptionOverlay : MonoBehaviour, ILateFrameTickable, IAudioCaptionEventListener, IGlobalRegistryHotSwapListener
     {
         private const int SlotCount = 8;
         private const float DefaultDuration = 1.65f;
@@ -1617,8 +1619,9 @@ namespace Hecton8.UI
             _viewTransform = null;
         }
 
-        public void Tick(float dt)
+        public void LateFrameTick()
         {
+            float dt = Time.unscaledDeltaTime;
             if (!_uiBuilt)
             {
                 return;

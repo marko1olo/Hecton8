@@ -297,8 +297,8 @@ namespace Hecton8.Caves
         {
             DisposeCarveEventQueue();
             DisposeBlackBox();
-            DisposeScheduledCarveBuffers();
-            DisposeScheduledCompactionBuffers();
+            DisposeScheduledCarveBuffersForShutdownOnly();
+            DisposeScheduledCompactionBuffersForShutdownOnly();
             DisposeCompactionScratchBuffers();
             DisposeNativeSnapshotScratchBuffer();
             _simulationBucketer = null;
@@ -4566,7 +4566,7 @@ namespace Hecton8.Caves
                    TryResolveVaultBuffer(vault, in _scheduledCarveWritesHandle, BufferID.ShinobuDeltaCrusherCarveWrites, ScheduledCarveWriteCapacity, out _);
         }
 
-        private void DisposeScheduledCarveBuffers()
+        private void DisposeScheduledCarveBuffersForShutdownOnly()
         {
             // [BLOCKING_SYNC_POINT] OnDisable teardown only: DataVault carve-write memory is persistent,
             // but the component must not leave a live writer lock behind during scene shutdown.
@@ -4669,8 +4669,10 @@ namespace Hecton8.Caves
             return Time.timeSinceLevelLoad;
         }
 
-        private void DisposeScheduledCompactionBuffers()
+        private void DisposeScheduledCompactionBuffersForShutdownOnly()
         {
+            // [BLOCKING_SYNC_POINT] OnDisable teardown only: compaction scratch is persistent and must
+            // not be released while a scene-shutdown compaction writer can still touch it.
             if (_scheduledCompactionRunning)
                 DispatcherJobFence.TryComplete(ref _scheduledCompactionHandle, forceComplete: true);
 

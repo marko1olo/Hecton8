@@ -1552,7 +1552,7 @@ namespace Hecton8.UI
         private int ResolveStressReactiveSpanToBuffer(ReadOnlySpan<char> text, ref char[] buffer)
         {
             EnsureCharCapacity(ref buffer, math.max(1, text.Length));
-            LocalizationManager manager = s_cachedLocalization;
+            ILocalizationMadnessPresentationReadModel manager = s_cachedLocalization;
             if (manager != null && manager.TryApplyHullStressCorruptionIfNeeded(text, buffer, out int length))
                 return length;
 
@@ -1567,7 +1567,7 @@ namespace Hecton8.UI
                 return;
             }
 
-            LocalizationManager manager = s_cachedLocalization;
+            ILocalizationMadnessPresentationReadModel manager = s_cachedLocalization;
             int stressBucket = manager != null ? manager.GetHullStressCorruptionBucket() : 0;
             if (stressBucket == _lastStressCorruptionBucket)
                 return;
@@ -1603,7 +1603,7 @@ namespace Hecton8.UI
             if (effect == null)
                 return;
 
-            LocalizationManager manager = s_cachedLocalization;
+            ILocalizationMadnessPresentationReadModel manager = s_cachedLocalization;
             effect.SetEffectActive(
                 manager != null &&
                 log != null &&
@@ -1661,7 +1661,7 @@ namespace Hecton8.UI
             if (text.Length == 0)
                 return true;
 
-            LocalizationManager manager = s_cachedLocalization;
+            ILocalizationMadnessPresentationReadModel manager = s_cachedLocalization;
             if (manager == null)
             {
                 length = CopySpanToBuffer(text, destination);
@@ -1683,7 +1683,7 @@ namespace Hecton8.UI
             if (destination == null || destination.Length == 0)
                 return 0;
 
-            LocalizationManager manager = s_cachedLocalization;
+            ILocalizationMadnessPresentationReadModel manager = s_cachedLocalization;
             ReadOnlySpan<char> source = manager != null && !string.IsNullOrEmpty(key)
                 ? manager.GetRawSpanOrFallback(LocHash.Compute(key.AsSpan()), fallback)
                 : fallback;
@@ -1836,7 +1836,7 @@ namespace Hecton8.UI
 
         private void TriggerHiddenRecordFlash(AudioLogData log)
         {
-            LocalizationManager manager = s_cachedLocalization;
+            ILocalizationMadnessPresentationReadModel manager = s_cachedLocalization;
             if (manager == null || _summaryLabel == null || log == null)
                 return;
 
