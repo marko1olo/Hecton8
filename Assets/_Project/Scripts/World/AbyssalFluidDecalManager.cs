@@ -966,7 +966,7 @@ namespace Hecton8.World
         private void CacheRegistryServicesCold()
         {
             if (_playerContext == null)
-                _playerContext = GlobalRegistry.Player;
+                _playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
 
             if (_sargassumDrag == null)
                 _sargassumDrag = GlobalRegistry.SargassumDrag;

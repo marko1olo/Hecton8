@@ -221,7 +221,7 @@ namespace Hecton8.World
 
         private void CacheRegistryServicesCold()
         {
-            _cachedPlayerContext = Hecton8.Core.GlobalRegistry.Player;
+            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
         }
 
         private void TryRegisterHotSwapListener()

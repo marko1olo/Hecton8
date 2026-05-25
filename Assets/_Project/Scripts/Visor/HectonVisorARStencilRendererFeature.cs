@@ -619,7 +619,7 @@ namespace Hecton8.Visor
             EnsureFallbackMaskMeshCold();
             TryRegisterHotSwapListener();
             TryRegisterRenderWatchdog();
-            CacheColdServices(GlobalRegistry.Player, GlobalRegistry.DataVault);
+            CacheColdServices(Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext, GlobalRegistry.DataVault);
             TryEnsureVaultBuffers();
 #if UNITY_EDITOR
             LoadCsvProfilesCold();

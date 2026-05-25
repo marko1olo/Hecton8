@@ -642,7 +642,7 @@ namespace Hecton8.World
         private void CacheRuntimeServices()
         {
             if (_playerContext == null)
-                _playerContext = GlobalRegistry.Player;
+                _playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
 
             RefreshCachedPlayerRuntimeReference();
 

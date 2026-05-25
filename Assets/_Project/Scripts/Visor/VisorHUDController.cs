@@ -575,7 +575,7 @@ namespace NASAPunk.Visor
 
         private void CacheRegistryServicesCold()
         {
-            _cachedPlayerContext = GlobalRegistry.Player;
+            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
             _cachedModularEquipment = GlobalRegistry.ModularEquipment;
             _submarineRuntimeContext = GlobalRegistry.Submarine;
             _cachedVramMonitor = GlobalRegistry.VRAMBudgetReadModel;

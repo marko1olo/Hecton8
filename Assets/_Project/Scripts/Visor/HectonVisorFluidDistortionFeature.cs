@@ -1124,7 +1124,7 @@ namespace Hecton8.Visor
             if (context != null && context.PlayerCamera != null)
                 return context;
 
-            context = GlobalRegistry.Player;
+            context = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
             _playerContext = context;
             return context;
         }

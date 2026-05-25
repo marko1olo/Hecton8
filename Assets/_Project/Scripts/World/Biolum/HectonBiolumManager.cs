@@ -1990,7 +1990,7 @@ namespace Hecton8.Biolum
             _dataVault = currentVault;
             _cachedTickDispatcher = GlobalRegistry.TickDispatcher;
             _cachedFluid = GlobalRegistry.AbyssalFlowGpu;
-            _cachedPlayerContext = GlobalRegistry.Player;
+            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
         }
 
         private void TryRegisterHotSwapListener()

@@ -393,7 +393,7 @@ namespace Hecton8.Visor
         private void CacheRegistryServicesCold()
         {
             _cachedAudioService = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
-            _cachedPlayerContext = GlobalRegistry.Player;
+            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
         }
 
         private float ResolveStress01()

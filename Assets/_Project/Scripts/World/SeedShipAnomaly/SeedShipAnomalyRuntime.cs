@@ -376,7 +376,7 @@ namespace Hecton8.World.SeedShipAnomaly
             }
 
             _dataVault = currentVault;
-            _playerContext = GlobalRegistry.Player;
+            _playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
         }
 
         private bool EnsureVaultState()

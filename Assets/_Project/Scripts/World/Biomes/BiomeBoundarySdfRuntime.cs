@@ -259,7 +259,7 @@ namespace Hecton8.World.Biomes
             CacheDataVaultCold();
 
             if (_playerContext == null)
-                _playerContext = GlobalRegistry.Player;
+                _playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
 
             if (_playerContext != null && _playerContext.PlayerTransform != null)
                 playerTransform = _playerContext.PlayerTransform;

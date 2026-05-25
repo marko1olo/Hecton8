@@ -655,7 +655,7 @@ namespace Hecton8.World
 
         private void CacheRegistryServicesCold()
         {
-            _playerContext = GlobalRegistry.Player;
+            _playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
             _inputService = GlobalRegistry.Input;
             ResolveDependencies();
             ResolveVisualDependencies();

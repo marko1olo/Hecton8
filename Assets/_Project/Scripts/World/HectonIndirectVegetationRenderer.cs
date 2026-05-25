@@ -5018,7 +5018,7 @@ namespace Hecton8.World
             if (_cachedPlayerContext != null)
                 return _cachedPlayerContext;
 
-            _cachedPlayerContext = GlobalRegistry.Player;
+            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
             return _cachedPlayerContext;
         }
 

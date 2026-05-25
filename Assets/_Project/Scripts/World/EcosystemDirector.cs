@@ -3339,7 +3339,7 @@ namespace Hecton8.World
             if (_cachedSargassumMicroFauna == null)
                 _cachedSargassumMicroFauna = GlobalRegistry.SargassumMicroFauna;
             if (_cachedPlayerContext == null)
-                _cachedPlayerContext = GlobalRegistry.Player;
+                _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
         }
 
         private void CacheColdRegistryReferences()
