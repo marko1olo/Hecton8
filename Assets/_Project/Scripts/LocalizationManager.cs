@@ -1744,6 +1744,15 @@ namespace Hecton.Localization
             return length > 0;
         }
 
+        bool ILocalizationMadnessPresentationReadModel.TryResolveMadnessWhisperPreview(
+            int sourceTokenHash,
+            int cycle,
+            char[] destination,
+            out int length)
+        {
+            return TryResolveMadnessWhisperPreview(sourceTokenHash, cycle, destination, out length);
+        }
+
         private void EvaluateMadnessOverrideState()
         {
             float intensity = GetHullStressCorruptionIntensity();

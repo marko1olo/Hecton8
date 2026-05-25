@@ -147,7 +147,7 @@ Quality does not change DTO layout, save identity, rollback ownership, or author
 
 
 
-Mock/procedural input generation uses `Unity.Mathematics.Random` only. Seeds mix stable exosuit source hash, kilometer-quantized AUP sector hash, frame, quality, and action mask. External player authority disables procedural RNG for normal runtime control.
+Mock/procedural input uses `Unity.Mathematics.Random` only. Seeds mix exosuit hash, AUP sector, frame, quality, and action mask. External authority disables procedural RNG.
 
 
 
@@ -161,7 +161,7 @@ Mock/procedural input generation uses `Unity.Mathematics.Random` only. Seeds mix
 
 - The black box is `ExosuitTelemetryEntry[300]` in `BufferID.ShinobuExosuitTelemetryRing`.
 - It records AUP, velocity, heat, hydraulic pressure, SDF push, elapsed milliseconds, frame, flags, and state hash.
-- Faults, non-finite state, and over-0.1 ms solver completions dump fixed-size rows to `Docs/AgentLogs/Dump_SHINOBU_276.bin` and `Docs/AgentLogs/Dump_EXO_KINEMATICS.bin`; budget breaches first patch `ExosuitStateFlags.BudgetExceeded` and `SolverComputeTimeMs`, then use the same one-dump-per-frame guard as fault dumps.
+- Faults, non-finite state, and over-0.1 ms solver completions dump fixed rows to `Dump_SHINOBU_276.bin` and `Dump_EXO_KINEMATICS.bin`; one dump per frame.
 - The duplicate guard is armed only after telemetry and cursor buffers resolve, so a failed resolve does not suppress a later same-frame fault/budget attempt.
 
 

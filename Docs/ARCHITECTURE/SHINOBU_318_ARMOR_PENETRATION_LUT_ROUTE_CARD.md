@@ -10,7 +10,7 @@ Hot route:
 
 - Registered tool-hit route: `ToolHitUtility.TryQueueCentralDamage` now passes finite hit-point AUP through the public `CombatDamageRuntime.TryQueueDamage(..., double3 impactAup)` ingress.
 - It resolves player-pose AUP first and falls back to `HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(hitPoint)` for finite runtime hits.
-- It does not derive weakspot or limb metadata from the hit collider, does not use `Transform.InverseTransformPoint(hitPoint)` for registered combat targets, and does not queue `double3.zero` as a plausible impact AUP.
+- It does not derive weakspot/limb metadata from hit collider, use `Transform.InverseTransformPoint` for registered targets, or queue `double3.zero` as plausible impact AUP.
 
 Vault lanes:
 - `73580` `double3[1024]` signal impact AUPs.

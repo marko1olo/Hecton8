@@ -114,4 +114,4 @@ Complexity after Dear Lie: `O(entityCount)` scalar Burst evaluation with `O(1)` 
 - Static status: no runtime `CrushDepthTrigger`, `DepthDamage`, `Physics.OverlapBox`, or `OnTriggerStay` pressure authority found in the owned scan.
 - Runtime proof still required: Unity import, Burst Inspector, profiler/GCMonitor, and player-build validation after CPU/dotnet compile gate clears.
 
-Rejected alternatives: BoxCollider death zone, trigger callbacks, `Physics.OverlapBox`, direct health mutation, `Destroy(player)`, mesh dents, post-process volume edits, material clones, hot `GlobalRegistry` polling, absolute-float depth math, and stale player AUP reuse.
+Rejected alternatives: BoxCollider death zone, trigger callbacks, `Physics.OverlapBox`, direct health mutation, `Destroy(player)`, mesh dents, post-process edits, material clones, hot registry polling, stale AUP.

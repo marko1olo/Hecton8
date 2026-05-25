@@ -137,7 +137,7 @@ CPU complexity before the lie would be `O(tanks * bubbles * audio voices)`. Curr
 
 - Static scans show zero targeted dynamic `Rigidbody.mass` ballast writes, zero targeted water `Physics.OverlapSphere` hacks, and zero targeted direct `AddForceAtPosition` sites.
 - Full compile remains blocked by sibling-domain errors and one later `csc.exe` exit `-1` without source diagnostics; no SHINOBU_333 source diagnostics appeared after generated-project source inclusion.
-- The scanner intentionally counts both `Physics.OverlapSphere` and `Physics.OverlapSphereNonAlloc` as forbidden water-volume broadphase query routes in Vehicles/Physics authority; the non-allocating variant is still an OOP water-query path, not a ballast solver route.
+- Scanner counts both `Physics.OverlapSphere` and `Physics.OverlapSphereNonAlloc` as forbidden water-volume broadphase routes; non-allocating variant is still OOP water-query, not ballast solver route.
 
 Metadata audit, 2026-05-23:
 

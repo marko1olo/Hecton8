@@ -35,7 +35,7 @@ Buffers are owned by `SystemID.AICognition`.
 
 ## Rollback And Quality
 
-`GlobalQualityWeight` is continuous. `ResolveQuality()` sanitizes with `math.select`, gates tiny zero-quality values with `math.step`, eases the result with `math.smoothstep`, then drives `math.lerp` for cadence, signal tap count, and Dear Lie candidate budget:
+`GlobalQualityWeight` is continuous. `ResolveQuality()` sanitizes with `math.select`, gates tiny values with `math.step`, eases via `smoothstep`, then drives cadence, taps, and candidate budget:
 
 - weak device: 1 target candidate, lower signal tap count, cognitive interval near 1.5 seconds.
 - middle device: 2 candidates and moderate tap count.
@@ -61,7 +61,7 @@ Quality does not change DTO layout, action hash identity, save identity, or auth
 
 ## Legacy Quarantine
 
-`FaunaBrain`, `FaunaStateMachine`, and `MesofaunaBehavioralStateMachine` remain compatibility/serialized shells. They are scanner candidates, not deletion targets in this batch. New generic cognition work must schedule `UtilityAICognitionVault` jobs instead of adding managed FSM branches.
+`FaunaBrain`, `FaunaStateMachine`, and `MesofaunaBehavioralStateMachine` remain compatibility shells. They are scanner candidates, not deletion targets. New cognition work must schedule `UtilityAICognitionVault` jobs.
 
 ## Editor Facade
 
