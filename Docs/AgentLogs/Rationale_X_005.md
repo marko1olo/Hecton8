@@ -1020,3 +1020,11 @@ Solution: Removed `IUpdatable` from `DiegeticPDAController` instead of adding an
 Rejected Alternatives: Adding a no-op `Tick(float)` was rejected because it would keep a false update-lane contract. Changing dispatcher interfaces was rejected as architectural overreach. Ignoring the error was rejected because compiler proof cannot proceed through a known wall.
 Scalability potential: Runtime tiers unchanged. The PDA remains late-frame only; Low/Middle/High/Ultra UI cost is not changed by this repair.
 Hardware Impact: 0 us claimed for KCC. This only removes an invalid interface declaration and should not alter runtime registration behavior.
+
+## Decision 123 - Snapshot-First Needs A Validity Gate
+
+Problem: The first snapshot-first patch made `AllocateNativeState()` call `ResolveBodyRuntimePosition()` after native buffers were allocated. A freshly allocated `_positions[0]` is zero, so a blind snapshot-first resolver could seed the player KCC state at world origin before any authoritative pose existed.
+Solution: Added `_hasAuthoritativePoseSnapshot` and made `TryReadAuthoritativePositionSnapshot` plus rotation snapshot reads ignore native/sync buffers until a validated seed, warm state, Hydro authority snapshot, pre-shift halt, fixed-tick solve, or committed state write has populated them. Cold startup can still seed from the shell once; hot runtime then stays snapshot/AUP-first.
+Rejected Alternatives: Rejecting zero vectors was rejected because world origin is a valid coordinate. Keeping unguarded snapshot-first reads was rejected because it creates a deterministic teleport risk. Forcing all cold startup through AUP state was rejected because the first scene seed still needs the authored shell pose.
+Scalability potential: All tiers use the same validity gate. Higher-quality presentation can consume the guarded snapshot without changing authority or adding allocations.
+Hardware Impact: 0 us claimed. This prevents a correctness regression from the split-authority cleanup; no new jobs or managed allocations were added.

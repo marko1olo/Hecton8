@@ -1280,6 +1280,7 @@ Exact microseconds saved:
 Verification:
 - Direct movement `_rb.position/_rb.rotation` scan now leaves only cold `Awake` seed and emergency helper fallback.
 - Direct player kinematics `_body.position/_body.rotation` scan now leaves only emergency helper fallbacks.
+- Immediate self-review found a cold-start zero-buffer risk and added `_hasAuthoritativePoseSnapshot` so newly allocated native buffers cannot override the authored shell seed before the first authoritative pose exists.
 - `python -m py_compile Tools/KccApexAudit_X_005.py Tools/OOP_Kcc_Scanner_X_005.py`: passed.
 - `python Tools/OOP_Kcc_Scanner_X_005.py`: `finding_counts = {}` and Hydro KCC forbidden command hits 0.
 - `python Tools/KccApexAudit_X_005.py`: broad/scoped forbidden counts 0; `movement_hot_rb_pose_read_count = 0`; `player_kinematics_hot_body_pose_read_count = 0`; both snapshot-first flags true.
