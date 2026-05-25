@@ -53,7 +53,7 @@ Runtime route:
 - XR cameras are routed through the Dear Lie proxy until a per-eye 3D frustum-grid contract exists.
 - The compute shader uses `RW_TEXTURE2D_X`, `COORD_TEXTURE2D_X`, and `UNITY_XR_ASSIGN_VIEW_INDEX`; 2D kernels compile with `DISABLE_TEXTURE2D_X_ARRAY`, while XR kernels compile without it.
 - There is no runtime compute-keyword mutation from RenderGraph passes.
-- Single-pass XR writes one proxy fog slice per active view only after the source descriptor proves `Tex2DArray` shape and sufficient slices; non-XR and XR multipass keep 2D targets.
+- Single-pass XR writes one proxy fog slice per active view only after the descriptor proves `Tex2DArray` shape and sufficient slices; non-XR and XR multipass keep 2D targets.
 
 
 

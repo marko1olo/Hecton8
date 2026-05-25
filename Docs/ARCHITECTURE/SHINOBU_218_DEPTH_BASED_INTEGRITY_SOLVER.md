@@ -109,7 +109,7 @@ Cold boot/mock/CSV jobs also register handles before intentional cold completion
 
 Worst-case unchanged upload avoided at current capacity: `4096 nodes * 32 bytes = 131,072 bytes` per skipped pass.
 
-The telemetry fold sanitizes stress, pressure, and buckling before max counters and `StateHash`; non-finite source values set `TelemetryFlagNonFinite` instead of entering the forensic row as raw NaN payloads.
+The telemetry fold sanitizes stress, pressure, and buckling before max counters and `StateHash`; non-finite source values set `TelemetryFlagNonFinite` instead of entering the forensic row as NaN payloads.
 
 If active node count resolves to zero, visual sync publishes shader count `0` and skips buffer copy rather than uploading one stale/default DTO.
 

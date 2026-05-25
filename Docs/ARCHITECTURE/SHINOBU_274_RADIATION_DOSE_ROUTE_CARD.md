@@ -25,7 +25,7 @@ Owner: SHINOBU_274 / Radiation Scrubber
 ## Phase And Failure Mode
 
 - Simulation: schedules Burst jobs and returns the `JobHandle` to `SystemDispatcher`.
-- Simulation does not drain source/dose signals or rebuild grids while a previous radiation job is active; deferred processing is preferred over mutating Vault lanes under a live reader.
+- Simulation does not drain source/dose signals or rebuild grids while a radiation job is active; deferred processing is preferred over mutating Vault lanes under a live reader.
 - Active previous radiation job:
   - requeue source signals to typed SignalBus for next flush;
   - fold external dose into `_pendingExternalDoseRad`;

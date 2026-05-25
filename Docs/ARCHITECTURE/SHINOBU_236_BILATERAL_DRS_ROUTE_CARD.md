@@ -100,7 +100,7 @@ Consumer phase:
 - iOS: `Mobile_Renderer`, `URP_Low`.
 - Manual no-target setup checks/repairs all by explicit menu action.
 - Each scoped path still verifies feature references, feature map entries, compute shader binding, injection point, forced-full-resolution state, activation scale, all mono/array kernels, and required camera depth texture.
-- Platforms or graphics backends reporting `SystemInfo.supportsComputeShaders == false` enqueue only the raster clear proof pass; they never enter Sobel/upscale compute reconstruction and never fall back to bilinear blit ownership.
+- Platforms or graphics backends reporting `SystemInfo.supportsComputeShaders == false` enqueue only the raster clear proof pass; they never enter Sobel/upscale compute reconstruction or fall back to bilinear blit ownership.
 
 Route:
 
@@ -160,7 +160,7 @@ No `[StructLayout(Pack=1)]`, managed references, runtime `bool`, properties, or 
 - It also clears published constant-buffer frame index.
 - Covered phases: Simulation, PostSimulation publication, VisualSync upload.
 - Stale GPU constants cannot be consumed.
-- Non-finite active DTO after `PostSimulation` publication: dump black-box telemetry, clear pending upload, invalidate `s_hasPublishedParameters`, and force RenderGraph into cleared edge-mask fail-close instead of reusing the previous constant buffer.
+- Non-finite active DTO after `PostSimulation` publication: dump black-box telemetry, clear pending upload, invalidate `s_hasPublishedParameters`, and force RenderGraph into cleared edge-mask fail-close instead of reusing the constant buffer.
 - Invalid DTO layout: set `FaultLayout` and dump telemetry if available.
 - Non-finite output parameters: set `FaultNonFinite` and dump telemetry once per fault streak.
 

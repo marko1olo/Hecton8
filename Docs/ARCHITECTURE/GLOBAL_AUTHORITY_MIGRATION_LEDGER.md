@@ -112,7 +112,8 @@ Allowed global routes:
   - Proof: `CompileWallX003Audit.py` concrete casts `979->973`; critical source using/FQN `0`; hot-path lookup `0`; build blocked by CPU/compiler guard.
 - loop164/X_003: construction logistics/habitat/parasite graph and vehicle docking physics-state routes moved to contract service surfaces.
   - Owners: `ConstructionManager` owns `ILogisticsService`, `IHabitatGraphService`, and `IConstructionParasiteGraphService`; `GlobalPhysicsStateManager` owns `IPhysicsStateEventService`; `SubmarineFluidDynamics` owns `IDockedExternalMassSink`.
-  - Consumers: builder/dev smoke, construction UI, tools, drone fleet, spatial audio graph reads, flora parasite spread, base degradation, mod runtime catalog, game bootstrap clearing, and `VehicleDockingModule` use contract routes instead of concrete owner imports where safe.
+  - Consumers: builder/dev smoke, construction UI, tools, drone fleet, spatial audio graph reads, flora parasite spread, base degradation, mod runtime catalog, and game bootstrap clearing.
+  - `VehicleDockingModule` uses contract routes instead of concrete owner imports where safe.
   - Proof: `CompileWallX003Audit.py` concrete casts `973->968`; critical source using/FQN `0`; hot-path lookup `0`; runtime concrete sibling refs remain `96`; build blocked by active compiler/CPU guard.
 
 ## Required Audit Commands

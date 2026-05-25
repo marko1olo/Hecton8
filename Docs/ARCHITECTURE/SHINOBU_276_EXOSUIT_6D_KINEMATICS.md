@@ -6,7 +6,7 @@ Owner: `SHINOBU_276`
 
 Domain: Echelon 4 Player, Kinematics & Tools / Exosuit 6DoF Kinematics
 
-Proof class: static source plus narrow compile attempt. `Hecton8.Core.csproj` build is blocked before SHINOBU_276 diagnostics by external `CS2001` missing `Assets/_Project/Scripts/IBuildPlacementRule.cs`; Unity Play Mode and profiler proof remain pending.
+Proof class: static source plus compile attempt. `Hecton8.Core.csproj` build is blocked before SHINOBU_276 diagnostics by external `CS2001` missing `Assets/_Project/Scripts/IBuildPlacementRule.cs`; Unity Play Mode and profiler proof remain pending.
 
 
 

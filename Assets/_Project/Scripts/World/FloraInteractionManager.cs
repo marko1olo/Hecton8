@@ -1621,7 +1621,8 @@ namespace Hecton8.World
             long totalBytes = 0L;
             totalBytes += EstimateGraphicsBufferBytes(_interactionBufferA);
             totalBytes += EstimateGraphicsBufferBytes(_interactionBufferB);
-            totalBytes += EstimateGraphicsBufferBytes(_flowFieldBuffer);
+            totalBytes += EstimateGraphicsBufferBytes(_flowFieldBufferA);
+            totalBytes += EstimateGraphicsBufferBytes(_flowFieldBufferB);
             totalBytes += EstimateGraphicsBufferBytes(_floraSwayFieldBufferA);
             totalBytes += EstimateGraphicsBufferBytes(_floraSwayFieldBufferB);
             totalBytes += EstimateGraphicsBufferBytes(_surfaceCascadePhaseSeedBuffer);
@@ -7477,8 +7478,12 @@ namespace Hecton8.World
 
             EnsureWakeTrailStampCommandBuffer(clearExisting: false);
 
-            if (_wakeTrailStampCommandBuffer == null)
-                _wakeTrailStampCommandBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<WakeTrailStampCommand>(WakeTrailStampCommandCapacity); // COLD ALLOC: GraphicsBuffer[4] - queued vegetation wake-trail stamp buffer for single compute dispatch - owner: FloraInteractionManager
+            if (_wakeTrailStampCommandBufferA == null)
+                _wakeTrailStampCommandBufferA = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<WakeTrailStampCommand>(WakeTrailStampCommandCapacity); // COLD ALLOC: GraphicsBuffer[4] - queued vegetation wake-trail stamp buffer A for compute dispatch - owner: FloraInteractionManager
+            if (_wakeTrailStampCommandBufferB == null)
+                _wakeTrailStampCommandBufferB = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<WakeTrailStampCommand>(WakeTrailStampCommandCapacity); // COLD ALLOC: GraphicsBuffer[4] - queued vegetation wake-trail stamp buffer B for compute dispatch - owner: FloraInteractionManager
+            if (_activeWakeTrailStampCommandBuffer == null)
+                _activeWakeTrailStampCommandBuffer = _wakeTrailStampCommandBufferA;
 
             TryAutoAssignWakeTrailSimulationCompute();
             if (_wakeTrailSimulationCompute == null)
@@ -7503,11 +7508,10 @@ namespace Hecton8.World
             ReleaseWakeTrailTexture(ref _wakeTrailRead);
             ReleaseWakeTrailTexture(ref _wakeTrailWrite);
 
-            if (_wakeTrailStampCommandBuffer != null)
-            {
-                _wakeTrailStampCommandBuffer.Release();
-                _wakeTrailStampCommandBuffer = null;
-            }
+            ReleaseGraphicsBuffer(ref _wakeTrailStampCommandBufferA);
+            ReleaseGraphicsBuffer(ref _wakeTrailStampCommandBufferB);
+            _activeWakeTrailStampCommandBuffer = null;
+            _wakeTrailStampCommandUploadBufferIndex = 0;
 
             _wakeTrailStampCommandsHandle = default;
 
@@ -7530,7 +7534,8 @@ namespace Hecton8.World
 
             _hasActiveSubmarineWake = false;
             CreateWakeTrailResources();
-            if (_wakeTrailRead == null || _wakeTrailWrite == null || _wakeTrailSimulationCompute == null || _wakeTrailStampCommandBuffer == null)
+            if (_wakeTrailRead == null || _wakeTrailWrite == null || _wakeTrailSimulationCompute == null ||
+                _wakeTrailStampCommandBufferA == null || _wakeTrailStampCommandBufferB == null)
             {
                 QueueWakeTrailGlobals();
                 return;
@@ -7730,18 +7735,29 @@ namespace Hecton8.World
                 _wakeTrailSimulationKernel < 0 ||
                 _wakeTrailRead == null ||
                 _wakeTrailWrite == null ||
-                _wakeTrailStampCommandBuffer == null ||
+                _wakeTrailStampCommandBufferA == null ||
+                _wakeTrailStampCommandBufferB == null ||
                 _lastWakeTrailDispatchSerial == _wakeTrailDispatchSerial)
             {
                 return;
             }
 
             if (_queuedWakeTrailStampCount > 0 && TryResolveWakeTrailStampCommands(out NativeArray<WakeTrailStampCommand> stampCommands))
-                GraphicsBufferUploadUtility.UploadNativeArray(_wakeTrailStampCommandBuffer, stampCommands, _queuedWakeTrailStampCount);
+            {
+                GraphicsBuffer stampWriteBuffer = (_wakeTrailStampCommandUploadBufferIndex & 1) == 0
+                    ? _wakeTrailStampCommandBufferA
+                    : _wakeTrailStampCommandBufferB;
+                if (stampWriteBuffer != null && stampWriteBuffer.IsValid())
+                {
+                    GraphicsBufferUploadUtility.UploadNativeArray(stampWriteBuffer, stampCommands, _queuedWakeTrailStampCount);
+                    _activeWakeTrailStampCommandBuffer = stampWriteBuffer;
+                    _wakeTrailStampCommandUploadBufferIndex ^= 1;
+                }
+            }
 
             _wakeTrailSimulationCompute.SetTexture(_wakeTrailSimulationKernel, _WakeTrailSourceId, _wakeTrailRead);
             _wakeTrailSimulationCompute.SetTexture(_wakeTrailSimulationKernel, _WakeTrailResultId, _wakeTrailWrite);
-            _wakeTrailSimulationCompute.SetBuffer(_wakeTrailSimulationKernel, _WakeTrailStampCommandsId, _wakeTrailStampCommandBuffer);
+            _wakeTrailSimulationCompute.SetBuffer(_wakeTrailSimulationKernel, _WakeTrailStampCommandsId, _activeWakeTrailStampCommandBuffer);
             _wakeTrailSimulationCompute.SetInt(_WakeTrailStampCountId, _queuedWakeTrailStampCount);
             _wakeTrailSimulationCompute.SetVector(_WakeTrailScrollUvOffsetId, new Vector4(_pendingWakeTrailScrollUv.x, _pendingWakeTrailScrollUv.y, 0f, 0f));
             _wakeTrailSimulationCompute.SetFloat(_WakeTrailFadeDeltaId, Mathf.Max(0f, fade));
@@ -8562,11 +8578,10 @@ namespace Hecton8.World
 
         private void ReleaseFlowFieldBuffer()
         {
-            if (_flowFieldBuffer == null)
-                return;
-
-            _flowFieldBuffer.Release();
-            _flowFieldBuffer = null;
+            ReleaseGraphicsBuffer(ref _flowFieldBufferA);
+            ReleaseGraphicsBuffer(ref _flowFieldBufferB);
+            _activeFlowFieldBuffer = null;
+            _flowFieldUploadBufferIndex = 0;
         }
 
         private void ReleaseFloraSwayFieldBuffers()

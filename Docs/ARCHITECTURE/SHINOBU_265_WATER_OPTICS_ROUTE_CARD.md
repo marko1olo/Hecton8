@@ -32,7 +32,7 @@ UberNoir solid surfaces and volumetric fog need the same water absorption/scatte
 ## Producer And Consumer Phase
 
 - Cold bootstrap: `WaterOpticsRuntime` must be authored or explicitly bootstrapped by the owning scene/bootstrap composition.
-- `WaterOpticsRuntimeOwnerInstaller` provides the manual editor route `Hecton8/Rendering/Water Optics/Install Runtime Owner In Bootstrap Scene`, which attaches the component to the existing `[BOOTSTRAPPER]` root in `Assets/_Project/Scenes/00_BOOTSTRAP.unity` only when deliberately invoked.
+- `WaterOpticsRuntimeOwnerInstaller` provides the editor route `Hecton8/Rendering/Water Optics/Install Runtime Owner In Bootstrap Scene`, which attaches the component to the existing `[BOOTSTRAPPER]` root in `Assets/_Project/Scenes/00_BOOTSTRAP.unity` only when deliberately invoked.
 - Runtime caches `IDataVault` from `Awake/OnEnable/Start`.
 - It allocates generation handles and cold-acquires the double `_GlobalWaterOptics` constant-buffer pair when supported.
 - It registers pre-simulation owner and visual-sync child dispatcher systems.
@@ -55,7 +55,7 @@ UberNoir solid surfaces and volumetric fog need the same water absorption/scatte
 - It binds active color as `AccessFlags.ReadWrite`.
 - It does not call `WaterOpticsRuntime`, `GlobalRegistry`, or static owner mutator from `RecordRenderGraph`.
 - Render func only emits `BeginSample`/`EndSample`.
-- Editor/build: `WaterOpticsRendererFeatureInstaller` ensures the feature exists in PC, PC_High, Mobile, and Quest renderer assets through Unity serialized object APIs only on explicit menu action or build preprocessor validation.
+- Editor/build: `WaterOpticsRendererFeatureInstaller` ensures the feature exists in PC, PC_High, Mobile, and Quest renderer assets through Unity serialized object APIs only on menu action or build preprocessor validation.
 - It also fails validation when no authored `WaterOpticsRuntime` owner is serialized in `_Project` scenes/prefabs, so the explicit-owner requirement cannot silently regress.
 - Current static GUID scan finds no authored owner, and scene/bootstrap placement remains an owner-review blocker.
 - Domain reload no longer mutates renderer assets.

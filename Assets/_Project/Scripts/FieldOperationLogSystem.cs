@@ -289,6 +289,58 @@ namespace Hecton8.Gameplay
             return count;
         }
 
+        public bool TryCopyRecentEntry(
+            int index,
+            Span<char> source,
+            out int sourceLength,
+            Span<char> title,
+            out int titleLength,
+            Span<char> summary,
+            out int summaryLength,
+            Span<char> severity,
+            out int severityLength)
+        {
+            sourceLength = 0;
+            titleLength = 0;
+            summaryLength = 0;
+            severityLength = 0;
+
+            if ((uint)index >= (uint)_recentCount)
+                return false;
+
+            FieldOperationRecordSlot record = _recent[index];
+            if (record == null)
+                return false;
+
+            sourceLength = CopySpan(record.SourceSpan, source);
+            titleLength = CopySpan(record.TitleSpan, title);
+            summaryLength = CopySpan(record.SummarySpan, summary);
+            severityLength = CopySpan(record.SeveritySpan, severity);
+            return titleLength > 0;
+        }
+
+        public bool TryCopyLatestEntry(
+            Span<char> source,
+            out int sourceLength,
+            Span<char> title,
+            out int titleLength,
+            Span<char> summary,
+            out int summaryLength,
+            Span<char> severity,
+            out int severityLength)
+        {
+            return TryCopyRecentEntry(
+                0,
+                source,
+                out sourceLength,
+                title,
+                out titleLength,
+                summary,
+                out summaryLength,
+                severity,
+                out severityLength);
+        }
+
         public bool TryGetLatestEntry(out FieldOperationSnapshot snapshot)
         {
             if (_recentCount <= 0)
@@ -453,6 +505,16 @@ namespace Hecton8.Gameplay
 
             int length = Mathf.Min(value.Length, destination.Length);
             value.Slice(0, length).CopyTo(destination.AsSpan(0, length));
+            return length;
+        }
+
+        private static int CopySpan(ReadOnlySpan<char> source, Span<char> destination)
+        {
+            if (destination.Length == 0 || source.Length == 0)
+                return 0;
+
+            int length = Mathf.Min(source.Length, destination.Length);
+            source.Slice(0, length).CopyTo(destination);
             return length;
         }
 

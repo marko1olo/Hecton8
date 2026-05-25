@@ -234,7 +234,7 @@ Current migration boundary:
 
 
 
-Rollback construction validation jobs use deterministic Burst math: `BurstGridValidationJob`, `LogisticsGraphSpliceJob`, `DeconstructionConnectivityJob`, and `HabitatConstructionManager.IntegrityValidationJob` all use `FloatMode.Deterministic`. Fast math is reserved for presentation-only work outside this placement/connectivity truth boundary.
+Rollback construction validation jobs use deterministic Burst math: `BurstGridValidationJob`, `LogisticsGraphSpliceJob`, `DeconstructionConnectivityJob`, and `HabitatConstructionManager.IntegrityValidationJob` use `FloatMode.Deterministic`. Fast math is reserved for presentation-only work outside this placement/connectivity truth boundary.
 
 
 

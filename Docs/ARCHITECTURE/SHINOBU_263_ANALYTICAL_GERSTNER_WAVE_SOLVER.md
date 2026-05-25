@@ -14,7 +14,7 @@ Owner: ECHELON 4 / Hydrodynamic Drag & Buoyancy.
 - `Shinobu263WaveSpectrum`: packed 64-byte `GerstnerWaveParamsDTO`, 4 wave lanes per row.
 - `Shinobu263WaveTuning`: one 128-byte `GerstnerWaveTuningDTO`.
 - `Shinobu263WaveRequests`: AUP sample requests with `ShiftFrameID` at byte 40.
-- `Shinobu263WaveResults`: height, analytical normal, displacement, result flags, and preserved origin shift sequence at byte 60. `FlagStaleOrigin` marks rejected requests whose `ShiftFrameID` did not match the tuning snapshot sequence.
+- `Shinobu263WaveResults`: height, analytical normal, displacement, result flags, and origin shift sequence at byte 60. `FlagStaleOrigin` marks rejected requests whose `ShiftFrameID` did not match the tuning snapshot sequence.
 - `Shinobu263WaveMacroGrid`: cached low-octave swell proxy for coarse requests.
 - `Shinobu263WaveTelemetryRing`: 300-entry black box.
 - `Shinobu263WaveTelemetryCursor`: telemetry write cursor.

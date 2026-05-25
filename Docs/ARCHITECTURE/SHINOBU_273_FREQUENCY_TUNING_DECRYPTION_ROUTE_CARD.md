@@ -204,7 +204,7 @@ Loop 13 shader variant closure:
 
 
 
-- Loop 18 terminal wrapper bounds closure covers public terminal copy/write helpers, dirty flags, text formatting, interaction jobs, screen command uploads, panel instance uploads, bounds recomputation, and layout hashing.
+- Loop 18 terminal wrapper bounds closure covers terminal copy/write helpers, dirty flags, text formatting, interaction jobs, screen command uploads, panel instance uploads, bounds recomputation, and layout hashing.
 - Clamp source: current Vault and GPU buffer lengths, not `_terminalCount` after handle relocation.
 - Visual compute glitch time now uses owner-frame fixed-step seconds instead of `Time.unscaledTime`.
 - The owner terminal black-box dump now uses a raw little-endian header and raw `TerminalTelemetryEntry` rows rather than `BinaryWriter`.

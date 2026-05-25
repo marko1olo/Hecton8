@@ -63,7 +63,7 @@ Expected max events/reads per frame:
 - Shader crack/refraction detail scales by quality and `NormalRefractionIntensity`; DTO layout and authority route do not change.
 - Active Noir integration is pre-tonemap only; URP Volume Tonemapping owns final ACES.
 - `Hecton_VisorGlitchACES.shader` must not apply local fragment tonemap or clamp HDR color with `saturate(color)`.
-- Active Noir timing follows the dispatcher route: `TimeSliceScheduler.CurrentFrameId` supplies frame/profile cadence and finite `SystemDispatcher.CurrentFrameDeltaTime` advances wrapped visual phase. Unity `Time.*` is not part of the owned wound/noir route.
+- Noir timing follows the dispatcher route: `TimeSliceScheduler.CurrentFrameId` supplies frame/profile cadence and finite `SystemDispatcher.CurrentFrameDeltaTime` advances wrapped visual phase. Unity `Time.*` is not part of the owned wound/noir route.
 - Active Noir CBuffer publication is owned by `HectonVisorUberPostFeature.LateFrameTick`.
 - `AddRenderPasses()` consumes last valid buffer and enqueues RenderGraph pass. One-record mock/parameter math is direct scalar code.
 - Shared host player-context path consumes cached `IPlayerRuntimeContext` snapshots; render enqueue does not call `PlayerRuntimeContextService.TryGetActiveRuntimeContext()`.
@@ -129,7 +129,7 @@ Loop 23 cold-state addendum:
 
 Loop 24 editor-facade addendum:
 - `ScreenSpaceDecalTunerWindow` now surfaces source CSV, schema id/hash, runtime Vault route, DataMonolith bake caveat, last validation state, row count, selected header hash, and explicit DTO byte-layout summaries.
-- CSV load rejects schema-header hash mismatches before calling the cold `TryLoadMaterialProfilesCsv` Vault path. This is editor-only validation; it does not claim `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin` exists or changes runtime payload authority.
+- CSV load rejects schema-header hash mismatches before calling the cold `TryLoadMaterialProfilesCsv` Vault path. This validation does not claim `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin` exists or changes runtime payload authority.
 
 Loop 26 disk-state render-binding correction:
 - `DeferredDecalPass` binds `_GlobalVisorWoundAtlas` with `RasterCommandBuffer.SetGlobalTexture`.

@@ -1773,6 +1773,9 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
     HectonVertexJob MakeVertexJob(int resX, int resZ,
                                    float orgX, float orgZ,
                                    float spacing, int lod,
+                                   NativeArray<float> westLut,
+                                   NativeArray<float> eastLut,
+                                   NativeArray<float> biomeLut,
                                    NativeArray<Vector3> outVerts,
                                    NativeArray<Vector2> outUVs,
                                    NativeArray<float>   outCave,
@@ -1820,9 +1823,9 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
             caveMinY   = caves.minDepth,
             caveNoise  = NoiseData.From(caves.noise),
 
-            westLUT  = _westLUT,
-            eastLUT  = _eastLUT,
-            biomeLUT = _biomeLUT,
+            westLUT  = westLut,
+            eastLUT  = eastLut,
+            biomeLUT = biomeLut,
 
             outVerts  = outVerts,
             outUVs    = outUVs,
@@ -2777,21 +2780,23 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
 
     public float GetBiomeAt(float x, float z)
     {
-        EnsureLUTs();
         NoiseData bioND = NoiseData.From(biomes.biomeNoise);
         float bRaw = HectonNoise.Fractal2D(x, z, bioND);
-        return HectonNoise.SampleLUT(_biomeLUT, bRaw);
+        return TryReadLut(in _biomeLutHandle, out NativeArray<float>.ReadOnly biomeLut)
+            ? HectonNoise.SampleLUT(biomeLut, bRaw)
+            : EvaluateCurve01(biomes.biomeRemapCurve, bRaw);
     }
 
     public float GetWorldHeight(float x, float z)
     {
-        EnsureLUTs();
-
         NoiseData warpND = NoiseData.From(spine.warpNoise);
         NoiseData islND  = NoiseData.From(spine.islandNoise);
         NoiseData bioND  = NoiseData.From(biomes.biomeNoise);
         NoiseData flatND = NoiseData.From(biomes.flatSurfaceNoise);
         NoiseData aggrND = NoiseData.From(biomes.aggressiveSurfaceNoise);
+        bool hasWestLut = TryReadLut(in _westLutHandle, out NativeArray<float>.ReadOnly westLut);
+        bool hasEastLut = TryReadLut(in _eastLutHandle, out NativeArray<float>.ReadOnly eastLut);
+        bool hasBiomeLut = TryReadLut(in _biomeLutHandle, out NativeArray<float>.ReadOnly biomeLut);
 
         float hs = mapSize * 0.5f;
 
@@ -2806,8 +2811,10 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
         float normD = math.saturate(absDx / math.max(sLen, 1f));
         float curveV;
 
-        if (west) curveV = HectonNoise.SampleLUT(_westLUT, normD);
-        else      curveV = HectonNoise.SampleLUT(_eastLUT, normD);
+        if (west)
+            curveV = hasWestLut ? HectonNoise.SampleLUT(westLut, normD) : EvaluateCurve01(slopes.westCurve, normD);
+        else
+            curveV = hasEastLut ? HectonNoise.SampleLUT(eastLut, normD) : EvaluateCurve01(slopes.eastCurve, normD);
 
         if (west && slopes.terraceCount > 0 && slopes.terraceStrength > 0f)
         {
@@ -2827,7 +2834,7 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
         float spineElev = spine.maxHeight * spineInf * islF;
 
         float bRaw = HectonNoise.Fractal2D(x, z, bioND);
-        float bVal = HectonNoise.SampleLUT(_biomeLUT, bRaw);
+        float bVal = hasBiomeLut ? HectonNoise.SampleLUT(biomeLut, bRaw) : EvaluateCurve01(biomes.biomeRemapCurve, bRaw);
         float fltN = HectonNoise.Fractal2D(x, z, flatND);
         float agrN = HectonNoise.Fractal2D(x, z, aggrND);
         float surfY = (math.lerp(fltN, agrN, bVal) * 2f - 1f) *

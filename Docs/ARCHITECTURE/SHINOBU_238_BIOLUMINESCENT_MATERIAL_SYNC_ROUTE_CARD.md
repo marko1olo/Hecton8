@@ -86,7 +86,7 @@ GlobalQualityWeight behavior:
 - Shader publication happens only in owner publication methods, not from copy facades.
 - No copy facade completes jobs, searches scenes, allocates/grows Vault buffers, or publishes signals.
 - Touched legacy camera accessors are cached snapshot reads only: `HectonBiolumManager.GetCameraPosition()` and `GetCameraAup()` do not read live `Transform.position`, refresh scene/player state, or rebuild AUP; owner phases call `RefreshCameraSnapshotForOwnerPhase(...)`.
-- Touched mutating helpers use explicit `Update*`, `Sample*`, `Select*`, `TryOpen*`, `TryCache*`, or `TryBuild*` names; read-like `Resolve*` names are not used for cache mutation or buffer selection in this route.
+- Touched mutating helpers use `Update*`, `Sample*`, `Select*`, `TryOpen*`, `TryCache*`, or `TryBuild*` names; read-like `Resolve*` names are not used for cache mutation or buffer selection in this route.
 
 ## Payload And Layout
 

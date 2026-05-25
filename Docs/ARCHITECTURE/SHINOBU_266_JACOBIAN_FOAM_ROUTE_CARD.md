@@ -149,7 +149,7 @@ Black-box:
 | Loop | Result | Facts preserved |
 |---|---|---|
 | Review | `YELLOW` | complete static route card; missing Unity Console, RenderGraph Viewer, Profiler/GCMonitor, GPU timestamps, player/device run |
-| 2026-05-21 static integration | `YELLOW` | overlay cameras rejected; `_FoamWakeImpacts` uses declared `BufferHandle`; VFX namespace/asmdef island; cold clear for readable-before-write lanes; params/CSV scratch uninitialized by design; editor telemetry read-only path |
+| 2026-05-21 integration | `YELLOW` | overlay cameras rejected; `_FoamWakeImpacts` uses declared `BufferHandle`; VFX namespace/asmdef island; cold clear for readable-before-write lanes; params/CSV scratch uninitialized by design; editor telemetry read-only path |
 | Loop 24 | `YELLOW` | finite-safe compute shader; smooth foam visibility; no Vault grow from frame path; deferred dump; split generate/advection passes; published payload bridge; JSON report object restored |
 | Loop 25 | `YELLOW` | pass-local `_FoamSourceDepthTexture`; XR disables shoreline Dear Lie only; package API support checked |
 | Loop 28 | `YELLOW` | `DeclareDepthTexture` approach superseded; normal 2D depth texture plus texel size; XR black texture and `WakeParams.z=0`; no authority change |
