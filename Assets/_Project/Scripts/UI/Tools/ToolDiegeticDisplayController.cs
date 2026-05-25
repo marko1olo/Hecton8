@@ -204,11 +204,17 @@ namespace Hecton8.UI.Tools
             object previousService,
             object currentService)
         {
-            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && isActiveAndEnabled)
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
-                TryRegisterUpdatable();
-                TryRegisterSlowTickable();
-                TryRegisterLateFrameTickable();
+                _registered = false;
+                _registeredSlowTick = false;
+                _registeredLateFrame = false;
+                if (currentService != null && isActiveAndEnabled)
+                {
+                    TryRegisterUpdatable();
+                    TryRegisterSlowTickable();
+                    TryRegisterLateFrameTickable();
+                }
                 return;
             }
 

@@ -2804,6 +2804,8 @@ namespace Hecton8.Gameplay
             {
                 _positions[0] = position;
                 _velocities[0] = velocity;
+                _lastValidPositions[0] = position;
+                _hasAuthoritativePoseSnapshot = true;
             }
 
             PublishKccVelocitySignal(position, velocity, KccVelocitySignal.FlagMovementAuthorityExternal);
@@ -3451,6 +3453,7 @@ namespace Hecton8.Gameplay
                 _positions[0] = position;
                 _velocities[0] = velocity;
                 _lastValidPositions[0] = position;
+                _hasAuthoritativePoseSnapshot = true;
             }
 
             quaternion rotation = ResolveAuthoritativeRotationSnapshot();
@@ -3729,6 +3732,7 @@ namespace Hecton8.Gameplay
             _velocities[0] = state.Velocity;
             if ((state.Flags & (uint)(FaultNaN | FaultSolidTeleport)) == 0u)
                 _lastValidPositions[0] = state.Position;
+            _hasAuthoritativePoseSnapshot = true;
 
             Vector3 position = ToVector3(state.Position);
             Vector3 velocity = ToVector3(state.Velocity);

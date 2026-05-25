@@ -12,7 +12,7 @@ namespace Hecton8.VFX
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/VFX/Native Trail Renderer")]
     public sealed class NativeTrailRenderer : MonoBehaviour,
-        IUpdatable,
+        ILateFrameTickable,
         IRenderable,
         IOriginShiftListener,
         IGlobalRegistryHotSwapListener
@@ -109,8 +109,9 @@ namespace Hecton8.VFX
             }
         }
 
-        public void Tick(float deltaTime)
+        public void LateFrameTick()
         {
+            float deltaTime = Time.unscaledDeltaTime;
             if (_samples == null || _mesh == null)
                 EnsureBuffers();
 
@@ -191,7 +192,7 @@ namespace Hecton8.VFX
 
                     if (_registeredUpdate)
                     {
-                        GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+                        GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
                         _registeredUpdate = false;
                     }
 
@@ -409,7 +410,7 @@ namespace Hecton8.VFX
                 return;
 
             if (_dispatcherReady && !_registeredUpdate)
-                _registeredUpdate = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
+                _registeredUpdate = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
             if (_renderDispatcherReady && !_registeredRender)
                 _registeredRender = GlobalRegistry.Renderables.TryRegister(this);
             if (_dispatcherReady && !_registeredOriginShift)
@@ -464,7 +465,7 @@ namespace Hecton8.VFX
 
             if (_registeredUpdate)
             {
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
                 _registeredUpdate = false;
             }
         }

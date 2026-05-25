@@ -1017,12 +1017,15 @@ namespace Hecton8.World
                 return;
             }
 
-            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && isActiveAndEnabled)
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
                 _registered = false;
                 _registeredLateFrame = false;
-                TryRegister();
-                TryRegisterLateFrame();
+                if (currentService != null && isActiveAndEnabled)
+                {
+                    TryRegister();
+                    TryRegisterLateFrame();
+                }
             }
         }
 
