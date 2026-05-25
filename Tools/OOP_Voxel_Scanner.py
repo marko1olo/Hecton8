@@ -1422,6 +1422,44 @@ def carve_queue_pressure():
     }
 
 
+def voxel_delta_shutdown_completion_proof():
+    delta_text = read(FILES["delta"])
+    force_complete_hits = line_hits(FILES["delta"], r"forceComplete:\s*true")
+    shutdown_only_hits = []
+    non_shutdown_hits = []
+    for hit in force_complete_hits:
+        context = source_window(FILES["delta"], hit["line"], before=10, after=2)
+        if "ForShutdownOnly" in context and "[BLOCKING_SYNC_POINT] OnDisable teardown only" in context:
+            shutdown_only_hits.append(hit)
+        else:
+            non_shutdown_hits.append(hit)
+
+    on_disable_start = delta_text.find("private void OnDisable()")
+    tick_start = delta_text.find("public void Tick(float deltaTime)", on_disable_start)
+    on_disable_block = delta_text[on_disable_start:tick_start] if on_disable_start >= 0 and tick_start > on_disable_start else ""
+    return {
+        "force_complete_hits": force_complete_hits,
+        "shutdown_only_force_complete_hits": shutdown_only_hits,
+        "non_shutdown_force_complete_hits": non_shutdown_hits,
+        "shutdown_only_method_names_present": (
+            "DisposeScheduledCarveBuffersForShutdownOnly" in delta_text
+            and "DisposeScheduledCompactionBuffersForShutdownOnly" in delta_text
+        ),
+        "old_dispose_names_absent": (
+            "DisposeScheduledCarveBuffers();" not in delta_text
+            and "DisposeScheduledCompactionBuffers();" not in delta_text
+            and "private void DisposeScheduledCarveBuffers()" not in delta_text
+            and "private void DisposeScheduledCompactionBuffers()" not in delta_text
+        ),
+        "on_disable_calls_shutdown_only": (
+            "DisposeScheduledCarveBuffersForShutdownOnly();" in on_disable_block
+            and "DisposeScheduledCompactionBuffersForShutdownOnly();" in on_disable_block
+        ),
+        "hot_carve_completion_nonblocking": "DispatcherJobSwap.TryComplete(ref _scheduledCarveHandle, false)" in delta_text,
+        "hot_compaction_completion_nonblocking": "DispatcherJobSwap.TryComplete(ref _scheduledCompactionHandle, false)" in delta_text,
+    }
+
+
 def rle_packet_layout(sector_payload_bytes):
     rle_text = read(FILES["rle"])
     native_header = struct_layout(FILES["delta"], "NativeSnapshotHeader")

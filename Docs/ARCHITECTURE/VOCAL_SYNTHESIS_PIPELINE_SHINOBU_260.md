@@ -68,7 +68,7 @@ It owns no private persistent `NativeArray` allocations. MMF release is fenced b
 
 ## Dear Lie Radio Filter
 
-The "Sweet Lie" radio effect is a mathematical fake: one-pole low state, band state, soft saturation, deterministic static noise, and quality-scaled quantization. No AudioMixer graph or physical radio simulation is introduced.
+"Sweet Lie" radio is a math fake: one-pole low/band state, soft saturation, deterministic noise, quality-scaled quantization. No AudioMixer graph or physical radio simulation.
 
 `GlobalQualityWeight` changes sample stride and filter density.
 

@@ -116,7 +116,7 @@ Loop 17 correction: CAS now has a concrete same-slot editor/development torture 
 
 Loop 18 correction: project-wide inverse-trig evidence includes shader/compute/hlsl sources.
 
-Sky and firmament `asin` latitude calls were replaced with a bounded polynomial presentation cheat. Scanner proof: `projectAcosAsinInventoryCount=0` for C#, `shaderAcosAsinCount=0` for shaders. Remaining shader `sin/cos/atan/atan2` tokens are presentation/bake inventory.
+Sky/firmament `asin` latitude calls became bounded polynomial presentation cheat. Scanner proof: `projectAcosAsinInventoryCount=0`, `shaderAcosAsinCount=0`. Remaining shader trig is presentation/bake inventory.
 
 Loop 19 correction: shader inverse-angle evidence covers `asin/acos/atan/atan2`.
 

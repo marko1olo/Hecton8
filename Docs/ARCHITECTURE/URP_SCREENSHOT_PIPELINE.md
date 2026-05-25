@@ -64,7 +64,7 @@ The screenshot path is split across two owners:
 
 3. During that camera's next URP render, `SaveThumbnailCaptureFeature.RecordRenderGraph(...)` detects the request.
 
-4. The pass copies the declared camera color `TextureHandle` into a dedicated thumbnail `TextureHandle` through a RenderGraph-safe raster/blit pass. This wording does not approve `Graphics.Blit`, `CommandBuffer.Blit`, or URP Compatibility Mode routing.
+4. Pass copies declared camera color `TextureHandle` into thumbnail `TextureHandle` through RenderGraph-safe raster/blit. It rejects `Graphics.Blit`, `CommandBuffer.Blit`, and URP Compatibility Mode.
 
 5. The pass requests `AsyncGPUReadback` for that RT.
 

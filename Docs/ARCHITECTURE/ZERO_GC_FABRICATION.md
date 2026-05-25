@@ -277,6 +277,6 @@ Delivered-item `CraftingCompletedSignal` remains owned by `Fabricator.CompleteCr
 
 - Legacy local craft timer progression is removed from the active route.
 - `Fabricator` keeps only a seconds mirror for UI/audio compatibility, while smoke testing now injects SHINOBU mock records into `ShinobuFabricationJobs` and reads Vault snapshots instead of advancing a C# timer helper.
-- Batchmode smoke may create a bounded 16MB fallback `GlobalDataVault` only when bootstrap has not produced one; graphics buffers are deferred in batchmode because the smoke route validates data, not render-device availability.
+- Batchmode smoke may create bounded 16MB fallback `GlobalDataVault` only without bootstrap Vault; graphics buffers defer because smoke validates data, not render-device availability.
 
 The per-fabricator `NativeQueue<CraftingTask>` lane was removed. Delivery metadata is one unmanaged `CraftingTask` slot plus bool; progress, flags, duration, hashes, GPU payload, and telemetry remain Vault-owned.
