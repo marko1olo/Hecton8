@@ -589,7 +589,7 @@ namespace Hecton8.Gameplay
 
         private void RefreshColdRegistryReferences()
         {
-            _playerRuntime = GlobalRegistry.Player;
+            _playerRuntime = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
             _scanLogRuntime = GlobalRegistry.ScanLogService;
             _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
         }

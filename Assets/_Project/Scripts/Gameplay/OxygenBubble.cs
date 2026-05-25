@@ -452,7 +452,7 @@ namespace Hecton8.Gameplay
         {
             _audioService = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
             _objectPool = GlobalRegistry.ObjectPoolService;
-            _playerRuntime = GlobalRegistry.Player;
+            _playerRuntime = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
         }
 
         private void TryRegisterHotSwapListener()

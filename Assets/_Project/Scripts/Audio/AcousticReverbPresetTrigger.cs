@@ -42,7 +42,7 @@ namespace Hecton8.Audio
         {
             _cachedTransform = transform;
             CacheVolumeCold();
-            _playerRuntime = GlobalRegistry.Player;
+            _playerRuntime = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
         }
 
         private void OnValidate()
@@ -53,7 +53,7 @@ namespace Hecton8.Audio
 
         private void OnEnable()
         {
-            _playerRuntime = GlobalRegistry.Player;
+            _playerRuntime = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
             TryRegister();
             TryRegisterHotSwapListener();
         }

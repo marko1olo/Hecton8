@@ -340,7 +340,7 @@ namespace Hecton8.Core
         {
             TryRegisterHotSwapListener();
             RebindDataVaultForOwnerRoute(_dataVault, GlobalRegistry.DataVault);
-            _playerContext = GlobalRegistry.Player;
+            _playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
 
             if (!_originShiftListenerRegistered)
             {

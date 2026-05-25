@@ -483,7 +483,7 @@ namespace Hecton8.Ecosystem
             _vault = GlobalRegistry.DataVault;
             _thermalVentReadModel = GlobalRegistry.NutrientThermalVents;
             _abyssalFlowReadModel = GlobalRegistry.AbyssalFlowVolume;
-            _playerContext = GlobalRegistry.Player;
+            _playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
             TryRegister();
             EnsureDensityTexture();
             EnsureVaultState();

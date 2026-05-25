@@ -193,7 +193,7 @@ namespace Hecton8.Gameplay
             if (_playerInside)
                 ExitPlayerInfluence();
 
-            _playerRuntime = playerContext ?? (useRegistryFallback ? GlobalRegistry.Player : null);
+            _playerRuntime = playerContext ?? (useRegistryFallback ? Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext : null);
             IPlayerRuntimeContext runtime = _playerRuntime;
             _playerTransform = runtime != null ? runtime.PlayerTransform : null;
             HectonPlayerMovement movement = runtime != null ? runtime.PlayerMovement : null;

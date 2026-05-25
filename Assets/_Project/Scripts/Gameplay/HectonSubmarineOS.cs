@@ -1028,7 +1028,7 @@ namespace Hecton8.Gameplay
             _runtimeDispatcherReady = GlobalRegistry.Dispatcher != null;
             _powerGridService = GlobalRegistry.PowerGrid;
             _spectrumRuntime = GlobalRegistry.Spectrum;
-            _playerRuntime = GlobalRegistry.Player;
+            _playerRuntime = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
         }
 
         private void Subscribe()

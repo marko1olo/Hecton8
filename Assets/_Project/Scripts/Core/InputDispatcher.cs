@@ -2378,7 +2378,7 @@ namespace Hecton8.Core
             if (_playerContext != null)
                 return;
 
-            _playerContext = GlobalRegistry.Player;
+            _playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
         }
 
         private void CaptureState(float deltaTime = 0f)

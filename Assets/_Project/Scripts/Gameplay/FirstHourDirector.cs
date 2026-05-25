@@ -1000,7 +1000,7 @@ namespace Hecton8.Gameplay
             _cachedAtlasSignalSystem = Hecton8.Core.GlobalRegistry.AtlasSignalReadModel;
             _cachedEmergencyRelayDirector = Hecton8.Core.GlobalRegistry.EmergencyRelay;
             _cachedAudioLogSystem = Hecton8.Core.GlobalRegistry.AudioLogRuntime;
-            _cachedPlayerContext = Hecton8.Core.GlobalRegistry.Player;
+            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
             _cachedLocalization = Hecton8.Core.GlobalRegistry.LocalizationText;
             _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
         }

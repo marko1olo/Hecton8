@@ -548,7 +548,7 @@ namespace Hecton8.Core.Determinism
         private void RefreshDependenciesFromRegistry()
         {
             _dataVault = GlobalRegistry.DataVault;
-            _player = GlobalRegistry.Player;
+            _player = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
             _habitat = GlobalRegistry.HabitatGraph;
             _dispatcher = GlobalRegistry.Dispatcher;
             RefreshCachedQualityWeight01();

@@ -3802,7 +3802,7 @@ namespace Hecton8.Environment
             _tickDispatcher = GlobalRegistry.TickDispatcher;
             _dataVault = GlobalRegistry.DataVault;
             _worldSeedProvider = GlobalRegistry.WorldSeedProvider;
-            _playerRuntime = GlobalRegistry.Player;
+            _playerRuntime = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
             _fallbackAbsoluteUniverseTime = (_celestialSnapshot.Flags & (uint)CelestialRuntimeFlags.Valid) != 0u
                 ? _celestialSnapshot.AbsoluteUniverseTime
                 : Time.timeAsDouble;

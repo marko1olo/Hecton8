@@ -1505,7 +1505,7 @@ namespace Hecton8.Construction
                 return;
 
             s_CachedLogisticsService = GlobalRegistry.Logistics;
-            s_CachedPlayerRuntime = GlobalRegistry.Player;
+            s_CachedPlayerRuntime = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
             s_CachedSubmarineRuntime = GlobalRegistry.Submarine;
             s_CachedFluidRuntime = GlobalRegistry.FluidSurfaceCurrent;
             s_RuntimeRegistryCacheInitialized = true;

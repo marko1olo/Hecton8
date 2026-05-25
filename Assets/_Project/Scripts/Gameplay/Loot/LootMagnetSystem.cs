@@ -365,7 +365,7 @@ namespace Hecton8.Gameplay.Loot
         private void RefreshDependenciesCold()
         {
             _vault = GlobalRegistry.DataVault;
-            _playerContext = GlobalRegistry.Player;
+            _playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
             _inventoryService = GlobalRegistry.PlayerInventory;
             RefreshDependencySnapshotsFromCachedOwners();
         }
