@@ -58,7 +58,7 @@ Route invariants:
 - `71786 Shinobu332GyroCounters` - `SubmarineGyroCounterDTO[1]`, 64-byte reduction row.
 - `71787 Shinobu332GyroCsvScratch` - cold CSV scratch bytes.
 
-Rejected draft: `71735..71742` was invalid because terrain pager already owns `71740..71758`. The repaired range `71780..71787` is outside terrain `71740..71758`, KCC environment `71760..71770`, ballast `71771..71778`, and wave `71800..71809` lanes.
+Rejected draft: `71735..71742` was invalid because terrain pager owns `71740..71758`. The repaired range `71780..71787` is outside terrain `71740..71758`, KCC environment `71760..71770`, ballast `71771..71778`, and wave `71800..71809` lanes.
 
 All persistent native lanes are requested from `GlobalDataVault`. The runtime does not own private persistent `NativeArray`, `NativeList`, or `NativeHashMap` fields.
 

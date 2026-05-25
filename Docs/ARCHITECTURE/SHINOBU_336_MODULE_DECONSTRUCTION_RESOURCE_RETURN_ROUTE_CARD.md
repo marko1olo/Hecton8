@@ -6,7 +6,7 @@ Status: STATIC_SOURCE / STATIC_DOC, runtime proof pending
 
 ## Authority Route
 
-`ConstructionManager` owns the teardown request. It builds one `DeconstructionTransactionDTO`, resolves unmanaged module-cost rows, executes `ExecuteModuleTeardownJob`, applies refund commands through current `PlayerInventory` authority, and publishes overflow through `SignalBus<InventoryDeathLootCacheSignal>`.
+`ConstructionManager` owns the teardown request. It builds one `DeconstructionTransactionDTO`, resolves unmanaged module-cost rows, executes `ExecuteModuleTeardownJob`, applies refund commands through `PlayerInventory` authority, and publishes overflow through `SignalBus<InventoryDeathLootCacheSignal>`.
 
 `HabitatGraphManager` owns topology. Transaction job zeros target CSR edge strength; owner marks matching edges ruptured and invalidates CSR destinations. Teardown never calls `Destroy()`.
 

@@ -25,7 +25,7 @@ Problem: player suit and exoskeleton crush depth must not be represented by scen
   - if descriptor is absent at boot, `BorrowVaultArray` may late-bind existing owner-created descriptor with `IDataVault.TryGetGenerationHandle`;
   - reads through `TryReadHandle`;
   - never allocates, locks, mutates, or releases foreign Kinematic/Metabolic buffers.
-- Bootstrap fallback: cached `PlayerRuntimePoseSnapshot.Aup` remains only as a cold/service bridge when the Kinematic Vault fact is absent or not yet valid; it is not the preferred authority route.
+- Bootstrap fallback: cached `PlayerRuntimePoseSnapshot.Aup` remains only as a cold/service bridge when the Kinematic Vault fact is absent or not yet valid; it is not the authority route.
 - Naming note: active player-owned kinematic Vault fact is `LockstepPlayerKinematicState`.
 - It is not the Physics/KCC `KinematicStateDTO` row used for separate KCC/debris domains.
 - SHINOBU_323 reads player-owned Core fact; no sibling Physics/KCC assembly dependency or authority-lane mutation.

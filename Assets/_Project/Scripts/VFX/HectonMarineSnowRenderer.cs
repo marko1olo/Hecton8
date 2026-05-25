@@ -548,7 +548,10 @@ namespace Hecton8.Environment
         private GraphicsBuffer _particleMetaBufferB;
         private GraphicsBuffer _flowFieldBuffer;
         private GraphicsBuffer _emptyFlowFieldBuffer;
-        private GraphicsBuffer _frameConstantsBuffer;
+        private GraphicsBuffer _frameConstantsBufferA;
+        private GraphicsBuffer _frameConstantsBufferB;
+        private GraphicsBuffer _activeFrameConstantsBuffer;
+        private int _frameConstantsUploadBufferIndex;
         private GraphicsBuffer _visibleParticleIndexBuffer;
         private GraphicsBuffer _indirectArgsBuffer;
         private GraphicsBuffer _maelstromBufferA;
@@ -2547,8 +2550,10 @@ namespace Hecton8.Environment
             _particleBufferB = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<ParticleDataDTO>(clampedParticleCount);
             _particleMetaBufferA = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<ParticleRenderMetaDTO>(clampedParticleCount); // COLD ALLOC: GraphicsBuffer[clampedParticleCount] - 32B render metadata ping-pong A - owner: HectonMarineSnowRenderer
             _particleMetaBufferB = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<ParticleRenderMetaDTO>(clampedParticleCount); // COLD ALLOC: GraphicsBuffer[clampedParticleCount] - 32B render metadata ping-pong B - owner: HectonMarineSnowRenderer
-            // COLD ALLOC: GraphicsBuffer[1] - per-frame marine-snow constant buffer - owner: HectonMarineSnowRenderer
-            _frameConstantsBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<FrameConstantsData>(1);
+            _frameConstantsBufferA = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<FrameConstantsData>(1); // COLD ALLOC: GraphicsBuffer[1] - per-frame marine-snow constant buffer A - owner: HectonMarineSnowRenderer
+            _frameConstantsBufferB = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<FrameConstantsData>(1); // COLD ALLOC: GraphicsBuffer[1] - per-frame marine-snow constant buffer B - owner: HectonMarineSnowRenderer
+            _activeFrameConstantsBuffer = _frameConstantsBufferA;
+            _frameConstantsUploadBufferIndex = 1;
             _emptyFlowFieldBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float2>(1); // COLD ALLOC: GraphicsBuffer[1] - zero fallback ecosystem flow-vector buffer - owner: HectonMarineSnowRenderer
             ClearGraphicsBuffer<float2>(_emptyFlowFieldBuffer, 1);
             int flowFieldCapacity = SanitizeFlowFieldUploadCapacity();
@@ -2838,7 +2843,7 @@ namespace Hecton8.Environment
                 _particleBufferB == null ||
                 _particleMetaBufferA == null ||
                 _particleMetaBufferB == null ||
-                _frameConstantsBuffer == null ||
+                _activeFrameConstantsBuffer == null ||
                 _emptyFlowFieldBuffer == null ||
                 _visibleParticleIndexBuffer == null ||
                 _indirectArgsBuffer == null ||
@@ -2869,8 +2874,8 @@ namespace Hecton8.Environment
             _boundSimulationVisibleParticleIndexBuffer = _visibleParticleIndexBuffer;
             marineSnowCompute.SetBuffer(_kernelIndex, ShaderIds.IndirectArgsId, _indirectArgsBuffer);
             _boundSimulationIndirectArgsBuffer = _indirectArgsBuffer;
-            marineSnowCompute.SetBuffer(_initializeKernel, ShaderIds.FrameConstantsId, _frameConstantsBuffer);
-            marineSnowCompute.SetBuffer(_wakeProximityKernel, ShaderIds.FrameConstantsId, _frameConstantsBuffer);
+            marineSnowCompute.SetBuffer(_initializeKernel, ShaderIds.FrameConstantsId, _activeFrameConstantsBuffer);
+            marineSnowCompute.SetBuffer(_wakeProximityKernel, ShaderIds.FrameConstantsId, _activeFrameConstantsBuffer);
             marineSnowCompute.SetBuffer(_clearVisibleKernel, ShaderIds.IndirectArgsId, _indirectArgsBuffer);
             marineSnowCompute.SetBuffer(_kernelIndex, ShaderIds.AbyssalFlowFieldResultId, _emptyAbyssalFlowBuffer);
             _boundAbyssalFlowBuffer = _emptyAbyssalFlowBuffer;
@@ -2898,7 +2903,7 @@ namespace Hecton8.Environment
             _boundAbyssalFlowTexture = _emptyAbyssalFlowTexture;
             marineSnowCompute.SetFloat(ShaderIds.AbyssalFlowTextureActiveId, 0f);
             _boundAbyssalFlowTextureActive = 0f;
-            marineSnowCompute.SetBuffer(_kernelIndex, ShaderIds.FrameConstantsId, _frameConstantsBuffer);
+            marineSnowCompute.SetBuffer(_kernelIndex, ShaderIds.FrameConstantsId, _activeFrameConstantsBuffer);
             VFXEmissionProfile.FluidSettings emissionSettings = ResolveEmissionSettings();
             Vector4 driftParams = ResolveDriftParams(emissionSettings);
             marineSnowCompute.SetVector(ShaderIds.DriftParamsId, driftParams);
@@ -2924,7 +2929,7 @@ namespace Hecton8.Environment
             _boundVelocityParams = new Vector4(math.max(0.1f, maxSiltSpeed), math.max(0f, headlightEmissionMultiplier), 0f, 0f);
             marineSnowCompute.SetVector(ShaderIds.InitializationParamsId, Vector4.zero);
 
-            marineSnowMaterial.SetBuffer(ShaderIds.FrameConstantsId, _frameConstantsBuffer);
+            marineSnowMaterial.SetBuffer(ShaderIds.FrameConstantsId, _activeFrameConstantsBuffer);
             marineSnowMaterial.SetBuffer(ShaderIds.ParticleMetaRenderId, _particleMetaBufferB);
             _boundMaterialParticleMetaBuffer = _particleMetaBufferB;
             marineSnowMaterial.SetBuffer(ShaderIds.VisibleParticleIndicesId, _visibleParticleIndexBuffer);
@@ -3087,7 +3092,12 @@ namespace Hecton8.Environment
                 Pad0 = Vector4.zero
             };
 
-            UploadSingleGraphicsBuffer(_frameConstantsBuffer, frameConstants);
+            GraphicsBuffer frameConstantsWriteBuffer = (_frameConstantsUploadBufferIndex & 1) == 0
+                ? _frameConstantsBufferA
+                : _frameConstantsBufferB;
+            UploadSingleGraphicsBuffer(frameConstantsWriteBuffer, frameConstants);
+            _activeFrameConstantsBuffer = frameConstantsWriteBuffer;
+            _frameConstantsUploadBufferIndex ^= 1;
             VFXEmissionProfile.FluidSettings emissionSettings = ResolveEmissionSettings();
             float biolumeSurgeBlend = ResolveBiolumeSurgeBlend();
             float surgeTurbulenceScale = 1f + (biolumeSurgeTurbulenceMultiplier - 1f) * biolumeSurgeBlend;
@@ -3635,14 +3645,14 @@ namespace Hecton8.Environment
                 particleWriteBuffer == null ||
                 particleMetaWriteBuffer == null ||
                 _propwashEventBuffer == null ||
-                _frameConstantsBuffer == null)
+                _activeFrameConstantsBuffer == null)
             {
                 return;
             }
 
             Texture sdfTexture = _boundCaveSdfTexture != null ? _boundCaveSdfTexture : _emptyCaveSdfTexture;
             Texture heightTexture = _boundTerrainHeightTexture != null ? _boundTerrainHeightTexture : Texture2D.blackTexture;
-            marineSnowCompute.SetBuffer(_wakeProximityKernel, ShaderIds.FrameConstantsId, _frameConstantsBuffer);
+            marineSnowCompute.SetBuffer(_wakeProximityKernel, ShaderIds.FrameConstantsId, _activeFrameConstantsBuffer);
             marineSnowCompute.SetBuffer(_wakeProximityKernel, ShaderIds.ParticlesWriteId, particleWriteBuffer);
             marineSnowCompute.SetBuffer(_wakeProximityKernel, ShaderIds.ParticleMetaWriteId, particleMetaWriteBuffer);
             marineSnowCompute.SetBuffer(_wakeProximityKernel, ShaderIds.PropwashEventsId, _propwashEventBuffer);
@@ -4288,7 +4298,10 @@ namespace Hecton8.Environment
             ReleaseBuffer(ref _flowFieldBuffer);
             _flowFieldBufferCapacity = 0;
             ReleaseBuffer(ref _emptyFlowFieldBuffer);
-            ReleaseBuffer(ref _frameConstantsBuffer);
+            ReleaseBuffer(ref _frameConstantsBufferA);
+            ReleaseBuffer(ref _frameConstantsBufferB);
+            _activeFrameConstantsBuffer = null;
+            _frameConstantsUploadBufferIndex = 0;
             ReleaseBuffer(ref _visibleParticleIndexBuffer);
             ReleaseBuffer(ref _indirectArgsBuffer);
             ReleaseBuffer(ref _emptyAbyssalFlowBuffer);

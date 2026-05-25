@@ -1096,7 +1096,14 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
 
     void DisposeLUTs()
     {
-        if (!_lutsReady) return;
+        if (!_lutsReady &&
+            _westLutHandle.BufferID == 0u &&
+            _eastLutHandle.BufferID == 0u &&
+            _biomeLutHandle.BufferID == 0u)
+        {
+            return;
+        }
+
         ReleaseLutHandle(ref _westLutHandle);
         ReleaseLutHandle(ref _eastLutHandle);
         ReleaseLutHandle(ref _biomeLutHandle);
@@ -1105,7 +1112,14 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
 
     void DisposeLUTs(JobHandle dependency)
     {
-        if (!_lutsReady) return;
+        if (!_lutsReady &&
+            _westLutHandle.BufferID == 0u &&
+            _eastLutHandle.BufferID == 0u &&
+            _biomeLutHandle.BufferID == 0u)
+        {
+            return;
+        }
+
         JobHandle releaseDependency = dependency;
         DispatcherJobSwap.TryComplete(ref releaseDependency, forceComplete: true);
         DisposeLUTs();
@@ -2855,6 +2869,17 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
     {
         ClearPreview();
         EnsureLUTs();
+        bool ownsPreviewLuts = false;
+        NativeArray<float> westLut;
+        NativeArray<float> eastLut;
+        NativeArray<float> biomeLut;
+        if (!TryResolveLutViews(out westLut, out eastLut, out biomeLut))
+        {
+            westLut = BakeTemporaryLUT(slopes.westCurve);
+            eastLut = BakeTemporaryLUT(slopes.eastCurve);
+            biomeLut = BakeTemporaryLUT(biomes.biomeRemapCurve);
+            ownsPreviewLuts = true;
+        }
 
         const float previewSpacing = 100f;
         float hs  = mapSize * 0.5f;
@@ -2876,6 +2901,7 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
                 $"Generating {res}×{res} vertices...", 0.2f);
 #endif
             JobHandle previewVertexHandle = MakeVertexJob(res, res, -hs, -hs, previewSpacing, 1,
+                          westLut, eastLut, biomeLut,
                           verts, uvs, caveV, caveB, biomeV)
                 .Schedule(vc, JOB_BATCH);
             DispatcherJobSwap.TryComplete(ref previewVertexHandle, forceComplete: true);
@@ -2959,6 +2985,12 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
             if (caveV.IsCreated)  caveV.Dispose();
             if (caveB.IsCreated)  caveB.Dispose();
             if (biomeV.IsCreated) biomeV.Dispose();
+            if (ownsPreviewLuts)
+            {
+                if (westLut.IsCreated) westLut.Dispose();
+                if (eastLut.IsCreated) eastLut.Dispose();
+                if (biomeLut.IsCreated) biomeLut.Dispose();
+            }
 
 #if UNITY_EDITOR
             EditorUtility.ClearProgressBar();

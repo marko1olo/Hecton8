@@ -86,7 +86,7 @@ It adds resolved render camera position only to gizmo matrix translation. It doe
 
 Mock wrist projection and forced PDA visibility serialize false by default.
 
-Task 06 mock generation remains editor/emergency-only. Mock input is compiled out for non-development player builds, so production PDA cannot stay visible or pay the fullscreen pass while closed.
+Task 06 mock generation remains editor/emergency-only. Mock input is compiled out for non-development player builds, so production PDA cannot stay visible or pay the pass while closed.
 
 `TrySetActivePdaProjectionTuning` compiles only in Editor. Player builds keep pure read accessors and render resource query; designer tuner cannot mutate Vault tuning there.
 

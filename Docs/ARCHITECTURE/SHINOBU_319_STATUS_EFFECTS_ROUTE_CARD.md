@@ -67,4 +67,4 @@ Evidence: STATIC_SOURCE / STATIC_DOC. Unity import, Burst Inspector, profiler, G
 - The 300-entry telemetry ring records active live-mask row count, request count, damage, VFX count, bit extraction count, state hash, anomaly hash, and elapsed microseconds.
 - Active row count is captured before result early-out, so stable poison/bleed rows remain visible even if they emit no damage/change row in that frame.
 - Per-result telemetry is folded by owner completion after the Burst fence; the parallel job never writes the ring.
-- Non-finite health/damage/mask faults, `SignalBus<CombatDamageSignal>.TryPush` backpressure (`0x5319D001`), missing damage SignalBus native storage at publish time (`0x5319D002`), or solve time above `200us` write `Docs/AgentLogs/Dump_SHINOBU_319.bin` in cursor-ordered ring order.
+- Non-finite health/damage/mask faults, `SignalBus<CombatDamageSignal>.TryPush` backpressure (`0x5319D001`), missing damage SignalBus native storage at publish time (`0x5319D002`), or solve time above `200us` write `Docs/AgentLogs/Dump_SHINOBU_319.bin` in ring order.
