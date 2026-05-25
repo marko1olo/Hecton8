@@ -13,7 +13,7 @@ namespace Hecton8.World
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-6240)]
     [AddComponentMenu("Hecton8/World/Environmental Strain Manager")]
-    public sealed class EnvironmentalStrainManager : MonoBehaviour, ISaveable, IUpdatable, IEnvironmentalStrainReadModel, IGlobalRegistryHotSwapListener
+    public sealed class EnvironmentalStrainManager : MonoBehaviour, ISaveable, IUpdatable, ILateFrameTickable, IEnvironmentalStrainReadModel, IGlobalRegistryHotSwapListener
     {
         private const float BasePlasticRecycleStrain = 1.2f;
         private const float BaseDiscardPollution = 1.0f;
@@ -25,8 +25,10 @@ namespace Hecton8.World
 
         private bool _serviceRegistered;
         private bool _tickRegistered;
+        private bool _lateFrameRegistered;
         private bool _hotSwapRegistered;
         private bool _duplicateServiceSuppressed;
+        private bool _duplicateDestroyPending;
         private uint _lastProcessedItemLifecycleSequence;
         private ISaveService _saveService;
 
@@ -151,6 +153,16 @@ namespace Hecton8.World
             DrainItemLifecycleSignals();
         }
 
+        public void LateFrameTick()
+        {
+            if (!_duplicateDestroyPending)
+                return;
+
+            _duplicateDestroyPending = false;
+            if (GlobalRegistry.EnvironmentalStrain != this)
+                Destroy(gameObject);
+        }
+
         private void TryRegisterService()
         {
             if (_serviceRegistered || !Application.isPlaying)
@@ -172,8 +184,8 @@ namespace Hecton8.World
             _duplicateServiceSuppressed = true;
             _serviceRegistered = false;
             _tickRegistered = false;
-            enabled = false;
-            Destroy(gameObject);
+            _duplicateDestroyPending = true;
+            TryRegisterLateFrameTick();
         }
 
         private void TryUnregisterService()
@@ -191,15 +203,30 @@ namespace Hecton8.World
                 return;
 
             _tickRegistered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
+            TryRegisterLateFrameTick();
+        }
+
+        private void TryRegisterLateFrameTick()
+        {
+            if (_lateFrameRegistered || !Application.isPlaying)
+                return;
+
+            _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregisterTick()
         {
-            if (!_tickRegistered)
-                return;
+            if (_tickRegistered)
+            {
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+                _tickRegistered = false;
+            }
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
-            _tickRegistered = false;
+            if (_lateFrameRegistered)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                _lateFrameRegistered = false;
+            }
         }
 
         private void CacheSaveServiceCold()

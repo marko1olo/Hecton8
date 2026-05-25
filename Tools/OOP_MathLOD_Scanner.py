@@ -1163,6 +1163,7 @@ def main() -> int:
     domain_tan_visual = scan_signed_residual_with(lambda x: approx_tan_clamped_f32(x, 4096.0), math.tan, 1.4, 0.0001)
     domain_atan = scan_signed_residual_with(approx_atan_fast_f32, math.atan, 16.0, 0.0001)
     domain_acos = scan_signed_residual_with(approx_acos_fast_f32, math.acos, 1.0, 0.0001)
+    extreme_kernel_finiteness = scan_extreme_kernel_finiteness()
     phys_x = math.log(2.0) / 300.0 * 256.0 * 0.25
     phys_exact = math.exp(-phys_x)
     phys_approx = float(approx_exp_neg_pade33_reduced_f32(phys_x))
@@ -1228,6 +1229,7 @@ def main() -> int:
             "extremeTemperatureCelsiusSamples": [-273.15, 37.0, 1000000.0, -1000000.0],
             "extremePressureAtmSamples": [0.0, 1.0, 1000.0, 1000000.0],
         },
+        "extremeKernelFinitenessProof": extreme_kernel_finiteness,
         "jacobiProof": {
             "samples": [jacobi_sample(q) for q in [0.0, 0.1, 0.5, 1.0]],
             "safetyInvariant": "bounded relaxation: capped non-negative conductance, guarded denominator, saturated [0,1] potential, finite current caps, divergence flags",
@@ -1395,6 +1397,20 @@ def main() -> int:
             "policy": "cadence changes integrate accumulated delta time; visual turbulence/debris use smooth continuous quality curves; gameplay truth amplitudes are not reduced by binary quality tiers",
         },
         "branchAudit": branch_audit(),
+        "burstBranchBoundaryProof": {
+            "approximationKernelTotalIfCount": anchors["approximationKernelTotalIfCount"],
+            "approximationKernelTotalTernaryCount": anchors["approximationKernelTotalTernaryCount"],
+            "approximationKernelUsesMathSelect": anchors["approximationKernelUsesMathSelect"],
+            "mathLodTortureSafetyIfCount": anchors["mathLodTortureSafetyIfCount"],
+            "mathLodTortureTernaryCount": anchors["mathLodTortureTernaryCount"],
+            "powerVoltageSolverSafetyIfCount": anchors["powerVoltageSolverSafetyIfCount"],
+            "powerVoltageSolverTernaryCount": anchors["powerVoltageSolverTernaryCount"],
+            "powerVoltageEdgeLoopIfCount": anchors["powerVoltageEdgeLoopIfCount"],
+            "powerVoltageEdgeLoopContinueCount": anchors["powerVoltageEdgeLoopContinueCount"],
+            "integrateBatterySafetyIfCount": anchors["integrateBatterySafetyIfCount"],
+            "equipmentDrainSafetyIfCount": anchors["equipmentDrainSafetyIfCount"],
+            "truthPolicy": "approximation kernels are branchless; Burst jobs still contain explicit safety/topology branches for native memory validity, offline/damaged nodes, map lookup, and telemetry writes",
+        },
         "asmdefDependencyAudit": asmdef_audit,
         "codeAnchorAudit": anchors,
         "hardFailures": [],
@@ -1557,6 +1573,12 @@ def main() -> int:
         report["hardFailures"].append("hydraulic erosion direct math.exp still present")
     if report["codeAnchorAudit"]["approxCoreIfCount"] != 0:
         report["hardFailures"].append("approximation core contains if branches")
+    if report["codeAnchorAudit"]["approximationKernelTotalIfCount"] != 0 or report["codeAnchorAudit"]["approximationKernelTotalTernaryCount"] != 0:
+        report["hardFailures"].append("audited approximation kernel set contains branch syntax")
+    if report["extremeKernelFinitenessProof"]["nonFiniteOutputCount"] != 0:
+        report["hardFailures"].append("extreme approximation kernel proof produced non-finite output")
+    if report["codeAnchorAudit"]["powerVoltageEdgeLoopContinueCount"] != 0:
+        report["hardFailures"].append("power voltage edge loop still contains continue")
     if report["codeAnchorAudit"]["aiAnxietyApproxIfCount"] != 0:
         report["hardFailures"].append("ai anxiety approximation core contains if branches")
     if report["codeAnchorAudit"]["bhaskaraCoreIfCount"] != 0:
