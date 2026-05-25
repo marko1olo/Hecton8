@@ -32,7 +32,7 @@ Instrument:
 
 Producer phase:
 
-- Wake snapshots are produced by the owning wake-capable systems through the existing `SignalBus<WakeRequestSignal>` lane. Cavitation force events already bridge to this core signal; Buoyancy does not import Cavitation `ForcePacketDTO` directly.
+- Wake snapshots are produced by wake-capable owners through `SignalBus<WakeRequestSignal>`. Cavitation force events bridge to this core signal; Buoyancy does not import Cavitation `ForcePacketDTO`.
 - Sleep telemetry is produced after buoyancy evaluation reduction.
 
 Consumer phase:

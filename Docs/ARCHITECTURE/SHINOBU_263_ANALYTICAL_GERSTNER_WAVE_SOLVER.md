@@ -39,7 +39,7 @@ Owner: ECHELON 4 / Hydrodynamic Drag & Buoyancy.
 - `ResolveActiveOctaves` schedules the partially active last octave; `ResolveOctaveWeight` fades amplitude instead of toggling rows.
 - DTO layout, request identity, and authority route are unchanged.
 - Coarse samples use the macro grid. Mixed vector groups still compute full lanes and select per lane; all-coarse groups skip full Gerstner accumulation.
-- Packed full evaluation and scalar macro-grid generation both route amplitude through `AnalyticalGerstnerWaveMath.ResolveAmplitude`, including authored storm weight, so quality LOD changes octave count and sampling path without changing the swell amplitude envelope.
+- Packed evaluation and macro-grid generation route amplitude through `ResolveAmplitude`, including storm weight. Quality LOD changes octave count/sampling path, not swell amplitude envelope.
 - The Dear Lie is explicit: buoyancy samples use requested XZ without iterative horizontal inversion. Rendering remains presentation-owned.
 - Fixed tick time is consumed from the dispatcher-provided `fixedDeltaTime`; the runtime does not read Unity `Time.*` inside the solver cadence.
 - `GlobalRegistry.DataVault` is used only during cold dependency refresh and hot-swap. `FixedTick` uses the cached Vault interface and generation handles.

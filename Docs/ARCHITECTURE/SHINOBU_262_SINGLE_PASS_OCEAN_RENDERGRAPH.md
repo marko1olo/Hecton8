@@ -40,7 +40,7 @@ It resolves wake texture size `256..1024` in 16-pixel quanta, scales foam intens
 
 ## Rollback Boundary
 
-All SHINOBU_262 buffers are presentation-only. They are excluded from `StateRingBuffer`, Merkle hashing, save identity, and lockstep rollback. Physics can resimulate; ocean presentation continues through its own VisualSync route and telemetry proof.
+All SHINOBU_262 buffers are presentation-only, excluded from `StateRingBuffer`, Merkle, save identity, and rollback. Physics can resimulate; ocean presentation uses VisualSync and telemetry.
 
 ## Verification Status
 

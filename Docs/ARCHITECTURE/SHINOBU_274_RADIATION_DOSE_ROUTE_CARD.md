@@ -59,8 +59,8 @@ Owner: SHINOBU_274 / Radiation Scrubber
 
 - `HazardZoneManager` still owns legacy non-radiation scene-scratch buffers for generic heat/toxicity/biohazard volumes (`_volumes`, `_volumeIds`, `_volumeSpatialHandles`, `_volumeCurveLutSamples`, `_jobVolumes`, `_candidateVolumeFlags`, `_spatialQueryHandles`).
 - SHINOBU_274 excludes radiation from those generic buffers: radiation registration and reads route to `RadiationHazardGrid`, and completed generic hazard jobs zero radiation cache slots before publishing non-radiation masks.
-- Exception scope: existing non-radiation compatibility scratch only. Owner is `HazardZoneManager`; capacity is `maxZoneCount`; allocations are registered with `NativeMemorySentinel`; disposal completes only active generic exposure work before release. `HazardExposureJobResult` is already Vault-backed.
-- Migration of the remaining generic scratch buffers to Vault descriptors is outside Radiation Scrubber authority and belongs to generic hazard/environment ownership. Radiation payload correctness does not depend on those private buffers.
+- Exception scope: existing non-radiation compatibility scratch only. Owner `HazardZoneManager`; capacity `maxZoneCount`; allocations registered with `NativeMemorySentinel`; disposal completes active exposure work before release.
+- Remaining generic scratch buffer migration is outside Radiation Scrubber authority and belongs to hazard/environment ownership. Radiation payload correctness does not depend on those private buffers.
 
 ## Proof Artifacts
 

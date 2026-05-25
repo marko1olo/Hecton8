@@ -131,7 +131,7 @@ The visual cavitation bubble is not a fluid simulation. CPU writes `CavitationVi
 
 Editor/development builds register a cold `Application.logMessageReceived` fault hook.
 
-Exceptions, errors, and asserts attempt one reentrant-guarded dump when no scheduled writer job is active. `TryDumpBlackBox` resolves project root through `Application.dataPath`, writes `Dump_SHINOBU_248.bin.tmp`, then replaces/moves final artifact with delete+move fallback.
+Exceptions/errors/asserts attempt one reentrant-guarded dump when no writer job is active. `TryDumpBlackBox` writes `.tmp`, then replaces/moves final artifact with delete+move fallback.
 
 ## Compile Wall
 

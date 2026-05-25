@@ -55,7 +55,7 @@ Those systems provide scalar snapshots or signals. This route applies hydrodynam
 
 | `Shinobu251AddedMassTuning` / `71734` | `SubmarineAddedMassTuningDTO` | `1` | `ClearMemory`; editor/cold tuning lane |
 
-`Shinobu251CsvScratch` / `71733` is reserved for the cold CSV scratch lane. The current runtime reuses the existing submarine CSV byte route and does not allocate a private persistent native array for it.
+`Shinobu251CsvScratch` / `71733` is reserved for cold CSV scratch. Runtime reuses existing submarine CSV byte route and allocates no private persistent native array.
 
 ## Human Tuning / Import
 

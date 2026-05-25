@@ -195,7 +195,7 @@ Loop 13 shader variant closure:
 
 
 - Loop 17 dispatcher-frame and Vault-count closure: `TerminalOsRuntime` no longer passes Unity `Time.frameCount` into decryption schedule, knob input, telemetry, or `TerminalUnlockedSignal`.
-- `TryScheduleDecryptionPipeline(int simulationFrame)` is only called after `SystemDispatcher.CurrentFrameId` resolves, and `TryFinalizeDecryptionJob()` records completed solver telemetry against the stored `_decryptionScheduleFrame` from the scheduled job, not the current dispatcher or Unity owner frame.
+- `TryScheduleDecryptionPipeline` runs only after `SystemDispatcher.CurrentFrameId` resolves. `TryFinalizeDecryptionJob()` records telemetry against stored `_decryptionScheduleFrame`, not current dispatcher/Unity frame.
 - The fused solver row count is clamped by puzzle and terminal Vault lengths, zero-length knob input fails closed, and `ValidateNativeBuffers()` refuses `_nativeResourcesReady` unless terminal/decryption buffers meet their requested capacities.
 
 
