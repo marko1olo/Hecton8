@@ -342,7 +342,7 @@ namespace Hecton8.Narrative
 
         private static ReadOnlySpan<char> ResolveLocalizedSpan(string key, string fallback)
         {
-            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
+            LocalizationManager manager = Hecton.Localization.LocalizationManager.ActiveRuntimeInstance;
             return manager != null
                 ? manager.GetRawSpanOrFallback(LocHash.Compute(key), fallback.AsSpan())
                 : fallback.AsSpan();
