@@ -417,7 +417,7 @@ namespace Hecton8.Gameplay
 
         private void CacheRegistryServicesCold()
         {
-            _cachedAudioService = GlobalRegistry.Audio;
+            _cachedAudioService = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
             _cachedNativeInputManager = GlobalRegistry.NativeInputRuntime;
         }
 

@@ -556,7 +556,7 @@ namespace Hecton8.Narrative
             IAudioService audioManager = _cachedAudioService;
             if (audioManager == null)
             {
-                CacheAudioService(GlobalRegistry.Audio);
+                CacheAudioService(Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance);
                 audioManager = _cachedAudioService;
             }
 
@@ -1332,7 +1332,7 @@ namespace Hecton8.Narrative
 
         private void CacheRegistryServicesCold()
         {
-            CacheAudioService(GlobalRegistry.Audio);
+            CacheAudioService(Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance);
             _cachedPlayerContext = Hecton8.Core.GlobalRegistry.Player;
             _cachedSaveService = GlobalRegistry.Save;
             _dataVault = GlobalRegistry.DataVault;

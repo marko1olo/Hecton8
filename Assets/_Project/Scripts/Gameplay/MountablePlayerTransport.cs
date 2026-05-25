@@ -2211,7 +2211,7 @@ namespace Hecton8.Gameplay
         private void RefreshCachedRegistryServices()
         {
             _cachedInputService = GlobalRegistry.Input;
-            _cachedAudioService = GlobalRegistry.Audio;
+            _cachedAudioService = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
         }
 
         private void TryRegisterHotSwapListener()
