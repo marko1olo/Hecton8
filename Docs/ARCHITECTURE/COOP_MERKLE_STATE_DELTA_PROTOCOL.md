@@ -29,7 +29,7 @@ State sync operates on owner-provided unmanaged leaves:
 - no `Transform.position` authority
 - no float absolute-world hashes
 
-State owners publish compact dirty facts through typed signal lanes or read-only DataVault snapshots. The network layer builds Merkle roots in a controlled phase and sends mismatched subtree or leaf deltas.
+State owners publish dirty facts through typed signal lanes or read-only DataVault snapshots. Network builds Merkle roots in controlled phase and sends mismatched deltas.
 
 ## Hash Rules
 

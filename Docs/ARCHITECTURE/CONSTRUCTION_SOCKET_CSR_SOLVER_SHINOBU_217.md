@@ -37,7 +37,7 @@ The construction socket path now owns a data-oriented snap layer:
 
 
 - Runtime proxy sockets no longer create trigger colliders.
-- For active preview, `PlayerBuilder.SpawnGhost()` is data-only: it releases any legacy ghost object, sets `_builderGhostPreviewActive`, and stores preview pose/rotation/scale fields instead of spawning the authored `ghostPrefab` or acquiring a runtime proxy shell.
+- Active preview `PlayerBuilder.SpawnGhost()` is data-only: releases legacy ghost object, sets `_builderGhostPreviewActive`, and stores pose/rotation/scale instead of spawning `ghostPrefab`.
 - Ghost socket truth is hydrated from `BaseModuleTemplate.SocketDefinitions`, builder preview pose fields, and `GhostPreviewDTO`, not preview-prefab hierarchy components.
 - Connection visuals route through `Hecton8/Construction/DearLieHologram` and the active `Hecton8/Fabrication/BlueprintWireInstanced` preview shader.
 - `ConstructionPreviewSignal` remains 128 bytes.
@@ -53,7 +53,7 @@ Current migration boundary:
 
 
 - `PlayerBuilder` uses cached DataVault views and a scheduled deterministic Burst chain instead of `Physics.OverlapSphereNonAlloc` for active structural socket snapping.
-- The SHINOBU active bridges do not fall back to `GlobalRegistry.DataVault`; `GlobalRegistry.DataVault` binding and `ShinobuSocketConstructionRuntime.InitializeVault()` run in the cold `BindRuntimeReferences()` path, while active snap and builder validation use pure cached-vault view gates.
+- SHINOBU active bridges do not fall back to `GlobalRegistry.DataVault`; binding/`InitializeVault()` run cold in `BindRuntimeReferences()`. Active snap/validation use pure cached-vault gates.
 - `HectonBlueprintPreviewBatch` likewise binds its builder-holography `VaultGenerationHandle<T>` descriptors in `Awake()`/`OnEnable()` through `EnsureBuffersCold()`; active upload and signal consumption use `TryReadCachedBuffers()` with `IDataVault.TryResolveHandle(...)` only.
 - The mutating socket-alignment bridge is named `TryUpdateShinobuSocketAlignment()` because it can prepare owner-local CSR rows, schedule jobs, finalize prior results, and update cached pose state.
 - `EvaluateSocketSnappingJob` is scheduled as an `IJobParallelFor`; `SelectBestSocketSnapJob` depends on that handle, reduces into a reserved sink row in the same `SnapResults` Vault lane, and is finalized only through `DispatcherJobFence.TryFinalizeCompleted`.

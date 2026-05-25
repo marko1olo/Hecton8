@@ -14,7 +14,7 @@ Signal lane:
 - Producer phase: POST_SIMULATION owner job chain after collapse signal extraction.
 - Consumer phase: VISUAL_SYNC/audio snapshot read; power/lighting/physiology consume only the typed signal bit/scalar payload in their owner phases.
 - Lane payload: `BaseStructuralWarningSignal=64` in `Hecton8.Core.Contracts.Signals`, lane hash `0x42535744` (`BSWD`), capacity `64`, low-tier frame budget `8`, max frame budget `64`, one-frame retention.
-- Overflow route: `RouteStructuralWarningsJob` emits highest-stress groups first and applies a continuous smoothstep producer budget from `4..64` signals before touching the queue. `SignalBus<T>` bounded frame snapshot/load shedding is the second wall.
+- Overflow route: `RouteStructuralWarningsJob` emits highest-stress groups first and applies smoothstep budget `4..64` before queue write. `SignalBus<T>` snapshot/load shedding is the second wall.
 - Duplicate-name audit: resolved. Construction's foundation-pylon warning lane is now `Hecton8.Construction.FoundationStructuralWarningSignal` (`FWNG`); the only public `BaseStructuralWarningSignal` is the Core Contracts audio/visor payload (`BSWD`).
 
 Non-authority fence:

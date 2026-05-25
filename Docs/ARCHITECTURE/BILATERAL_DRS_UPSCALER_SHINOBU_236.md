@@ -61,7 +61,7 @@ Runtime path:
 - Depth coordinates map from output pixels into actual depth texture dimensions; all UAV writes have finite guards.
 - Edge masks use split read/write bindings so clear/Sobel bind UAV names and upscale/debug bind SRV names.
 - Development debug can switch the second pass to mono or array `EdgeMaskDebugComposite` black/green output without CPU readback.
-- `BilateralDrsRendererFeatureInstaller` is editor-only glue: it attaches the feature to PC, PC High, Mobile, and Quest renderer assets via `SerializedObject`, rebuilds `m_RendererFeatureMap`, and binds the compute shader path without runtime YAML assumptions.
+- `BilateralDrsRendererFeatureInstaller` is editor-only glue: attaches feature to PC/PC High/Mobile/Quest renderers via `SerializedObject`, rebuilds `m_RendererFeatureMap`, and binds compute shader path.
 - Reload-time auto-install uses `EditorUserBuildSettings.activeBuildTarget` so ordinary script reloads repair only the active target route.
 - `BilateralDrsRendererFeatureBuildGuard` runs before player builds and invokes target-scoped installation.
 - Platform route: standalone uses PC/PC High plus Low/Medium/High URP assets.

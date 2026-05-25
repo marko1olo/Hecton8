@@ -50,6 +50,7 @@ namespace Hecton8.Physics.Vehicles
         public const uint StateFlagHasBreach = 1u << 2;
         public const uint StateFlagHasFire = 1u << 3;
         public const uint StateFlagCsvLayout = 1u << 4;
+        public const uint StateFlagSignalDrop = 1u << 5;
 
         public const uint DamageFlagMapped = 1u << 0;
         public const uint DamageFlagExplosive = 1u << 1;

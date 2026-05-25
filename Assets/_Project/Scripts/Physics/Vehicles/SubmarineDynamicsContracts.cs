@@ -35,6 +35,7 @@ namespace Hecton8.Physics.Vehicles
         public const uint StateFlagInitialized = 1u << 0;
         public const uint StateFlagFatalNan = 1u << 1;
         public const uint StateFlagGyroSuppressed = 1u << 2;
+        public const uint StateFlagSignalDrop = 1u << 3;
         public const uint HydroFlagTensorFallback = 1u << 0;
         public const uint HydroFlagFullTensorBlend = 1u << 1;
         public const uint HydroFlagFloodMassInjected = 1u << 2;
@@ -1695,7 +1696,8 @@ namespace Hecton8.Physics.Vehicles
                 signal.FrequencyHz = 80f + 420f * signal.Intensity01;
                 signal.Frame = Frame;
                 signal.Flags = 1;
-                SignalBus<CavitationAcousticSignal>.TryEnqueueBounded(CavitationWriter, CavitationWriterBudget, signal);
+                if (!SignalBus<CavitationAcousticSignal>.TryEnqueueBounded(CavitationWriter, CavitationWriterBudget, signal))
+                    state.Flags |= SubmarineDynamicsConstants.StateFlagSignalDrop;
             }
 
             float dragCoefficient = SampleDragLut(speedSq, in DragLut) * SafePositive(config.DragScale, 0.01f);
