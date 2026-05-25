@@ -1135,4 +1135,4 @@ What was done: Cut-mask and damage-volume stamp write-buffer resolvers now retur
 Cinematic Cheats used: Fail-closed visual silence is preferred over a fake stamp count with no valid GPU buffer. Dear Lie still uses the bounded 16-command path when buffers are valid.
 Exact Microseconds saved: 0 us measured. Static impact: invalid stamp buffers cannot produce compute shader iteration over stale/invalid data.
 Verification: OOP scanner reports `PASS_STATIC_WITH_BUDGETED_UNITY_MESH_UPLOAD_RESIDUAL`, failed_gates=none. New proof field: `stamp_graphics_buffer_invalid_fail_closed=true`.
-Build: Pending CPU/process gate.
+Build: Not launched. Gate sampled CPU 59%, then 53% after wait, with zero active compiler/build processes. Project rule forbids dotnet build launch above 50% CPU.

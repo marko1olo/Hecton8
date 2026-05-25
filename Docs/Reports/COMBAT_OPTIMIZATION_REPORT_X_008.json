@@ -1,7 +1,7 @@
 {
   "metadata": {
     "agent": "X_008",
-    "generatedUtc": "2026-05-25T00:19:53.629436+00:00",
+    "generatedUtc": "2026-05-25T00:25:47.019710+00:00",
     "root": "C:\\hades\\Hecton8",
     "evidenceClass": "STATIC_SOURCE_SCAN_AND_SOURCE_LAYOUT_DECLARATIONS",
     "runtimeProof": "PENDING_VERIFICATION_UNITY_IMPORT_BURST_DISASSEMBLY_PROFILER_NOT_RUN"
@@ -684,6 +684,7 @@
     "centralBuilderRejectsVisualOnlySignals": true,
     "submarineHullDentUsesVisualOnlyFlag": true,
     "submarineHullDentStillUsesTypedVisualProjection": true,
+    "signalBusCoalescingKeepsVisualOnlySeparate": true,
     "verdict": "PASS",
     "contract": "Visual-only hull dent notifications may share the historical CombatDamageSignal lane for VFX consumers, but central CombatDamageRuntime must reject them before LUT/CAS health mutation."
   },
@@ -1797,7 +1798,7 @@
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 2245,
+        "line": 2253,
         "text": "if (!TryAtomicSubtractHealth(Health, slot, damage, out previousHealth, out float nextHealth))"
       },
       {
@@ -2009,17 +2010,17 @@
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 2165,
+        "line": 2173,
         "text": "EmitArmorImpactFeedback("
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 2171,
+        "line": 2179,
         "text": "ArmorImpactSignalFlagDirectionalDeflect);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 2178,
+        "line": 2186,
         "text": "EmitArmorDeflectFeedback("
       },
       {
@@ -2174,7 +2175,7 @@
     "projectDamageQueueCalls": [
       {
         "file": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
-        "line": 6059,
+        "line": 6060,
         "argCount": 3,
         "args": [
           "in signal",
@@ -2200,7 +2201,7 @@
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/EnvironmentalHazard.cs",
-        "line": 672,
+        "line": 666,
         "argCount": 3,
         "args": [
           "in signal",
@@ -2331,9 +2332,9 @@
       "interactionBonusUsesSourceAwareDamage": true,
       "bladeRoutePreservesWoundPresentation": true,
       "predatorBiteCarriesAup": true,
-      "predatorBiteResolvesPlayerHealthOwner": true,
+      "predatorBiteResolvesPlayerHealthOwner": false,
       "predatorBiteDoesNotDirectFallbackOnQueueReject": true,
-      "predatorBiteUnregisteredOwnerFallback": true,
+      "predatorBiteUnregisteredOwnerFallback": false,
       "leviathanGrabCarriesAup": true,
       "leviathanGrabDoesNotDirectFallbackOnQueueReject": true,
       "directTwoArgQueueCallCount": 0,
@@ -2409,37 +2410,37 @@
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/EnvironmentalHazard.cs",
-        "line": 641,
+        "line": 635,
         "text": "float3 localPoint = ResolveTargetLocalPoint(playerTransform, impactPoint);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/EnvironmentalHazard.cs",
-        "line": 650,
+        "line": 644,
         "text": "PackedMeta = CombatDamageRuntime.PackSignalMeta("
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/EnvironmentalHazard.cs",
-        "line": 672,
+        "line": 666,
         "text": "CombatDamageRuntime.TryQueueDamage(in signal, in detail, impactAup);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/EnvironmentalHazard.cs",
-        "line": 695,
+        "line": 689,
         "text": "LocalPoint = ResolveTargetLocalPoint(playerTransform, impactPoint),"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/EnvironmentalHazard.cs",
-        "line": 705,
+        "line": 699,
         "text": "private static float3 ResolveTargetLocalPoint(Transform targetTransform, Vector3 impactPoint)"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/EnvironmentalHazard.cs",
-        "line": 732,
+        "line": 726,
         "text": "return CombatDamageTypes.Thermal;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/EnvironmentalHazard.cs",
-        "line": 737,
+        "line": 731,
         "text": "return hazardType == HazardType.Heat ? CombatStatusBits.Burning : 0u;"
       },
       {
@@ -3439,37 +3440,37 @@
       },
       {
         "file": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
-        "line": 6037,
+        "line": 6038,
         "text": "uint statusBits = IsApexPredator() ? CombatStatusBits.Stunned : 0u;"
       },
       {
         "file": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
-        "line": 6041,
+        "line": 6042,
         "text": "SourceId = IsApexPredator() ? DamageSourceIds.FaunaLeviathanBite : DamageSourceIds.FaunaBite,"
       },
       {
         "file": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
-        "line": 6045,
+        "line": 6046,
         "text": "PackedMeta = CombatDamageRuntime.PackSignalMeta("
       },
       {
         "file": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
-        "line": 6053,
+        "line": 6054,
         "text": "LocalPoint = localPoint3,"
       },
       {
         "file": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
-        "line": 6059,
+        "line": 6060,
         "text": "CombatDamageRuntime.TryQueueDamage(in signal, in detail, impactAup);"
       },
       {
         "file": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
-        "line": 6090,
+        "line": 6092,
         "text": "LocalPoint = localPoint3,"
       },
       {
         "file": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
-        "line": 6094,
+        "line": 6096,
         "text": "SourceId = IsApexPredator() ? DamageSourceIds.FaunaLeviathanBite : DamageSourceIds.FaunaBite,"
       },
       {
@@ -3604,7 +3605,7 @@
     "stableSourceId": true,
     "registeredHeatCarriesLocalPoint": true,
     "registeredHeatAupFailureDoesNotBypassCentralQueue": true,
-    "resolvePlayerHealthUsesParentFallback": true,
+    "resolvePlayerHealthUsesParentFallback": false,
     "statusMetadata": true,
     "packetFallbackOnly": true,
     "sourceEvidence": [
@@ -3620,62 +3621,62 @@
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/EnvironmentalHazard.cs",
-        "line": 601,
+        "line": 595,
         "text": "DamageSourceIds.EnvironmentHazard,"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/EnvironmentalHazard.cs",
-        "line": 624,
+        "line": 618,
         "text": "private bool TryQueueCentralHazardDamage(HectonPlayerHealth playerHealth, float damage)"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/EnvironmentalHazard.cs",
-        "line": 641,
+        "line": 635,
         "text": "float3 localPoint = ResolveTargetLocalPoint(playerTransform, impactPoint);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/EnvironmentalHazard.cs",
-        "line": 646,
+        "line": 640,
         "text": "SourceId = DamageSourceIds.EnvironmentHazard,"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/EnvironmentalHazard.cs",
-        "line": 652,
+        "line": 646,
         "text": "ResolveHazardStatusBits(),"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/EnvironmentalHazard.cs",
-        "line": 672,
+        "line": 666,
         "text": "CombatDamageRuntime.TryQueueDamage(in signal, in detail, impactAup);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/EnvironmentalHazard.cs",
-        "line": 676,
+        "line": 670,
         "text": "private void ApplyOwnerHazardDamageFallback(HectonPlayerHealth playerHealth, float damage)"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/EnvironmentalHazard.cs",
-        "line": 695,
+        "line": 689,
         "text": "LocalPoint = ResolveTargetLocalPoint(playerTransform, impactPoint),"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/EnvironmentalHazard.cs",
-        "line": 699,
+        "line": 693,
         "text": "SourceId = DamageSourceIds.EnvironmentHazard,"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/EnvironmentalHazard.cs",
-        "line": 702,
+        "line": 696,
         "text": "playerHealth.ReceiveDamage(in packet);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/EnvironmentalHazard.cs",
-        "line": 705,
+        "line": 699,
         "text": "private static float3 ResolveTargetLocalPoint(Transform targetTransform, Vector3 impactPoint)"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/EnvironmentalHazard.cs",
-        "line": 735,
+        "line": 729,
         "text": "private uint ResolveHazardStatusBits()"
       }
     ]
@@ -3966,17 +3967,17 @@
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 1983,
+        "line": 1991,
         "text": "float qualityWeight01 = SignalBusRegistry.GlobalQualityWeight01;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 1984,
+        "line": 1992,
         "text": "float requestedWeight01 = SanitizeQualityWeight01(_requestedVisualQualityWeight01);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
-        "line": 1985,
+        "line": 1993,
         "text": "_visualQualityWeight01 = SanitizeQualityWeight01(qualityWeight01) * requestedWeight01;"
       }
     ]

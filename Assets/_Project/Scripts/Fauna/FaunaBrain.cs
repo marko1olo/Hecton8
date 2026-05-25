@@ -6005,12 +6005,7 @@ namespace Hecton8.AI
             if (target == null || damage <= 0f)
                 return false;
 
-            IDamageReceiver damageReceiver = target.GetComponentInParent<IDamageReceiver>();
-            Component receiverComponent = damageReceiver as Component;
-            GameObject targetObject = receiverComponent != null ? receiverComponent.gameObject : target.gameObject;
-            Transform targetTransform = receiverComponent != null ? receiverComponent.transform : target;
-            int targetId = CombatDamageRuntime.ResolveTargetId(targetObject);
-            if (!CombatDamageRuntime.IsTargetRegistered(targetId))
+            if (!CombatDamageRuntime.TryResolveRegisteredTarget(target, out int targetId, out Transform targetTransform))
                 return false;
 
             Vector3 targetPosition = targetTransform.position;
@@ -6067,11 +6062,10 @@ namespace Hecton8.AI
                 return;
 
             IDamageReceiver damageReceiver = target.GetComponentInParent<IDamageReceiver>();
-            Component receiverComponent = damageReceiver as Component;
-            if (damageReceiver == null || receiverComponent == null)
+            if (damageReceiver == null)
                 return;
 
-            Transform targetTransform = receiverComponent.transform != null ? receiverComponent.transform : target;
+            Transform targetTransform = target;
             Vector3 targetPosition = targetTransform.position;
             float3 fallbackImpactPoint = IsFiniteVector(targetPosition)
                 ? new float3(targetPosition.x, targetPosition.y, targetPosition.z)

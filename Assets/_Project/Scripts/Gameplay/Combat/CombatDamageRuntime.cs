@@ -1676,6 +1676,14 @@ namespace Hecton8.Gameplay
                    TryResolveRegisteredTargetFromTransform(hit.Rigidbody.transform, out targetId, out receiverTransform);
         }
 
+        public static bool TryResolveRegisteredTarget(
+            Transform candidate,
+            out int targetId,
+            out Transform receiverTransform)
+        {
+            return TryResolveRegisteredTargetFromTransform(candidate, out targetId, out receiverTransform);
+        }
+
         private static bool TryResolveRegisteredTargetFromTransform(
             Transform candidate,
             out int targetId,
