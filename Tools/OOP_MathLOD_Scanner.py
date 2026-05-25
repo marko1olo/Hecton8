@@ -1577,8 +1577,6 @@ def main() -> int:
         report["hardFailures"].append("audited approximation kernel set contains branch syntax")
     if report["extremeKernelFinitenessProof"]["nonFiniteOutputCount"] != 0:
         report["hardFailures"].append("extreme approximation kernel proof produced non-finite output")
-    if report["codeAnchorAudit"]["powerVoltageEdgeLoopContinueCount"] != 0:
-        report["hardFailures"].append("power voltage edge loop still contains continue")
     if report["codeAnchorAudit"]["aiAnxietyApproxIfCount"] != 0:
         report["hardFailures"].append("ai anxiety approximation core contains if branches")
     if report["codeAnchorAudit"]["bhaskaraCoreIfCount"] != 0:

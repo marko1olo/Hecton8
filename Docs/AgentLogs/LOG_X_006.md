@@ -1126,4 +1126,4 @@ What was done: Fixed cell staging to `ChunkCellCount`, clamped RLE run staging t
 Cinematic Cheats used: None. This is memory containment for the persistence route behind the visual Dear Lie delay.
 Exact Microseconds saved: 0 us measured. Static impact: voxel RLE staging cannot grow above one chunk and one pager-sector payload by caller request.
 Verification: OOP scanner reports `PASS_STATIC_WITH_BUDGETED_UNITY_MESH_UPLOAD_RESIDUAL`, failed_gates=none. `voxel_rle_architecture_wal_payload_guard=true` now requires the vault staging caps.
-Build: Pending CPU/process gate.
+Build: Not launched. Gate sampled CPU 81%, then 100% and 100% over two rechecks, with zero active compiler/build processes. Project rule forbids dotnet build launch above 50% CPU.

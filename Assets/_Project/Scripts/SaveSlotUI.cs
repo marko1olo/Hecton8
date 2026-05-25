@@ -299,10 +299,8 @@ namespace Hecton.UI.MainMenu
         private void ApplyPresentation()
         {
             ILocalizationTextReadModel loc = _localization;
-            string prefix = loc != null
-                ? loc.GetOrFallback(LocalizationKeys.SLOT_PREFIX, "SLOT")
-                : "SLOT";
-            int slotLineLength = BuildSlotLine(prefix.AsSpan(), ExtractSlotNumberSpan(_slotId), _slotLineBuffer);
+            ReadOnlySpan<char> prefix = ResolveCompactLabelSpan(loc, LocalizationKeys.SLOT_PREFIX, "SLOT");
+            int slotLineLength = BuildSlotLine(prefix, ExtractSlotNumberSpan(_slotId), _slotLineBuffer);
             int detailsLineLength = _useCompactSingleTextLayout
                 ? BuildCompactDetailsLine(loc, _detailsLineBuffer)
                 : BuildDetailsLine(loc, _detailsLineBuffer);
@@ -375,33 +373,30 @@ namespace Hecton.UI.MainMenu
 
             if (_exists)
             {
-                string sceneLabel = ResolveSceneLabel(loc, _sceneName);
-                string statusLabel = ResolveStatusLabel(loc, _integrityState, _statusLabel);
+                ReadOnlySpan<char> sceneLabel = ResolveSceneLabelSpan(loc, _sceneName);
+                ReadOnlySpan<char> statusLabel = ResolveStatusLabelSpan(loc, _integrityState, _statusLabel);
                 if (_timestampLength > 0)
                     Append(_timestampBuffer, _timestampLength, destination, ref cursor);
                 else
                     Append(string.IsNullOrEmpty(_timestamp) ? ReadOnlySpan<char>.Empty : _timestamp.AsSpan(), destination, ref cursor);
                 Append(" | ".AsSpan(), destination, ref cursor);
                 AppendPlaytime(_playtime, destination, ref cursor);
-                if (!string.IsNullOrEmpty(sceneLabel))
+                if (!sceneLabel.IsEmpty)
                 {
                     Append(" | ".AsSpan(), destination, ref cursor);
-                    Append(sceneLabel.AsSpan(), destination, ref cursor);
+                    Append(sceneLabel, destination, ref cursor);
                 }
 
-                if (!string.IsNullOrEmpty(statusLabel))
+                if (!statusLabel.IsEmpty)
                 {
                     Append("\n".AsSpan(), destination, ref cursor);
-                    Append(statusLabel.AsSpan(), destination, ref cursor);
+                    Append(statusLabel, destination, ref cursor);
                 }
 
                 return cursor;
             }
 
-            string noData = loc != null
-                ? loc.GetOrFallback(LocalizationKeys.SLOT_NO_DATA, "NO DATA")
-                : "NO DATA";
-            Append(noData.AsSpan(), destination, ref cursor);
+            Append(ResolveCompactLabelSpan(loc, LocalizationKeys.SLOT_NO_DATA, "NO DATA"), destination, ref cursor);
             return cursor;
         }
 
@@ -410,30 +405,27 @@ namespace Hecton.UI.MainMenu
             int cursor = 0;
             if (!_exists)
             {
-                string noData = loc != null
-                    ? loc.GetOrFallback(LocalizationKeys.SLOT_NO_DATA, "NO DATA")
-                    : "NO DATA";
                 Append("<size=58%>".AsSpan(), destination, ref cursor);
-                Append(noData.AsSpan(), destination, ref cursor);
+                Append(ResolveCompactLabelSpan(loc, LocalizationKeys.SLOT_NO_DATA, "NO DATA"), destination, ref cursor);
                 Append("</size>".AsSpan(), destination, ref cursor);
                 return cursor;
             }
 
             Append("<size=52%>".AsSpan(), destination, ref cursor);
             AppendPlaytime(_playtime, destination, ref cursor);
-            string sceneLabel = ResolveSceneLabel(loc, _sceneName);
-            string compactStatus = GetCompactStatusLabel(loc, _integrityState, _statusLabel);
+            ReadOnlySpan<char> sceneLabel = ResolveSceneLabelSpan(loc, _sceneName);
+            ReadOnlySpan<char> compactStatus = ResolveStatusLabelSpan(loc, _integrityState, _statusLabel);
 
-            if (!string.IsNullOrEmpty(sceneLabel))
+            if (!sceneLabel.IsEmpty)
             {
                 Append(" | ".AsSpan(), destination, ref cursor);
-                AppendCompactSceneName(sceneLabel.AsSpan(), destination, ref cursor);
+                AppendCompactSceneName(sceneLabel, destination, ref cursor);
             }
 
-            if (!string.IsNullOrEmpty(compactStatus))
+            if (!compactStatus.IsEmpty)
             {
                 Append(" | ".AsSpan(), destination, ref cursor);
-                Append(compactStatus.AsSpan(), destination, ref cursor);
+                Append(compactStatus, destination, ref cursor);
             }
 
             Append("</size>".AsSpan(), destination, ref cursor);
@@ -453,48 +445,18 @@ namespace Hecton.UI.MainMenu
             Append("...".AsSpan(), destination, ref cursor);
         }
 
-        private static string GetCompactStatusLabel(
-            ILocalizationTextReadModel loc,
-            SaveSlotIntegrityState integrityState,
-            string fallbackStatusLabel)
-        {
-            switch (integrityState)
-            {
-                case SaveSlotIntegrityState.Healthy:
-                    return string.Empty;
-                case SaveSlotIntegrityState.HealthyWithBackup:
-                    return ResolveCompactLabel(loc, LocalizationKeys.SLOT_STATUS_BACKUP, "BACKUP");
-                case SaveSlotIntegrityState.BackupOnly:
-                    return ResolveCompactLabel(loc, LocalizationKeys.SLOT_STATUS_BACKUP_ONLY, "BACKUP ONLY");
-                case SaveSlotIntegrityState.MissingMetadata:
-                    return ResolveCompactLabel(loc, LocalizationKeys.SLOT_STATUS_NO_META, "NO META");
-                case SaveSlotIntegrityState.MetadataRecoveredFromBackup:
-                    return ResolveCompactLabel(loc, LocalizationKeys.SLOT_STATUS_META_RESTORED, "META RESTORED");
-                case SaveSlotIntegrityState.MetadataSynthesized:
-                    return ResolveCompactLabel(loc, LocalizationKeys.SLOT_STATUS_META_SYNTH, "META SYNTH");
-                case SaveSlotIntegrityState.CorruptedMetadata:
-                    return ResolveCompactLabel(loc, LocalizationKeys.SLOT_STATUS_CORRUPT, "CORRUPT");
-                default:
-                    return string.IsNullOrEmpty(fallbackStatusLabel) ? string.Empty : fallbackStatusLabel;
-            }
-        }
-
-        private static string ResolveSceneLabel(ILocalizationTextReadModel loc, string sceneName)
+        private static ReadOnlySpan<char> ResolveSceneLabelSpan(ILocalizationTextReadModel loc, string sceneName)
         {
             if (string.IsNullOrEmpty(sceneName))
-                return string.Empty;
+                return ReadOnlySpan<char>.Empty;
 
             if (string.Equals(sceneName, "02_HECTON_WORLD", StringComparison.Ordinal))
-            {
-                return loc != null
-                    ? loc.GetOrFallback(LocalizationKeys.SLOT_SCENE_WORLD, "WORLD")
-                    : "WORLD";
-            }
+                return ResolveCompactLabelSpan(loc, LocalizationKeys.SLOT_SCENE_WORLD, "WORLD");
 
-            return sceneName;
+            return sceneName.AsSpan();
         }
 
-        private static string ResolveStatusLabel(
+        private static ReadOnlySpan<char> ResolveStatusLabelSpan(
             ILocalizationTextReadModel loc,
             SaveSlotIntegrityState integrityState,
             string fallbackStatusLabel)
@@ -502,29 +464,31 @@ namespace Hecton.UI.MainMenu
             switch (integrityState)
             {
                 case SaveSlotIntegrityState.Healthy:
-                    return string.Empty;
+                    return ReadOnlySpan<char>.Empty;
                 case SaveSlotIntegrityState.HealthyWithBackup:
-                    return ResolveCompactLabel(loc, LocalizationKeys.SLOT_STATUS_BACKUP, "BACKUP");
+                    return ResolveCompactLabelSpan(loc, LocalizationKeys.SLOT_STATUS_BACKUP, "BACKUP");
                 case SaveSlotIntegrityState.BackupOnly:
-                    return ResolveCompactLabel(loc, LocalizationKeys.SLOT_STATUS_BACKUP_ONLY, "BACKUP ONLY");
+                    return ResolveCompactLabelSpan(loc, LocalizationKeys.SLOT_STATUS_BACKUP_ONLY, "BACKUP ONLY");
                 case SaveSlotIntegrityState.MissingMetadata:
-                    return ResolveCompactLabel(loc, LocalizationKeys.SLOT_STATUS_NO_META, "NO META");
+                    return ResolveCompactLabelSpan(loc, LocalizationKeys.SLOT_STATUS_NO_META, "NO META");
                 case SaveSlotIntegrityState.MetadataRecoveredFromBackup:
-                    return ResolveCompactLabel(loc, LocalizationKeys.SLOT_STATUS_META_RESTORED, "META RESTORED");
+                    return ResolveCompactLabelSpan(loc, LocalizationKeys.SLOT_STATUS_META_RESTORED, "META RESTORED");
                 case SaveSlotIntegrityState.MetadataSynthesized:
-                    return ResolveCompactLabel(loc, LocalizationKeys.SLOT_STATUS_META_SYNTH, "META SYNTH");
+                    return ResolveCompactLabelSpan(loc, LocalizationKeys.SLOT_STATUS_META_SYNTH, "META SYNTH");
                 case SaveSlotIntegrityState.CorruptedMetadata:
-                    return ResolveCompactLabel(loc, LocalizationKeys.SLOT_STATUS_CORRUPT, "CORRUPT");
+                    return ResolveCompactLabelSpan(loc, LocalizationKeys.SLOT_STATUS_CORRUPT, "CORRUPT");
                 default:
-                    return string.IsNullOrEmpty(fallbackStatusLabel) ? string.Empty : fallbackStatusLabel;
+                    return string.IsNullOrEmpty(fallbackStatusLabel)
+                        ? ReadOnlySpan<char>.Empty
+                        : fallbackStatusLabel.AsSpan();
             }
         }
 
-        private static string ResolveCompactLabel(ILocalizationTextReadModel loc, string key, string fallback)
+        private static ReadOnlySpan<char> ResolveCompactLabelSpan(ILocalizationTextReadModel loc, string key, string fallback)
         {
             return loc != null
-                ? loc.GetOrFallback(key, fallback)
-                : fallback;
+                ? loc.GetRawSpanOrFallback(LocHash.Compute(key.AsSpan()), fallback.AsSpan())
+                : fallback.AsSpan();
         }
 
         private static Color GetStatusColor(SaveSlotIntegrityState integrityState, Color fallback)
