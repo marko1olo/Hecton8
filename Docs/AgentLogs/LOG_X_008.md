@@ -1442,3 +1442,11 @@ Cinematic Cheats used: none; this is damage route correctness and AUP hygiene.
 Exact Microseconds saved: 0 us measured. Registered hot path remains central LUT/CAS and does not direct-fallback on queue rejection. Fallback cost exists only when registration is absent.
 Verification: AST pass OK; `python Tools\OOP_Hitbox_Scanner.py` passed in ~130.9s; JSON query confirmed `abyssalBoilingUnregisteredFallbackUsesOwnerPacket=true`, `abyssalShockUnregisteredFallbackUsesOwnerPacket=true`, `abyssalBoilingAupFailureDoesNotBypassCentralQueue=true`, `abyssalBoilingRegisteredDoesNotDirectFallbackOnQueueReject=true`, combat trig `0`, combat angle API `0`, and project `acos/asin` inventory `0`. `git diff --check` passed with a line-ending warning only.
 Compile: not run. Guard sample was CPU `71%`, so project rule forbids `dotnet build`.
+
+2026-05-25 Loop 82 - Direct damage ingress AUP bounds unification.
+Wrong: `SignalBus<CombatDamageSignal>` sanitizes AUP with `CombatDamageSignalCodec.IsFiniteAup`, but direct `CombatDamageRuntime.TryQueueDamage(..., impactAup)` ingress only checked finite `double3` before writing armor impact AUP storage. That allowed inconsistent AUP validity between global and direct damage routes.
+Done: changed `HectonCombatRuntime_ArmorPenetration.IsFinite(double3)` to delegate to `CombatDamageSignalCodec.IsFiniteAup(value)`. The write remains `math.select(double3.zero, impactAup, new bool3(IsFinite(impactAup)))`, but now shares the signal sanitizer's finite-plus-extent contract. Scanner records `writeHelperUsesSignalCodecAupBounds=true`.
+Cinematic Cheats used: none; ingress metadata hygiene only.
+Exact Microseconds saved: 0 us measured. The combat LUT/CAS hot path is unchanged; this prevents invalid far AUP metadata from reaching deferred feedback/telemetry.
+Verification: AST pass OK; `python Tools\OOP_Hitbox_Scanner.py` passed in ~143s; JSON query confirmed `damageIngressBufferBoundsProof.verdict=PASS`, `writeHelperUsesSignalCodecAupBounds=true`, branchless LUT `PASS`, combat trig `0`, combat angle API `0`, and project `acos/asin` inventory `0`. `git diff --check` passed clean.
+Compile: not run. Guard sample was CPU `100%` with active `csc` and `dotnet`, so project rule forbids `dotnet build`.

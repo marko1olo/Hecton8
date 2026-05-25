@@ -80,7 +80,7 @@ namespace Hecton8.UI
         private SequenceState _state;
         private HectonSurvivalSystem _survivalSystem;
         private HectonPlayerMovement _playerMovement;
-        private LocalizationManager _localization;
+        private ILocalizationTextReadModel _localization;
         private DepthZoneDirector _depthZoneDirector;
         private bool _hotSwapRegistered;
         private uint _lastSessionLifecycleSequence;
@@ -403,7 +403,7 @@ namespace Hecton8.UI
             BootTextWriter writer = new BootTextWriter(destination);
             ResolveOwners();
 
-            LocalizationManager manager = _localization;
+            ILocalizationTextReadModel manager = _localization;
             SurvivalStats stats = _survivalSystem != null ? _survivalSystem.Stats : null;
             DepthZoneDirector depthZoneDirector = _depthZoneDirector;
             DepthZoneProfile currentZone = depthZoneDirector != null ? depthZoneDirector.CurrentZone : null;
@@ -513,7 +513,7 @@ namespace Hecton8.UI
             writer.AppendUpperInvariant(slotName);
         }
 
-        private static void AppendLanguageTag(ref BootTextWriter writer, LocalizationManager manager)
+        private static void AppendLanguageTag(ref BootTextWriter writer, ILocalizationTextReadModel manager)
         {
             if (manager == null)
             {
@@ -521,7 +521,7 @@ namespace Hecton8.UI
                 return;
             }
 
-            switch (manager.CurrentLanguage)
+            switch ((GameLanguage)manager.ActiveLanguageId)
             {
                 case GameLanguage.English: writer.Append("ENGLISH".AsSpan()); break;
                 case GameLanguage.Russian: writer.Append("RUSSIAN".AsSpan()); break;
@@ -634,7 +634,7 @@ namespace Hecton8.UI
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.LocalizationRuntime:
-                    _localization = currentService as LocalizationManager;
+                    _localization = currentService as ILocalizationTextReadModel;
                     font = LocalizedFontResolver.ResolveReadableFont(font, _localization);
                     if (_consoleLabel != null && font != null)
                         _consoleLabel.font = font;
@@ -647,7 +647,7 @@ namespace Hecton8.UI
 
         private void CacheRegistryServicesCold()
         {
-            _localization = GlobalRegistry.Localization;
+            _localization = GlobalRegistry.LocalizationText;
             _depthZoneDirector = GlobalRegistry.DepthZone;
         }
 
@@ -767,7 +767,7 @@ namespace Hecton8.UI
             return overlay != null && overlay.TryGetComponent(out Canvas canvas) ? canvas : null;
         }
 
-        private static ReadOnlySpan<char> ResolveLocalizedSpan(LocalizationManager manager, int keyHash, ReadOnlySpan<char> fallback)
+        private static ReadOnlySpan<char> ResolveLocalizedSpan(ILocalizationTextReadModel manager, int keyHash, ReadOnlySpan<char> fallback)
         {
             return manager != null
                 ? manager.GetRawSpanOrFallback(keyHash, fallback)
