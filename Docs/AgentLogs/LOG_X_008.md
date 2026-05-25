@@ -1569,4 +1569,4 @@ Done: added `TryMulInverse3x3()` with direct 3x3 cofactor/adjugate solve. Linear
 Cinematic Cheats used: none; this preserves vehicle hydrodynamic truth and avoids changing force accumulation or AUP routes.
 Exact Microseconds saved: 0 us measured. Static work removed per tensor-blended solve: one general 4x4 determinant and one general 4x4 inverse, replaced by a direct 3x3 solve. Profiler proof pending.
 Verification: AST pass OK; scoped inverse grep over Combat/Vehicle/Hull routes found no `math.inverse` or `Quaternion.Inverse`; `python Tools\OOP_Hitbox_Scanner.py` passed in ~64.1s after correcting stale `TryPushTracked` proof markers. JSON proof assert confirmed `vehicleHydrodynamicTensorInverseProof.verdict=PASS`, `remainingMathInverseMatrixCalls=0`, `submarineHullDentUsesVisualOnlyFlag=true`, `submarineHullDentStillUsesTypedVisualProjection=true`, lane segregation `PASS`, combat trig `0`, combat angle API `0`, and project `acos/asin` inventory `0`.
-Compile: pending build guard.
+Compile: not run. Latest guard sample was CPU `74%`; project rule forbids `dotnet build` while CPU is above `50%`.

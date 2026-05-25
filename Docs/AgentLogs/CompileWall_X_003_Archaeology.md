@@ -102,13 +102,13 @@ Evidence class: STATIC_SOURCE. No Unity import, C# compile, runtime wiring, GC, 
 | `explicit` | `IntPtr` | `Hecton8.Core` | `Assets/_Project/Scripts/Audio/NativeAudioFrameRingBuffer.cs:261` |
 | `explicit` | `ReverbDspTier` | `Hecton8.Core` | `Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs:3604` |
 | `as` | `MonoBehaviour` | `Hecton8.Core` | `Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs:6360` |
-| `GetComponent` | `SubmarineAtmosphereSystem` | `Hecton8.Core` | `Assets/_Project/Scripts/BaseModule.cs:3893` |
-| `GetComponent` | `HectonVoxelVolume` | `Hecton8.Core` | `Assets/_Project/Scripts/BaseModule.cs:3899` |
-| `GetComponent` | `HectonSurvivalSystem` | `Hecton8.Core` | `Assets/_Project/Scripts/BaseModule.cs:4383` |
-| `GetComponent` | `HectonSurvivalSystem` | `Hecton8.Core` | `Assets/_Project/Scripts/BaseModule.cs:4395` |
-| `GetComponent` | `HectonSurvivalSystem` | `Hecton8.Core` | `Assets/_Project/Scripts/BaseModule.cs:4447` |
-| `GetComponent` | `BioReactor` | `Hecton8.Core` | `Assets/_Project/Scripts/BaseModule.cs:5174` |
-| `GetComponent` | `SubmarineAtmosphereSystem` | `Hecton8.Core` | `Assets/_Project/Scripts/BaseModule.cs:5631` |
+| `GetComponent` | `SubmarineAtmosphereSystem` | `Hecton8.Core` | `Assets/_Project/Scripts/BaseModule.cs:3896` |
+| `GetComponent` | `HectonVoxelVolume` | `Hecton8.Core` | `Assets/_Project/Scripts/BaseModule.cs:3902` |
+| `GetComponent` | `HectonSurvivalSystem` | `Hecton8.Core` | `Assets/_Project/Scripts/BaseModule.cs:4386` |
+| `GetComponent` | `HectonSurvivalSystem` | `Hecton8.Core` | `Assets/_Project/Scripts/BaseModule.cs:4398` |
+| `GetComponent` | `HectonSurvivalSystem` | `Hecton8.Core` | `Assets/_Project/Scripts/BaseModule.cs:4450` |
+| `GetComponent` | `BioReactor` | `Hecton8.Core` | `Assets/_Project/Scripts/BaseModule.cs:5189` |
+| `GetComponent` | `SubmarineAtmosphereSystem` | `Hecton8.Core` | `Assets/_Project/Scripts/BaseModule.cs:5646` |
 | `is` | `BeaconNetworkSystem` | `Hecton8.Core` | `Assets/_Project/Scripts/BeaconNetworkSystem.cs:159` |
 | `is` | `ModuloSimulationBucketer` | `Hecton8.Core` | `Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:2993` |
 | `is` | `BurstTokenBucketJobAdmissionService` | `Hecton8.Core` | `Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:3019` |
@@ -197,14 +197,14 @@ Evidence class: STATIC_SOURCE. No Unity import, C# compile, runtime wiring, GC, 
 ## Source Fully-Qualified Reference Audit
 
 - Cross-domain reference edges: `140`
-- Cross-domain references: `1473`
+- Cross-domain references: `1472`
 - Critical AI/Physics/UI/Audio findings: `0`
 
 | Source Domain | Target Domain | Count |
 |---|---|---:|
 | `Hecton8.Gameplay` | `Hecton8.Core` | 189 |
 | `Hecton8.UI` | `Hecton8.Core` | 106 |
-| `Hecton8.World` | `Hecton8.Core` | 105 |
+| `Hecton8.World` | `Hecton8.Core` | 104 |
 | `Hecton8.Dev` | `Hecton8.Core` | 90 |
 | `Hecton8.Bootstrap` | `Hecton8.Core` | 67 |
 | `Hecton8.Audio` | `Hecton8.Core` | 66 |

@@ -321,7 +321,7 @@
         "directPlayerCoupling": false,
         "domain": "Hecton8.Gameplay",
         "kind": "GetComponent",
-        "line": 3893,
+        "line": 3896,
         "path": "Assets/_Project/Scripts/BaseModule.cs",
         "text": "_submarineAtmosphereSystem = GetComponentInParent<SubmarineAtmosphereSystem>();",
         "type": "SubmarineAtmosphereSystem"
@@ -331,7 +331,7 @@
         "directPlayerCoupling": false,
         "domain": "Hecton8.Gameplay",
         "kind": "GetComponent",
-        "line": 3899,
+        "line": 3902,
         "path": "Assets/_Project/Scripts/BaseModule.cs",
         "text": "_voxelVolume = GetComponentInParent<HectonVoxelVolume>();",
         "type": "HectonVoxelVolume"
@@ -341,7 +341,7 @@
         "directPlayerCoupling": false,
         "domain": "Hecton8.Gameplay",
         "kind": "GetComponent",
-        "line": 4383,
+        "line": 4386,
         "path": "Assets/_Project/Scripts/BaseModule.cs",
         "text": "HectonSurvivalSystem resolvedSurvival = other.GetComponentInParent<HectonSurvivalSystem>();",
         "type": "HectonSurvivalSystem"
@@ -351,7 +351,7 @@
         "directPlayerCoupling": false,
         "domain": "Hecton8.Gameplay",
         "kind": "GetComponent",
-        "line": 4395,
+        "line": 4398,
         "path": "Assets/_Project/Scripts/BaseModule.cs",
         "text": "HectonSurvivalSystem resolvedSurvival = playerTransform.GetComponentInParent<HectonSurvivalSystem>();",
         "type": "HectonSurvivalSystem"
@@ -361,7 +361,7 @@
         "directPlayerCoupling": false,
         "domain": "Hecton8.Gameplay",
         "kind": "GetComponent",
-        "line": 4447,
+        "line": 4450,
         "path": "Assets/_Project/Scripts/BaseModule.cs",
         "text": "HectonSurvivalSystem resolvedSurvival = other.GetComponentInParent<HectonSurvivalSystem>();",
         "type": "HectonSurvivalSystem"
@@ -371,7 +371,7 @@
         "directPlayerCoupling": false,
         "domain": "Hecton8.Gameplay",
         "kind": "GetComponent",
-        "line": 5174,
+        "line": 5189,
         "path": "Assets/_Project/Scripts/BaseModule.cs",
         "text": "reactor = GetComponentInChildren<BioReactor>();",
         "type": "BioReactor"
@@ -381,7 +381,7 @@
         "directPlayerCoupling": false,
         "domain": "Hecton8.Gameplay",
         "kind": "GetComponent",
-        "line": 5631,
+        "line": 5646,
         "path": "Assets/_Project/Scripts/BaseModule.cs",
         "text": "_submarineAtmosphereSystem = GetComponentInParent<SubmarineAtmosphereSystem>();",
         "type": "SubmarineAtmosphereSystem"
@@ -15676,7 +15676,7 @@
     "criticalFindingCount": 0,
     "criticalFindings": [],
     "edgeCount": 140,
-    "referenceCount": 1473,
+    "referenceCount": 1472,
     "topEdges": [
       {
         "count": 189,
@@ -15689,7 +15689,7 @@
         "targetDomain": "Hecton8.Core"
       },
       {
-        "count": 105,
+        "count": 104,
         "sourceDomain": "Hecton8.World",
         "targetDomain": "Hecton8.Core"
       },
@@ -16190,7 +16190,7 @@
       },
       {
         "assembly": "Hecton8.Core",
-        "line": 577,
+        "line": 609,
         "namespace": "Hecton8.Core.GlobalRegistry.Player",
         "path": "Assets/_Project/Scripts/AmbientWaterMotionManager.cs",
         "sourceDomain": "Hecton8.Physics",
@@ -17252,7 +17252,7 @@
       },
       {
         "assembly": "Hecton8.Core",
-        "line": 707,
+        "line": 709,
         "namespace": "Hecton8.Core.IAudioService",
         "path": "Assets/_Project/Scripts/BaseModule.cs",
         "sourceDomain": "Hecton8.Gameplay",
@@ -17261,7 +17261,7 @@
       },
       {
         "assembly": "Hecton8.Core",
-        "line": 1181,
+        "line": 1183,
         "namespace": "Hecton8.Construction.BaseDegradationSystem.ClearParasiteStructuralState",
         "path": "Assets/_Project/Scripts/BaseModule.cs",
         "sourceDomain": "Hecton8.Gameplay",
@@ -17270,7 +17270,7 @@
       },
       {
         "assembly": "Hecton8.Core",
-        "line": 1391,
+        "line": 1394,
         "namespace": "Hecton8.Construction.BaseDegradationSystem.ClearParasiteStructuralState",
         "path": "Assets/_Project/Scripts/BaseModule.cs",
         "sourceDomain": "Hecton8.Gameplay",
@@ -17279,7 +17279,7 @@
       },
       {
         "assembly": "Hecton8.Core",
-        "line": 1416,
+        "line": 1419,
         "namespace": "Hecton8.Construction.BaseDegradationSystem.ClearParasiteStructuralState",
         "path": "Assets/_Project/Scripts/BaseModule.cs",
         "sourceDomain": "Hecton8.Gameplay",
@@ -17288,7 +17288,7 @@
       },
       {
         "assembly": "Hecton8.Core",
-        "line": 1626,
+        "line": 1629,
         "namespace": "Hecton8.Interaction.IRepairableModuleTarget.TryReadRepairState",
         "path": "Assets/_Project/Scripts/BaseModule.cs",
         "sourceDomain": "Hecton8.Gameplay",
@@ -17297,7 +17297,7 @@
       },
       {
         "assembly": "Hecton8.Core",
-        "line": 1626,
+        "line": 1629,
         "namespace": "Hecton8.Interaction.ModuleRepairReadSnapshot",
         "path": "Assets/_Project/Scripts/BaseModule.cs",
         "sourceDomain": "Hecton8.Gameplay",
@@ -17306,7 +17306,7 @@
       },
       {
         "assembly": "Hecton8.Core",
-        "line": 1633,
+        "line": 1636,
         "namespace": "Hecton8.Interaction.ModuleRepairReadSnapshot.FlagFlooded",
         "path": "Assets/_Project/Scripts/BaseModule.cs",
         "sourceDomain": "Hecton8.Gameplay",
@@ -17315,7 +17315,7 @@
       },
       {
         "assembly": "Hecton8.Core",
-        "line": 1635,
+        "line": 1638,
         "namespace": "Hecton8.Interaction.ModuleRepairReadSnapshot.FlagDraining",
         "path": "Assets/_Project/Scripts/BaseModule.cs",
         "sourceDomain": "Hecton8.Gameplay",
@@ -17324,7 +17324,7 @@
       },
       {
         "assembly": "Hecton8.Core",
-        "line": 1637,
+        "line": 1640,
         "namespace": "Hecton8.Interaction.ModuleRepairReadSnapshot.FlagHasPower",
         "path": "Assets/_Project/Scripts/BaseModule.cs",
         "sourceDomain": "Hecton8.Gameplay",
@@ -17333,7 +17333,7 @@
       },
       {
         "assembly": "Hecton8.Core",
-        "line": 1643,
+        "line": 1646,
         "namespace": "Hecton8.Interaction.IRepairableModuleTarget.ApplyRepair",
         "path": "Assets/_Project/Scripts/BaseModule.cs",
         "sourceDomain": "Hecton8.Gameplay",
@@ -17342,7 +17342,7 @@
       },
       {
         "assembly": "Hecton8.Core",
-        "line": 3845,
+        "line": 3848,
         "namespace": "Hecton8.Core.IAudioService",
         "path": "Assets/_Project/Scripts/BaseModule.cs",
         "sourceDomain": "Hecton8.Gameplay",
@@ -17351,7 +17351,7 @@
       },
       {
         "assembly": "Hecton8.Core",
-        "line": 4370,
+        "line": 4373,
         "namespace": "Hecton8.Core.GlobalRegistry.ConstructionRuntime",
         "path": "Assets/_Project/Scripts/BaseModule.cs",
         "sourceDomain": "Hecton8.Gameplay",
@@ -17360,7 +17360,7 @@
       },
       {
         "assembly": "Hecton8.Core",
-        "line": 4420,
+        "line": 4423,
         "namespace": "Hecton8.Core.GlobalRegistry.PlayerMovementContracts",
         "path": "Assets/_Project/Scripts/BaseModule.cs",
         "sourceDomain": "Hecton8.Gameplay",
@@ -17369,7 +17369,7 @@
       },
       {
         "assembly": "Hecton8.Core",
-        "line": 4639,
+        "line": 4642,
         "namespace": "Hecton8.Core.GlobalRegistry.ConstructionRuntime",
         "path": "Assets/_Project/Scripts/BaseModule.cs",
         "sourceDomain": "Hecton8.Gameplay",
@@ -17378,7 +17378,7 @@
       },
       {
         "assembly": "Hecton8.Core",
-        "line": 4714,
+        "line": 4717,
         "namespace": "Hecton8.Interaction.KinematicRepairTargetProbe",
         "path": "Assets/_Project/Scripts/BaseModule.cs",
         "sourceDomain": "Hecton8.Gameplay",
@@ -17387,7 +17387,7 @@
       },
       {
         "assembly": "Hecton8.Core",
-        "line": 4715,
+        "line": 4718,
         "namespace": "Hecton8.Interaction.KinematicRepairSnapPoint",
         "path": "Assets/_Project/Scripts/BaseModule.cs",
         "sourceDomain": "Hecton8.Gameplay",
@@ -17396,7 +17396,7 @@
       },
       {
         "assembly": "Hecton8.Core",
-        "line": 4744,
+        "line": 4747,
         "namespace": "Hecton8.Interaction.KinematicRepairSnapPoint",
         "path": "Assets/_Project/Scripts/BaseModule.cs",
         "sourceDomain": "Hecton8.Gameplay",
@@ -17405,7 +17405,7 @@
       },
       {
         "assembly": "Hecton8.Core",
-        "line": 4878,
+        "line": 4881,
         "namespace": "Hecton8.Core.GlobalRegistry.AtmosphereReadModel",
         "path": "Assets/_Project/Scripts/BaseModule.cs",
         "sourceDomain": "Hecton8.Gameplay",
@@ -17414,7 +17414,7 @@
       },
       {
         "assembly": "Hecton8.Core",
-        "line": 4879,
+        "line": 4882,
         "namespace": "Hecton8.Core.GlobalRegistry.PlayerInventory",
         "path": "Assets/_Project/Scripts/BaseModule.cs",
         "sourceDomain": "Hecton8.Gameplay",
@@ -17423,7 +17423,7 @@
       },
       {
         "assembly": "Hecton8.Core",
-        "line": 4880,
+        "line": 4883,
         "namespace": "Hecton8.Core.GlobalRegistry.Audio",
         "path": "Assets/_Project/Scripts/BaseModule.cs",
         "sourceDomain": "Hecton8.Gameplay",
@@ -17432,7 +17432,7 @@
       },
       {
         "assembly": "Hecton8.Core",
-        "line": 4882,
+        "line": 4885,
         "namespace": "Hecton8.Core.GlobalRegistry.ObjectPoolService",
         "path": "Assets/_Project/Scripts/BaseModule.cs",
         "sourceDomain": "Hecton8.Gameplay",
@@ -17441,7 +17441,7 @@
       },
       {
         "assembly": "Hecton8.Core",
-        "line": 4883,
+        "line": 4886,
         "namespace": "Hecton8.Core.GlobalRegistry.Player",
         "path": "Assets/_Project/Scripts/BaseModule.cs",
         "sourceDomain": "Hecton8.Gameplay",
@@ -17450,7 +17450,7 @@
       },
       {
         "assembly": "Hecton8.Core",
-        "line": 4924,
+        "line": 4927,
         "namespace": "Hecton8.Core.IAudioService",
         "path": "Assets/_Project/Scripts/BaseModule.cs",
         "sourceDomain": "Hecton8.Gameplay",
@@ -17459,7 +17459,7 @@
       },
       {
         "assembly": "Hecton8.Core",
-        "line": 5567,
+        "line": 5582,
         "namespace": "Hecton8.Core.GlobalRegistry.ConstructionRuntime",
         "path": "Assets/_Project/Scripts/BaseModule.cs",
         "sourceDomain": "Hecton8.Gameplay",
