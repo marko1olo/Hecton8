@@ -818,6 +818,8 @@ namespace Hecton8.Tools
                     _playerRuntimeContext = currentService as IPlayerRuntimeContext;
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
+                    _registeredUpdate = false;
+                    _registeredLateFrame = false;
                     if (currentService != null && isActiveAndEnabled)
                     {
                         TryRegisterUpdate();

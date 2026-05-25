@@ -322,7 +322,10 @@ namespace Hecton8.Interaction
                     _audioService = currentService as IAudioService;
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    RefreshTickRegistration();
+                    _registered = false;
+                    _registeredLateFrame = false;
+                    if (currentService != null)
+                        RefreshTickRegistration();
                     break;
             }
         }

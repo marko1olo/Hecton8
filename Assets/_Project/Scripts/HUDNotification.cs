@@ -292,7 +292,10 @@ namespace Hecton8.UI
                     }
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    RegisterToTickManager();
+                    _registeredToTickManager = false;
+                    _registeredToLateFrame = false;
+                    if (currentService != null)
+                        RegisterToTickManager();
                     break;
                 case GlobalRegistryServiceSlot.DataVault:
                     ReleaseQueue(previousService as IDataVault ?? _dataVault);

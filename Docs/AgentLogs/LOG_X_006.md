@@ -1127,3 +1127,12 @@ Cinematic Cheats used: None. This is memory containment for the persistence rout
 Exact Microseconds saved: 0 us measured. Static impact: voxel RLE staging cannot grow above one chunk, one pager-sector payload, and 512 sector-stat records by caller request.
 Verification: OOP scanner reports `PASS_STATIC_WITH_BUDGETED_UNITY_MESH_UPLOAD_RESIDUAL`, failed_gates=none. `voxel_rle_architecture_wal_payload_guard=true` now requires the vault staging caps.
 Build: Not launched. Gate sampled CPU 81%, then 100% and 100% over two rechecks, then 100% with active `dotnet.exe` and `csc.exe` after the sector-stat cap extension. Project rule forbids dotnet build launch above 50% CPU or while compiler/build processes exist.
+
+## 2026-05-25 Dear Lie Stamp Invalid Buffer Fail-Closed
+
+What was wrong: `SargassumCutManager` stamp resolvers could return the B GraphicsBuffer even when B was invalid. The upload helper would no-op, but the caller still treated the upload as successful and could set a nonzero shader stamp count.
+What was done: Cut-mask and damage-volume stamp write-buffer resolvers now return `null` unless the selected fallback buffer is valid. The existing upload path returns immediately on null, before publishing shader count.
+Cinematic Cheats used: Fail-closed visual silence is preferred over a fake stamp count with no valid GPU buffer. Dear Lie still uses the bounded 16-command path when buffers are valid.
+Exact Microseconds saved: 0 us measured. Static impact: invalid stamp buffers cannot produce compute shader iteration over stale/invalid data.
+Verification: OOP scanner reports `PASS_STATIC_WITH_BUDGETED_UNITY_MESH_UPLOAD_RESIDUAL`, failed_gates=none. New proof field: `stamp_graphics_buffer_invalid_fail_closed=true`.
+Build: Pending CPU/process gate.

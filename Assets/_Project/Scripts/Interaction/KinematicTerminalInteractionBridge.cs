@@ -480,7 +480,9 @@ namespace Hecton8.Interaction
                     _playerRuntimeContext = currentService as IPlayerRuntimeContext;
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    TryRegister();
+                    _registered = false;
+                    if (currentService != null)
+                        TryRegister();
                     break;
             }
         }

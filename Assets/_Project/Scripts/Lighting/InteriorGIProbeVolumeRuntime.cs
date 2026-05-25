@@ -1012,7 +1012,11 @@ namespace Hecton8.Lighting
                     break;
 
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    TryRegister();
+                    _registeredTick = false;
+                    _registeredSlowTick = false;
+                    _registeredLateFrame = false;
+                    if (currentService != null)
+                        TryRegister();
                     break;
             }
         }

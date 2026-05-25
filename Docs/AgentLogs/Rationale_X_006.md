@@ -1010,3 +1010,11 @@ Solution: Capped the resolver at the architecture limits: cell capacity is fixed
 Rejected Alternatives: Trusting callers was rejected because the stress case is about bounded memory under sustained drilling. Growing the WAL/page sector was rejected because it changes storage geometry. Silently truncating after vault allocation was rejected because it still wastes memory and hides the real overflow.
 Scalability potential: Low/Middle/High/Ultra use the same chunk and WAL payload geometry. Quality can change compression effort and write cadence, not the maximum staging allocation or save identity.
 Hardware Impact: Measured microseconds saved: 0. Expected i3/MX350 impact is memory-pressure containment: a malformed or future caller cannot enlarge voxel RLE staging beyond one pager-sector payload.
+
+## Decision 127: Dear Lie Stamp Upload Must Fail Closed On Invalid GraphicsBuffers
+
+Problem: `SargassumCutManager` double-buffered stamp resolvers returned buffer B when buffer A was invalid, without checking that B was valid. `GraphicsBufferUploadUtility` would no-op on an invalid destination, but the caller could still publish a nonzero stamp count after selecting that invalid buffer.
+Solution: Changed both cut-mask and damage-volume stamp write-buffer resolvers to return `null` when neither buffer is valid. The existing upload path already returns before setting shader count when the resolver returns `null`. The scanner now requires this invalid-buffer fail-closed route under the graphics stamp buffer gate.
+Rejected Alternatives: Recreating the GraphicsBuffer inside the visual-sync upload path was rejected because device-loss recovery must not allocate while a 60 Hz drill is submitting stamps. Leaving the no-op upload was rejected because shader count and actual GPU buffer state could diverge.
+Scalability potential: Low/Middle/High/Ultra keep the same 16-command double-buffered GPU route. Quality can scale damage-volume dimensions and cadence, not bypass validity checks.
+Hardware Impact: Measured microseconds saved: 0. Expected i3/MX350 impact is fault containment: invalid GPU stamp buffers cannot receive nonzero shader counts or trigger undefined compute iteration.

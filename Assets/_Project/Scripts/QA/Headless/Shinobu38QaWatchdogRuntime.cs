@@ -969,8 +969,15 @@ namespace Hecton8.QA.Headless
             object previousService,
             object currentService)
         {
-            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher ||
-                currentService == null ||
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
+                return;
+
+            _registeredFast = false;
+            _registeredCold = false;
+            _registeredLate = false;
+            _started = false;
+
+            if (currentService == null ||
                 _finished ||
                 !isActiveAndEnabled)
             {

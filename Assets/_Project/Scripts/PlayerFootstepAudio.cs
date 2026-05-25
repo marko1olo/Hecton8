@@ -254,12 +254,17 @@ namespace Hecton8.Audio
                 return;
             }
 
-            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && isActiveAndEnabled)
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
-                if (!_registeredUpdate)
-                    _registeredUpdate = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
-                if (!_registeredLateFrame)
-                    _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
+                _registeredUpdate = false;
+                _registeredLateFrame = false;
+                if (currentService != null && isActiveAndEnabled)
+                {
+                    if (!_registeredUpdate)
+                        _registeredUpdate = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
+                    if (!_registeredLateFrame)
+                        _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
+                }
             }
         }
 

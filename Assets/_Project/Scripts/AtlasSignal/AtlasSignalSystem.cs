@@ -655,6 +655,8 @@ namespace Hecton8.AtlasSignal
                     }
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
+                    _registered = false;
+                    _lateFrameRegistered = false;
                     if (currentService != null)
                     {
                         TryRegister();

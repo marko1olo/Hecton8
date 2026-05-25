@@ -1018,6 +1018,7 @@ namespace Hecton8.Gameplay
                     _audioLogs = currentService as IAudioLogRuntime;
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
+                    _registeredToSlowTickManager = false;
                     if (currentService != null)
                     {
                         TryRegisterToSlowTickManager();

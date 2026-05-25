@@ -521,7 +521,13 @@ namespace Hecton8.Gameplay
             object previousService,
             object currentService)
         {
-            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher || currentService == null || _shortCircuitMask == 0)
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
+                return;
+
+            _registeredTick = false;
+            _registeredLateFrame = false;
+
+            if (currentService == null || _shortCircuitMask == 0)
                 return;
 
             _tickDormant = false;

@@ -433,7 +433,8 @@ namespace Hecton8.Interaction
                     _playerRuntimeContext = currentService as IPlayerRuntimeContext;
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    if (_seatLockActive)
+                    _registeredFixedTick = false;
+                    if (currentService != null && _seatLockActive)
                         TryRegisterFixedTick();
                     break;
             }

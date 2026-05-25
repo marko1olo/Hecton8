@@ -1447,8 +1447,13 @@ namespace Hecton8.World
             object previousService,
             object currentService)
         {
-            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && currentService != null && isActiveAndEnabled)
-                TryRegisterSlowTick();
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                _registeredSlowTick = false;
+                _registeredLateFrameTick = false;
+                if (currentService != null && isActiveAndEnabled)
+                    TryRegisterSlowTick();
+            }
         }
 
         private void TryRegisterHotSwapListener()

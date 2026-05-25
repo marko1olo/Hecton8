@@ -206,7 +206,10 @@ namespace Hecton.UI.MainMenu
             }
 
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                _registeredToTickManager = false;
                 TryRegisterToTickManager();
+            }
 
             if (serviceSlot == GlobalRegistryServiceSlot.Save)
             {

@@ -165,7 +165,10 @@ namespace Hecton8.Core
             object currentService)
         {
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                _registeredUpdatable = false;
                 TryRegisterUpdatable();
+            }
         }
 
         private void SyncInventoryContext()

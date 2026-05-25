@@ -219,8 +219,12 @@ namespace Hecton8.AtlasSignal
                 _atlasSignal = currentService as IAtlasSignalReadModel;
             else if (serviceSlot == GlobalRegistryServiceSlot.FirstHourRuntime)
                 _firstHourDirector = currentService as IFirstHourReadModel;
-            else if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && currentService != null && isActiveAndEnabled)
-                TryRegister();
+            else if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                _registered = false;
+                if (currentService != null && isActiveAndEnabled)
+                    TryRegister();
+            }
         }
 
         private void CacheAtlasSignalCold()

@@ -685,6 +685,9 @@ namespace Hecton8.Tools.ToolKinematics
                     QueueDataVaultRebind(currentService as IDataVault);
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
+                    _fixedRegistered = false;
+                    _postFixedRegistered = false;
+                    _slowRegistered = false;
                     if (currentService != null && isActiveAndEnabled)
                     {
                         TryRegisterFixed();

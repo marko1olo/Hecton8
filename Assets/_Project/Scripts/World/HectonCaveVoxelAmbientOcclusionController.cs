@@ -101,6 +101,14 @@ namespace Hecton8.World
         {
             if (serviceSlot == GlobalRegistryServiceSlot.Player)
                 _cachedPlayerContext = currentService as IPlayerRuntimeContext;
+            else if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                _registeredUpdatable = false;
+                _registeredSlowTickable = false;
+                _registeredLateFrame = false;
+                if (currentService != null && isActiveAndEnabled)
+                    TryRegister();
+            }
         }
 
         /// <summary>
