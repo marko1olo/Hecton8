@@ -943,7 +943,7 @@ namespace Hecton8.Economy
             _cachedSaveService = GlobalRegistry.Save;
             _cachedQuestManager = GlobalRegistry.QuestSystem;
             _cachedInventoryService = GlobalRegistry.PlayerInventory;
-            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _cachedPlayerContext = Hecton8.Core.GlobalRegistry.Player;
         }
 
         private void TryRegisterWithSaveManager()

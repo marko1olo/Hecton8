@@ -816,7 +816,7 @@ namespace Hecton8.UI
         private ItemCatalog _itemCatalog;
         private PlayerToolManager _toolManager;
         private Hecton8.Core.IAudioService _spatialAudioManager;
-        private LocalizationManager _localizationRuntime;
+        private ILocalizationStressPresentationReadModel _localizationRuntime;
         private IPlayerRuntimeContext _playerRuntimeContext;
         private int _lastInventoryVersion = -1;
         private readonly int[] _quickbarSlotHashCache = new int[QuickbarSlotCount];
@@ -2025,7 +2025,7 @@ namespace Hecton8.UI
 
         private bool CacheRuntimeDependencies()
         {
-            LocalizationManager localizationRuntime = GlobalRegistry.Localization;
+            ILocalizationStressPresentationReadModel localizationRuntime = GlobalRegistry.LocalizationStressPresentation;
             bool localizationChanged = !ReferenceEquals(_localizationRuntime, localizationRuntime);
             _localizationRuntime = localizationRuntime;
             _spatialAudioManager = GlobalRegistry.Audio;
@@ -2051,7 +2051,7 @@ namespace Hecton8.UI
                     if (ReferenceEquals(_localizationRuntime, currentService))
                         return;
 
-                    _localizationRuntime = currentService as LocalizationManager;
+                    _localizationRuntime = currentService as ILocalizationStressPresentationReadModel;
                     RebuildLocalizationCache();
                     InvalidateVisualCaches();
                     needsRefresh = true;
@@ -4179,7 +4179,7 @@ namespace Hecton8.UI
             Color pulsedPrimary = ResolveStressPulseColor(primary, warning, stressPulse, stressPulseBrightnessBoost, stressPulseWarningBlend);
             Color pulsedDim = ResolveStressPulseColor(dim, warning, stressPulse, stressPulseBrightnessBoost * 0.45f, stressPulseWarningBlend * 0.38f);
             Color pulsedWarning = ResolveStressPulseColor(warning, primary, stressPulse, stressPulseBrightnessBoost * 0.22f, 0f);
-            LocalizationManager manager = _localizationRuntime;
+            ILocalizationStressPresentationReadModel manager = _localizationRuntime;
             float hullStressCorruptionIntensity = manager != null ? manager.GetHullStressCorruptionIntensity() : 0f;
             bool hullStressWhisperMode = !_biosRecoveryMode && ShouldUseHullStressWhisperMode(manager);
             float traumaCorruptionIntensity = _traumaGlitchIntensity > CorruptedModeThreshold ? _traumaGlitchIntensity : 0f;
@@ -5074,20 +5074,20 @@ namespace Hecton8.UI
 
         private void RebuildLocalizationCache()
         {
-            LocalizationManager manager = _localizationRuntime;
+            ILocalizationStressPresentationReadModel manager = _localizationRuntime;
             bool hasLocalizationRuntime = manager != null;
-            _localizedMeasurementLanguage = manager != null ? manager.CurrentLanguage : GameLanguage.English;
+            _localizedMeasurementLanguage = manager != null ? (GameLanguage)manager.ActiveLanguageId : GameLanguage.English;
             BuildMetricTemplate(ref _depthTemplateBuffer, out _depthTemplateLength, _HudDepthKeyHash, ResolveDistanceUnitKeyHash(_localizedMeasurementLanguage), DepthNumberToken.AsSpan(), prependNegativeSign: true, hasLocalizationRuntime: hasLocalizationRuntime);
             BuildMetricTemplate(ref _temperatureTemplateBuffer, out _temperatureTemplateLength, _HudTemperatureKeyHash, ResolveTemperatureUnitKeyHash(_localizedMeasurementLanguage), FixedTenthsNumberToken.AsSpan(), prependNegativeSign: false, hasLocalizationRuntime: hasLocalizationRuntime);
             BuildMetricTemplate(ref _pressureTemplateBuffer, out _pressureTemplateLength, _HudPressureKeyHash, _HudAtmKeyHash, FixedTenthsNumberToken.AsSpan(), prependNegativeSign: false, hasLocalizationRuntime: hasLocalizationRuntime);
         }
 
-        private static bool ShouldUseHullStressWhisperMode(LocalizationManager manager)
+        private static bool ShouldUseHullStressWhisperMode(ILocalizationStressPresentationReadModel manager)
         {
             return manager != null && manager.GetHullStressCorruptionIntensity() > 0.9f;
         }
 
-        private void ResolveHullStressWhisperText(LocalizationManager manager)
+        private void ResolveHullStressWhisperText(ILocalizationStressPresentationReadModel manager)
         {
             if (manager == null)
             {
@@ -6651,10 +6651,11 @@ namespace Hecton8.UI
             length = writeIndex;
         }
 
-        private void GetHullStressWhisperBuffer(LocalizationManager manager, out char[] buffer, out int length, out int version)
+        private void GetHullStressWhisperBuffer(ILocalizationStressPresentationReadModel manager, out char[] buffer, out int length, out int version)
         {
             ResolveHullStressWhisperText(manager);
-            _cachedHullStressWhisperRtl = manager != null && LocalizedMeasurementFormatter.IsRightToLeft(manager.CurrentLanguage);
+            _cachedHullStressWhisperRtl = manager != null &&
+                                          LocalizedMeasurementFormatter.IsRightToLeft((GameLanguage)manager.ActiveLanguageId);
             buffer = _cachedHullStressWhisperBuffer;
             length = _cachedHullStressWhisperLength;
             version = _cachedHullStressWhisperBucket;

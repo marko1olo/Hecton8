@@ -586,7 +586,7 @@ namespace Hecton8.AtlasSignal
 
         private void CacheRuntimeDependencies()
         {
-            _playerRuntimeContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _playerRuntimeContext = Hecton8.Core.GlobalRegistry.Player;
             _firstHourDirector = Hecton8.Core.GlobalRegistry.FirstHourReadModel;
             _narrativeDiscoveryReadModel = GlobalRegistry.NarrativeDiscoveryReadModel;
             _audioLogs = GlobalRegistry.AudioLogRuntime;

@@ -2068,7 +2068,7 @@ namespace Hecton8.Environment
             _sargassumDragRuntime = GlobalRegistry.SargassumDrag;
             _soundscapeRuntime = GlobalRegistry.Soundscape;
             _mapMagicRuntime = GlobalRegistry.MapMagic;
-            _playerRuntimeContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _playerRuntimeContext = Hecton8.Core.GlobalRegistry.Player;
             _biomeFogVault = GlobalRegistry.DataVault;
 
             if (depthZoneDirector == null)

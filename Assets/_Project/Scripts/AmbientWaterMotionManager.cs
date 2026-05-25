@@ -574,7 +574,7 @@ namespace Hecton8.Physics
 
         private void CacheRegistryServicesCold()
         {
-            _playerRuntimeContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _playerRuntimeContext = Hecton8.Core.GlobalRegistry.Player;
         }
 
         private void TryRegisterHotSwapListener()

@@ -1664,6 +1664,14 @@ namespace Hecton.Localization
             return length > 0;
         }
 
+        bool ILocalizationStressPresentationReadModel.TryGetHullStressHudWhisperBuffer(
+            ReadOnlySpan<char> fallback,
+            char[] destination,
+            out int length)
+        {
+            return TryGetHullStressHudWhisperBuffer(fallback, destination, out length);
+        }
+
         private bool TryResolveMadnessOverride(int sourceTokenHash, char[] destination, out int length)
         {
             length = 0;

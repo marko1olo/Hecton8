@@ -2633,6 +2633,7 @@ namespace Hecton8.Core
         int GetHullStressCorruptionBucket();
         bool IsMadnessWhisperVisualActive();
         bool TryApplyHullStressCorruptionIfNeeded(ReadOnlySpan<char> text, char[] destination, out int length);
+        bool TryGetHullStressHudWhisperBuffer(ReadOnlySpan<char> fallback, char[] destination, out int length);
     }
 
     public interface ILocalizationStressHudRefreshSink

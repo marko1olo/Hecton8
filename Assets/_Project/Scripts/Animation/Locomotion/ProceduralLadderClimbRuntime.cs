@@ -407,7 +407,7 @@ namespace Hecton8.Animation.Locomotion
         {
             RebindDataVault(GlobalRegistry.DataVault, ensureBuffers: false);
             _cachedMovementForceSink = GlobalRegistry.PlayerMovementContracts as IPlayerMovementForceSink;
-            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _cachedPlayerContext = Hecton8.Core.GlobalRegistry.Player;
         }
 
         private bool CacheVaultDependency()

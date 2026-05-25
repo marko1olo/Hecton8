@@ -176,7 +176,7 @@ namespace Hecton8.Atmosphere
             _readbackDispatchEnabled = true;
             ConfigureSignalLanes();
             TryRegisterHotSwapListener();
-            CachePlayerRuntimeContext(Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext);
+            CachePlayerRuntimeContext(Hecton8.Core.GlobalRegistry.Player);
             CacheDataVaultCold(GlobalRegistry.DataVault);
             ResolveCameraTransformCold();
             EnsureVaultBuffersCold();

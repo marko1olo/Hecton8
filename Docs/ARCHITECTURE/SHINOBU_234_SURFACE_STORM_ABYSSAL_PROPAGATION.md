@@ -8,7 +8,7 @@ Current route card:
 
 Supersession:
 
-This older note is retained only to prevent stale cross-links from reviving the rejected direct-mutation route. The current implementation does not mutate `FogConstantsDTO`, `BiolumPulseStateDTO`, ocean swell DTOs, or audio DSP objects.
+This older note prevents stale cross-links from reviving direct mutation. Current implementation does not mutate `FogConstantsDTO`, `BiolumPulseStateDTO`, ocean swell DTOs, or audio DSP objects.
 
 Current owner:
 

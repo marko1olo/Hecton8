@@ -390,7 +390,7 @@ namespace Hecton8.Atmosphere
             TryAssignEditorAuthoringDefaults();
 #endif
             CacheDataVaultCold();
-            CachePlayerRuntimeContext(Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext);
+            CachePlayerRuntimeContext(Hecton8.Core.GlobalRegistry.Player);
             TryResolveDependencies(true);
             InitializeRuntimeStateIfNeeded();
         }
@@ -398,7 +398,7 @@ namespace Hecton8.Atmosphere
         private void OnEnable()
         {
             CacheDataVaultCold();
-            CachePlayerRuntimeContext(Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext);
+            CachePlayerRuntimeContext(Hecton8.Core.GlobalRegistry.Player);
             TryRegisterService();
             TryRegisterHotSwapListener();
             HectonFloatingOrigin.RegisterListener(this);

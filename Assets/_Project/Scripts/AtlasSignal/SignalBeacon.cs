@@ -461,13 +461,13 @@ namespace Hecton8.AtlasSignal
         {
             _audioLogs = GlobalRegistry.AudioLogRuntime;
             _spatialAudio = GlobalRegistry.Audio as ISpatialAudioListenerCaveReadModel;
-            _playerRuntimeContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _playerRuntimeContext = Hecton8.Core.GlobalRegistry.Player;
         }
 
         private void ResolvePlayer()
         {
             if (_playerRuntimeContext == null)
-                _playerRuntimeContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+                _playerRuntimeContext = Hecton8.Core.GlobalRegistry.Player;
         }
 
         private void TryRegisterHotSwapListener()

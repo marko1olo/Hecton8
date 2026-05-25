@@ -86,7 +86,7 @@ Consumer phase:
 - If current dimensions lack a published CBuffer, the pass fails closed for that frame.
 - It does not run jobs or buffer uploads while recording the graph.
 - Compute shader kernels `SobelDepthMask`, `BilateralUpscale`, and development-only `EdgeMaskDebugComposite`.
-- XR/VR texture-array inputs use paired kernels `ClearEdgeMaskArray`, `SobelDepthMaskArray`, `BilateralUpscaleArray`, and `EdgeMaskDebugCompositeArray` when color/depth descriptors are both `Texture2DArray`, `SystemInfo.supports2DArrayTextures` is true, slice counts match, slice count is `1..2`, and MSAA is off.
+- XR/VR texture-array inputs use paired array kernels when color/depth are `Texture2DArray`, array textures are supported, slice counts match `1..2`, and MSAA is off.
 - `ClearEdgeMask` fail-close path:
   - Writes declared 1x1 black mask for graph-valid skip paths.
   - Prevents `_H8BilateralDrsEdgeMask` from exposing stale edge data.

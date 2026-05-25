@@ -36,7 +36,7 @@ They are not Unity-object effect owners. This supports scanner P1 extension and 
 - SignalBus telemetry under mock stress;
 - Frame Debugger proof for the double-buffered VFX upload.
 
-Parked work rejected: scanner lore/UI zero-GC rewrite, downstream audio/AI/cockpit radar consumer migration, tether-manager cold pool removal, Data Monolith h8bin migration, and downstream visual implementation remain owner-specific work outside this route card.
+Parked work rejected: scanner lore/UI zero-GC rewrite, downstream consumer migration, tether pool removal, Data Monolith h8bin migration, and visual implementation remain owner-specific.
 
 ## Instruments
 
@@ -66,7 +66,7 @@ Cadence/capacity: continuous `GlobalQualityWeight` curve, 15 Hz to 60 Hz; 1024 d
 
 - Expected max events per frame: 1024 flare, 1024 sonar, 1024 tether configured maximum-quality lane maxima.
 - Each lane prewarms 1024 queue slots to match the maximum one-signal-per-active-slot producer ceiling.
-- Minimum-quality SignalBus flush caps intentionally shed visual/effect bandwidth at 64 flare, 32 sonar, and 16 tether signals per frame; deployment truth remains in Vault and lane drops/coalescing are recorded in telemetry.
+- Minimum-quality SignalBus flush caps shed visual/effect bandwidth at 64 flare, 32 sonar, 16 tether signals per frame; deployment truth stays in Vault, drops/coalescing in telemetry.
 - GlobalQualityWeight behavior: cadence, flare range, sonar expansion rate, and VFX scale lerp continuously; gameplay truth and DTO layout do not change.
 
 ## Accessor Purity

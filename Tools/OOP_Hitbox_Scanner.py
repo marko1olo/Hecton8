@@ -1598,6 +1598,10 @@ def main() -> int:
             "writeHelperUsesSignalCodecAupBounds": (
                 "return CombatDamageSignalCodec.IsFiniteAup(value);" in armor_aup_is_finite_block
             ),
+            "combatDamageSignalCodecFromRuntimePointUsesAupBounds": (
+                "if (!IsFiniteAup(resolvedAup))" in combat_damage_signal_codec_block and
+                "impactAup = resolvedAup;" in combat_damage_signal_codec_block
+            ),
             "storageRejectTelemetryHashDeclared": "TelemetryAnomalyQueueStorage" in combat_damage_text,
             "verdict": (
                 "PASS"
@@ -1614,6 +1618,7 @@ def main() -> int:
                 and "(uint)detailIndex >= (uint)views.SignalImpactAups.Length" in write_signal_impact_aup_block
                 and "math.select(double3.zero, impactAup, new bool3(IsFinite(impactAup)))" in write_signal_impact_aup_block
                 and "return CombatDamageSignalCodec.IsFiniteAup(value);" in armor_aup_is_finite_block
+                and "if (!IsFiniteAup(resolvedAup))" in combat_damage_signal_codec_block
                 else "FAIL"
             ),
             "contract": (
