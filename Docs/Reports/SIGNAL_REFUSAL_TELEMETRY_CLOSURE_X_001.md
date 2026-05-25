@@ -44,7 +44,7 @@ Touched code files: 37.
 - Core signal DTO banned-field scan: 0 hits.
 - Runtime statement-level `TryEnqueueBounded(...)` scan outside `Core/Signals`, Editor, Tests, and ModdingAPI: `runtime_statement_tryenqueuebounded=0`.
 - Touched-file brace delta scan: 0 deltas.
-- Build not launched: guard reported `CPU=99 compiler_count=0`, above the `AGENTS.md` 50 percent CPU threshold.
+- Build not launched: latest guard reported `CPU=100 compiler_count=0`, above the `AGENTS.md` 50 percent CPU threshold.
 
 ## Microseconds
 
@@ -52,4 +52,3 @@ Runtime savings verified: 0us.
 Reason: no Unity Play Mode, profiler, GCMonitor, Memory Profiler, or player build was run in this pass.
 
 Static expected effect on i3/MX350-class hardware: fewer hidden native queue accepts during reactor/fluid/combat/fabrication/equipment/inventory storms, with deterministic owner-visible drop state and no heap growth.
-

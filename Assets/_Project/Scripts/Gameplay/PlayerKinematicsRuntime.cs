@@ -3793,15 +3793,16 @@ namespace Hecton8.Gameplay
             if (_body == null)
                 return;
 
-            float3 position = HasSyncStateReadStorage()
+            bool hasReadableStateSnapshot = _hasAuthoritativePoseSnapshot && HasSyncStateReadStorage();
+            float3 position = hasReadableStateSnapshot
                 ? _stateRead[0].Position
                 : SnapMillimeter(SanitizeFloat3(ToFloat3(ResolveBodyRuntimePosition()), ReadLastValidPosition()));
-            float3 velocity = HasSyncStateReadStorage()
+            float3 velocity = hasReadableStateSnapshot
                 ? _stateRead[0].Velocity
                 : SnapMillimeter(ReadVelocitySnapshot(float3.zero));
             position = SanitizeFloat3(position, ReadLastValidPosition());
             velocity = SanitizeFloat3(velocity, float3.zero);
-            quaternion rotation = HasSyncStateReadStorage() ? _stateRead[0].Rotation : ResolveAuthoritativeRotationSnapshot();
+            quaternion rotation = hasReadableStateSnapshot ? _stateRead[0].Rotation : ResolveAuthoritativeRotationSnapshot();
             Vector3 runtimePosition = ToVector3(position);
             if (!TryConvertRuntimePositionToAup(position, out AbsoluteUniversePosition aup))
                 return;
@@ -3874,7 +3875,7 @@ namespace Hecton8.Gameplay
 
         private uint BuildCurrentSyncFenceHash()
         {
-            if (HasSyncStateReadStorage())
+            if (_hasAuthoritativePoseSnapshot && HasSyncStateReadStorage())
             {
                 PlayerKinematicsSyncState state = _stateRead[0];
                 float3 position = SanitizeFloat3(state.Position, ReadLastValidPosition());

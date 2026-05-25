@@ -904,4 +904,4 @@ Proof:
 - Core signal DTO banned-field scan: 0.
 - Touched-file brace delta: 0.
 
-Build status -> Not launched. Latest guard reported `CPU=99 compiler_count=0`; AGENTS blocks `dotnet build` above 50 percent CPU.
+Build status -> Not launched. Latest guard reported `CPU=100 compiler_count=0`; AGENTS blocks `dotnet build` above 50 percent CPU.
