@@ -1835,7 +1835,7 @@ namespace Hecton8.Construction
             if (_audioService != null)
                 return _audioService;
 
-            _audioService = GlobalRegistry.Audio;
+            _audioService = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
             return _audioService;
         }
 

@@ -1116,7 +1116,7 @@ namespace Hecton8.Audio
 
         private void RefreshAudioServiceIfStale(int frame)
         {
-            CacheAudioService(GlobalRegistry.Audio, frame);
+            CacheAudioService(Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance, frame);
         }
 
         private void RefreshAcousticZoneIfStale(int frame)

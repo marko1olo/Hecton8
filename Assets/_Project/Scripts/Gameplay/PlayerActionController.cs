@@ -601,7 +601,7 @@ namespace Hecton8.Gameplay
         private void CacheRegistryServicesCold()
         {
             _playerInventoryService = GlobalRegistry.PlayerInventory;
-            _audioService = GlobalRegistry.Audio;
+            _audioService = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
         }
 
         private void TryRegisterHotSwap()
