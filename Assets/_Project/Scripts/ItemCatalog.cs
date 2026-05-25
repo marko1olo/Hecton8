@@ -1187,7 +1187,7 @@ namespace Hecton8.SaveSystem
             if (_cachedAssetLoadDispatcher == null)
                 _cachedAssetLoadDispatcher = GlobalRegistry.AssetLoadDispatcher;
             if (_cachedPlayerContext == null)
-                _cachedPlayerContext = GlobalRegistry.Player;
+                _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
 #endif
         }
 

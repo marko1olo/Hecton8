@@ -424,7 +424,7 @@ namespace Hecton8.Lighting
 
         private void RefreshColdRuntimeDependencies()
         {
-            _cachedPlayerContext = GlobalRegistry.Player;
+            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
             _cachedBiomeMatrix = GlobalRegistry.BiomeMatrix;
             _cachedGlobalQualityWeight01 = ResolveGlobalQualityWeight();
             if (_vault != null &&

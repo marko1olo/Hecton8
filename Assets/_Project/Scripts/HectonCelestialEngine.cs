@@ -1627,7 +1627,7 @@ namespace Hecton8.Celestial
             _cachedRandomEvents = GlobalRegistry.RandomEvents;
             _cachedDynamicResolution = GlobalRegistry.DynamicResolution;
             _cachedWorldSeedGenerator = GlobalRegistry.WorldSeedProvider as global::HectonWorldGenerator;
-            _cachedPlayerContext = Hecton8.Core.GlobalRegistry.Player;
+            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
 
         }
 

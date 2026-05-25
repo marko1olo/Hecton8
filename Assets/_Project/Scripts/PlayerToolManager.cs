@@ -1153,7 +1153,7 @@ namespace Hecton8.Gameplay
         private void CacheRegistryServicesCold(bool forceRefresh = false)
         {
             if (forceRefresh || _playerRuntimeService == null)
-                _playerRuntimeService = GlobalRegistry.Player;
+                _playerRuntimeService = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
 
             if (forceRefresh || _inputService == null)
                 _inputService = GlobalRegistry.Input;

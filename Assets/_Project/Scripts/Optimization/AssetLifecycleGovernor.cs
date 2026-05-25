@@ -3973,7 +3973,7 @@ namespace Hecton8.Optimization
             if (_cachedVramPressure == null)
                 _cachedVramPressure = GlobalRegistry.VRAMPressureReadModel;
             if (_cachedPlayer == null)
-                _cachedPlayer = GlobalRegistry.Player;
+                _cachedPlayer = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
             if (_cachedPlayerInventory == null)
                 _cachedPlayerInventory = GlobalRegistry.PlayerInventory;
             if (_cachedScannerInterferenceUi == null)

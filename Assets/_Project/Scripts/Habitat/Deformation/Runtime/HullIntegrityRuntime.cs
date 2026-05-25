@@ -830,7 +830,7 @@ namespace Hecton8.Habitat.Deformation
             GenerateEmergencyMockIntegrity();
             BuildEmergencyScratchProof();
             BindInitialShaderState();
-            _cachedPlayerContext = Hecton8.Core.GlobalRegistry.Player;
+            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
             RefreshBreachJetCameraCold();
             _initialized = 1;
             _forceGpuUpload = 1;

@@ -971,7 +971,7 @@ namespace Hecton8.UI
 
         private void CacheRegistryServicesCold()
         {
-            _cachedPlayerContext = GlobalRegistry.Player;
+            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
             _cachedLocalization = GlobalRegistry.LocalizationStressPresentation;
             _cachedAtmosphere = GlobalRegistry.AtmosphereReadModel;
         }
@@ -2128,7 +2128,7 @@ namespace Hecton8.UI
 
         private void CacheRegistryServicesCold()
         {
-            _cachedPlayerContext = GlobalRegistry.Player;
+            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
         }
 
         private void RegisterToTickManager()

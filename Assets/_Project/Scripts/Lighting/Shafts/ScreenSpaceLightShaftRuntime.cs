@@ -192,7 +192,7 @@ namespace Hecton8.Lighting.Shafts
             RefreshQualityPolicy();
             TryRegisterHotSwapListener();
             CacheDataVaultCold(GlobalRegistry.DataVault);
-            CachePlayerCold(GlobalRegistry.Player);
+            CachePlayerCold(Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext);
             SignalCorridorRuntime.EnsureInitialized();
             EnsureBuffers();
             ResolveRenderCamera();

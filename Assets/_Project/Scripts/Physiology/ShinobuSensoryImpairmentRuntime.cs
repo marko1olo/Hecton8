@@ -296,7 +296,7 @@ namespace Hecton8.Physiology
         private void RebindColdServices()
         {
             _dataVault = GlobalRegistry.DataVault;
-            _playerContext = GlobalRegistry.Player;
+            _playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
         }
 
         private bool EnsureVaultState()

@@ -661,8 +661,8 @@ namespace Hecton8.Celestial
 
             if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) && playerTransform != null)
             {
-                Camera playerCamera = Hecton8.Core.GlobalRegistry.Player != null && Hecton8.Core.GlobalRegistry.Player.PlayerCamera != null
-                    ? Hecton8.Core.GlobalRegistry.Player.PlayerCamera
+                Camera playerCamera = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext != null && Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext.PlayerCamera != null
+                    ? Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext.PlayerCamera
                     : ResolveComponentOnTransform<Camera>(playerTransform);
                 if (playerCamera != null)
                     observerTransform = playerCamera.transform;

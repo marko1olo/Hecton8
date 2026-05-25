@@ -3865,7 +3865,7 @@ namespace Hecton8.Audio
         private void RefreshCachedAudioRuntimeServicesCold()
         {
             int nextResolveFrame = SystemDispatcher.CurrentFrameIndex + SpatialAudioRegistryRetryFrames;
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
             IWeatherService weatherService = GlobalRegistry.Weather;
 
             _cachedPlayerRuntimeContext = playerContext != null && playerContext.IsInitialized ? playerContext : null;
@@ -4009,7 +4009,7 @@ namespace Hecton8.Audio
                 return null;
 
             _playerRuntimeContextResolveFrame = frame + SpatialAudioRegistryRetryFrames;
-            playerContext = GlobalRegistry.Player;
+            playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
             _cachedPlayerRuntimeContext = playerContext != null && playerContext.IsInitialized ? playerContext : null;
             return _cachedPlayerRuntimeContext;
         }
