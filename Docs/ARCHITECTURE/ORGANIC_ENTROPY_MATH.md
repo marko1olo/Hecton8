@@ -454,7 +454,7 @@ Implementation surface:
 
 The macro regrowth model is a data-only world-economy layer; it instantiates no resource or predator GameObjects.
 
-It stores one byte lane per macro-sector for soil nutrients, temperature, biome id, lifecycle stage, tombstone age, regrowth progress, ore stock, flora stock, prey biomass, predator biomass, and apex respawn days.
+It stores byte lanes per macro-sector: soil nutrients, temperature, biome id, lifecycle stage, tombstone age, regrowth, ore stock, flora stock, prey, predator, apex respawn days.
 
 Daily growth is fixed-point:
 

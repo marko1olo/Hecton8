@@ -80,7 +80,7 @@ Owned source folders and scripts ship with checked-in `.meta` files. Unity must 
   - Caller-owned LOD0/LOD1/LOD2: tracked across the multi-mesh bake window.
   - `finally`: destroys tracked meshes if exception occurs before `SaveOrReplaceMesh` transfers or destroys them.
 
-- CSV tuning resolves the project root from `Application.dataPath` only after verifying the `/Assets` suffix; otherwise it falls back to the editor working directory and default settings if the file is absent.
+- CSV tuning resolves project root from `Application.dataPath` only after `/Assets` suffix validation; otherwise editor working directory/default settings are used if file is absent.
 
 - CSV fail-closed cases:
   - File above 1 MiB.
@@ -220,7 +220,7 @@ LOD0 is capped by `Lod0HardBudget`. LOD1 and LOD2 derive hard caps from `Lod0Har
 
 - LOD1/LOD2 source-triangle selection uses bounded partition-local saliency.
 - Each output triangle maps to a deterministic non-overlapping source partition.
-- `GlobalQualityWeight` and depth resolve the sampled candidate count from 1 to 7; low quality pays the cheapest single candidate while high quality preserves stronger area-normalized candidates under the same hard cap.
+- `GlobalQualityWeight` and depth resolve sampled candidate count `1..7`; low quality uses cheapest single candidate, high quality preserves stronger area-normalized candidates under same cap.
 - Imported index bases are clamped before raw pointer vertex reads.
 - Position streams must satisfy `offset + 12 <= stride`.
 - Optional normal streams must satisfy `offset + 12 <= stride`.
@@ -291,7 +291,7 @@ The editor baker records the last 300 bake outcomes into a fixed 64-byte row rin
 
 - `Dump_SHINOBU_213.bin` writes oldest-to-newest 64-byte rows with explicit little-endian field serialization, not raw host-endian `NativeArray` memory.
 
-- Non-finite metric input sets aggregate warning bit `0x80000000` plus per-lane bits for extraction, serialization, LOD thresholds, quality, and depth; raw fault lane bits are folded into `StateHash` before sanitized row serialization.
+- Non-finite metric input sets warning bit `0x80000000` plus per-lane extraction/serialization/LOD/quality/depth bits; raw fault bits fold into `StateHash` before sanitized serialization.
 
 - FixedString source/output paths are hashed byte-by-byte without managed `ToString()` allocation in black-box and manifest hash paths, and JSON metric path fields append escaped ASCII FixedString bytes directly.
 

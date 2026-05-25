@@ -946,3 +946,15 @@ Rejected Alternatives: Dropping unregistered abyssal thermal damage; direct `Tak
 Scalability potential: Low/Middle avoid missing heat/shock damage during bootstrap or registration churn while registered hot paths remain on the native LUT/CAS route. High/Ultra keep richer AUP/local point metadata for deferred thermal impact presentation.
 
 Hardware Impact: 0 us measured. Registered hot route adds only finite-gated AUP resolution already used by adjacent routes; fallback work runs only when registration is absent. Build proof remains PENDING because CPU guard is blocked.
+
+## Decision 105 - Direct Damage Ingress Uses Signal AUP Bounds
+
+Problem: `SignalBus<CombatDamageSignal>` sanitizes impact AUP with `CombatDamageSignalCodec.IsFiniteAup`, which checks finite values and the project AUP extent. Direct `CombatDamageRuntime.TryQueueDamage(..., impactAup)` routes bypass that sanitizer and the armor ingress helper only checked finite `double3`, so huge-but-finite coordinates could enter the impact AUP lane.
+
+Solution: `HectonCombatRuntime_ArmorPenetration.IsFinite(double3)` now delegates to `CombatDamageSignalCodec.IsFiniteAup(value)`. The existing branchless `math.select(double3.zero, impactAup, new bool3(IsFinite(impactAup)))` write remains intact, but the predicate now matches the first-party signal sanitizer bounds.
+
+Rejected Alternatives: Duplicating the max-extent constant in armor runtime; trusting every direct caller to sanitize correctly; routing all direct callers through SignalBus just to reuse its sanitizer; leaving inconsistent AUP validity between central and global ingress.
+
+Scalability potential: Low/Middle avoid invalid far-coordinate impact metadata corrupting deferred presentation or telemetry. High/Ultra keep richer AUP impact presentation while sharing the same validity contract across ingress routes.
+
+Hardware Impact: 0 us measured. Predicate adds the same simple bound checks already used in SignalBus sanitization; combat LUT and CAS truth math is unchanged. Build proof remains PENDING because CPU/compiler guard is blocked.

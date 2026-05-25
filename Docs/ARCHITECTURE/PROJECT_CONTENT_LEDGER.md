@@ -52,7 +52,7 @@ It is the canonical handoff table for item/resource/entity hash coordination unt
 
 May 7 static audit scanned `1192` `.cs` files under `Assets/_Project/Scripts` and `428` first-party prefab YAML files.
 
-Result: `334` scripts are deletion review targets because the filename token was not found in any other `.cs` file and the script `.meta` GUID was not found in first-party prefab YAML.
+Result: `334` scripts are deletion review targets: filename token absent from other `.cs` files and script `.meta` GUID absent from first-party prefab YAML.
 
 Historical candidate artifact, absent in the current filesystem:
 

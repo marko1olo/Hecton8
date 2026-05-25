@@ -32,7 +32,7 @@ Owner domain: Echelon 2 World Generation / Procedural Wreckage Assembler
 
 Owning file/system: `Assets/_Project/Scripts/World/ProceduralWreckage/ProceduralWreckageVault.cs`
 
-Problem: WFC wreck generation produces cross-domain, save-visible, render-visible, crash-forensic native state. Owner-local arrays would hide state from renderer upload, save paging, rollback hashing, collision proxy staging, loot staging, and black-box dumps.
+Problem: WFC wreck generation produces cross-domain native state for save, render, and crash forensics. Owner-local arrays would hide renderer, save, rollback, collision, loot, and dump state.
 
 Why owner-local data is insufficient: nodes, matrices, indirect args, collision proxies, loot requests, tuning, and telemetry cross scheduler phases and need stable handles.
 

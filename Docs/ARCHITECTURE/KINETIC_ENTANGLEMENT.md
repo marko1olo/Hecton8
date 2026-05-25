@@ -249,7 +249,7 @@ damage += ShearDamagePerSecond * overload01 * dt
 
 ```
 
-Damage is accumulated into a bounded scalar and emitted on `entanglementStressSignalInterval` through the existing `IDamageSignalEmitter` path. `TraumaDispatcher` remains a receiver only. The same interval gates structural groan audio and stress haptics.
+Damage accumulates into a bounded scalar and emits on `entanglementStressSignalInterval` through `IDamageSignalEmitter`. `TraumaDispatcher` stays receiver-only. Same interval gates groan audio/haptics.
 
 ## Cavitation Overload
 
