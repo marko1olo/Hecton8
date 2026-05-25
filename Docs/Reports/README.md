@@ -30,6 +30,7 @@ Evidence class: STATIC_DOC / CLI_COMPILE where artifact cited
 - Current X_012 34-word density artifact: `ARCHITECTURE_34WORD_DENSITY_AUDIT_X_012.json`
 - Current X_012 33-word density artifact: `ARCHITECTURE_33WORD_DENSITY_AUDIT_X_012.json`
 - Current X_012 32-word density artifact: `ARCHITECTURE_32WORD_DENSITY_AUDIT_X_012.json`
+- Current X_012 31-word density artifact: `ARCHITECTURE_31WORD_DENSITY_AUDIT_X_012.json`
 - Archived terrain report compatibility stub: `Docs/_Archive/Reports_X_012_2026-05-23/TERRAIN_AND_BIOME_REALITY_MAP.md`; canonical terrain contract is `Docs/ARCHITECTURE/FLOODED_TERRESTRIAL_GEOGRAPHY.md`
 
 ## Archived Reports

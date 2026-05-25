@@ -59,6 +59,7 @@ Prompt/report values that disagree with source are stale. Current source wins.
 | 34-word density pass | Manually split residual architecture blocks and made scanner fail at `>33` words | `../Reports/ARCHITECTURE_34WORD_DENSITY_AUDIT_X_012.json` |
 | 33-word density pass | Manually split residual architecture blocks and made scanner fail at `>32` words | `../Reports/ARCHITECTURE_33WORD_DENSITY_AUDIT_X_012.json` |
 | 32-word density pass | Manually split residual architecture blocks and made scanner fail at `>31` words | `../Reports/ARCHITECTURE_32WORD_DENSITY_AUDIT_X_012.json` |
+| 31-word density pass | Manually split residual architecture blocks and made scanner fail at `>30` words | `../Reports/ARCHITECTURE_31WORD_DENSITY_AUDIT_X_012.json` |
 
 ## Active Gaps
 

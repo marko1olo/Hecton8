@@ -120,7 +120,7 @@ namespace Hecton8.Interaction
 
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Interaction/Kinematic Terminal Interaction Bridge")]
-    public sealed class KinematicTerminalInteractionBridge : MonoBehaviour, ITickable, IUpdatable, IGlobalRegistryHotSwapListener
+    public sealed class KinematicTerminalInteractionBridge : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const float MinimumTickIntervalSeconds = 0.033333335f;
         private const float MaximumTickIntervalSeconds = 0.5f;
@@ -164,9 +164,12 @@ namespace Hecton8.Interaction
         private IInputService _input;
         private IPlayerRuntimeContext _playerRuntimeContext;
         private bool _registered;
+        private bool _registeredLateFrame;
         private bool _registeredHotSwapListener;
         private bool _pressedLastTick;
         private bool _handTargetActive;
+        private bool _pendingPressHaptic;
+        private byte _pendingPressHapticMotorMask;
         private float _tickAccumulator;
         private int _sourceId;
 
@@ -260,14 +263,24 @@ namespace Hecton8.Interaction
 
             if (emitPressHaptics && (actionFlags & TerminalActionFlags.Press) != 0)
             {
-                ToolHapticsRuntime.TryEnqueueSinusoidalCommand(
-                    0.04f,
-                    0.22f,
-                    0.05f,
-                    54f,
-                    TerminalHapticPriority,
-                    ResolveMotorMask(handSide));
+                _pendingPressHapticMotorMask = ResolveMotorMask(handSide);
+                _pendingPressHaptic = true;
             }
+        }
+
+        public void LateFrameTick()
+        {
+            if (!_pendingPressHaptic)
+                return;
+
+            _pendingPressHaptic = false;
+            ToolHapticsRuntime.TryEnqueueSinusoidalCommand(
+                0.04f,
+                0.22f,
+                0.05f,
+                54f,
+                TerminalHapticPriority,
+                _pendingPressHapticMotorMask);
         }
 
         private TerminalActionFlags ResolveTerminalActionFlags(out float2 analogDelta)
@@ -423,19 +436,28 @@ namespace Hecton8.Interaction
 
         private void TryRegister()
         {
-            if (_registered || !Application.isPlaying)
+            if ((_registered && _registeredLateFrame) || !Application.isPlaying)
                 return;
 
-            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
+            if (!_registered)
+                _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
+            if (!_registeredLateFrame)
+                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
         }
 
         private void TryUnregister()
         {
-            if (!_registered)
-                return;
+            if (_registered)
+            {
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
+                _registered = false;
+            }
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
-            _registered = false;
+            if (_registeredLateFrame)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+                _registeredLateFrame = false;
+            }
         }
 
         private void RefreshColdRegistryReferences()

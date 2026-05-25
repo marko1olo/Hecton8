@@ -91,6 +91,7 @@ Reports:
 - `Docs/Reports/ARCHITECTURE_34WORD_DENSITY_AUDIT_X_012.json`
 - `Docs/Reports/ARCHITECTURE_33WORD_DENSITY_AUDIT_X_012.json`
 - `Docs/Reports/ARCHITECTURE_32WORD_DENSITY_AUDIT_X_012.json`
+- `Docs/Reports/ARCHITECTURE_31WORD_DENSITY_AUDIT_X_012.json`
 
 Archives:
 
@@ -161,8 +162,9 @@ APEX validation:
 - Exact current 34-word density gate: `Docs/Reports/ARCHITECTURE_34WORD_DENSITY_AUDIT_X_012.json`.
 - Exact current 33-word density gate: `Docs/Reports/ARCHITECTURE_33WORD_DENSITY_AUDIT_X_012.json`.
 - Exact current 32-word density gate: `Docs/Reports/ARCHITECTURE_32WORD_DENSITY_AUDIT_X_012.json`.
+- Exact current 31-word density gate: `Docs/Reports/ARCHITECTURE_31WORD_DENSITY_AUDIT_X_012.json`.
 - Required scanner state: `finalPass=true`; source sync pass `true`; stale parameter files `0`; reduction at least `30%`; architecture marker hits `0`; long narrative paragraphs `0`.
-- Required density state: architecture paragraphs/sentences/structured lines `>=32` words `0`; document-voice marker hits `0`; max architecture file words `<2500`.
+- Required density state: architecture paragraphs/sentences/structured lines `>=31` words `0`; document-voice marker hits `0`; max architecture file words `<2500`.
 - Required structure state: `pass=true`; root text docs `3`; broken links `0`; duplicate headers `0`; fence issues `0`; stale parameter files `0`; active non-BOM files `0`.
 
 ## 2026-05-24 X_012 APEX Strict Architecture Paragraph Pass
@@ -237,7 +239,8 @@ Actions:
 - Exact 34-word density artifact: `Docs/Reports/ARCHITECTURE_34WORD_DENSITY_AUDIT_X_012.json`.
 - Exact 33-word density artifact: `Docs/Reports/ARCHITECTURE_33WORD_DENSITY_AUDIT_X_012.json`.
 - Exact 32-word density artifact: `Docs/Reports/ARCHITECTURE_32WORD_DENSITY_AUDIT_X_012.json`.
-- `Tools/OOP_Doc_Scanner.py` now fails on architecture paragraphs, sentences, or structured lines over `31` words.
+- Exact 31-word density artifact: `Docs/Reports/ARCHITECTURE_31WORD_DENSITY_AUDIT_X_012.json`.
+- `Tools/OOP_Doc_Scanner.py` now fails on architecture paragraphs, sentences, or structured lines over `30` words.
 - It also fails active architecture `.diff` and non-contract text files.
 
 Required residual-prose state:
