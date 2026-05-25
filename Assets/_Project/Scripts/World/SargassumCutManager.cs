@@ -1006,9 +1006,12 @@ namespace Hecton8.World
             if (preferred != null && preferred.IsValid())
                 return preferred;
 
-            return _stampCommandBufferA != null && _stampCommandBufferA.IsValid()
-                ? _stampCommandBufferA
-                : _stampCommandBufferB;
+            if (_stampCommandBufferA != null && _stampCommandBufferA.IsValid())
+                return _stampCommandBufferA;
+
+            return _stampCommandBufferB != null && _stampCommandBufferB.IsValid()
+                ? _stampCommandBufferB
+                : null;
         }
 
         private GraphicsBuffer ResolveDamageVolumeStampCommandWriteBuffer()
@@ -1019,9 +1022,12 @@ namespace Hecton8.World
             if (preferred != null && preferred.IsValid())
                 return preferred;
 
-            return _damageVolumeStampCommandBufferA != null && _damageVolumeStampCommandBufferA.IsValid()
-                ? _damageVolumeStampCommandBufferA
-                : _damageVolumeStampCommandBufferB;
+            if (_damageVolumeStampCommandBufferA != null && _damageVolumeStampCommandBufferA.IsValid())
+                return _damageVolumeStampCommandBufferA;
+
+            return _damageVolumeStampCommandBufferB != null && _damageVolumeStampCommandBufferB.IsValid()
+                ? _damageVolumeStampCommandBufferB
+                : null;
         }
 
         private void RefreshMaskWorldRect(bool forceClear = false)

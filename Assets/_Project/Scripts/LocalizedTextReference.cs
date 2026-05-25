@@ -147,13 +147,6 @@ namespace Hecton.Localization
             if (TryResolveInline(language, out string inlineValue) && !string.IsNullOrWhiteSpace(inlineValue))
                 return inlineValue;
 
-            if (manager != null && HasTableKey)
-            {
-                ReadOnlySpan<char> resolved = manager.GetRawSpanOrFallback(LocHash.Compute(tableKey.AsSpan()), ReadOnlySpan<char>.Empty);
-                if (!resolved.IsEmpty)
-                    return new string(resolved);
-            }
-
             if (!string.IsNullOrWhiteSpace(fallback))
                 return fallback;
 
