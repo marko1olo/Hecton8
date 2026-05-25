@@ -591,7 +591,7 @@ namespace Hecton8.Gameplay
         {
             _playerRuntime = GlobalRegistry.Player;
             _scanLogRuntime = GlobalRegistry.ScanLogService;
-            _saveService = GlobalRegistry.Save;
+            _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
         }
 
         private void AutoResolve(bool resolveHud)
@@ -660,7 +660,7 @@ namespace Hecton8.Gameplay
                 return;
 
             if (_saveService == null)
-                _saveService = GlobalRegistry.Save;
+                _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
 
             if (_saveService == null)
                 return;

@@ -160,7 +160,7 @@ namespace Hecton8.Gameplay
         {
             TryRegister();
             TryRegisterHotSwapListener();
-            _saveService = GlobalRegistry.Save;
+            _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
             TryRegisterSaveParticipant();
 
             NarrativeEvents.Register(this);
@@ -303,7 +303,7 @@ namespace Hecton8.Gameplay
                 return;
 
             if (_saveService == null)
-                _saveService = GlobalRegistry.Save;
+                _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
 
             if (_saveService == null)
                 return;

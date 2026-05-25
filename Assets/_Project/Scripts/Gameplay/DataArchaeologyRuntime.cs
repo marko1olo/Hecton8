@@ -906,7 +906,7 @@ namespace Hecton8.Gameplay
         {
             _cachedLoreDatabase = GlobalRegistry.LoreDatabase;
             _dataVault = GlobalRegistry.DataVault;
-            _saveService = GlobalRegistry.Save;
+            _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
         }
 
         private void TryRegisterRuntime()
@@ -923,7 +923,7 @@ namespace Hecton8.Gameplay
             if (!_registeredSave)
             {
                 if (_saveService == null)
-                    _saveService = GlobalRegistry.Save;
+                    _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
 
                 if (_saveService == null)
                     return;

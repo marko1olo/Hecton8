@@ -41,6 +41,7 @@ namespace Hecton8.SaveSystem
     public sealed class SaveManager : MonoBehaviour, IAsyncPersistenceService, IUpdatable, ISlowTickable, IFrostTickable, ILateFrameTickable, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener
     {
         private static int _signalPushDropCount;
+        public static SaveManager ActiveRuntimeInstance { get; private set; }
         private const long MainThreadSnapshotBudgetMs = 5L;
         private static readonly long PreCompressionYieldBudgetTicks = Math.Max(1L, Stopwatch.Frequency / 500L);
         private static readonly long LoadApplyFrameBudgetTicks = HydrationScheduler.FrameBudgetTicks;
@@ -569,6 +570,9 @@ namespace Hecton8.SaveSystem
             if (_serviceRegistered && ReferenceEquals(GlobalRegistry.Save, this))
                 GlobalRegistry.UnregisterSaveService(this);
 
+            if (ReferenceEquals(ActiveRuntimeInstance, this))
+                ActiveRuntimeInstance = null;
+
             _serviceRegistered = false;
             _isBusy = false;
             _compressionThrottleLateFrameArmed = false;
@@ -637,6 +641,8 @@ namespace Hecton8.SaveSystem
 
             GlobalRegistry.RegisterAsyncPersistenceService(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.SaveRuntime, this);
+            if (_serviceRegistered)
+                ActiveRuntimeInstance = this;
 
             TryRegisterHotSwapListener();
             if (isActiveAndEnabled && Application.isPlaying && GlobalRegistry.Dispatcher != null)

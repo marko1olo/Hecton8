@@ -313,7 +313,7 @@ namespace Hecton8.Meta
 
         private void RefreshColdRegistryDependencies()
         {
-            _saveService = GlobalRegistry.Save;
+            _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
             _saveManager = _saveService as SaveManager;
         }
 

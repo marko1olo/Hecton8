@@ -92,7 +92,7 @@ namespace Hecton8.Gameplay
         private void OnEnable()
         {
             TryRegisterService();
-            _saveService = GlobalRegistry.Save;
+            _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
             TryRegisterHotSwapListener();
             TryRegisterWithSaveManager();
             TryRegisterWithScanEvents();
@@ -351,7 +351,7 @@ namespace Hecton8.Gameplay
                 return;
 
             if (_saveService == null)
-                _saveService = GlobalRegistry.Save;
+                _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
 
             if (_saveService == null)
                 return;
