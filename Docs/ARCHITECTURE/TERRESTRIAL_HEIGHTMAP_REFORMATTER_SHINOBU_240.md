@@ -295,7 +295,7 @@ routes hold it in a one-row local `NativeArray` and mutate it through
 
 - If the `.failed` path cannot be cleared, restoring a valid active artifact wins over retaining the newest rejected bytes.
 
-- Without a backup, the invalid active artifact is displaced to `.failed` when possible, or removed if the failed-artifact path is blocked, so downstream import/streaming tools do not consume corrupt terrain truth.
+- Without backup, invalid active artifact moves to `.failed` when possible, or is removed if blocked, so downstream import/streaming tools cannot consume corrupt terrain truth.
 
 - IO or permission failure during this restore path is surfaced to the caller and is not swallowed.
 

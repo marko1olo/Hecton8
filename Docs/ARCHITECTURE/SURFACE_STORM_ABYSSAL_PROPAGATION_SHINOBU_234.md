@@ -217,7 +217,7 @@ Consumers are phase-separated and may be absent during bootstrap; a direct inter
 
 
 
-Producer/consumer phase: environment update admission schedules `CalculateStormAttenuationJob`; `ILateFrameTickable` publishes completed state plus scalar rows -> downstream flow, fog, audio, and biolum owners read scalar rows in their owner phases when integration exists.
+Producer/consumer phase: environment update schedules `CalculateStormAttenuationJob`; `ILateFrameTickable` publishes state/scalars; downstream flow/fog/audio/biolum owners read rows in owner phases.
 
 
 

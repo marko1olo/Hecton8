@@ -1288,3 +1288,26 @@ Verification:
 
 Residual truth:
 - C# compile rerun is pending after this pose-routing patch. Latest gate: CPU `100/100/100`, zero active compiler processes.
+
+## APEX Continuation - UI Compile Wall Minimal Unblock
+
+What was wrong:
+- After `dotnet restore`, full build reached C# and failed outside KCC: `DiegeticPDAController` declared `IUpdatable` without implementing `Tick(float)`.
+
+What was done:
+- Removed the stale `IUpdatable` interface from `DiegeticPDAController`.
+- Kept `ILateFrameTickable`, which matches the class registration path through `GlobalRegistry.TryRegisterLateFrameTickable`.
+
+Cinematic cheats used:
+- None. Compile-wall repair only.
+
+Exact microseconds saved:
+- 0 us claimed. No KCC runtime path changed.
+
+Verification:
+- Targeted scan found zero `DiegeticPDAController : MonoBehaviour, IUpdatable` matches.
+- `python -m py_compile Tools/KccApexAudit_X_005.py Tools/OOP_Kcc_Scanner_X_005.py`: passed.
+- Targeted `git diff --check`: passed.
+
+Residual truth:
+- Full C# compile still needs a rerun. Build gate retry stayed closed for 12 samples, ending at CPU `60` with zero active compiler processes.

@@ -6,7 +6,7 @@ Status: ACTIVE PRODUCTION-CONTRACT REFERENCE / RUNTIME PENDING
 
 ## Legal Boundary
 
-Do not copy Subnautica or Subnautica 2 assets, binaries, decompiled code, shader code, save payloads, or proprietary data. Borrow only public contract shapes, file taxonomy patterns, tool categories, and release-process pressure.
+Do not copy Subnautica assets, binaries, decompiled code, shaders, saves, or proprietary data. Borrow only public contract shapes, taxonomy patterns, tool categories, and release pressure.
 
 Allowed inputs used here:
 

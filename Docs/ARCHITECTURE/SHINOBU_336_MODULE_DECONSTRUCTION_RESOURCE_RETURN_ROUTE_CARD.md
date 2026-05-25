@@ -8,7 +8,7 @@ Status: STATIC_SOURCE / STATIC_DOC, runtime proof pending
 
 `ConstructionManager` owns the teardown request. It builds one `DeconstructionTransactionDTO`, resolves unmanaged module-cost rows, executes `ExecuteModuleTeardownJob`, applies refund commands through current `PlayerInventory` authority, and publishes overflow through `SignalBus<InventoryDeathLootCacheSignal>`.
 
-`HabitatGraphManager` owns topology. The transaction job zeros the target CSR edge strength lane, then the owner marks matching edge records ruptured and invalidates CSR destinations. No module teardown path calls `Destroy()`.
+`HabitatGraphManager` owns topology. Transaction job zeros target CSR edge strength; owner marks matching edges ruptured and invalidates CSR destinations. Teardown never calls `Destroy()`.
 
 ## ABI
 
@@ -56,7 +56,7 @@ Quality does not change DTO layout, resource truth, graph authority, or save/rol
 
 ## Telemetry
 
-`TeardownTelemetryEntry[300]` records frame, target hash, initiator hash, state hash, modules processed, resources refunded, overflow cache count, severed edge count, Burst microseconds, quality, fault flags, target node index, and AUP magnitude.
+`TeardownTelemetryEntry[300]` records frame, target/initiator/state hashes, processed modules, refunded resources, overflow count, severed edges, Burst us, quality, flags, target node, AUP magnitude.
 
 Fault dump: `Docs/AgentLogs/Dump_SHINOBU_336.bin`.
 

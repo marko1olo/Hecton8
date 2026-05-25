@@ -1012,3 +1012,11 @@ Solution: Made `PlayerKinematicsRuntime.ResolveBodyRuntimePosition` sync/native 
 Rejected Alternatives: Deleting the Rigidbody component was rejected because serialized scenes and presentation shell compatibility still depend on it. Keeping shell pose as a normal fallback was rejected because it preserves split authority. Replacing pose with transform reads was rejected for deterministic paths because transform is the same shell fact with different syntax.
 Scalability potential: Low tier uses the same snapshot/AUP truth with zero added jobs. Middle/High/Ultra can increase presentation interpolation or surface visual richness without changing pose ownership. `GlobalQualityWeight` remains a fidelity/cadence knob only, not an authority switch.
 Hardware Impact: No profiler microseconds claimed. Static proof now shows hot movement Rigidbody pose read count 0 and hot player-kinematics Rigidbody pose read count 0; exact frame savings must be measured in Unity Profiler after the build gate opens.
+
+## Decision 122 - UI Compile Wall Must Be Fixed Without Inventing Ticks
+
+Problem: After `dotnet restore`, full build reached a non-KCC compile wall: `DiegeticPDAController` declared `IUpdatable` but implemented only `ILateFrameTickable`. The class registers only through `GlobalRegistry.TryRegisterLateFrameTickable`, so the update interface was a stale contract.
+Solution: Removed `IUpdatable` from `DiegeticPDAController` instead of adding an empty `Tick(float)`. This is outside X_005 runtime authority but is a minimal compile-wall repair needed to validate the KCC patch set.
+Rejected Alternatives: Adding a no-op `Tick(float)` was rejected because it would keep a false update-lane contract. Changing dispatcher interfaces was rejected as architectural overreach. Ignoring the error was rejected because compiler proof cannot proceed through a known wall.
+Scalability potential: Runtime tiers unchanged. The PDA remains late-frame only; Low/Middle/High/Ultra UI cost is not changed by this repair.
+Hardware Impact: 0 us claimed for KCC. This only removes an invalid interface declaration and should not alter runtime registration behavior.

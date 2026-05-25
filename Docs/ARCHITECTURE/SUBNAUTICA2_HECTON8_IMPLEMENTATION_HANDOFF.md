@@ -10,7 +10,7 @@ Subnautica 2's screenshot surface is catchable with HECTON-8 fog, silt, cockpit 
 
 Real threat is operational: content payloads, first-hour route proof, creature stimulus contracts, platform presets, comfort settings, save/schema discipline, live-update trust.
 
-HECTON-8 already has many runtime primitives, but too many contracts are not yet backed by populated payloads or build-blocking proof. The next work should harden the foundation before adding more spectacle.
+HECTON-8 has runtime primitives, but many contracts lack populated payloads or build-blocking proof. Next work should harden foundation before adding spectacle.
 
 ## Source Map
 

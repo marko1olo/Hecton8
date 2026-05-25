@@ -84,7 +84,7 @@ Rules:
 
 - `SuitUpgradeManager` does not own a persistent telemetry `NativeArray`; it creates/refreshes Vault generation handles only during cold service setup and writes telemetry through phase-local resolved views.
 
-- Core stat truth is identical across hardware tiers. `GlobalQualityWeight` only affects `UpgradeVisualStateDTO` intensity/extrusion/glow, so weak hardware collapses to cheap shader flags while high/ultra can spend the saved CPU on visual overkill.
+- Core stat truth is identical across hardware tiers. `GlobalQualityWeight` affects only `UpgradeVisualStateDTO` intensity/extrusion/glow; weak hardware uses cheap shader flags, high/ultra spends saved CPU visually.
 
 - Hot evaluator requires valid LUT and thermal-grid pointers.
 - If thermodynamics is unavailable, boot provides a one-cell fallback grid with `AmbientFallbackCelsius`.

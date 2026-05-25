@@ -85,7 +85,7 @@ Dump route:
 
 ## Vault Buffers
 
-`73380` AirlockStateDTO, `73381` AirlockTuningDTO, `73382` AirlockDoorPoseDTO, `73383` AirlockExchangeIndexDTO, `73384` AirlockEvaluationResultDTO, `73385` BulkheadContainmentIntentDTO scratch, `73386` BubbleSpawnSignal, `73387` MovementAcousticSignal, `73388` AirlockTelemetryEntry[300], `73389` telemetry cursor, `73390` AirlockHardwareProfileDTO, `73391` AirlockDebugGizmoDTO, `73392` dump request latch.
+Vault lanes: `73380` state, `73381` tuning, `73382` door pose, `73383` exchange index, `73384` evaluation, `73385` containment scratch, `73386..73392` signals/telemetry/hardware/debug/dump.
 
 ## Verification State
 

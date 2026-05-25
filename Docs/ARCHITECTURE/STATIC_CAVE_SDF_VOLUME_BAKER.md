@@ -121,7 +121,7 @@ Delete helper names encode mutation explicitly: stale `.bak` cleanup is `DeleteE
 
 
 
-No runtime point-to-triangle distance evaluation is introduced by this baker. Runtime SDF query cadence remains a consumer responsibility and must be driven continuously by `GlobalQualityWeight`, not by binary low/high asset variants.
+This baker adds no runtime point-to-triangle distance evaluation. Runtime SDF query cadence remains consumer-owned and continuous via `GlobalQualityWeight`, not binary low/high variants.
 
 
 
