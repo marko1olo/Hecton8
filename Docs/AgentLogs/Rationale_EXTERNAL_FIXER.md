@@ -489,3 +489,19 @@ Solution: Route 28 selected consumers through the public save owner pointer from
 Rejected Alternatives: Broad save DI rewrite was rejected because save state crosses many active domains. Scene search fallback was rejected because it can allocate/search. Claiming filtered zero was rejected because a broader filtered scan still reports 48 save reads for another slice. Build was rejected because CPU measured 94 percent.
 Scalability potential: Low tier avoids repeated save-owner discovery in PDA/world/tool helper routes; Middle keeps identical save behavior; High and Ultra keep richer PDA/world/progression systems without service-locator cadence cost.
 Hardware Impact: STATIC estimate only: 35 exact save registry reads removed from 28 staged source files. No profiler, GCMonitor, Unity Console, or player-build artifact; CLI_COMPILE not run because CPU gate was closed.
+
+## Decision 62
+
+Problem: Remaining gameplay/meta/narrative save helpers still read `GlobalRegistry.Save` after the earlier save tranches, and the staged-blob method introduced re-encoding noise in comments for files with legacy text bytes.
+Solution: Reset the noisy staged slice and apply an LF-only zero-context cached patch that changes only lines containing exact save registry reads. Commit the first 30-file half separately.
+Rejected Alternatives: Committing visually unchanged comment churn was rejected. Broad save DI rewrite was rejected. Claiming save cleanup complete was rejected because the broad filtered count remained 35 after this half.
+Scalability potential: Low tier avoids save-owner discovery in gameplay/meta helper routes; Middle keeps identical save behavior; High and Ultra keep richer gameplay/narrative state systems without service-locator cadence cost.
+Hardware Impact: STATIC estimate only: 48 exact save registry reads removed from 30 staged source files. No runtime profiler artifact.
+
+## Decision 63
+
+Problem: The final filtered save scan still reported 35 exact save registry reads in PDA, progression, quest, tool, UI, voxel, and world helpers.
+Solution: Apply the same LF-only zero-context cached patch to the final 28 files and verify the filtered save scan reaches 0 outside bootstrap/core/editor/owner exclusions.
+Rejected Alternatives: Leaving residual filtered save reads was rejected. Full-file staging was rejected because prior staged blobs proved re-encoding-prone. Build was rejected because CPU was 93 percent with active `dotnet` and `csc`.
+Scalability potential: Low tier avoids repeated save-owner discovery in PDA/world/tool routes; Middle keeps identical null fallback and save behavior; High and Ultra preserve richer PDA/world/progression systems without service-locator cadence cost.
+Hardware Impact: STATIC estimate only: 35 exact save registry reads removed from 28 staged source files; filtered tracked runtime save scan now reports 0 outside excluded paths. No CLI_COMPILE proof because CPU/compiler gate was closed.

@@ -1108,3 +1108,49 @@ Evidence:
 - STATIC_GREP: selected-file staged grep found zero remaining exact save registry reads and malformed suffix/namespace grep passed. Broad filtered save scan still reports 48 reads for a later slice.
 - CLI_COMPILE: not launched; CPU measured 94 percent. `Temp\obj\Hecton8.Core\project.assets.json` exists again, but the CPU gate remained closed.
 - GIT: committed and pushed `792236a9b perf(save): route pda world readers` to `main`.
+
+## 2026-05-24 - Save Active Runtime Sweep 3
+
+What was wrong:
+- 30 gameplay/meta/narrative/runtime files still had exact save registry reads after the first two save tranches.
+- A staged-blob rewrite generated unrelated legacy comment re-encoding noise, so the slice had to be reset and rebuilt as line-only patch.
+
+What was done:
+- Applied an LF-only zero-context cached patch that changed only lines containing exact `GlobalRegistry.Save*` reads.
+- Routed those reads through `Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance`.
+- Committed and pushed the source tranche as `751c4ad87 perf(save): route gameplay readers`.
+
+Cinematic Cheats used:
+- None. This tranche is runtime service-route hygiene.
+
+Exact Microseconds saved:
+- STATIC estimate only: 48 exact save service-locator reads removed from affected gameplay/meta helper routes. No profiler capture, no microsecond claim.
+
+Evidence:
+- STATIC_SOURCE: 30 staged source files.
+- CLI_DIFF: `git diff --cached --check` passed; staged stat was 30 files, 48 insertions, 48 deletions.
+- STATIC_GREP: selected-file staged grep found zero remaining exact save registry reads; broad filtered save scan dropped to 35 reads.
+- GIT: committed and pushed `751c4ad87 perf(save): route gameplay readers` to `main`.
+
+## 2026-05-24 - Save Active Runtime Sweep 4
+
+What was wrong:
+- The final filtered runtime save scan still reported 35 exact save registry reads across 28 PDA/progression/quest/tool/UI/voxel/world files.
+
+What was done:
+- Applied an LF-only zero-context cached patch to the final 28 files.
+- Routed exact save registry reads through `Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance`.
+- Committed and pushed the source tranche as `e06f3f316 perf(save): close active reader sweep`.
+
+Cinematic Cheats used:
+- None. This tranche is runtime service-route hygiene.
+
+Exact Microseconds saved:
+- STATIC estimate only: 35 exact save service-locator reads removed from affected PDA/world/tool helper routes. No profiler capture, no microsecond claim.
+
+Evidence:
+- STATIC_SOURCE: 28 staged source files.
+- CLI_DIFF: `git diff --cached --check` passed; staged stat was 28 files, 35 insertions, 35 deletions.
+- STATIC_GREP: filtered tracked runtime scan now reports 0 exact `GlobalRegistry.Save`/`GlobalRegistry.SaveRuntime` reads outside excluded bootstrap/core/editor/owner paths.
+- CLI_COMPILE: not launched; CPU measured 93 percent with active `dotnet` and `csc`, even though `Temp\obj\Hecton8.Core\project.assets.json` exists again.
+- GIT: committed and pushed `e06f3f316 perf(save): close active reader sweep` to `main`.
