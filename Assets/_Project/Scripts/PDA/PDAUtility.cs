@@ -129,7 +129,7 @@ namespace Hecton8.PDA
 
         public static void CaptureStamp(out int dayIndex, out float dayTimeHours, out float playTimeSeconds)
         {
-            ISaveService saveService = Hecton8.Core.GlobalRegistry.Save;
+            ISaveService saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
             playTimeSeconds = saveService != null ? saveService.CurrentPlayTimeSeconds : 0f;
 
             HectonAtmosphereManager atmosphereManager = Hecton8.Core.GlobalRegistry.Atmosphere;

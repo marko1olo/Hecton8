@@ -663,7 +663,7 @@ namespace Hecton8.UI
         private void CacheRegistryServicesCold()
         {
             _cachedLocalization = Hecton8.Core.GlobalRegistry.LocalizationText;
-            _cachedSaveManager = Hecton8.Core.GlobalRegistry.Save as SaveManager;
+            _cachedSaveManager = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance as SaveManager;
         }
 
         private void TryRegisterHotSwapListener()

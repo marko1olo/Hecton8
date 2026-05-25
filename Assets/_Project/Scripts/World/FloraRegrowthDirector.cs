@@ -463,7 +463,7 @@ namespace Hecton8.World
         private void CacheRegistryServicesCold()
         {
             _persistentWorldRegistry = GlobalRegistry.PersistentWorldRegistry;
-            _saveService = GlobalRegistry.Save;
+            _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
         }
 
         private void TryRegisterDispatcherLanes()
