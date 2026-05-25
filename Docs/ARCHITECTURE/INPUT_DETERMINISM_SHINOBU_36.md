@@ -24,7 +24,7 @@ Static/source contract; runtime proof pending fresh Unity import, Unity Console,
 
 - `InputStateDTO` is 24 bytes: `float2 LookDelta`, `float2 MoveAxis`, `uint ButtonMask`, `uint _pad0`.
 
-- `ButtonMask` bit layout: 0 Jump, 1 Interact, 2 PrimaryFire, 3 SecondaryFire, 4 Sprint, 5 Dash, 6 PDA, 7 Inventory, 8 Cancel, 9 TabNext, 10 TabPrevious, 11-14 ToolSlot1-4, 15 Flashlight, 16 Pause.
+- `ButtonMask`: 0 Jump, 1 Interact, 2 PrimaryFire, 3 SecondaryFire, 4 Sprint, 5 Dash, 6 PDA, 7 Inventory, 8 Cancel, 9 TabNext, 10 TabPrevious, 11-14 ToolSlot1-4, 15 Flashlight, 16 Pause.
 
 - Deterministic history is `BufferID.ShinobuInputJournalRing`, 512 entries in `GlobalDataVault`.
 

@@ -48,7 +48,7 @@ Runtime contract:
 - If renderer material slots are fewer than submeshes, missing slots route through null-material atlas fallback.
 - Geometry is not dropped.
 
-- Transform and mock jobs write deterministic windows into pre-sized `NativeArray<InteriorClutterRawVertex>` buffers. Shared `NativeList` append is intentionally rejected because it would create contention and unstable write ordering in the parallel kernels.
+- Transform/mock jobs write deterministic windows into pre-sized `NativeArray<InteriorClutterRawVertex>` buffers. Shared `NativeList` append is rejected: contention and unstable parallel write order.
 
 - Source mesh extraction:
   - validates attribute byte windows against declared vertex strides;
@@ -81,7 +81,7 @@ Runtime contract:
   - fuses remap into `TransformAndAppendVerticesJob`;
   - keeps standalone `RemapUvCoordinatesJob` bounds/NaN guarded for the UV utility path.
 
-- Atlas packing reserves a 16px overflow fallback tile. Materials that cannot fit the atlas are flagged and remapped to that tile; they are not allowed to source-copy over the full atlas.
+- Atlas packing reserves a 16px overflow fallback tile. Oversized materials are flagged and remapped there; they cannot source-copy over the full atlas.
 
 - Atlas base texel staging uses `NativeArray<uint>` and Burst fill jobs before `Texture2D.SetPixelData`; per-texel `SetPixel`/managed `Color32[]` fill is not part of the path.
 

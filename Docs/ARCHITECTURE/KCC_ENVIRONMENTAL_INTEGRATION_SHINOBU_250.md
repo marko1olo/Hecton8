@@ -16,7 +16,7 @@ Route:
 - Cross-domain edit is limited to Physiology consuming the same Core.Contracts DTO/constants.
 - Files: `ShinobuMetabolismData.cs`, `ShinobuMetabolismJobs.cs`, `ShinobuMetabolismRuntime.cs`.
 - Vault payload type identity must stay one route.
-- Profile CSV ingestion writes profile rows to `71768`, linear-probe buckets to `71769`, and FNV-1a hash keys to `71770`, so bucket collisions are verified before a profile can become the active row.
+- Profile CSV ingestion writes rows to `71768`, linear-probe buckets to `71769`, FNV-1a keys to `71770`; bucket collisions are checked before active row selection.
 - `EvaluateSlopeFrictionJob` runs after capsule hit extraction and before kinematic resolution.
 - `KinematicResolutionJob` similarly guards mandatory state, previous-AUP, proposed-velocity, debug, and fault lanes before pointer/ref row mutation.
 - `KccEnvironmentTelemetryAggregateJob` writes the last 300 frames to `ShinobuKccEnvironmentTelemetryRing`.

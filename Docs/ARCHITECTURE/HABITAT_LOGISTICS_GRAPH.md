@@ -143,7 +143,7 @@ Mutation source is module/socket discovery. Runtime traversal reads CSR only.
 
 - Fault telemetry writes the explicit 64-byte 300-frame black-box ring and dumps to both `Docs/AgentLogs/Dump_SHINOBU_114.bin` and `Docs/AgentLogs/Dump_LOGISTICS_SURGEON.bin`.
 
-- Breach side effects write node indices into the same Vault scratch lane during the solver and publish the existing `FluidIncursionSignal` lane during POST_SIMULATION. No duplicate local breach signal queue is authorized.
+- Breach side effects write node indices into the solver's Vault scratch lane and publish existing `FluidIncursionSignal` during POST_SIMULATION. No duplicate local breach queue.
 
 - Designer CSV reload stages bytes in Vault-owned `ShinobuLogisticsCsvScratch=70550`; private managed CSV byte arrays are not authorized.
 

@@ -1027,35 +1027,33 @@ namespace Hecton8.UI
 
         private void ApplyVisualPhase()
         {
-            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
-            if (manager == null)
+            ILocalizationTransientOverrideSink overrideSink = Hecton8.Core.GlobalRegistry.LocalizationTransientOverrideSink;
+            if (overrideSink == null)
                 return;
 
             switch (_visualPhase)
             {
                 case IntrusionVisualPhase.Arabic:
-                    manager.SetTransientLanguageOverride(GameLanguage.Arabic);
+                    overrideSink.SetTransientLanguageOverride((ushort)GameLanguage.Arabic);
                     break;
 
                 case IntrusionVisualPhase.Chinese:
-                    manager.SetTransientLanguageOverride(GameLanguage.ChineseSimplified);
+                    overrideSink.SetTransientLanguageOverride((ushort)GameLanguage.ChineseSimplified);
                     break;
 
                 case IntrusionVisualPhase.Glyphs:
-                    manager.SetTransientLanguageOverride(GameLanguage.ChineseSimplified, enableGlyphMode: true);
+                    overrideSink.SetTransientLanguageOverride((ushort)GameLanguage.ChineseSimplified, enableGlyphMode: true);
                     break;
 
                 default:
-                    manager.SetTransientLanguageOverride(GameLanguage.English);
+                    overrideSink.SetTransientLanguageOverride((ushort)GameLanguage.English);
                     break;
             }
         }
 
         private void ClearVisualOverride()
         {
-            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
-            if (manager != null)
-                manager.ClearTransientLanguageOverride();
+            Hecton8.Core.GlobalRegistry.LocalizationTransientOverrideSink?.ClearTransientLanguageOverride();
         }
 
         private void ResetTransientState()

@@ -260,7 +260,7 @@ This command was not run during the SHINOBU_258 source-only pass.
 
 - Uses lazy sampling iterators: `--thorough` walks `range(count)` and default sampling streams deterministic pseudo-random indices without allocating a full index list.
 
-- Routes `H8VB` (`Audio/VocalBank`) by magic before H8DM parsing and validates its source-backed 64-byte header, 32-byte sorted index, FNV bank hash, contiguous payload ranges, supported runtime codec set, and H8ADPCM block headers.
+- Routes `H8VB` by magic before H8DM parsing and validates 64-byte header, 32-byte sorted index, FNV bank hash, payload ranges, codecs, and H8ADPCM block headers.
 
 - Uses `mmap.ACCESS_READ`; no full-file `bytearray` staging.
 

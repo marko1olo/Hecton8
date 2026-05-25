@@ -22,7 +22,7 @@ One proof artifact: `Docs/Reports/TRENCH_BAKE_REPORT.json` plus `Docs/Reports/SH
 
 This route is not `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin`.
 
-It is a separate StreamingAssets payload outside the `DataMonolith/` subtree. `H8StaticDataArena` will reject it because the path, magic, BIOS header, section table, and checksum contract differ from the Data Monolith format.
+It is a separate StreamingAssets payload outside `DataMonolith/`. `H8StaticDataArena` rejects it: path, magic, BIOS header, section table, and checksum contract differ.
 
 ## Binary Contract
 
@@ -40,7 +40,7 @@ Section alignment: `8` bytes.
 
 Checksum type: `1` = FNV-1a 64-bit over density payload, vent payload, and adaptive block payload.
 
-Header fields include resolution, sector origin AUP, voxel size, compression mode, compressed bytes, uncompressed RLE bytes, run count, vent count, adaptive block count, payload offsets, total file bytes, and rollback-excluded flag.
+Header fields: resolution, sector AUP, voxel size, compression mode, compressed bytes, RLE bytes, run count, vent count, adaptive blocks, payload offsets, file bytes, rollback flag.
 
 ## Payload Sections
 
