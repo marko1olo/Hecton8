@@ -1,13 +1,13 @@
 ﻿{
   "schema": "hecton8.documentation_actuality_scan.x012.v1",
-  "generatedUtc": "2026-05-24T23:57:44.166604+00:00",
+  "generatedUtc": "2026-05-25T00:16:23.777240+00:00",
   "repoRoot": "C:\\hades\\Hecton8",
   "scope": "repository root approved text anchors plus Docs/**/*.md/txt",
   "checks": {
     "activeFileCount": 591,
-    "activeWordCount": 540136,
+    "activeWordCount": 539756,
     "inventoryFileCount": 4837,
-    "inventoryWordCount": 33418358,
+    "inventoryWordCount": 33425852,
     "rootTextDocs": [
       "AGENTS.md",
       "BUILD_PLAYTEST_ISSUES.md",
@@ -33,25 +33,25 @@
     "sourceSyncPass": true,
     "wordReduction": {
       "method": "current active words plus X_012 archived report/root words minus concise replacement anchor words",
-      "activeWordCountAfter": 540136,
-      "reconstructedActiveWordCountBefore": 1197403,
-      "retiredActiveWords": 657267,
-      "reductionRatio": 0.5489104336635201,
-      "reductionPercent": 54.89104336635201,
+      "activeWordCountAfter": 539756,
+      "reconstructedActiveWordCountBefore": 1196960,
+      "retiredActiveWords": 657204,
+      "reductionRatio": 0.5490609544178586,
+      "reductionPercent": 54.906095441785865,
       "reductionPass": true,
       "archivedRootFiles": 2,
       "archivedReportFiles": 160,
       "archivedArchitectureFiles": 2,
       "archivedArchitectureDiffFiles": 2,
-      "currentRootAnchorWords": 687,
+      "currentRootAnchorWords": 710,
       "currentBinaryPayloadLedgerWords": 154,
-      "currentActualityLedgerWords": 862,
-      "currentArchitectureReplacementWords": 1016,
-      "architectureRetiredWords": 118005
+      "currentActualityLedgerWords": 902,
+      "currentArchitectureReplacementWords": 1056,
+      "architectureRetiredWords": 117965
     },
     "architecture": {
       "activeArchitectureFileCount": 192,
-      "activeArchitectureWordCount": 164925,
+      "activeArchitectureWordCount": 164255,
       "markerHits": {
         "docGlobalRefreshMarkers": 0,
         "r51BoundaryBoilerplate": 0,
@@ -60,15 +60,22 @@
       },
       "longNarrativeParagraphsOver180Words": [],
       "longNarrativeParagraphCount": 0,
-      "strictUnstructuredParagraphThresholdWords": 31,
+      "strictUnstructuredParagraphThresholdWords": 30,
       "strictUnstructuredParagraphsOverThreshold": [],
       "strictUnstructuredParagraphCount": 0,
-      "strictUnstructuredSentenceThresholdWords": 31,
+      "strictUnstructuredSentenceThresholdWords": 30,
       "strictUnstructuredSentencesOverThreshold": [],
       "strictUnstructuredSentenceCount": 0,
-      "strictStructuredLineThresholdWords": 31,
-      "strictStructuredLinesOverThreshold": [],
-      "strictStructuredLineCount": 0,
+      "strictStructuredLineThresholdWords": 30,
+      "strictStructuredLinesOverThreshold": [
+        {
+          "path": "Docs/ARCHITECTURE/README.md",
+          "line": 53,
+          "wordCount": 33,
+          "preview": "- It also covers loop151 rebind gaps, loop153 owner-cache ownership, loop154-156 Dispatcher tails, loop157 UI/Construction singleton tail removal, loop158 world"
+        }
+      ],
+      "strictStructuredLineCount": 1,
       "strictFileWordThreshold": 2500,
       "strictFilesOverWordThreshold": [],
       "strictFileWordCount": 0,
@@ -76,9 +83,9 @@
       "strictNonContractTextFileCount": 0,
       "tutorialMarkerHits": [],
       "tutorialMarkerHitCount": 0,
-      "pass": true
+      "pass": false
     },
     "activeParameterSyncPass": true,
-    "finalPass": true
+    "finalPass": false
   }
 }

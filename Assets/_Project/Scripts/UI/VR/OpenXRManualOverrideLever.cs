@@ -919,11 +919,13 @@ namespace Hecton8.UI.VR
 
         private void TryRegisterTick()
         {
-            if (_registeredTick || _latched || !_nativeAllocated || !Application.isPlaying || !_dispatcherAvailable)
+            if ((_registeredTick && _registeredLateFrame) || _latched || !_nativeAllocated || !Application.isPlaying || !_dispatcherAvailable)
                 return;
 
-            _registeredTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
-            _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
+            if (!_registeredTick)
+                _registeredTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
+            if (!_registeredLateFrame)
+                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
         }
 
         private void TryUnregisterTick()

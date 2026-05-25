@@ -2,11 +2,11 @@
   {
     "path": "AGENTS.md",
     "active": true,
-    "bytes": 78860,
-    "lastWriteUtc": "2026-05-24T23:54:46.061768+00:00",
+    "bytes": 79512,
+    "lastWriteUtc": "2026-05-25T00:01:45.117637+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 8991,
+    "wordCount": 9053,
     "topic": "# AGENTS.md — HECTON-8 Codex System Instructions",
     "references": [
       "Docs/_Archive/Reports_X_012_2026-05-23/2026-05-21_DOCUMENTATION_R51_ROOT_ARCHITECTURE_ENCODING_BOUNDARY_READORDER_AND_ROUTE_GAPS_LOCAL.md",
@@ -45,7 +45,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "90ed1fb40b0cc44d85b1301a1340e77bf9b39e27abe268034e2895110783b29d"
+    "sha256": "8fd1a5c0226ac05da64b1b79653c582f6596b5b2b967cc09febc3f27cde222ca"
   },
   {
     "path": "BUILD_PLAYTEST_ISSUES.md",
@@ -8308,11 +8308,11 @@
   {
     "path": "Docs/AgentLogs/LOG_DENTE.md",
     "active": false,
-    "bytes": 89762,
-    "lastWriteUtc": "2026-05-24T16:32:49.812140+00:00",
+    "bytes": 92511,
+    "lastWriteUtc": "2026-05-25T00:12:22.872134+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 10630,
+    "wordCount": 10952,
     "topic": "# DENTE Agent Log",
     "references": [
       "docs/13-dente-telegram-bot-plan.md",
@@ -8343,6 +8343,7 @@
       "docs/03-ux-principles.md",
       "README.md",
       "docs/13-dente-telegram-bot-plan.md",
+      "docs/13-dente-telegram-bot-plan.md",
       "docs/13-dente-telegram-bot-plan.md"
     ],
     "staleFlags": {
@@ -8351,16 +8352,16 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "ebceea951b3e800c9da886525b47a2cddc7a72ef632643837c95f4886750077b"
+    "sha256": "05aabb83cfec79c1b08ec6fab5bbcbcd4d39842e6b3255cc843dc3b1aa23ec10"
   },
   {
     "path": "Docs/AgentLogs/LOG_EXTERNAL_CODEX.md",
     "active": false,
-    "bytes": 166574,
-    "lastWriteUtc": "2026-05-24T23:54:46.059768+00:00",
+    "bytes": 168736,
+    "lastWriteUtc": "2026-05-25T00:01:26.544519+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 18401,
+    "wordCount": 18620,
     "topic": "# LOG_EXTERNAL_CODEX",
     "references": [
       "Docs/README.md",
@@ -8389,7 +8390,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "095ff964fcb745581809d3bc7fba6c4bd27f0fbc7614db5fb1c6266c23f2b293"
+    "sha256": "5546c4ea062a3b10cc303390f785c6a1408e3a004ded4523a9cea9ade5b2f811"
   },
   {
     "path": "Docs/AgentLogs/LOG_EXTERNAL_FIXER.md",
@@ -8649,11 +8650,11 @@
   {
     "path": "Docs/AgentLogs/LOG_X_004.md",
     "active": false,
-    "bytes": 82615,
-    "lastWriteUtc": "2026-05-24T17:29:55.312320+00:00",
+    "bytes": 84709,
+    "lastWriteUtc": "2026-05-24T23:56:17.982537+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 9618,
+    "wordCount": 9864,
     "topic": "# LOG_X_004",
     "references": [
       "Status_X_004.md",
@@ -8666,7 +8667,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "f95d6f8d9018f1670e6fd854fb13b0a1270ae0500451ff7ddf40a92b557b3f8f"
+    "sha256": "53a6f39df2b0c7d8a0a597628a2f955371cbf97868563661bddfe7c3ddb97884"
   },
   {
     "path": "Docs/AgentLogs/LOG_X_004_A.md",
@@ -8707,11 +8708,11 @@
   {
     "path": "Docs/AgentLogs/LOG_X_005.md",
     "active": false,
-    "bytes": 111534,
-    "lastWriteUtc": "2026-05-24T23:48:40.589752+00:00",
+    "bytes": 114829,
+    "lastWriteUtc": "2026-05-25T00:11:38.384585+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 12435,
+    "wordCount": 12798,
     "topic": "# LOG_X_005",
     "references": [
       "Docs/Tasks/CURRENT_BATCH.md",
@@ -8735,16 +8736,16 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "72f09deb3aec6db338a995abb7304ee29787faaeacab0778133011a31fd328b9"
+    "sha256": "04445386c10f369160c9be040152633afe2d9705ace94b0f1d50cf3bf692f5fd"
   },
   {
     "path": "Docs/AgentLogs/LOG_X_006.md",
     "active": false,
-    "bytes": 142825,
-    "lastWriteUtc": "2026-05-24T23:51:42.493292+00:00",
+    "bytes": 146445,
+    "lastWriteUtc": "2026-05-25T00:02:22.499562+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 17687,
+    "wordCount": 17982,
     "topic": "# LOG_X_006",
     "references": [],
     "staleFlags": {
@@ -8753,7 +8754,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "eb56b7f362d2b7b1e4153509059794359a212f4381c3f120ed38f67b91d5d28b"
+    "sha256": "416084f65778f61ab88f937f27837f846990ec092e4685382f328a980ec29404"
   },
   {
     "path": "Docs/AgentLogs/LOG_X_007.md",
@@ -8790,11 +8791,11 @@
   {
     "path": "Docs/AgentLogs/LOG_X_008.md",
     "active": false,
-    "bytes": 145782,
-    "lastWriteUtc": "2026-05-24T23:46:26.367747+00:00",
+    "bytes": 150488,
+    "lastWriteUtc": "2026-05-25T00:12:17.706018+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 17535,
+    "wordCount": 18069,
     "topic": "# LOG_X_008 - COMBAT_DAMAGE_AND_ARMOR_LUT_OPTIMIZER",
     "references": [
       "Docs/Tasks/CURRENT_BATCH.md",
@@ -8811,7 +8812,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "b9becb7df78f86bc5758ab3ee83f809d21a0d32aec3932cd81704c1a4259960d"
+    "sha256": "839cb859770f0d312153038b36a81545121b7842730d92746af91489e7722f37"
   },
   {
     "path": "Docs/AgentLogs/LOG_X_009.md",
@@ -8872,11 +8873,11 @@
   {
     "path": "Docs/AgentLogs/LOG_X_011.md",
     "active": false,
-    "bytes": 101626,
-    "lastWriteUtc": "2026-05-24T17:21:11.912438+00:00",
+    "bytes": 104060,
+    "lastWriteUtc": "2026-05-25T00:10:30.290831+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 11499,
+    "wordCount": 11772,
     "topic": "# LOG X_011 - VOCAL_WARNING_AND_SUBTITLE_STREAMLINER",
     "references": [
       "Status_X_011.md",
@@ -8890,16 +8891,16 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "a6a2c18b73e2b7ad6162531acf40107805426f96a642a465fe4a5f877268bf10"
+    "sha256": "467ed2d5f963647abe27e15cd250c60ce05828a01d3e8df446b5e0fbdc9cff38"
   },
   {
     "path": "Docs/AgentLogs/LOG_X_012.md",
     "active": false,
-    "bytes": 49487,
-    "lastWriteUtc": "2026-05-24T23:38:10.573384+00:00",
+    "bytes": 51350,
+    "lastWriteUtc": "2026-05-24T23:59:18.284550+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 4701,
+    "wordCount": 4932,
     "topic": "# LOG X_012",
     "references": [
       "MASTER_RELEASE_WORK_PLAN.md",
@@ -8989,7 +8990,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "ee3e05a9fafc00cb1379b6dc25e2fdb15fed0b8a8099bbb2d9edf5af26522a08"
+    "sha256": "399e295a8c44e52eb26a8f20588badda763a905bfa44301658f276171b245b4d"
   },
   {
     "path": "Docs/AgentLogs/Prompt_X_003_EXTRACTED_CURRENT.md",
@@ -9012,11 +9013,11 @@
   {
     "path": "Docs/AgentLogs/Rationale_DENTE.md",
     "active": false,
-    "bytes": 103927,
-    "lastWriteUtc": "2026-05-24T16:32:36.325511+00:00",
+    "bytes": 107375,
+    "lastWriteUtc": "2026-05-25T00:12:01.832556+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 12776,
+    "wordCount": 13204,
     "topic": "# DENTE Rationale",
     "references": [
       "docs/13-dente-telegram-bot-plan.md",
@@ -9048,6 +9049,8 @@
       "README.md",
       "docs/13-dente-telegram-bot-plan.md",
       "README.md",
+      "docs/13-dente-telegram-bot-plan.md",
+      "README.md",
       "docs/13-dente-telegram-bot-plan.md"
     ],
     "staleFlags": {
@@ -9056,16 +9059,16 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "3bb5e5398eee1d00231ea4bcf2cd15a92abf627973d17c5e1ff0674392f5de6b"
+    "sha256": "591c25ca75e05b614370e26ecabe40b2ce9a9913529d9c4d9eb9b4b0df5484df"
   },
   {
     "path": "Docs/AgentLogs/Rationale_EXTERNAL_CODEX.md",
     "active": false,
-    "bytes": 198439,
-    "lastWriteUtc": "2026-05-24T23:54:46.057769+00:00",
+    "bytes": 201489,
+    "lastWriteUtc": "2026-05-25T00:00:57.768946+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 23283,
+    "wordCount": 23611,
     "topic": "# Rationale_EXTERNAL_CODEX",
     "references": [
       "AGENTS.md",
@@ -9081,7 +9084,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "2fa657bd908d14ba96c3d0c7d1aae7a978ed0160028b64f1ed00fb9179bf4487"
+    "sha256": "f9a167c166c778e3c06dce179d7fe1e6be299d871eda18bf53c9eeac0a6177f8"
   },
   {
     "path": "Docs/AgentLogs/Rationale_EXTERNAL_FIXER.md",
@@ -9277,11 +9280,11 @@
   {
     "path": "Docs/AgentLogs/Rationale_X_004.md",
     "active": false,
-    "bytes": 104706,
-    "lastWriteUtc": "2026-05-24T17:29:41.003058+00:00",
+    "bytes": 107513,
+    "lastWriteUtc": "2026-05-24T23:56:02.890150+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 12425,
+    "wordCount": 12750,
     "topic": "# Rationale_X_004",
     "references": [
       "Docs/Tasks/Status_X_004.md",
@@ -9294,7 +9297,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "a12b83a9e8e426bda03dd8503b087d93ec6bfd8c491e81d7c6f3b6b48bd87f95"
+    "sha256": "95ed747e0f7c92a4f475d959f5d4596af173476895d7462a5a4775ee7159c465"
   },
   {
     "path": "Docs/AgentLogs/Rationale_X_004_A.md",
@@ -9335,11 +9338,11 @@
   {
     "path": "Docs/AgentLogs/Rationale_X_005.md",
     "active": false,
-    "bytes": 149408,
-    "lastWriteUtc": "2026-05-24T23:47:50.225581+00:00",
+    "bytes": 152436,
+    "lastWriteUtc": "2026-05-25T00:08:54.249656+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 19184,
+    "wordCount": 19576,
     "topic": "# Rationale_X_005",
     "references": [],
     "staleFlags": {
@@ -9348,16 +9351,16 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "1e607ae6aeace22a23bd31317320da06fe5eaa94c9d6f392e74d87d5ccefa968"
+    "sha256": "31de4475b1e1ed04d30ec8dd19672a1c3be53f0130c3e46bc12de467940dac94"
   },
   {
     "path": "Docs/AgentLogs/Rationale_X_006.md",
     "active": false,
-    "bytes": 178253,
-    "lastWriteUtc": "2026-05-24T23:51:32.935193+00:00",
+    "bytes": 184116,
+    "lastWriteUtc": "2026-05-25T00:12:35.559680+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 23642,
+    "wordCount": 24250,
     "topic": "# Rationale_X_006",
     "references": [],
     "staleFlags": {
@@ -9366,7 +9369,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "87f4b4a04fe56c8c462db1bc7a253ceb4ba5bd1624473fd531d26e1397b780fa"
+    "sha256": "3e420611d821258e10e0d9495914c6a966dcfc759b31b0370f9b4f7bd68bd792"
   },
   {
     "path": "Docs/AgentLogs/Rationale_X_007.md",
@@ -9396,11 +9399,11 @@
   {
     "path": "Docs/AgentLogs/Rationale_X_008.md",
     "active": false,
-    "bytes": 150215,
-    "lastWriteUtc": "2026-05-24T23:46:16.567836+00:00",
+    "bytes": 154942,
+    "lastWriteUtc": "2026-05-25T00:12:08.435675+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 18620,
+    "wordCount": 19196,
     "topic": "# Rationale_X_008 - COMBAT_DAMAGE_AND_ARMOR_LUT_OPTIMIZER",
     "references": [
       "Docs/ARCHITECTURE/X_008_COMBAT_ARMOR_LUT_ROUTE_CARD.md",
@@ -9412,7 +9415,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "8a6c08ae5826828f1cef5261a35c6e2119302cd30a41e74a852d4a97b554fe60"
+    "sha256": "6677a45d6a815b8f2f5d7b8f1debf03defc9ab80be24891cec71f7d07809be56"
   },
   {
     "path": "Docs/AgentLogs/Rationale_X_009.md",
@@ -9461,11 +9464,11 @@
   {
     "path": "Docs/AgentLogs/Rationale_X_011.md",
     "active": false,
-    "bytes": 108614,
-    "lastWriteUtc": "2026-05-24T17:21:11.911443+00:00",
+    "bytes": 111116,
+    "lastWriteUtc": "2026-05-25T00:10:30.288819+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 13243,
+    "wordCount": 13540,
     "topic": "# Rationale X_011 - VOCAL_WARNING_AND_SUBTITLE_STREAMLINER",
     "references": [],
     "staleFlags": {
@@ -9474,16 +9477,16 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "c782595447222eca940c27dd9b8209d375ee6d2d7f7b642375f32f3937d798d4"
+    "sha256": "72ade52ab4723b4e8e59ec091429e956d55d58e3e832d1558ae8829e57e1d45a"
   },
   {
     "path": "Docs/AgentLogs/Rationale_X_012.md",
     "active": false,
-    "bytes": 24096,
-    "lastWriteUtc": "2026-05-24T23:38:10.570302+00:00",
+    "bytes": 25051,
+    "lastWriteUtc": "2026-05-24T23:58:43.470010+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 2972,
+    "wordCount": 3095,
     "topic": "# Rationale X_012",
     "references": [
       "MASTER_RELEASE_WORK_PLAN.md",
@@ -9507,7 +9510,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "7fc86e0b5cff3e7aa60e4bad161bd09947857e3f9a607507c0496e5e3f68ba63"
+    "sha256": "2f4a7d913e3f0a0ff6b2a998f7482bacbba087ba2dc7835c2bec1e548b208104"
   },
   {
     "path": "Docs/AgentLogs/SIGNAL_ARCHITECTURE_OPTIMIZATION_REPORT_X_001.md",
@@ -9665,11 +9668,11 @@
   {
     "path": "Docs/ARCHITECTURE/ABYSSAL_CAUSTICS_SHINOBU_232.md",
     "active": true,
-    "bytes": 15138,
-    "lastWriteUtc": "2026-05-24T23:08:06.090060+00:00",
+    "bytes": 15042,
+    "lastWriteUtc": "2026-05-25T00:01:36.491343+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 1692,
+    "wordCount": 1674,
     "topic": "# ABYSSAL CAUSTICS ROUTE CARD - SHINOBU_232",
     "references": [],
     "staleFlags": {
@@ -9678,7 +9681,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "4cd9c6f609354ee74b6f665baacb39fde78c2ff7cd836fde4d6576fe4b1b7e8f"
+    "sha256": "76cbc1068ec9b29f3ffa91aca404248d8c1c234d3c28abf122024ef5ef836d3f"
   },
   {
     "path": "Docs/ARCHITECTURE/ABYSSAL_THERMODYNAMICS_SOLVER.md",
@@ -9739,11 +9742,11 @@
   {
     "path": "Docs/ARCHITECTURE/AI_POTENTIAL_FIELD_NAVIGATION.md",
     "active": true,
-    "bytes": 7766,
-    "lastWriteUtc": "2026-05-24T16:59:33.944885+00:00",
+    "bytes": 7701,
+    "lastWriteUtc": "2026-05-25T00:01:36.493353+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 871,
+    "wordCount": 856,
     "topic": "# AI Potential Field Navigation",
     "references": [
       "Docs/ARCHITECTURE/FLOW_FIELD_MATH.md",
@@ -9755,7 +9758,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "3b4f5c77baa87f634ecf95908f2209b69d4bc19cc90e9cb015f077068c3f878b"
+    "sha256": "09e5f45aefc0b06ab29a59c2275db83845a2250c75d74e6b1087559f901da958"
   },
   {
     "path": "Docs/ARCHITECTURE/ARENA_ALLOCATOR_2_0.md",
@@ -9778,11 +9781,11 @@
   {
     "path": "Docs/ARCHITECTURE/ARM64_MEMORY_ALIGNMENT_SHINOBU_204.md",
     "active": true,
-    "bytes": 9978,
-    "lastWriteUtc": "2026-05-24T23:26:54.421665+00:00",
+    "bytes": 9817,
+    "lastWriteUtc": "2026-05-25T00:01:36.503403+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 998,
+    "wordCount": 980,
     "topic": "# ARM64 Memory Alignment - SHINOBU_204",
     "references": [],
     "staleFlags": {
@@ -9791,7 +9794,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "4c2e5ce2499b7cf84d1442099162985b4617e178049bbf6d8003e3da67f7da7c"
+    "sha256": "d9b7eae92cb73be22daaf0fbdc9f274f5c59eda67c72be73433410e37b88cb31"
   },
   {
     "path": "Docs/ARCHITECTURE/ARM_TEXTURE_PACKING_PIPELINE.md",
@@ -9832,11 +9835,11 @@
   {
     "path": "Docs/ARCHITECTURE/ASYNCHRONOUS_TELEMETRY_EXPORTER_SHINOBU_160.md",
     "active": true,
-    "bytes": 13523,
-    "lastWriteUtc": "2026-05-24T23:26:54.430207+00:00",
+    "bytes": 13427,
+    "lastWriteUtc": "2026-05-25T00:01:36.503403+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 1517,
+    "wordCount": 1497,
     "topic": "# SHINOBU_160 Asynchronous Telemetry Exporter",
     "references": [],
     "staleFlags": {
@@ -9845,7 +9848,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "9ac50b113dff84c6f1fb81e7697794de1e3d0830e5eeca5d6ba029e454efc818"
+    "sha256": "4cd6a68aa98659344de9c9aa6268ac5b8edff646858d0bc43a0fe723aaba43be"
   },
   {
     "path": "Docs/ARCHITECTURE/AUDIO_DSP_PIPELINE.md",
@@ -9891,11 +9894,11 @@
   {
     "path": "Docs/ARCHITECTURE/AUXILIARY_EQUIPMENT_ROUTER_SHINOBU_229.md",
     "active": true,
-    "bytes": 9374,
-    "lastWriteUtc": "2026-05-24T23:26:54.430207+00:00",
+    "bytes": 9189,
+    "lastWriteUtc": "2026-05-25T00:01:36.505413+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 1038,
+    "wordCount": 1011,
     "topic": "# Auxiliary Equipment Router - SHINOBU_229",
     "references": [
       "Docs/ARCHITECTURE/SHINOBU_229_AUXILIARY_EQUIPMENT_ROUTE_CARD.md"
@@ -9906,7 +9909,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "bb71fa91e7b8cd7ef845167e477cf6bae9b61892080c84311de8f9476883af13"
+    "sha256": "fd0db737e52cc06cf884edb303dd0c70e85cfdea3cf0f395a1660154a52122da"
   },
   {
     "path": "Docs/ARCHITECTURE/BASE_ATMOSPHERE_LOGISTICS_ROUTE_CARD_SHINOBU_221.md",
@@ -9967,11 +9970,11 @@
   {
     "path": "Docs/ARCHITECTURE/BaseStructuralWarningDispatcher_SHINOBU_339.md",
     "active": true,
-    "bytes": 6507,
-    "lastWriteUtc": "2026-05-24T23:15:03.415925+00:00",
+    "bytes": 6451,
+    "lastWriteUtc": "2026-05-25T00:02:41.536295+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 685,
+    "wordCount": 677,
     "topic": "# Base Structural Warning Dispatcher",
     "references": [],
     "staleFlags": {
@@ -9980,16 +9983,16 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "a7c3feb8730ac05fa28ce66f6a50a1f7ee838a8a59214f62a36c572441090636"
+    "sha256": "b727ed65bfd304dfc82e9f27bb17cd02fc646d0290332a9e3742554695d6d839"
   },
   {
     "path": "Docs/ARCHITECTURE/BILATERAL_DRS_UPSCALER_SHINOBU_236.md",
     "active": true,
-    "bytes": 8192,
-    "lastWriteUtc": "2026-05-24T23:08:06.099530+00:00",
+    "bytes": 8135,
+    "lastWriteUtc": "2026-05-25T00:02:41.537838+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 942,
+    "wordCount": 930,
     "topic": "# Bilateral DRS Upscaler - SHINOBU_236",
     "references": [
       "Docs/ARCHITECTURE/SHINOBU_236_BILATERAL_DRS_ROUTE_CARD.md"
@@ -10000,7 +10003,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "12200a41e8a47e47019b40e5ca24c0fb2a270022509ac0affe00aace06734af1"
+    "sha256": "0501299ea7da3703de86fd896a1cc11916e2a5e54403b91832cff79778a5b1e5"
   },
   {
     "path": "Docs/ARCHITECTURE/BINARY_PAYLOAD_INTEGRATION_LEDGER.md",
@@ -10140,11 +10143,11 @@
   {
     "path": "Docs/ARCHITECTURE/CONSTRUCTION_BUILDER_HOLOGRAPHY_SHINOBU_228.md",
     "active": true,
-    "bytes": 16911,
-    "lastWriteUtc": "2026-05-24T23:27:23.916261+00:00",
+    "bytes": 16677,
+    "lastWriteUtc": "2026-05-25T00:03:16.766975+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 1739,
+    "wordCount": 1706,
     "topic": "# Construction Builder Holography - SHINOBU_228",
     "references": [],
     "staleFlags": {
@@ -10153,16 +10156,16 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "53000872eab82667c0f0646b9b56b27f3e723da7bdb021835ce1a90c4670898f"
+    "sha256": "b5e07ab9dfafa8bf3ee0031097e11069fc6af1cbd47570b96dfeef323a841086"
   },
   {
     "path": "Docs/ARCHITECTURE/CONSTRUCTION_SOCKET_CSR_SOLVER_SHINOBU_217.md",
     "active": true,
-    "bytes": 17511,
-    "lastWriteUtc": "2026-05-24T23:27:23.918261+00:00",
+    "bytes": 17336,
+    "lastWriteUtc": "2026-05-25T00:02:41.539118+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 1886,
+    "wordCount": 1863,
     "topic": "# Construction Socket CSR Solver - SHINOBU_217",
     "references": [],
     "staleFlags": {
@@ -10171,7 +10174,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "89bc9bc6023fb3c3baa05d65c9821ad56a48daddadd139facb1acc0dc0800501"
+    "sha256": "64d644f4ec6550705d79d2f6ff6e89a5931fa04b0f33e3bd5809c4f1daff63d3"
   },
   {
     "path": "Docs/ARCHITECTURE/CONTENT_SAVE_SLOT_TOPOLOGY.md",
@@ -10194,11 +10197,11 @@
   {
     "path": "Docs/ARCHITECTURE/COOP_MERKLE_STATE_DELTA_PROTOCOL.md",
     "active": true,
-    "bytes": 1569,
-    "lastWriteUtc": "2026-05-24T07:06:54.654265+00:00",
+    "bytes": 1533,
+    "lastWriteUtc": "2026-05-25T00:02:41.540452+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 200,
+    "wordCount": 193,
     "topic": "# Co-Op Merkle State Delta Protocol",
     "references": [],
     "staleFlags": {
@@ -10207,7 +10210,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "41deb6bf9dc4e30ab66ab3f0076b179ad20b2918b1e90f804867d4ba5c17ba44"
+    "sha256": "b04a04a7744fa544f28d7176b83bdab3e7481643b301167deaf64bf8f950e8ee"
   },
   {
     "path": "Docs/ARCHITECTURE/CORE_REPLAY_DETERMINISM.md",
@@ -10230,11 +10233,11 @@
   {
     "path": "Docs/ARCHITECTURE/CREST_VERSION_QUARANTINE_SHINOBU_260.md",
     "active": true,
-    "bytes": 23544,
-    "lastWriteUtc": "2026-05-24T23:27:23.919262+00:00",
+    "bytes": 23444,
+    "lastWriteUtc": "2026-05-25T00:03:57.341142+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 2065,
+    "wordCount": 2048,
     "topic": "# Crest Version Quarantine - SHINOBU_260",
     "references": [],
     "staleFlags": {
@@ -10243,7 +10246,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "dbfcc56fa2fcec9ed569106217e2ba24209ab4baa7677a1d60531a7f6e57bf40"
+    "sha256": "93546f586a478aaee11dccd7add0a3568563b040e442158bb373abb22b772155"
   },
   {
     "path": "Docs/ARCHITECTURE/DATA_MONOLITH_H8BIN_SPEC.md",
@@ -10284,11 +10287,11 @@
   {
     "path": "Docs/ARCHITECTURE/DECOMPRESSION_SICKNESS_SHINOBU_321.md",
     "active": true,
-    "bytes": 4768,
-    "lastWriteUtc": "2026-05-24T16:22:12.370599+00:00",
+    "bytes": 4595,
+    "lastWriteUtc": "2026-05-25T00:04:12.259621+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 543,
+    "wordCount": 524,
     "topic": "# Decompression Sickness Route - SHINOBU_321",
     "references": [],
     "staleFlags": {
@@ -10297,16 +10300,16 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "2c558df955bbd8d65f89b248f02e32ebfea32e72aaaec816dfd9ede6498f9a65"
+    "sha256": "109904725d89cc691e4873ddc0844a93138dfaa45db5ab7236abd27bda239483"
   },
   {
     "path": "Docs/ARCHITECTURE/DEEP_SEA_NOIR_POST_PROCESSOR_SHINOBU_235.md",
     "active": true,
-    "bytes": 6149,
-    "lastWriteUtc": "2026-05-24T23:27:23.922261+00:00",
+    "bytes": 6022,
+    "lastWriteUtc": "2026-05-25T00:04:12.261621+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 664,
+    "wordCount": 645,
     "topic": "# Deep Sea Noir Post Processor - SHINOBU_235",
     "references": [
       "Docs/ARCHITECTURE/SHINOBU_235_DEEP_SEA_NOIR_ROUTE_CARD.md",
@@ -10319,7 +10322,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "9fe5c47673efc53212830975884d0a7e9896e30a06e791a2f5a652bbaf3f6ccb"
+    "sha256": "cd85945792967e04d7b841e91542f3d80208f331811cabc2d5bb167ba9f31faa"
   },
   {
     "path": "Docs/ARCHITECTURE/DISPATCH_PIPELINE.md",
@@ -10549,11 +10552,11 @@
   {
     "path": "Docs/ARCHITECTURE/GLOBAL_AUTHORITY_BOUNDARIES.md",
     "active": true,
-    "bytes": 17489,
-    "lastWriteUtc": "2026-05-24T23:53:20.649666+00:00",
+    "bytes": 17737,
+    "lastWriteUtc": "2026-05-25T00:03:22.904048+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 1810,
+    "wordCount": 1828,
     "topic": "# Global Authority Boundaries",
     "references": [
       "GLOBAL_AUTHORITY_SETUP_PLAYBOOK.md",
@@ -10567,7 +10570,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "154b37f18a893088940f0b2f63ddf2df5728fa82ea5f614c0e269630fba750e1"
+    "sha256": "94f6ef244c936d7e9e7e1a90a90ad2b78962b22df8ab8fb91e8028d6f0b9d088"
   },
   {
     "path": "Docs/ARCHITECTURE/GLOBAL_AUTHORITY_BURN_DOWN_PLAN.md",
@@ -10593,11 +10596,11 @@
   {
     "path": "Docs/ARCHITECTURE/GLOBAL_AUTHORITY_MIGRATION_LEDGER.md",
     "active": true,
-    "bytes": 9811,
-    "lastWriteUtc": "2026-05-24T23:53:20.651679+00:00",
+    "bytes": 10168,
+    "lastWriteUtc": "2026-05-25T00:03:34.243397+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 896,
+    "wordCount": 935,
     "topic": "# Global Authority Migration Ledger",
     "references": [
       "GLOBAL_AUTHORITY_BOUNDARIES.md",
@@ -10609,16 +10612,16 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "94719e8ed1e34ffb21fdf58bd3b0053bca3db9627d331b479249dff4840a5095"
+    "sha256": "14744529226f7e615e6f2f5a136ccf44a98adbc0e97552064e3d104759111c34"
   },
   {
     "path": "Docs/ARCHITECTURE/GLOBAL_AUTHORITY_OPERATING_MODEL.md",
     "active": true,
-    "bytes": 14298,
-    "lastWriteUtc": "2026-05-24T17:13:38.556493+00:00",
+    "bytes": 14474,
+    "lastWriteUtc": "2026-05-25T00:04:00.744210+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 1591,
+    "wordCount": 1609,
     "topic": "# Global Authority Operating Model",
     "references": [
       "GLOBAL_AUTHORITY_BOUNDARIES.md",
@@ -10639,7 +10642,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "7063aff5e43b724fae7f63a5434153ed7df4bbfc2ad0d1d6bcb9c1ac10a33be1"
+    "sha256": "14146c409563a22eb0689ae3fcd74a93662a3e910dabddb25473c3be837fcf15"
   },
   {
     "path": "Docs/ARCHITECTURE/GLOBAL_AUTHORITY_REVIEW_CHECKLIST.md",
@@ -10669,11 +10672,11 @@
   {
     "path": "Docs/ARCHITECTURE/GLOBAL_AUTHORITY_ROUTE_CARD_BTREE_TELEMETRY_SHINOBU_207.md",
     "active": true,
-    "bytes": 5731,
-    "lastWriteUtc": "2026-05-24T23:27:51.435231+00:00",
+    "bytes": 5698,
+    "lastWriteUtc": "2026-05-25T00:04:12.262621+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 695,
+    "wordCount": 689,
     "topic": "# Global Authority Route Card: B-Tree MMF Telemetry",
     "references": [
       "Docs/AgentLogs/LOG_SHINOBU_207.md"
@@ -10684,7 +10687,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "c9e4a84324e3465d9c61476634801cfa8f1f1b583499b1b197596182210a1283"
+    "sha256": "87340153ce1e3d241ccb6bbb9dd52fe3812ca3bf37d11c8482316a7d684f3eac"
   },
   {
     "path": "Docs/ARCHITECTURE/GLOBAL_AUTHORITY_ROUTE_CARD_TEMPLATE.md",
@@ -10742,11 +10745,11 @@
   {
     "path": "Docs/ARCHITECTURE/GLOBAL_REGISTRY_SERVICE_LOCATOR.md",
     "active": true,
-    "bytes": 5231,
-    "lastWriteUtc": "2026-05-24T07:06:54.664162+00:00",
+    "bytes": 5216,
+    "lastWriteUtc": "2026-05-25T00:04:12.263622+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 615,
+    "wordCount": 609,
     "topic": "# Global Registry Service Locator",
     "references": [
       "GLOBAL_AUTHORITY_BOUNDARIES.md"
@@ -10757,7 +10760,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "6e8b5d963178f63d083d531cd03575eb5341f4fa3c100f493daec191c541528c"
+    "sha256": "b02a6fb0c0470d9d8bdb1f5a3afe53256e9e7544ea6730e223f0ef2d5c6da7d0"
   },
   {
     "path": "Docs/ARCHITECTURE/GLOBAL_SIGNAL_CORRIDOR.md",
@@ -10783,11 +10786,11 @@
   {
     "path": "Docs/ARCHITECTURE/H8BIN_VALIDATOR_SHINOBU_258.md",
     "active": true,
-    "bytes": 14383,
-    "lastWriteUtc": "2026-05-24T23:13:34.474422+00:00",
+    "bytes": 14313,
+    "lastWriteUtc": "2026-05-25T00:04:34.178607+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 1440,
+    "wordCount": 1433,
     "topic": "# H8BIN Validator SHINOBU_258",
     "references": [
       "Docs/DEPRECATED/X_012_Stale_DataMonolith_Reports_2026-05-23/SHINOBU_258_DataMonolith_SourceCoverage.md",
@@ -10799,7 +10802,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "e48a6bacef0dfaac21381925c790bc269991ad65b5f96486becf0ac4da97e9ee"
+    "sha256": "88cb72b6fffbe95da5a0f0d5909a588e8d05975cb9dd277ce3f00e17d247263d"
   },
   {
     "path": "Docs/ARCHITECTURE/HABITAT_FLUID_INCURSION.md",
@@ -10822,11 +10825,11 @@
   {
     "path": "Docs/ARCHITECTURE/HABITAT_INTERIOR_CLUTTER_FORGE.md",
     "active": true,
-    "bytes": 11095,
-    "lastWriteUtc": "2026-05-24T23:27:51.435231+00:00",
+    "bytes": 11001,
+    "lastWriteUtc": "2026-05-25T00:04:34.182381+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 1312,
+    "wordCount": 1293,
     "topic": "# Habitat Interior Clutter Forge",
     "references": [],
     "staleFlags": {
@@ -10835,16 +10838,16 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "d47ab63316c6a51b043ae736beda52634f65b9359a759f42d22f33d39819c67b"
+    "sha256": "239a59de10f4c93ab7dc37d073e6d4c2b9a5e4658926f4e1bb2a0a7d146ba054"
   },
   {
     "path": "Docs/ARCHITECTURE/HABITAT_LOGISTICS_GRAPH.md",
     "active": true,
-    "bytes": 20139,
-    "lastWriteUtc": "2026-05-24T23:49:05.710049+00:00",
+    "bytes": 20095,
+    "lastWriteUtc": "2026-05-25T00:04:34.184396+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 2216,
+    "wordCount": 2209,
     "topic": "# Habitat Logistics Graph",
     "references": [
       "Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md"
@@ -10855,16 +10858,16 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "c665fc4565f6c8e7125071b37e267e1a988c7d3eabae3b1e6a31581d59055db7"
+    "sha256": "89ef6b12e76c4330dc7bef77c5a7ef6e8a5b5ea36371b5ee5d2b9923033beb8e"
   },
   {
     "path": "Docs/ARCHITECTURE/HADAL_TRENCH_PAYLOAD_ROUTE_CARD.md",
     "active": true,
-    "bytes": 4018,
-    "lastWriteUtc": "2026-05-24T23:27:51.441055+00:00",
+    "bytes": 3910,
+    "lastWriteUtc": "2026-05-25T00:04:34.186411+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 477,
+    "wordCount": 461,
     "topic": "# HADAL_TRENCH_PAYLOAD_ROUTE_CARD",
     "references": [],
     "staleFlags": {
@@ -10873,7 +10876,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "11394b28ecf3bcf9137227f2a23872e875280196a7270a1e4ef38ca73fe7e5a6"
+    "sha256": "8a8950c6e55ef833a4649fe3bfa476f0783d8f48d9eeadb14b6afc033e8a51c8"
   },
   {
     "path": "Docs/ARCHITECTURE/HEADLESS_ECOSYSTEM_SIMULATION.md",
@@ -10902,11 +10905,11 @@
   {
     "path": "Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md",
     "active": true,
-    "bytes": 9226,
-    "lastWriteUtc": "2026-05-24T23:54:46.063767+00:00",
+    "bytes": 9353,
+    "lastWriteUtc": "2026-05-25T00:11:43.269821+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 862,
+    "wordCount": 876,
     "topic": "# HECTON-8 Documentation Actuality Ledger",
     "references": [
       "../_Archive/Architecture_X_012_APEX_2026-05-23/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.full.md",
@@ -10927,7 +10930,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "f02330ae1e272ceefaed4eb1fcedd3d4b5f30ec5fd67e5dea71da771511da97c"
+    "sha256": "6d38588bfcffa81309e3d35aba0ccca93c14dba9996cf88f1ffad9945b17aecb"
   },
   {
     "path": "Docs/ARCHITECTURE/HECTON8_P0_FOUNDATION_PROOF_MATRIX.md",
@@ -10988,11 +10991,11 @@
   {
     "path": "Docs/ARCHITECTURE/INPUT_DETERMINISM_SHINOBU_36.md",
     "active": true,
-    "bytes": 3728,
-    "lastWriteUtc": "2026-05-24T15:34:49.390851+00:00",
+    "bytes": 3717,
+    "lastWriteUtc": "2026-05-25T00:04:34.186411+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 396,
+    "wordCount": 394,
     "topic": "# SHINOBU_36 Input Determinism",
     "references": [],
     "staleFlags": {
@@ -11001,16 +11004,16 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "265c2edd7383f3267dd25177304e2bfd640f4fb015126cdc78c0fbbf445a1c54"
+    "sha256": "ee774236d3959723c117e419a32c1cc752fc86f8af056d2361d30e64260fb93e"
   },
   {
     "path": "Docs/ARCHITECTURE/KCC_ENVIRONMENTAL_INTEGRATION_SHINOBU_250.md",
     "active": true,
-    "bytes": 3173,
-    "lastWriteUtc": "2026-05-24T17:03:35.114100+00:00",
+    "bytes": 3137,
+    "lastWriteUtc": "2026-05-25T00:04:34.188424+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 348,
+    "wordCount": 340,
     "topic": "# KCC Environmental Integration - SHINOBU_250",
     "references": [],
     "staleFlags": {
@@ -11019,7 +11022,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "67f5ed994027dcac1d8d75d31a9d3e8e8da67d48ebee74d1e9f327f6e472682e"
+    "sha256": "3f090b573456a0e2db9b6963ed25690848c3d00d893572ed840e0b6b18c7b518"
   },
   {
     "path": "Docs/ARCHITECTURE/KINEMATICS_AUP_INTEGRATION.md",
@@ -11063,11 +11066,11 @@
   {
     "path": "Docs/ARCHITECTURE/KINETIC_ENTANGLEMENT.md",
     "active": true,
-    "bytes": 10736,
-    "lastWriteUtc": "2026-05-24T23:27:51.443064+00:00",
+    "bytes": 10683,
+    "lastWriteUtc": "2026-05-25T00:04:55.499306+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 1201,
+    "wordCount": 1190,
     "topic": "# KINETIC ENTANGLEMENT",
     "references": [
       "Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md"
@@ -11078,7 +11081,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "65851702ca22cf651360fac2f0963feeee718bbf21f6bb472c0aba8b998feda4"
+    "sha256": "b951b698b0b3505ff22c9fa6ebc5f5279f9ee0b5c769c79c4c24b69da76b2f5b"
   },
   {
     "path": "Docs/ARCHITECTURE/LOCALIZATION_SUBTITLE_SYNC_ENGINE.md",
@@ -11101,11 +11104,11 @@
   {
     "path": "Docs/ARCHITECTURE/MACRO_ECOSYSTEM_MATHEMATICIAN.md",
     "active": true,
-    "bytes": 12413,
-    "lastWriteUtc": "2026-05-24T23:28:44.323782+00:00",
+    "bytes": 12363,
+    "lastWriteUtc": "2026-05-25T00:04:55.504302+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 1315,
+    "wordCount": 1307,
     "topic": "# Macro Ecosystem Mathematician",
     "references": [],
     "staleFlags": {
@@ -11114,7 +11117,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "e3197fe675d9402e491bac2251fc2c2c9655df42db9f9183d55db495841335e5"
+    "sha256": "7701cfa60cac10fe473d71f180212d100dc40a9b589e9a384f6c210644b8a795"
   },
   {
     "path": "Docs/ARCHITECTURE/MESH_STATE_SWAP_DESTRUCTION_PIPELINE.md",
@@ -11195,11 +11198,11 @@
   {
     "path": "Docs/ARCHITECTURE/OFFLINE_LOD_AND_COLLIDER_BAKER_SHINOBU_213.md",
     "active": true,
-    "bytes": 12014,
-    "lastWriteUtc": "2026-05-24T23:28:44.324783+00:00",
+    "bytes": 11912,
+    "lastWriteUtc": "2026-05-25T00:04:55.507300+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 1394,
+    "wordCount": 1367,
     "topic": "# OFFLINE_LOD_AND_COLLIDER_BAKER_SHINOBU_213",
     "references": [
       "Docs/Tasks/Status_SHINOBU_213.md",
@@ -11212,7 +11215,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "fb3b6d33fbba3880eeb440a4f1c834f8e22010b9b0708e7b79a351504e41ac16"
+    "sha256": "39e2d5388f89ea82917186a467d43ea3b7be05f70b8b528d440900aa29f06186"
   },
   {
     "path": "Docs/ARCHITECTURE/OFFLINE_MODULE_DAMAGE_BAKER_SHINOBU_210.md",
@@ -11253,11 +11256,11 @@
   {
     "path": "Docs/ARCHITECTURE/ORGANIC_ENTROPY_MATH.md",
     "active": true,
-    "bytes": 17747,
-    "lastWriteUtc": "2026-05-24T23:15:03.419923+00:00",
+    "bytes": 17712,
+    "lastWriteUtc": "2026-05-25T00:04:55.511302+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 1975,
+    "wordCount": 1969,
     "topic": "# ORGANIC_ENTROPY_MATH",
     "references": [
       "Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md",
@@ -11269,7 +11272,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "1222c97eaf1450e91197325acf18bfa8c4e66e173b2f552223083b6701080545"
+    "sha256": "ff59d6026e0e0a6d27d826e578d3b53b88e2a765dbe4eaa6ef7cffe0e175fea4"
   },
   {
     "path": "Docs/ARCHITECTURE/PARASITIC_FAUNA_PARTICLE_SWARMS_SHINOBU_313.md",
@@ -11384,11 +11387,11 @@
   {
     "path": "Docs/ARCHITECTURE/PROCEDURAL_WRECKAGE_GLOBAL_AUTHORITY_ROUTE_CARD_SHINOBU_121.md",
     "active": true,
-    "bytes": 6780,
-    "lastWriteUtc": "2026-05-24T23:49:05.753191+00:00",
+    "bytes": 6712,
+    "lastWriteUtc": "2026-05-25T00:04:55.514655+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 746,
+    "wordCount": 741,
     "topic": "# Procedural Wreckage Global Authority Route Card - SHINOBU_121",
     "references": [],
     "staleFlags": {
@@ -11397,16 +11400,16 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "8f3e0ac582f678739b948ad7ff0810abfb4ea72213b6f6f8093df6f9fd0ab50f"
+    "sha256": "ad2d94410643e0b44f71dccf47841322982a8f5a8a274160b05d4ea91c75e0a6"
   },
   {
     "path": "Docs/ARCHITECTURE/PROJECT_CONTENT_LEDGER.md",
     "active": true,
-    "bytes": 21005,
-    "lastWriteUtc": "2026-05-24T17:13:11.696559+00:00",
+    "bytes": 20977,
+    "lastWriteUtc": "2026-05-25T00:04:55.516663+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 1594,
+    "wordCount": 1586,
     "topic": "# PROJECT_CONTENT_LEDGER",
     "references": [
       "Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md",
@@ -11428,7 +11431,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "4004da85e4efa6099997c62502720c5927d2f39f6e1673d22ace427ac166c8cd"
+    "sha256": "17ff25556327cb492f9563ce764dca3a3be4f2f0014b47c07ba1a376efe04039"
   },
   {
     "path": "Docs/ARCHITECTURE/PROPWASH_GPU_DIRECTOR_SHINOBU_237.md",
@@ -11489,11 +11492,11 @@
   {
     "path": "Docs/ARCHITECTURE/REACTIVE_ECONOMY_SYSTEM.md",
     "active": true,
-    "bytes": 8380,
-    "lastWriteUtc": "2026-05-24T17:36:28.296865+00:00",
+    "bytes": 8274,
+    "lastWriteUtc": "2026-05-25T00:05:38.224830+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 879,
+    "wordCount": 867,
     "topic": "# Reactive Economy System",
     "references": [
       "Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md",
@@ -11512,16 +11515,16 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "650acd3db3e6d0ccd16bd8a35b6ff79217dd45b6ca1cc1c5e66177dbd7ba204f"
+    "sha256": "1c3012aec240a1cddf7895d56e2723b03240b4dacd01fcd994d8d0bfe61026f9"
   },
   {
     "path": "Docs/ARCHITECTURE/README.md",
     "active": true,
-    "bytes": 4938,
-    "lastWriteUtc": "2026-05-24T23:53:20.647910+00:00",
+    "bytes": 5109,
+    "lastWriteUtc": "2026-05-25T00:04:07.174276+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 406,
+    "wordCount": 424,
     "topic": "# Architecture Index",
     "references": [
       "HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md",
@@ -11573,16 +11576,16 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "c0717c696f0658c6101fdfeba006e33082c7d65859b8261a36af8a62fad643f2"
+    "sha256": "30a3720ee635957ee013e020b266d6344d721b67800850020f3ad1c6631e9154"
   },
   {
     "path": "Docs/ARCHITECTURE/ROUTE_CARD_SHINOBU_157_AUTOPILOT.md",
     "active": true,
-    "bytes": 10296,
-    "lastWriteUtc": "2026-05-24T17:14:45.083873+00:00",
+    "bytes": 10138,
+    "lastWriteUtc": "2026-05-25T00:05:43.151913+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 1117,
+    "wordCount": 1101,
     "topic": "# Route Card: SHINOBU_157 Submarine Autopilot",
     "references": [],
     "staleFlags": {
@@ -11591,7 +11594,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "c45242e0a03056918a6f5e2d278a34835948ecd501745e0735a327dd9511fcf8"
+    "sha256": "d657aefc912031231d05de145b0fd25c1f4725d8d42232d95c1e866fbdf81168"
   },
   {
     "path": "Docs/ARCHITECTURE/ROUTE_CARD_SHINOBU_314_CARRION_DECAY.md",
@@ -11614,11 +11617,11 @@
   {
     "path": "Docs/ARCHITECTURE/SAVE_PAGING_PROTOCOL.md",
     "active": true,
-    "bytes": 14347,
-    "lastWriteUtc": "2026-05-24T23:28:44.327782+00:00",
+    "bytes": 14306,
+    "lastWriteUtc": "2026-05-25T00:05:57.168447+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 1514,
+    "wordCount": 1507,
     "topic": "# SAVE_PAGING_PROTOCOL",
     "references": [
       "HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md",
@@ -11634,7 +11637,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "78f9b0d0bf144bef680eed96e2e5fd86f0f17f9b37e4ddf68fa9154b910797e9"
+    "sha256": "ef6541df3c2b384d704b49986e5890b4cb4e2ce5aa9b2a2f8f3181f2729bda7d"
   },
   {
     "path": "Docs/ARCHITECTURE/SCALABILITY_MATRIX.md",
@@ -11677,11 +11680,11 @@
   {
     "path": "Docs/ARCHITECTURE/ScreenSpaceVisorWounds_SHINOBU_275.md",
     "active": true,
-    "bytes": 11335,
-    "lastWriteUtc": "2026-05-24T23:28:44.328783+00:00",
+    "bytes": 11288,
+    "lastWriteUtc": "2026-05-25T00:05:57.168447+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 1315,
+    "wordCount": 1305,
     "topic": "# Screen-Space Visor Wounds - SHINOBU_275",
     "references": [
       "Docs/ARCHITECTURE/SHINOBU_325_SCREEN_SPACE_TRAUMA_DECAL_ROUTE_CARD.md"
@@ -11692,7 +11695,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "3d66ea8e8da717c8c8fa4b9199e8cbfcd3b82fc6d8bc135eaed49926fc7c5e78"
+    "sha256": "0baba1f8bd05a05adcc874037f0ca0ae666dd854ec33cdb7db09f2a107db7a1e"
   },
   {
     "path": "Docs/ARCHITECTURE/SEAGLIDE_HYDRODYNAMICS_SHINOBU_227.md",
@@ -11775,11 +11778,11 @@
   {
     "path": "Docs/ARCHITECTURE/SHINOBU_115_STRUCTURAL_INTEGRITY_CALCULATOR.md",
     "active": true,
-    "bytes": 11481,
-    "lastWriteUtc": "2026-05-24T23:49:20.743457+00:00",
+    "bytes": 11416,
+    "lastWriteUtc": "2026-05-25T00:05:57.170456+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 1210,
+    "wordCount": 1198,
     "topic": "# SHINOBU_115 Structural Integrity Calculator",
     "references": [
       "Docs/ARCHITECTURE/SHINOBU_218_DEPTH_BASED_INTEGRITY_SOLVER.md",
@@ -11795,7 +11798,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "47474e87edbeb626cb44ff90dafb31bd28fbac2802db09e9e76df5414e0a6c7a"
+    "sha256": "671f9563c0d174009a43e1f4756ba91a3a35a5168e2a5b29b24440b185e1ba60"
   },
   {
     "path": "Docs/ARCHITECTURE/SHINOBU_125_SCAVENGING_LOOT_ORACLE_ROUTE_CARD.md",
@@ -11836,11 +11839,11 @@
   {
     "path": "Docs/ARCHITECTURE/SHINOBU_149_DYNAMIC_DECALS.md",
     "active": true,
-    "bytes": 12877,
-    "lastWriteUtc": "2026-05-24T23:29:15.774690+00:00",
+    "bytes": 12755,
+    "lastWriteUtc": "2026-05-25T00:05:57.172463+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 1416,
+    "wordCount": 1395,
     "topic": "# SHINOBU_149 Dynamic Deferred Decals",
     "references": [],
     "staleFlags": {
@@ -11849,7 +11852,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "33f1763a106175919d2ad55bf4aac2ff6c85706ce1197ec2b5d644a00e3937d7"
+    "sha256": "acc6b80ffbe9bf017ab30d5aa5568d716da30d95d99907e100bd6fedd51f0197"
   },
   {
     "path": "Docs/ARCHITECTURE/SHINOBU_151_DYNAMIC_POINT_LIGHT_CULLING_ROUTE_CARD.md",
@@ -11966,11 +11969,11 @@
   {
     "path": "Docs/ARCHITECTURE/SHINOBU_218_DEPTH_BASED_INTEGRITY_ROUTE_CARD.md",
     "active": true,
-    "bytes": 12518,
-    "lastWriteUtc": "2026-05-24T23:29:15.779747+00:00",
+    "bytes": 12468,
+    "lastWriteUtc": "2026-05-25T00:06:34.772067+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 1396,
+    "wordCount": 1391,
     "topic": "Route ID: SHINOBU_218_DEPTH_BASED_INTEGRITY_SOLVER",
     "references": [],
     "staleFlags": {
@@ -11979,7 +11982,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "083461ca3b3dbc0eadc42c05dce08ae05e0c4c8f7a4c0757126e30bf8b3d17ff"
+    "sha256": "30437d264c84198ef5d29e83a4e9e77767b9152b2b7561ffb70d5d1e918c0564"
   },
   {
     "path": "Docs/ARCHITECTURE/SHINOBU_218_DEPTH_BASED_INTEGRITY_SOLVER.md",
@@ -12004,11 +12007,11 @@
   {
     "path": "Docs/ARCHITECTURE/SHINOBU_226_SCANNER_LORE_DATABASE_SYNC.md",
     "active": true,
-    "bytes": 10086,
-    "lastWriteUtc": "2026-05-24T17:15:33.930455+00:00",
+    "bytes": 9936,
+    "lastWriteUtc": "2026-05-25T00:06:34.781100+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 1091,
+    "wordCount": 1069,
     "topic": "# SHINOBU_226 Scanner Lore Database Sync",
     "references": [],
     "staleFlags": {
@@ -12017,16 +12020,16 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "3000c2439f3fa34cab96d3058b3e01e69fcf1d3efd3ab3c5775d6dc7d3ab33df"
+    "sha256": "b24c05591607d814336aaf68b9600f0b451584d9331d50dcfac3a969e7bbcea4"
   },
   {
     "path": "Docs/ARCHITECTURE/SHINOBU_229_AUXILIARY_EQUIPMENT_ROUTE_CARD.md",
     "active": true,
-    "bytes": 12508,
-    "lastWriteUtc": "2026-05-24T23:49:20.743457+00:00",
+    "bytes": 12391,
+    "lastWriteUtc": "2026-05-25T00:07:06.342700+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 1433,
+    "wordCount": 1418,
     "topic": "# SHINOBU_229 Auxiliary Equipment Global Authority Route Card",
     "references": [],
     "staleFlags": {
@@ -12035,7 +12038,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "9304285345599a0919b1a911160e9c433dbca9ae4a24110fb1fe2fd8fd855b21"
+    "sha256": "4b247df7dabe4c5400357a79552d329513c24c5ac4dbe408ee29c6487c350624"
   },
   {
     "path": "Docs/ARCHITECTURE/SHINOBU_233_COMPUTE_VOLUMETRIC_FOG.md",
@@ -12058,11 +12061,11 @@
   {
     "path": "Docs/ARCHITECTURE/SHINOBU_234_SURFACE_STORM_ABYSSAL_PROPAGATION.md",
     "active": true,
-    "bytes": 2358,
-    "lastWriteUtc": "2026-05-24T23:29:40.881869+00:00",
+    "bytes": 2316,
+    "lastWriteUtc": "2026-05-25T00:07:14.288157+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 266,
+    "wordCount": 259,
     "topic": "# SHINOBU_234 Surface Storm Abyssal Propagation",
     "references": [
       "Docs/ARCHITECTURE/SURFACE_STORM_ABYSSAL_PROPAGATION_SHINOBU_234.md"
@@ -12073,16 +12076,16 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "c24f8569c7d5fafd48d66214e3aa712e569fbe3deff82a18cd4375cc179701c7"
+    "sha256": "7a89b8a2170089a51776a09a1ba00c98cff840d897f6f0060793c88ba40636ec"
   },
   {
     "path": "Docs/ARCHITECTURE/SHINOBU_235_DEEP_SEA_NOIR_ROUTE_CARD.md",
     "active": true,
-    "bytes": 7903,
-    "lastWriteUtc": "2026-05-24T23:49:36.924381+00:00",
+    "bytes": 7829,
+    "lastWriteUtc": "2026-05-25T00:06:34.781100+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 896,
+    "wordCount": 886,
     "topic": "# SHINOBU_235 Deep Sea Noir Route Card",
     "references": [
       "Docs/ARCHITECTURE/BINARY_PAYLOAD_INTEGRATION_LEDGER.md",
@@ -12097,16 +12100,16 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "eba5bc7f2daf19bf4750318d1549185043ffaaf9b7d0c730e7249ccf62528031"
+    "sha256": "602d31d288584e41a3caa62d01057bf55d6643ab2c788ccc42b27215aa729728"
   },
   {
     "path": "Docs/ARCHITECTURE/SHINOBU_236_BILATERAL_DRS_ROUTE_CARD.md",
     "active": true,
-    "bytes": 14690,
-    "lastWriteUtc": "2026-05-24T23:29:40.885892+00:00",
+    "bytes": 14543,
+    "lastWriteUtc": "2026-05-25T00:07:14.288157+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 1577,
+    "wordCount": 1569,
     "topic": "# SHINOBU_236 Bilateral DRS Route Card",
     "references": [],
     "staleFlags": {
@@ -12115,7 +12118,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "f17d17d03978a134dfcb869a55977f138354ad0f2c6fbee4c6efd73a203181a3"
+    "sha256": "0a39ff0456b0b50e6dadbd90bbb405ab7a3739cf03073bb059544dadf50b1c81"
   },
   {
     "path": "Docs/ARCHITECTURE/SHINOBU_238_BIOLUMINESCENT_MATERIAL_SYNC_ROUTE_CARD.md",
@@ -12138,11 +12141,11 @@
   {
     "path": "Docs/ARCHITECTURE/SHINOBU_248_SHOCKWAVE_NAN_ROUTE_CARD.md",
     "active": true,
-    "bytes": 6431,
-    "lastWriteUtc": "2026-05-24T23:14:40.085974+00:00",
+    "bytes": 6341,
+    "lastWriteUtc": "2026-05-25T00:07:37.197890+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 663,
+    "wordCount": 654,
     "topic": "# SHINOBU_248 Shockwave NaN Route Card",
     "references": [],
     "staleFlags": {
@@ -12151,16 +12154,16 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "fe45e8d0caa68580ee6a983073884054f5f69140af504bb9db7e76e572e2007c"
+    "sha256": "a7c560decbd81acefafbfb760229e3aad5618bb21d8c9dcd64738af1b301cc1a"
   },
   {
     "path": "Docs/ARCHITECTURE/SHINOBU_249_BUOYANCY_SLEEP_ROUTE_CARD.md",
     "active": true,
-    "bytes": 6662,
-    "lastWriteUtc": "2026-05-24T16:32:20.008537+00:00",
+    "bytes": 6615,
+    "lastWriteUtc": "2026-05-25T00:07:37.199147+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 784,
+    "wordCount": 777,
     "topic": "# SHINOBU_249 Buoyancy Sleep Route Card",
     "references": [],
     "staleFlags": {
@@ -12169,16 +12172,16 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "39775e30175d1dbcff2d6a4b8f5c08bec6a6fff998d9e56cdeb19fa5416c30d8"
+    "sha256": "411d1ce8c8abf37006d95f8ed7ea9a330b5373ffcfec16525d997bddf4282152"
   },
   {
     "path": "Docs/ARCHITECTURE/SHINOBU_251_SUBMARINE_ADDED_MASS_ROUTE_CARD.md",
     "active": true,
-    "bytes": 8308,
-    "lastWriteUtc": "2026-05-24T23:49:36.926392+00:00",
+    "bytes": 8269,
+    "lastWriteUtc": "2026-05-25T00:07:37.200142+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 912,
+    "wordCount": 903,
     "topic": "# SHINOBU_251 Submarine Added Mass Route Card",
     "references": [],
     "staleFlags": {
@@ -12187,16 +12190,16 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "540ba5ab71c1a87b86243c69c853b05891f8f79dd2e46915b79e25cd95d192e7"
+    "sha256": "479716231a2462704070d2357d6f568019b2b8fcbc359e40e802925b302d1c65"
   },
   {
     "path": "Docs/ARCHITECTURE/SHINOBU_262_SINGLE_PASS_OCEAN_RENDERGRAPH.md",
     "active": true,
-    "bytes": 3061,
-    "lastWriteUtc": "2026-05-24T17:16:31.953693+00:00",
+    "bytes": 3002,
+    "lastWriteUtc": "2026-05-25T00:07:37.201332+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 346,
+    "wordCount": 337,
     "topic": "# SHINOBU_262 Single-Pass Ocean RenderGraph Route",
     "references": [],
     "staleFlags": {
@@ -12205,16 +12208,16 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "54c27798dbfbf0b9f517f6846002c0e2fa14ef0d70be16f23118d74d212402f2"
+    "sha256": "ec9ac9ca657acd589a0360fde67499c2f4f5902e401b612e1dd6b0a41b7fc746"
   },
   {
     "path": "Docs/ARCHITECTURE/SHINOBU_263_ANALYTICAL_GERSTNER_WAVE_SOLVER.md",
     "active": true,
-    "bytes": 5051,
-    "lastWriteUtc": "2026-05-24T17:16:31.953693+00:00",
+    "bytes": 4975,
+    "lastWriteUtc": "2026-05-25T00:07:37.202576+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 561,
+    "wordCount": 552,
     "topic": "# SHINOBU_263 Analytical Gerstner Wave Solver",
     "references": [],
     "staleFlags": {
@@ -12223,7 +12226,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "7ddb87d06199a5a37838e4b14b50fdf41a31392e7546ea80533321936d31479f"
+    "sha256": "58c8d3f44e3703182483360c75fe09e120e324ebdee99bba3faac15a4ab57be1"
   },
   {
     "path": "Docs/ARCHITECTURE/SHINOBU_265_WATER_OPTICS_ROUTE_CARD.md",
@@ -12282,11 +12285,11 @@
   {
     "path": "Docs/ARCHITECTURE/SHINOBU_273_FREQUENCY_TUNING_DECRYPTION_ROUTE_CARD.md",
     "active": true,
-    "bytes": 8972,
-    "lastWriteUtc": "2026-05-24T23:49:36.928402+00:00",
+    "bytes": 8885,
+    "lastWriteUtc": "2026-05-25T00:07:37.203732+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 988,
+    "wordCount": 973,
     "topic": "# SHINOBU_273 Frequency Tuning Decryption Route Card",
     "references": [],
     "staleFlags": {
@@ -12295,16 +12298,16 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "38c52f0ed2b8b85bf00c092a3a373c8b0b5e871eb6e08975e7b4479794c73719"
+    "sha256": "51b8d44c69a25dcd20e8a8e9c73330d12796c5fac5e1d6375fa924051b724f9f"
   },
   {
     "path": "Docs/ARCHITECTURE/SHINOBU_274_RADIATION_DOSE_ROUTE_CARD.md",
     "active": true,
-    "bytes": 6384,
-    "lastWriteUtc": "2026-05-24T17:17:59.233524+00:00",
+    "bytes": 6273,
+    "lastWriteUtc": "2026-05-25T00:07:37.204925+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 696,
+    "wordCount": 681,
     "topic": "# SHINOBU_274 Radiation Dose Route Card",
     "references": [
       "Docs/Tasks/Status_SHINOBU_274.md",
@@ -12317,7 +12320,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "8bf5bd2e246c9cf015804ad2bc34b3be51274539073b79cd0ad98edb4058f407"
+    "sha256": "e9f89e507affbb1cb3c3f3aab36c91a9b144873ff54139d3af5695db8de33d77"
   },
   {
     "path": "Docs/ARCHITECTURE/SHINOBU_275_SCREEN_SPACE_VISOR_WOUNDS_ROUTE_CARD.md",
@@ -12342,11 +12345,11 @@
   {
     "path": "Docs/ARCHITECTURE/SHINOBU_276_EXOSUIT_6D_KINEMATICS.md",
     "active": true,
-    "bytes": 10150,
-    "lastWriteUtc": "2026-05-24T23:09:30.680480+00:00",
+    "bytes": 9902,
+    "lastWriteUtc": "2026-05-25T00:08:28.611972+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 1137,
+    "wordCount": 1115,
     "topic": "# SHINOBU_276 Exosuit 6DoF Kinematics",
     "references": [],
     "staleFlags": {
@@ -12355,7 +12358,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "226500f73b81471e8ed67602d38edcf929abcf112e663214fd7cc9baa7b639f4"
+    "sha256": "b04e39ad47dbbb597f0d1f14bf1c6f09791250441a94dc6133e97b9cdaaf8a80"
   },
   {
     "path": "Docs/ARCHITECTURE/SHINOBU_277_CREST_SHORELINE_FOAM_GRAFT.md",
@@ -12396,11 +12399,11 @@
   {
     "path": "Docs/ARCHITECTURE/SHINOBU_302_UTILITY_AI_COGNITION_ROUTE.md",
     "active": true,
-    "bytes": 5068,
-    "lastWriteUtc": "2026-05-24T23:15:35.558472+00:00",
+    "bytes": 4929,
+    "lastWriteUtc": "2026-05-25T00:08:28.611972+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 581,
+    "wordCount": 562,
     "topic": "# SHINOBU_302 Utility AI Cognition Route",
     "references": [],
     "staleFlags": {
@@ -12409,7 +12412,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "06fb1a8ce54b2f4efd5967ab4d8e228195b991ea322cb468f8d5a535dc830ad1"
+    "sha256": "1743db8cd97e375f7ab37c1599df37c08ada3aad31435080eb0ec8218b779fab"
   },
   {
     "path": "Docs/ARCHITECTURE/SHINOBU_303_LEVIATHAN_STEERING_ROUTE.md",
@@ -12468,11 +12471,11 @@
   {
     "path": "Docs/ARCHITECTURE/SHINOBU_318_ARMOR_PENETRATION_LUT_ROUTE_CARD.md",
     "active": true,
-    "bytes": 4551,
-    "lastWriteUtc": "2026-05-24T23:49:53.255311+00:00",
+    "bytes": 4506,
+    "lastWriteUtc": "2026-05-25T00:08:28.611972+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 493,
+    "wordCount": 483,
     "topic": "PROMPT IDENTIFIED: SHINOBU_318",
     "references": [],
     "staleFlags": {
@@ -12481,7 +12484,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "1f69376b2ca231c88b9309efc7f989d5bcce8daeb93adbccb2fc56d4a02d2bf2"
+    "sha256": "19e7beded46f081ffdf93d5a6c6a007f478dd6aae677482b6b117eee04ce96e9"
   },
   {
     "path": "Docs/ARCHITECTURE/SHINOBU_319_STATUS_EFFECTS_ROUTE_CARD.md",
@@ -12504,11 +12507,11 @@
   {
     "path": "Docs/ARCHITECTURE/SHINOBU_323_SUIT_INTEGRITY_DEPTH_CRUSH_ROUTE_CARD.md",
     "active": true,
-    "bytes": 9076,
-    "lastWriteUtc": "2026-05-24T23:30:09.065969+00:00",
+    "bytes": 9017,
+    "lastWriteUtc": "2026-05-25T00:08:28.611972+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 978,
+    "wordCount": 971,
     "topic": "# SHINOBU_323 Suit Integrity Depth Crush Route Card",
     "references": [],
     "staleFlags": {
@@ -12517,7 +12520,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "7d648d2d014b68a1a641b7c0d40996c7fe248389f8d590771fea2ddcf0720a63"
+    "sha256": "2fc74a642ff7201c938205a3939dc21e7ff7ccad34dbba9140661dfe873b95ba"
   },
   {
     "path": "Docs/ARCHITECTURE/SHINOBU_325_SCREEN_SPACE_TRAUMA_DECAL_ROUTE_CARD.md",
@@ -12612,11 +12615,11 @@
   {
     "path": "Docs/ARCHITECTURE/SHINOBU_333_SUBMARINE_BALLAST_BUOYANCY_ROUTE_CARD.md",
     "active": true,
-    "bytes": 9661,
-    "lastWriteUtc": "2026-05-24T23:15:35.558472+00:00",
+    "bytes": 9593,
+    "lastWriteUtc": "2026-05-25T00:08:28.611972+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 1084,
+    "wordCount": 1074,
     "topic": "# SHINOBU_333 Submarine Ballast Buoyancy Route Card",
     "references": [],
     "staleFlags": {
@@ -12625,16 +12628,16 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "e958979d3bc0187dbd4b83e7c16a2c58803e579bc6476d116ff60828aea595c6"
+    "sha256": "c39034f292838177ebccd24a19fc9a8ecf793b567f275a5162cd660a84bd0b38"
   },
   {
     "path": "Docs/ARCHITECTURE/SHINOBU_336_MODULE_DECONSTRUCTION_RESOURCE_RETURN_ROUTE_CARD.md",
     "active": true,
-    "bytes": 3491,
-    "lastWriteUtc": "2026-05-24T23:30:09.068969+00:00",
+    "bytes": 3406,
+    "lastWriteUtc": "2026-05-25T00:09:04.847588+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 368,
+    "wordCount": 351,
     "topic": "# SHINOBU_336 Module Deconstruction Resource Return",
     "references": [],
     "staleFlags": {
@@ -12643,16 +12646,16 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "d2cafc1dbd04d758913ec69eb5a9475dba27ae9fe12bc3878ffb0ea29bd43936"
+    "sha256": "37f2b818497a7bfd15349c953e4ba7a7b810be7b717d67eebd25cef84ddc1140"
   },
   {
     "path": "Docs/ARCHITECTURE/SHINOBU_338_AIRLOCK_PRESSURIZATION_ROUTE_CARD.md",
     "active": true,
-    "bytes": 6113,
-    "lastWriteUtc": "2026-05-24T23:30:40.810004+00:00",
+    "bytes": 5895,
+    "lastWriteUtc": "2026-05-25T00:09:04.852350+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 588,
+    "wordCount": 576,
     "topic": "# SHINOBU_338 Airlock Pressurization Route Card",
     "references": [],
     "staleFlags": {
@@ -12661,7 +12664,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "c614e7704d60f6ba212dcfb754b16a8c1875df6d777dc680dcc97a29131c08d5"
+    "sha256": "d07cc7d617cd5327a437285e34b85f73878cc9de1948db5b96e235df127f6191"
   },
   {
     "path": "Docs/ARCHITECTURE/SHINOBU_340_PIPE_DRAINAGE_ROUTE_CARD.md",
@@ -12954,11 +12957,11 @@
   {
     "path": "Docs/ARCHITECTURE/STATIC_CAVE_SDF_VOLUME_BAKER.md",
     "active": true,
-    "bytes": 13007,
-    "lastWriteUtc": "2026-05-24T23:31:38.243834+00:00",
+    "bytes": 12959,
+    "lastWriteUtc": "2026-05-25T00:09:04.852350+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 1624,
+    "wordCount": 1615,
     "topic": "# Static Cave SDF Volume Baker",
     "references": [
       "Docs/_Archive/Reports_X_012_2026-05-23/CAVE_SDF_SELF_AUDIT_SHINOBU_244.md"
@@ -12969,7 +12972,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "3b7be186876b2a01af2bd37be0be286b8a8bc4cbed3d091ffcf87c9dc3d3dc83"
+    "sha256": "6f0162daf0c2e2588f65dd819b5d2206b1c09922e51ee33c75e3a2de28df7c53"
   },
   {
     "path": "Docs/ARCHITECTURE/STREAMINGASSETS_TEXT_RUNTIME_MIGRATION_SHINOBU_258.md",
@@ -13012,11 +13015,11 @@
   {
     "path": "Docs/ARCHITECTURE/SUBNAUTICA2_EA_TO_HECTON8_PRODUCTION_CONTRACTS.md",
     "active": true,
-    "bytes": 15861,
-    "lastWriteUtc": "2026-05-24T17:29:03.694181+00:00",
+    "bytes": 15820,
+    "lastWriteUtc": "2026-05-25T00:09:04.856102+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 1806,
+    "wordCount": 1800,
     "topic": "# Subnautica 2 EA To HECTON-8 Production Contracts",
     "references": [
       "Docs/ARCHITECTURE/SAVE_PAGING_PROTOCOL.md",
@@ -13030,16 +13033,16 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "036923d4cedec366ffbf282e20cc41f6c33486deb29481c1ebb9f5357d3ff03f"
+    "sha256": "e80db0d3b92dee5ecdac24d2c99b7ef9b5246841fa0ab88ede48bf24dbb2cc92"
   },
   {
     "path": "Docs/ARCHITECTURE/SUBNAUTICA2_HECTON8_IMPLEMENTATION_HANDOFF.md",
     "active": true,
-    "bytes": 10709,
-    "lastWriteUtc": "2026-05-24T17:29:03.694181+00:00",
+    "bytes": 10662,
+    "lastWriteUtc": "2026-05-25T00:09:04.857181+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 1161,
+    "wordCount": 1151,
     "topic": "# Subnautica 2 To HECTON-8 Implementation Handoff",
     "references": [],
     "staleFlags": {
@@ -13048,7 +13051,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "868fc912c6f1d4af88bd9d3bfaade81eb290309e8b5fc701a0a9d01437841b66"
+    "sha256": "86053f19ed0aa9681b31f154c95876a59fd754de7ce71c1a33940f7a7c30f9e8"
   },
   {
     "path": "Docs/ARCHITECTURE/SUBNAUTICA2_PLAYER_LOOP_TO_HECTON8_GAP_MATRIX.md",
@@ -13089,11 +13092,11 @@
   {
     "path": "Docs/ARCHITECTURE/SURFACE_STORM_ABYSSAL_PROPAGATION_SHINOBU_234.md",
     "active": true,
-    "bytes": 17087,
-    "lastWriteUtc": "2026-05-24T23:49:53.333995+00:00",
+    "bytes": 17012,
+    "lastWriteUtc": "2026-05-25T00:09:04.858800+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 1896,
+    "wordCount": 1882,
     "topic": "# SHINOBU_234 Surface Storm Abyssal Propagation",
     "references": [],
     "staleFlags": {
@@ -13102,7 +13105,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "10d439802b68db829479043fa9f007d3d9be4ac6f4660cffac3fd5ba04ef901e"
+    "sha256": "657857027696b924006cdd8fe0844190dba21697952fa7fc90879dbd5975dbd6"
   },
   {
     "path": "Docs/ARCHITECTURE/SYSTEM_INTERCONNECT_MATRIX.md",
@@ -13148,11 +13151,11 @@
   {
     "path": "Docs/ARCHITECTURE/TERRESTRIAL_HEIGHTMAP_REFORMATTER_SHINOBU_240.md",
     "active": true,
-    "bytes": 13135,
-    "lastWriteUtc": "2026-05-24T23:31:38.247850+00:00",
+    "bytes": 13097,
+    "lastWriteUtc": "2026-05-25T00:09:04.860414+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 1583,
+    "wordCount": 1576,
     "topic": "# SHINOBU_240 Terrestrial Heightmap Reformatter",
     "references": [],
     "staleFlags": {
@@ -13161,7 +13164,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "3d443ee1ac2eff4530ff8e7e7a3e7fa14e7e32705f91aad88978d7e8c793e1ea"
+    "sha256": "9dca43d22db34343c9df29b4388564f0dbcbfd861ec0969fc630a92a8e5d0357"
   },
   {
     "path": "Docs/ARCHITECTURE/THIRD_PARTY_POISON.md",
@@ -13234,11 +13237,11 @@
   {
     "path": "Docs/ARCHITECTURE/UPGRADE_MATRIX_COMPILER_SHINOBU_231.md",
     "active": true,
-    "bytes": 5504,
-    "lastWriteUtc": "2026-05-24T23:31:38.249858+00:00",
+    "bytes": 5471,
+    "lastWriteUtc": "2026-05-25T00:09:04.861497+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 531,
+    "wordCount": 524,
     "topic": "# Upgrade Matrix Compiler SHINOBU_231",
     "references": [],
     "staleFlags": {
@@ -13247,16 +13250,16 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "df6252b6a84158fb1f66a203a4ee721109138321eaf48405f786809aab489fb0"
+    "sha256": "d896b46235832fe76c1fbc2f1591d25176b4c4612ecc5185f94c3b1e74e87a12"
   },
   {
     "path": "Docs/ARCHITECTURE/URP_SCREENSHOT_PIPELINE.md",
     "active": true,
-    "bytes": 6688,
-    "lastWriteUtc": "2026-05-24T23:31:38.249858+00:00",
+    "bytes": 6635,
+    "lastWriteUtc": "2026-05-25T00:10:59.417998+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 764,
+    "wordCount": 754,
     "topic": "# URP Screenshot Pipeline",
     "references": [
       "Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md"
@@ -13267,7 +13270,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "83639d52d0075b3a668bcfa99244e8afbd9608ebeeac22299d09f6db6fb91078"
+    "sha256": "ddff48e229e5e15f29a0acc41e2988eb361fa990d2c3278ec8573e03952b509e"
   },
   {
     "path": "Docs/ARCHITECTURE/Vehicle_Component_Damage_Router_SHINOBU_152.md",
@@ -13308,11 +13311,11 @@
   {
     "path": "Docs/ARCHITECTURE/VOCAL_SYNTHESIS_PIPELINE_SHINOBU_260.md",
     "active": true,
-    "bytes": 5204,
-    "lastWriteUtc": "2026-05-24T17:29:03.704667+00:00",
+    "bytes": 5153,
+    "lastWriteUtc": "2026-05-25T00:10:59.418995+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 596,
+    "wordCount": 588,
     "topic": "# SHINOBU_260 Vocal Synthesis Pipeline",
     "references": [],
     "staleFlags": {
@@ -13321,7 +13324,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "8bdb9ec8eb997e2bf5ca592c70641ef40478e70a25aeff0ebd294df727534a54"
+    "sha256": "36b825b2b4779b8a51691a1cb7827cef94d21f1a08691d7b9e97b105fdcef654"
   },
   {
     "path": "Docs/ARCHITECTURE/VOCAL_WARNING_QUEUE_SHINOBU_352.md",
@@ -13362,11 +13365,11 @@
   {
     "path": "Docs/ARCHITECTURE/X_008_COMBAT_ARMOR_LUT_ROUTE_CARD.md",
     "active": true,
-    "bytes": 20897,
-    "lastWriteUtc": "2026-05-24T23:50:02.399710+00:00",
+    "bytes": 20836,
+    "lastWriteUtc": "2026-05-25T00:10:59.420997+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 2075,
+    "wordCount": 2065,
     "topic": "# X_008 Combat Armor LUT Route Card",
     "references": [],
     "staleFlags": {
@@ -13375,16 +13378,16 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "572f5fc26f0367bdfbe27b0dbee85690ddad8300b64e3e12a0617ab501bcd6aa"
+    "sha256": "48478e59d70268e1bf7382d3345357d8f16b42dfc47223bf9146fbbec555ec14"
   },
   {
     "path": "Docs/ARCHITECTURE/ZERO_GC_FABRICATION.md",
     "active": true,
-    "bytes": 11971,
-    "lastWriteUtc": "2026-05-24T23:50:02.401718+00:00",
+    "bytes": 11927,
+    "lastWriteUtc": "2026-05-25T00:10:59.421997+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 1330,
+    "wordCount": 1321,
     "topic": "# ZERO-GC Fabrication",
     "references": [
       "Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md",
@@ -13401,7 +13404,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "80d4a72b7275894dd39b061bb11950cbd10e8b3be88a12708cc00b5b826e6d47"
+    "sha256": "1126c2dc30b55a9c1ae5b07799462a21f46cce4fdb3140facae2b60f5ceb96e3"
   },
   {
     "path": "Docs/ARCHITECTURE/ZERO_GC_UI_PIPELINE.md",
@@ -107733,11 +107736,11 @@
   {
     "path": "Docs/README.md",
     "active": true,
-    "bytes": 15523,
-    "lastWriteUtc": "2026-05-24T23:54:28.813560+00:00",
+    "bytes": 15786,
+    "lastWriteUtc": "2026-05-25T00:15:09.094168+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 1099,
+    "wordCount": 1126,
     "topic": "# HECTON-8 Documentation Index",
     "references": [
       "AGENTS.md",
@@ -107817,7 +107820,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "d73fd77e2b548a890bbc639413324e2b4b62965e54d6edbe26d8762105b11b48"
+    "sha256": "4f9cc9363ab64cf0c91a565c283799413edea1a915c905f3bebc8faf03d77b05"
   },
   {
     "path": "Docs/Reports/ASSEMBLY_DEPENDENCY_AUDIT_X003.md",
@@ -107876,11 +107879,11 @@
   {
     "path": "Docs/Reports/MATH_LOD_APEX_PROOF_X_007.md",
     "active": true,
-    "bytes": 32953,
-    "lastWriteUtc": "2026-05-24T23:29:40.556673+00:00",
+    "bytes": 34987,
+    "lastWriteUtc": "2026-05-25T00:13:34.092022+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 3343,
+    "wordCount": 3534,
     "topic": "# X_007 APEX Math LOD Proof",
     "references": [],
     "staleFlags": {
@@ -107889,16 +107892,16 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "53f6fc30b5f41f9f47fc738a980e22e350e6f41e0302654c51c828ca1086f86b"
+    "sha256": "95c6033222dc4a4d107dd748e893a88a30fabaf17d941d2be87b41d3654bdca8"
   },
   {
     "path": "Docs/Reports/README.md",
     "active": true,
-    "bytes": 4855,
-    "lastWriteUtc": "2026-05-24T23:55:01.658495+00:00",
+    "bytes": 4812,
+    "lastWriteUtc": "2026-05-25T00:15:09.098187+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 334,
+    "wordCount": 329,
     "topic": "# Reports Index",
     "references": [
       "Docs/_Archive/Reports_X_012_2026-05-23/2026-05-21_DOCUMENTATION_SANITIZATION_REPORT.md",
@@ -107912,7 +107915,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "09568991c61e99276b250c518a86197817ae7d248d488e4e27148d0ea2e90b7a"
+    "sha256": "a9a7a0dc39e2548611fac3b99a22ecacaf5a443cafd9123629b3c0816220997f"
   },
   {
     "path": "Docs/Reports/SHINOBU_107_StaticScan/SHINOBU_107_BURST_EXACT_ROUTE_AUDIT.md",
@@ -112170,11 +112173,11 @@
   {
     "path": "Docs/ROOT_DOCS_REFERENCE.md",
     "active": true,
-    "bytes": 3390,
-    "lastWriteUtc": "2026-05-24T23:55:01.657118+00:00",
+    "bytes": 3451,
+    "lastWriteUtc": "2026-05-25T00:15:09.096178+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 293,
+    "wordCount": 285,
     "topic": "# Root Docs Reference",
     "references": [
       "AGENTS.md",
@@ -112196,7 +112199,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "f8a99b0a72bf77d063d330bc05b0dc1d1917b8dae31dba7c574da43c29d75564"
+    "sha256": "79b073e7717ce09cd7db8fb12c8dd1e32df175f77e3ddedc91a7e14a4bdd29b0"
   },
   {
     "path": "Docs/Scatter_Runtime/ECS_DOTS_ADOPTION_PLAN.md",
@@ -112461,7 +112464,7 @@
     "path": "Docs/Tasks/_X_006_extracted_prompt.tmp.md",
     "active": false,
     "bytes": 11994,
-    "lastWriteUtc": "2026-05-24T16:45:49.674381+00:00",
+    "lastWriteUtc": "2026-05-25T00:06:29.457429+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
     "wordCount": 1704,
@@ -112503,11 +112506,11 @@
   {
     "path": "Docs/Tasks/Status_DENTE.md",
     "active": false,
-    "bytes": 61323,
-    "lastWriteUtc": "2026-05-24T16:32:17.321869+00:00",
+    "bytes": 63379,
+    "lastWriteUtc": "2026-05-25T00:11:23.195294+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 7885,
+    "wordCount": 8139,
     "topic": "# DENTE Status",
     "references": [
       "Docs/AgentLogs/LOG_DENTE.md"
@@ -112518,16 +112521,16 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "7b9a06b256b9025652ef9e29f78359ef36c4e3b57727df49122b39aec1134fbf"
+    "sha256": "28b470eaa83f4279b4724c5d1bc13b95358ceeaafbaee6ba351a1fb958352216"
   },
   {
     "path": "Docs/Tasks/Status_EXTERNAL_CODEX.md",
     "active": false,
-    "bytes": 116501,
-    "lastWriteUtc": "2026-05-24T23:54:46.055766+00:00",
+    "bytes": 120694,
+    "lastWriteUtc": "2026-05-25T00:13:07.808218+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 12649,
+    "wordCount": 13061,
     "topic": "# Status_EXTERNAL_CODEX",
     "references": [
       "AGENTS.md",
@@ -112563,7 +112566,13 @@
       "Docs/README.md",
       "Docs/ROOT_DOCS_REFERENCE.md",
       "Docs/Reports/README.md",
-      "Docs/ARCHITECTURE/{README,GLOBAL_AUTHORITY_BOUNDARIES,GLOBAL_AUTHORITY_MIGRATION_LEDGER,HECTON8_DOCUMENTATION_ACTUALITY_LEDGER}.md"
+      "Docs/ARCHITECTURE/{README,GLOBAL_AUTHORITY_BOUNDARIES,GLOBAL_AUTHORITY_MIGRATION_LEDGER,HECTON8_DOCUMENTATION_ACTUALITY_LEDGER}.md",
+      "AGENTS.md",
+      "MASTER_RELEASE_WORK_PLAN.md",
+      "Docs/README.md",
+      "Docs/ROOT_DOCS_REFERENCE.md",
+      "Docs/Reports/README.md",
+      "Docs/ARCHITECTURE/{README,GLOBAL_AUTHORITY_BOUNDARIES,GLOBAL_AUTHORITY_OPERATING_MODEL,GLOBAL_AUTHORITY_MIGRATION_LEDGER,HECTON8_DOCUMENTATION_ACTUALITY_LEDGER}.md"
     ],
     "staleFlags": {
       "signalBusRegistry256": 0,
@@ -112571,7 +112580,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "acdc29b3e7f7f79c81e94406d0c1d4673101521a94be1046d8c2febdf74e4a98"
+    "sha256": "4f68d66e7395b963c61341f95555361275f39b8e83acc1d506df855669988efd"
   },
   {
     "path": "Docs/Tasks/Status_EXTERNAL_FIXER.md",
@@ -112707,11 +112716,11 @@
   {
     "path": "Docs/Tasks/Status_X_001.md",
     "active": false,
-    "bytes": 42920,
-    "lastWriteUtc": "2026-05-24T23:00:04.757656+00:00",
+    "bytes": 44360,
+    "lastWriteUtc": "2026-05-25T00:15:37.154558+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 4668,
+    "wordCount": 4827,
     "topic": "# Status_X_001",
     "references": [
       "Docs/Tasks/CURRENT_BATCH.md",
@@ -112748,6 +112757,7 @@
       "Docs/Reports/SIGNAL_TRY_SURFACE_AND_HASH_SAVE_CLOSURE_X_001.md",
       "Docs/Reports/SIGNAL_OWNER_LOCAL_TRYRAISE_SIDECAR_CLOSURE_X_001.md",
       "Docs/Reports/SIGNAL_TRYPUBLISH_DEFERRED_INGRESS_CLOSURE_X_001.md",
+      "Docs/Reports/SIGNAL_REFUSAL_TELEMETRY_CLOSURE_X_001.md",
       "Docs/Tasks/CURRENT_BATCH.md"
     ],
     "staleFlags": {
@@ -112756,7 +112766,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "9794f0958073f1e2cb1d969ad2117bb4c22e9434c9dec3d4c4f7d0f92ad084c0"
+    "sha256": "6de2f77bd7af2266cd8ae2a6103596792fda398a87d2068a9147ec1117fbc75c"
   },
   {
     "path": "Docs/Tasks/Status_X_002.md",
@@ -112868,11 +112878,11 @@
   {
     "path": "Docs/Tasks/Status_X_005.md",
     "active": false,
-    "bytes": 123374,
-    "lastWriteUtc": "2026-05-24T23:57:12.000378+00:00",
+    "bytes": 124760,
+    "lastWriteUtc": "2026-05-25T00:11:33.038184+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 12995,
+    "wordCount": 13169,
     "topic": "# Status_X_005",
     "references": [
       "Docs/Reports/KINEMATIC_COLLISION_LEDGER_X_005.md",
@@ -112888,16 +112898,16 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "bd03eb3d7aed3853762288384e3a562a7ce31dcd0430fe9b21bc3a994dab8df3"
+    "sha256": "05a3e8eb4dbf2218b13eb7cf35b3cebdaf08c736b3020ad3e9d9255549e64305"
   },
   {
     "path": "Docs/Tasks/Status_X_006.md",
     "active": false,
-    "bytes": 108612,
-    "lastWriteUtc": "2026-05-24T23:56:02.810274+00:00",
+    "bytes": 110878,
+    "lastWriteUtc": "2026-05-25T00:14:20.839382+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 12133,
+    "wordCount": 12336,
     "topic": "# Status_X_006",
     "references": [
       "Docs/Tasks/CURRENT_BATCH.md",
@@ -112909,16 +112919,16 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "81b7c7fdd0076394b1e19e0d204d8f9bb58660bd618b82c1ed35a20df1e7a0ba"
+    "sha256": "0add73a988826ba97d18d53153ecf7607d2e3461423763d1a3c5b740cf37586a"
   },
   {
     "path": "Docs/Tasks/Status_X_007.md",
     "active": false,
-    "bytes": 46278,
-    "lastWriteUtc": "2026-05-24T23:28:57.520893+00:00",
+    "bytes": 47898,
+    "lastWriteUtc": "2026-05-25T00:12:38.904152+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 5313,
+    "wordCount": 5493,
     "topic": "# X_007 Status",
     "references": [
       "Docs/Reports/MATH_LOD_PHASE0_REPORT_X_007.md",
@@ -112940,16 +112950,16 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "c0797b063f41f17e2cd40327fdb9b22997bd7136193a271e52f0e99debcfea86"
+    "sha256": "38bf998452fa20bd09a6db86a91309bd41cc1a041a806c28490c5fbac06010fe"
   },
   {
     "path": "Docs/Tasks/Status_X_008.md",
     "active": false,
-    "bytes": 105782,
-    "lastWriteUtc": "2026-05-24T23:46:03.046552+00:00",
+    "bytes": 108872,
+    "lastWriteUtc": "2026-05-25T00:11:59.958314+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 11618,
+    "wordCount": 11961,
     "topic": "# Status_X_008 - COMBAT_DAMAGE_AND_ARMOR_LUT_OPTIMIZER",
     "references": [
       "Status_X_008.md",
@@ -112972,7 +112982,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "12340900a5f15437021a3259184730deaf1a8a641e9ea368837e6df55d3bf4da"
+    "sha256": "b65686e4fd47df03aee90545c66fedad704acbde63886695057e9b9bd82d5b02"
   },
   {
     "path": "Docs/Tasks/Status_X_009.md",
@@ -113016,11 +113026,11 @@
   {
     "path": "Docs/Tasks/Status_X_011.md",
     "active": false,
-    "bytes": 72890,
-    "lastWriteUtc": "2026-05-24T17:21:11.910439+00:00",
+    "bytes": 75373,
+    "lastWriteUtc": "2026-05-25T00:10:30.287067+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 8099,
+    "wordCount": 8371,
     "topic": "# Status X_011 - VOCAL_WARNING_AND_SUBTITLE_STREAMLINER",
     "references": [
       "Docs/Tasks/CURRENT_BATCH.md",
@@ -113035,16 +113045,16 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "6b0f3b2af449c2fe30dec21d1b9d84d4f2acec69b2c11e733c64c248722046b0"
+    "sha256": "eba8ca56d8a414eebed7ae42f1c97d5d8747f0c476f3e0b2823b05a0bbf9abfb"
   },
   {
     "path": "Docs/Tasks/Status_X_012.md",
     "active": false,
-    "bytes": 39204,
-    "lastWriteUtc": "2026-05-24T23:38:10.546318+00:00",
+    "bytes": 41744,
+    "lastWriteUtc": "2026-05-24T23:59:18.282788+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 4594,
+    "wordCount": 4911,
     "topic": "# Status X_012",
     "references": [
       "QA_Evidence_Text_Filter_Audit.txt",
@@ -113118,15 +113128,15 @@
       "Docs/Reports/README.md",
       "Docs/README.md",
       "Docs/Reports/README.md",
+      "Docs/Tasks/CURRENT_BATCH.md",
+      "Docs/README.md",
+      "Docs/Reports/README.md",
+      "KCC_APEX_AUDIT_X_005.md",
       "Docs/_Archive/Reports_X_012_2026-05-23/README.md",
       "Docs/_Archive/Reports_X_012_2026-05-23/MANIFEST.md",
       "Docs/_Archive/Architecture_X_012_APEX_2026-05-23/README.md",
       "Docs/_Archive/Architecture_X_012_APEX_2026-05-24/README.md",
-      "Docs/_Archive/Architecture_X_012_APEX_2026-05-24/MANIFEST.md",
-      "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_LINE_SPLIT/README.md",
-      "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_LINE_SPLIT/MANIFEST.md",
-      "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_FILE_CAP/README.md",
-      "Docs/_Archive/Architecture_X_012_APEX_2026-05-24_FILE_CAP/MANIFEST.md"
+      "Docs/_Archive/Architecture_X_012_APEX_2026-05-24/MANIFEST.md"
     ],
     "staleFlags": {
       "signalBusRegistry256": 1,
@@ -113134,7 +113144,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "2a5efba4a7b5870771874b5b4b32ff16330679cb2c6ade8a1c449b1cfdbed051"
+    "sha256": "e8ab2bb79dfeb2fb4c5d82471a94bda8a702f585d396390696f2efccf24d71de"
   },
   {
     "path": "Docs/TECH_ART_PBR_SURFACE_DOCTRINE.md",
@@ -113216,11 +113226,11 @@
   {
     "path": "MASTER_RELEASE_WORK_PLAN.md",
     "active": true,
-    "bytes": 3767,
-    "lastWriteUtc": "2026-05-24T23:53:20.639858+00:00",
+    "bytes": 4035,
+    "lastWriteUtc": "2026-05-25T00:15:09.088395+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 361,
+    "wordCount": 384,
     "topic": "# HECTON-8 Master Release Plan",
     "references": [
       "AGENTS.md",
@@ -113237,6 +113247,6 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "064fcca17e090b6e76dace97ec2bbd93de3afda8e995c9f399302cad2adf1df5"
+    "sha256": "f8c10a838dc42469287bf0025231aa898540ba7e15f138e36c82776bd1560658"
   }
 ]
