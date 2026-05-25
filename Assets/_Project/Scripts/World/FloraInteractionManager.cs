@@ -1425,11 +1425,17 @@ namespace Hecton8.World
         private GraphicsBuffer _interactionBufferB;
         private GraphicsBuffer _activeInteractionBuffer;
         private int _interactionBufferWriteIndex;
-        private GraphicsBuffer _flowFieldBuffer;
+        private GraphicsBuffer _flowFieldBufferA;
+        private GraphicsBuffer _flowFieldBufferB;
+        private GraphicsBuffer _activeFlowFieldBuffer;
+        private int _flowFieldUploadBufferIndex;
         private GraphicsBuffer _floraSwayFieldBufferA;
         private GraphicsBuffer _floraSwayFieldBufferB;
         private GraphicsBuffer _floraSwayFieldReadBuffer;
-        private GraphicsBuffer _wakeTrailStampCommandBuffer;
+        private GraphicsBuffer _wakeTrailStampCommandBufferA;
+        private GraphicsBuffer _wakeTrailStampCommandBufferB;
+        private GraphicsBuffer _activeWakeTrailStampCommandBuffer;
+        private int _wakeTrailStampCommandUploadBufferIndex;
         private IInstanceCullingService _instanceCullingService;
         private bool _cullingHotSwapRegistered;
         private RenderTexture _wakeTrailRead;
@@ -7322,7 +7328,7 @@ namespace Hecton8.World
 
             float recenterThreshold = math.max(0.01f, cellSize * FlowFieldRecenterThresholdCells);
             bool forceUpload =
-                _flowFieldBuffer == null ||
+                _activeFlowFieldBuffer == null ||
                 _flowFieldUploadTimer <= 0f ||
                 _lastUploadedFlowFieldCenterWS == Vector3.zero ||
                 (gridCenter - _lastUploadedFlowFieldCenterWS).sqrMagnitude >= recenterThreshold * recenterThreshold;
@@ -7330,15 +7336,25 @@ namespace Hecton8.World
             if (forceUpload)
             {
                 int requiredCount = math.max(1, flowVectors.Length);
-                if (_flowFieldBuffer == null || _flowFieldBuffer.count != requiredCount)
+                if (_flowFieldBufferA == null || _flowFieldBufferA.count != requiredCount ||
+                    _flowFieldBufferB == null || _flowFieldBufferB.count != requiredCount)
                 {
                     ReleaseFlowFieldBuffer();
-                    _flowFieldBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float2>(requiredCount); // COLD ALLOC: GraphicsBuffer[flowVectors.Length] - authoritative ecosystem flow-field GPU staging for flora shading - owner: FloraInteractionManager
+                    _flowFieldBufferA = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float2>(requiredCount); // COLD ALLOC: GraphicsBuffer[flowVectors.Length] - authoritative ecosystem flow-field GPU staging A for flora shading - owner: FloraInteractionManager
+                    _flowFieldBufferB = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float2>(requiredCount); // COLD ALLOC: GraphicsBuffer[flowVectors.Length] - authoritative ecosystem flow-field GPU staging B for flora shading - owner: FloraInteractionManager
+                    _activeFlowFieldBuffer = _flowFieldBufferA;
+                    _flowFieldUploadBufferIndex = 1;
                 }
 
-                if (!_vegetationBridge.TryUploadEcosystemFlowFieldPayload(_flowFieldBuffer, requiredCount))
+                GraphicsBuffer writeBuffer = (_flowFieldUploadBufferIndex & 1) == 0 ? _flowFieldBufferA : _flowFieldBufferB;
+                if (writeBuffer == null || !writeBuffer.IsValid())
                     return;
 
+                if (!_vegetationBridge.TryUploadEcosystemFlowFieldPayload(writeBuffer, requiredCount))
+                    return;
+
+                _activeFlowFieldBuffer = writeBuffer;
+                _flowFieldUploadBufferIndex ^= 1;
                 _lastUploadedFlowFieldCenterWS = gridCenter;
                 _flowFieldUploadTimer = FlowFieldUploadIntervalSeconds;
             }
@@ -7357,8 +7373,8 @@ namespace Hecton8.World
                 return;
 
             _flowFieldGlobalsDirty = false;
-            if (_flowFieldBuffer != null)
-                Shader.SetGlobalBuffer(_MarineSnowFlowFieldId, _flowFieldBuffer);
+            if (_activeFlowFieldBuffer != null)
+                Shader.SetGlobalBuffer(_MarineSnowFlowFieldId, _activeFlowFieldBuffer);
 
             Shader.SetGlobalVector(
                 _MarineSnowFlowFieldCenterCellSizeId,

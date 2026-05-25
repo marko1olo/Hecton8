@@ -82,9 +82,9 @@ Presentation signal route:
 - Publish budget is continuous: one packet at survival quality, up to four at high quality.
 - Publication scans evaluated request window and counts only successful `SignalBus.TryPush` calls.
 - `ToolAcousticSignal.State` uses SHINOBU-local state byte `4` for Seaglide propeller output. It does not reuse `ToolAcousticSignal.StateLaserLoop`.
-- `BubbleSpawnSignal.PositionAup` requires the `Hecton8.World.AbsoluteUniversePosition` contract type, so the runtime performs one fully-qualified payload conversion from the job's `double3` AUP. It does not import or poll World services.
+- `BubbleSpawnSignal.PositionAup` requires the `Hecton8.World.AbsoluteUniversePosition` contract type, so the runtime performs one payload conversion from the job's `double3` AUP. It does not import or poll World services.
 
-- Manta headlight presentation configures and publishes `SubmarineLightsChangedSignal` through the typed `SignalBus<T>` lane instead of `GlobalSignals.Publish`. Tick only queues the presentation update; actual shader/light mutation runs from `ILateFrameTickable.LateFrameTick`.
+- Manta headlight presentation configures and publishes `SubmarineLightsChangedSignal` through the typed `SignalBus<T>` lane instead of `GlobalSignals.Publish`. Tick only queues the presentation update; shader/light mutation runs from `ILateFrameTickable.LateFrameTick`.
 - Manta has no Unity `AudioSource` motor fallback. If hydrodynamic DSP publication is absent, motor presentation fails silent instead of starting Unity audio playback.
 - Manta headlight upsert/remove masks advance only after accepted `SignalBus<SubmarineLightsChangedSignal>.TryPush` calls. Dropped pushes leave previous published bits intact for retry and record bounded local drop state.
 - Manta headlight shader global vector arrays are hash-gated; unchanged payloads do not call `Shader.SetGlobalVectorArray` again during dirty late-frame presentation.

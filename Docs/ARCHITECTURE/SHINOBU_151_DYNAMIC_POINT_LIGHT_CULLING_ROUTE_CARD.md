@@ -320,7 +320,7 @@ Public ownership route remains Vault handles. Raw pointers do not escape the SHI
 
 
 
-| Proof required before GREEN | Fresh compile/import artifact, Burst Inspector proof, Frame Debugger/profiler proof, GC proof, GPU upload proof, and linked output path with command, timestamp, environment, and result |
+| Proof required before GREEN | Compile/import artifact, Burst Inspector proof, Frame Debugger/profiler proof, GC proof, GPU upload proof, and linked output path with command, timestamp, environment, and result |
 
 
 

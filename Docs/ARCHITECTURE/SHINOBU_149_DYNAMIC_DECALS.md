@@ -159,7 +159,7 @@ The shader does not invert matrices per pixel. The 80-byte DTO remains sufficien
 - `response` rises continuously with thermal pressure.
 - Prevents one-frame upload-count cliffs.
 
-- Active upload/evaluation capacity lerps from the legacy serialized minimum field `LowTierCapacity` (`128` by default) to `MaximumOverkillCapacity` (`1024` by default); the field name is not a runtime hardware branch.
+- Upload/evaluation capacity lerps from the legacy serialized minimum field `LowTierCapacity` (`128` by default) to `MaximumOverkillCapacity` (`1024` by default); the field name is not a runtime hardware branch.
 - `MaximumOverkillCapacity` is capped by the capacity requested by `DeferredDecalPass`, so the runtime upload window cannot exceed the current `GraphicsBuffer` allocation.
 
 - `DeferredDecalPass` clamps its GPU buffer capacity to the same 128-decal low floor, so serialized sub-floor values cannot allocate an undersized upload target.

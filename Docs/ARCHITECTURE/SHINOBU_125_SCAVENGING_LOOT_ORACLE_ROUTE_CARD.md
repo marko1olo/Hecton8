@@ -106,7 +106,7 @@ Instrument:
 
 
 
-- Item acquisition source-kind: `ItemAcquiredSignalSourceKinds.ScavengingLootOracle` = 13 for scavenging oracle, owned by Core contracts signal surface. The same narrow source-kind surface preserves existing `HarvestableOutcrop` = 14; source-kind 9 remains manual pickup.
+- Item acquisition source-kind: `ItemAcquiredSignalSourceKinds.ScavengingLootOracle` = 13 for scavenging oracle, owned by Core contracts signal surface. The narrow source-kind surface preserves existing `HarvestableOutcrop` = 14; source-kind 9 remains manual pickup.
 
 
 

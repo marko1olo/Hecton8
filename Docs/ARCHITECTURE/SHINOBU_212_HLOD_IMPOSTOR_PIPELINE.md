@@ -44,7 +44,7 @@ Audit: `Docs/Reports/SHINOBU_212_SELF_AUDIT.xml` is the current SHINOBU forensic
 - Invalid atlas depth resolves to empty occupancy.
 - Invalid normals resolve to up-vector fallback.
 
-- The low-quality shader sample collapse remains intact: q below 0.22 keeps one atlas view, q 0.22..0.55 restores interpolation continuously, and higher quality keeps the richer two-view Dear Lie.
+- The low-quality shader sample collapse remains intact: q below 0.22 keeps one atlas view, q 0.22..0.55 restores interpolation continuously, and higher quality keeps the two-view Dear Lie.
 
 ## 2026-05-20 Loop 12 Reversed-Z Depth Bias Boundary
 

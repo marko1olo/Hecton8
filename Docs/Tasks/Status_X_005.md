@@ -5,7 +5,7 @@ Role: HYDRODYNAMIC_KCC_AND_COLLISION_SOVEREIGN
 Domain: Echelon 4 Player/Kinematics/Physics KCC
 Task Count: 10
 Batch Source: Docs/Tasks/CURRENT_BATCH.md
-Status: APEX_UNITY_COLLISION_DTO_STATIC_GREEN_BUILD_BLOCKED
+Status: APEX_COLLISION_DAMAGE_DEAD_ROUTE_STATIC_GREEN_BUILD_BLOCKED
 
 ## Hygiene
 
@@ -789,3 +789,21 @@ The whole non-Editor runtime is now clean for the broad hidden PhysX query class
 - Strict whole-runtime non-Editor forbidden-symbol scan returned zero sync Unity Physics casts/overlaps/checks, zero PhysX command types/schedules, zero Unity collision/trigger callbacks, zero `Physics.SyncTransforms`, zero `.ClosestPoint`, zero `GetContacts`, zero `GetContact`, and zero `SweepTest*`.
 - Targeted `git diff --check` passed for touched code/tool/report files with CRLF warnings only.
 - Compile gate retry stayed closed for 10 attempts: active compiler/runtime process count was `0` for attempts 1-4 and `2` for attempts 5-10, but CPU max stayed `100` on every attempt.
+
+## APEX Continuation - Collision-Damage Dead Route Cleanup
+
+- [x] Manta emergency wreck no longer stores dead legacy collision-damage state | DOD practice: removed unused `collisionDamage*` authoring fields, residency cooldown state, and cooldown timer; preserved the only live cap behavior as `bailoutVelocityCapMaxSpeed` | Alternatives rejected: keeping dead damage knobs after the Unity `Collision` route was deleted | Estimate: runtime 0 us, dead state removal
+- [x] Sargassum collapse chunk no longer carries dead collision-snag residue | DOD practice: removed unused legacy snag target fields, `_cascadeImpactConsumed`, `TryConfigureSnag`, `LayerMatchesMask`, `ShouldStopSiltTrail`, and the cold `_snagContacts` array | Alternatives rejected: leaving private dead methods as future hooks after the Unity collision DTO route was removed | Estimate: removes one cold managed array allocation per chunk instance
+- [x] Apex audit proof expanded and rerun | DOD practice: `KccApexAudit_X_005.py` now persists `manta_legacy_collision_damage_symbol_count = 0` and `sargassum_dead_collision_snag_symbol_count = 0` | Alternatives rejected: manual grep-only proof | Estimate: offline proof only
+- [x] Static verification rerun | DOD practice: py_compile, OOP scanner, apex audit, targeted dead-symbol scans, strict whole-runtime forbidden scan, and targeted diff-check were rerun | Alternatives rejected: reporting from local memory after source edits | Estimate: runtime 0 us
+- [ ] C# compile rerun pending | DOD practice: build gate sampled zero compiler/runtime processes but CPU max `96.9`, so local build stayed blocked | Alternatives rejected: launching `dotnet build` above the 50% CPU rule | Estimate: compile pending verification
+
+## Latest Verification - Collision-Damage Dead Route Cleanup
+
+- `python -m py_compile Tools/KccApexAudit_X_005.py Tools/OOP_Kcc_Scanner_X_005.py`: passed.
+- `python Tools/KccApexAudit_X_005.py`: `manta_legacy_collision_damage_symbol_count = 0`, `manta_legacy_collision_damage_route_removed = true`, `sargassum_dead_collision_snag_symbol_count = 0`, `sargassum_dead_collision_snag_route_removed = true`, `broad_forbidden_count = 0`, and `scoped_forbidden_count = 0`.
+- `python Tools/OOP_Kcc_Scanner_X_005.py`: `finding_counts = {}` and Hydro KCC forbidden command hits 0.
+- Targeted dead-symbol scans returned zero `collisionDamage`, `TryConfigureSnag`, `ShouldStopSiltTrail`, `_cascadeImpactConsumed`, `snagImpactSpeedThreshold`, `snagLayers`, `snagSearchRadius`, `snagSurfaceOffset`, and `_snagContacts` matches in the patched Manta/Sargassum route.
+- Strict whole-runtime non-Editor forbidden-symbol scan returned zero sync Unity Physics casts/overlaps/checks, zero PhysX command types/schedules, zero Unity collision/trigger callbacks, zero `Physics.SyncTransforms`, zero `.ClosestPoint`, zero `GetContacts`, zero `GetContact`, and zero `SweepTest*`.
+- Targeted `git diff --check` passed for touched code/tool/report/status files.
+- Compile gate remained closed: active compiler/runtime process count `0`, CPU samples `91.2/96.9/87.1`.

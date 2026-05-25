@@ -221,6 +221,15 @@ public static class HectonNoise
         return math.lerp(lut[i0], lut[i1], fi - i0);
     }
 
+    public static float SampleLUT(NativeArray<float>.ReadOnly lut, float t)
+    {
+        t = math.clamp(t, 0f, 1f);
+        float fi = t * (lut.Length - 1);
+        int i0 = (int)fi;
+        int i1 = math.min(i0 + 1, lut.Length - 1);
+        return math.lerp(lut[i0], lut[i1], fi - i0);
+    }
+
     public static float Fractal2D(float x, float z, NoiseData n)
     {
         float amp = 1f, freq = 1f, val = 0f, maxA = 0f;
@@ -660,7 +669,10 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
 
     private const string NativeMemoryOwner = nameof(HectonWorldGenerator);
     private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
-    private const Allocator DataVaultExemptWorldGenerationLutAllocator = Allocator.Persistent;
+    private const SystemID WorldGeneratorVaultOwner = SystemID.WorldStreaming;
+    private const BufferID WestSlopeLutBufferId = BufferID.HectonWorldGeneratorWestSlopeLut;
+    private const BufferID EastSlopeLutBufferId = BufferID.HectonWorldGeneratorEastSlopeLut;
+    private const BufferID BiomeLutBufferId = BufferID.HectonWorldGeneratorBiomeLut;
     const int WorldStreamingQueueMaxCapacity = 512;
     const int PendingChunkMaxCapacity = 64;
     const int PendingPhysicsBakeMaxCapacity = 2048;
@@ -762,7 +774,10 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
     readonly List<List<Vector3>> _poiVectorListPool = new List<List<Vector3>>(PoiListPoolCapacity);
     bool _poiVectorListPoolReady;
 
-    NativeArray<float> _westLUT, _eastLUT, _biomeLUT;
+    IDataVault _worldGeneratorVault;
+    VaultGenerationHandle<float> _westLutHandle;
+    VaultGenerationHandle<float> _eastLutHandle;
+    VaultGenerationHandle<float> _biomeLutHandle;
     bool _lutsReady;
 
     int2 _lastChunk = new int2(int.MinValue, int.MinValue);
@@ -940,6 +955,16 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
                     RegisterToTickManager();
                     EnsureDeferredPhysicsBakeTeardownRegistered();
                 }
+                break;
+            case GlobalRegistryServiceSlot.DataVault:
+                if (ReferenceEquals(_worldGeneratorVault, currentService))
+                    break;
+
+                CompletePendingChunkJobsForTeardown();
+                DisposeLUTs();
+                CacheWorldGeneratorVaultCold(currentService as IDataVault);
+                if (_streaming)
+                    EnsureLUTs();
                 break;
         }
     }
